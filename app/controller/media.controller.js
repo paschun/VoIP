@@ -44,8 +44,7 @@ var upload = multer({
             return cb(null, true);
         }
 
-        cb("Error: File upload only supports the "
-            + "following filetypes - " + filetypes);
+        cb(new Error("Error: File upload only supports the following filetypes - " + filetypes));
     }
 
     // mypic is the name of file attribute

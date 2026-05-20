@@ -10,7 +10,7 @@ app.use(compression())
 var expiryDate = new Date(Date.now() + 60 * 60 * (1000 * 12 * 30)) // 30 day
 app.use(session({
   name: 'session',
-  keys: [process.env.COOKIE_KEY, process.env.COOKIE_KEY2],
+  keys: [process.env.COOKIE_KEY], // could hypothetically have process.env.COOKIE_KEY2 , but need to change other refs
   cookie: {
     secure: true,
     httpOnly: true,
@@ -159,5 +159,5 @@ app.get('/api/users/', function (req, res) {
 app.get('/get-base-url', function(req, res) {
   res.status(200).json({url: process.env.BASE_URL.trim()});
 });
-console.log('listening on PORT', process.env.PORT)
+console.log('express listening on PORT', process.env.PORT)
 server.listen(process.env.PORT)
