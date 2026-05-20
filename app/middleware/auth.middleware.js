@@ -1,7 +1,8 @@
 var User = require('../model/user.model');
-var jwt = require('jsonwebtoken');
+const { jwtVerify } = require('jose');
+const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY);
 // const salt = process.env.COOKIE_KEY
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
     try {
         if(req.headers.token){
             const token = req.headers.token;
@@ -9,9 +10,9 @@ module.exports = (req, res, next) => {
             /* User.findOne(condition).then(data => {
                 if(data){ */
                     try {
-                        var decoded = jwt.verify(token, process.env.COOKIE_KEY);
-                        //console.log(decoded)
-                        req.user = decoded;
+                        const { payload } = await jwtVerify(token, joseSecret);
+                        //console.log(payload)
+                        req.user = payload;
                         next();
                       } catch(err) {
                         res.status(401).json({

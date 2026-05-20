@@ -18,7 +18,8 @@ const twilioHelper = require('../helper/twilio.helper');
 const remoteVersion = 'https://raw.githubusercontent.com/0perationPrivacy/VoIP/main/version.md';
 const currentVersion = 'version.md'; // read from local file version.md
 
-var jwt = require('jsonwebtoken');
+const { SignJWT } = require('jose');
+const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY)
 
 const Speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
@@ -44,7 +45,10 @@ exports.login = async (req, res) => {
                 var checkpassword = bcrypt.compareSync(req.body.password, user.password);
                 if(checkpassword){
                     var obj = {id:user.id,email:user.email,name:user.name};
-                    var token = jwt.sign(obj, process.env.COOKIE_KEY);
+                    const token = await new SignJWT(obj)
+                      .setProtectedHeader({ alg: 'HS256' })
+                      .setExpirationTime('30d')
+                      .sign(joseSecret);
                     user.token = token;
                     user.save();      
                     var status = 'true';
