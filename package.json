@@ -6,6 +6,7 @@
   "workspaces": ["frontend"],
   "scripts": {
     "dev": "NODE_ENV=development nodemon -x 'node --env-file=.env' app.js",
+    "build": "npm run build -w frontend",
     "start": "NODE_ENV=production node --env-file=.env app.js"
   },
   "author": "Operation Privacy",
