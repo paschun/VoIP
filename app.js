@@ -1,10 +1,7 @@
-const config =  require('./config.js');
-
 const express = require('express')
 const app = express()
 var bodyParser = require('body-parser')
 const cors = require("cors");
-require('dotenv').config()
 const path = require('path');
 var session = require('cookie-session')
 var compression = require('compression')
@@ -162,4 +159,5 @@ app.get('/api/users/', function (req, res) {
 app.get('/get-base-url', function(req, res) {
   res.status(200).json({url: process.env.BASE_URL.trim()});
 });
+console.log('listening on PORT', process.env.PORT)
 server.listen(process.env.PORT)
