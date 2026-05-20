@@ -25,7 +25,13 @@ exports.cssLoaders = function (options) {
   const postcssLoader = {
     loader: 'postcss-loader',
     options: {
-      sourceMap: options.sourceMap
+      sourceMap: options.sourceMap,
+      // Explicitly point at frontend/.postcssrc.js. Required because this repo
+      // is an npm workspace: dependencies are hoisted to the repo-root
+      // node_modules/, so postcss-loader's default upward search from a CSS
+      // file under node_modules/ walks to the repo root without ever
+      // visiting frontend/.postcssrc.js .
+      config: { path: path.resolve(__dirname, '..') }
     }
   }
 
