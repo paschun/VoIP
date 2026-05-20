@@ -3,11 +3,7 @@ const openpgp = require('openpgp');
 var Email = require('../model/email.model');
 var Setting = require('../model/setting.model');
 
-const _validPgpKey = async (keyString) => {
-    return new Promise(async (resolve, reject) => {
-        await openpgp.readKey({ armoredKey: keyString }).then(resolve).catch(reject);
-    });
-}
+const _validPgpKey = (keyString) => openpgp.readKey({ armoredKey: keyString });
 
 exports.create = async (req, res) => {
     try{

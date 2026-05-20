@@ -28,7 +28,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.1",
     "nodemailer-openpgp": "^2.2.1",
-    "openpgp": "^5.11.3",
+    "openpgp": "^6.3.0",
     "qrcode": "^1.5.4",
     "request": "^2.88.2",
     "socket.io": "^4.8.3",
