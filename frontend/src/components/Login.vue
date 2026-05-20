@@ -126,7 +126,6 @@ import { post } from '../core/module/common.module'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 // import { constants } from 'zlib'
-// const CBOR = require('cbor-js')
 export default {
 name: 'Login',
 components: { ThemeButton },

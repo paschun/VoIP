@@ -42,12 +42,10 @@
 import { encode, decode } from '../../../base64url-arraybuffer'
 import { post } from '../../../core/module/common.module'
 // import { decode } from 'cbor-x/decode'
-// const CBOR = require('../../../cbor')
 // import base64url from 'base64url'
 import { parseAuthData, bufToHex } from '../../../helper'
 // const Helper = require('../../../helper')
 const CBOR = require('cbor-js')
-// const cbor = require('cbor')
 export default {
   data () {
     return {
