@@ -34,6 +34,7 @@
     "zlib": "^1.0.5"
   },
   "devDependencies": {
+    "@soda/friendly-errors-webpack-plugin": "^1.8.1",
     "autoprefixer": "^7.2.6",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.6",
@@ -60,7 +61,6 @@
     "eslint-plugin-standard": "^3.1.0",
     "eslint-plugin-vue": "^4.7.1",
     "file-loader": "^1.1.11",
-    "friendly-errors-webpack-plugin": "^1.7.0",
     "html-webpack-plugin": "^4.5.2",
     "mini-css-extract-plugin": "^1.6.2",
     "node-notifier": "^10.0.1",
@@ -93,6 +93,6 @@
   "browserslist": [
     "> 1%",
     "last 2 versions",
-    "not ie <= 8"
+    "not dead"
   ]
 }

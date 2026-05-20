@@ -1,4 +1,3 @@
-const U2F = require("u2f");
 const base64url = require('base64url');
 var baseUrl = process.env.BASE_URL.trim()
 const APP_ID = baseUrl.substr(0, baseUrl.length - 1);
