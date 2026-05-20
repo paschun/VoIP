@@ -1,33 +1,21 @@
 const Telnyx = require('telnyx');
-var axios = require('axios');
 const moment = require('moment');
 const crypto = require('crypto')
 const { combineURLs } = require("./common.helper")
 
 //Inside lib file declare functions
-const requestCurl = (method,url,headers,data=null) => {
-    return new Promise((resolve) => {
-        if(data){
-            var config = {
-                method: method,
-                url: url,
-                headers: headers,
-                data:data
-            };
-        }else{
-            var config = {
-                method: method,
-                url: url,
-                headers: headers
-            };   
-        }
-        axios(config).then(function (response) {
-            resolve(response.data);
-        }).catch(function (error) {
-            // console.log(error)
-            resolve(false);
-        });
-    });
+const requestCurl = async (method, url, headers, data = null) => {
+    try {
+        const init = { method, headers };
+        if (data) init.body = JSON.stringify(data);
+        const response = await fetch(url, init);
+        if (!response.ok) return false;
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
+    } catch (error) {
+        // console.error(error)
+        return false;
+    }
 }
  
 const createTexmlApp = (apiKey) => {
