@@ -74,7 +74,6 @@
     "postcss-loader": "^2.1.6",
     "postcss-url": "^7.3.2",
     "pulltorefreshjs": "^0.1.22",
-    "rimraf": "^2.7.1",
     "semver": "^5.7.2",
     "shelljs": "^0.8.5",
     "terser-webpack-plugin": "^4.2.3",
@@ -91,7 +90,7 @@
     "webpack-merge": "^4.2.2"
   },
   "engines": {
-    "node": ">= 6.0.0",
+    "node": ">= 14.14.0",
     "npm": ">= 3.0.0"
   },
   "browserslist": [
