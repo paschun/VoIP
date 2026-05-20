@@ -10,7 +10,7 @@
 
 import { post } from '../core/module/common.module'
 // import { parseAuthData, bufToHex } from '../helper'
-const CBOR = require('cbor-js')
+const { decode } = require('cbor-x/decode')
 export default {
   data () {
     return {
@@ -45,7 +45,8 @@ export default {
           const credential = await navigator.credentials.create({
             publicKey: pkCredCreateOpts // some info in the options come from backend
           })
-          let attestationObject = await CBOR.decode(credential.response.attestationObject)
+          // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
+          const attestationObject = decode(new Uint8Array(credential.response.attestationObject))
           // let authData = parseAuthData(attestationObject.authData)
           console.log(attestationObject)
           // let aaguid = bufToHex(authData.aaguid)

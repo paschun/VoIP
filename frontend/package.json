@@ -15,7 +15,7 @@
     "axios": "^1.16.1",
     "bootstrap": "^5.3.8",
     "bootstrap-vue": "^2.23.1",
-    "cbor-js": "^0.1.0",
+    "cbor-x": "^1.6.4",
     "papaparse": "^5.5.3",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.24",

@@ -41,11 +41,10 @@
 <script>
 import { encode, decode } from '../../../base64url-arraybuffer'
 import { post } from '../../../core/module/common.module'
-// import { decode } from 'cbor-x/decode'
 // import base64url from 'base64url'
 import { parseAuthData, bufToHex } from '../../../helper'
 // const Helper = require('../../../helper')
-const CBOR = require('cbor-js')
+const { decode: cborDecode } = require('cbor-x/decode')
 export default {
   data () {
     return {
@@ -202,7 +201,8 @@ export default {
                       // console.log(error)
                     }
 
-                    let attestationObject = await CBOR.decode(newCredentialInfo.response.attestationObject)
+                    // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
+                    const attestationObject = cborDecode(new Uint8Array(newCredentialInfo.response.attestationObject))
                     let authData = parseAuthData(attestationObject.authData)
                     let aaguid = bufToHex(authData.aaguid)
                     newCredentialInfo = this.publicKeyCredentialToJSON(newCredentialInfo)
