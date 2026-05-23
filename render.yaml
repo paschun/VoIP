@@ -19,8 +19,7 @@ services:
   - key: DB
     sync: false
   - key: COOKIE_KEY
-    sync: false
-    #generateValue: true
+    generateValue: true
   - key: BASE_URL
     sync: false
   region: frankfurt
