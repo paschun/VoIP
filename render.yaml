@@ -1,0 +1,30 @@
+# Docs: https://render.com/docs/blueprint-spec
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+
+# Exported from Render on 2026-05-23T08:51:58Z
+version: "1"
+services:
+- type: web
+  name: voip-suite
+  runtime: node
+  repo: https://github.com/paschun/VoIP
+  plan: free
+  envVars:
+  - key: HTTPS
+    value: "true"
+  - key: SIGNUPS
+    value: "false"
+  - key: NODE_VERSION
+    value: lts
+  - key: DB
+    sync: false
+  - key: COOKIE_KEY
+    sync: false
+    #generateValue: true
+  - key: BASE_URL
+    sync: false
+  region: frankfurt
+  buildCommand: npm ci --ignore-scripts && npm run build
+  startCommand: set -x; npm -v; node -v; pnpm -v; npm start
+  autoDeployTrigger: commit
+  healthCheckPath: /api/users/
