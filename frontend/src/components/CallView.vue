@@ -166,7 +166,7 @@ import { post } from '../core/module/common.module'
 import { EventBus } from '@/event-bus'
 import { TelnyxRTC } from '@telnyx/webrtc'
 import 'vue-select/dist/vue-select.css'
-const { Device } = require('twilio-client')
+import { Device } from 'twilio-client'
 export default {
   props: ['contacts'],
   data () {

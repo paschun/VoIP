@@ -39,12 +39,9 @@
 </template>
 
 <script>
-import { encode, decode } from '../../../base64url-arraybuffer'
 import { post } from '../../../core/module/common.module'
-// import base64url from 'base64url'
 import { parseAuthData, bufToHex } from '../../../helper'
-// const Helper = require('../../../helper')
-const { decode: cborDecode } = require('cbor-x/decode')
+import { decode as cborDecode } from 'cbor-x/decode'
 export default {
   data () {
     return {
@@ -185,7 +182,7 @@ export default {
                       for (const key of hardwarekey) {
                         console.log(key)
                         excludeCredentials.push({
-                          id: decode(key.credentials[0]),
+                          id: Uint8Array.fromBase64(key.credentials[0], { alphabet: 'base64url' }),
                           type: 'public-key'
                         })
                       }
@@ -260,8 +257,8 @@ export default {
       return randomBuff
     },
     preformatMakeCredReq (makeCredReq) {
-      makeCredReq.challenge = decode(makeCredReq.challenge)
-      makeCredReq.user.id = decode(makeCredReq.user.id)
+      makeCredReq.challenge = Uint8Array.fromBase64(makeCredReq.challenge, { alphabet: 'base64url' })
+      makeCredReq.user.id = Uint8Array.fromBase64(makeCredReq.user.id, { alphabet: 'base64url' })
 
       return makeCredReq
     },
@@ -335,7 +332,7 @@ export default {
       }
 
       if (pubKeyCred instanceof ArrayBuffer) {
-        return encode(pubKeyCred)
+        return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url' })
       }
 
       if (pubKeyCred instanceof Object) {

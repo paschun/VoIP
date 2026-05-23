@@ -659,11 +659,11 @@ export default {
       this.firstChatShow(value);
     },
     notifyMe(user, message) {
-      let msgIcon = require(`@/assets/img/icon.png`);
+      const msgIcon = new URL('@/assets/img/icon.png', import.meta.url).href;
       if (!("Notification" in window)) {
         alert("This browser does not support desktop notification");
       } else if (Notification.permission === "granted") {
-        var options = {
+        const options = {
           body: message,
           dir: "auto",
           icon: msgIcon,
@@ -671,12 +671,12 @@ export default {
         // eslint-disable-next-line no-new
         new Notification("Message from " + user, options);
       } else if (Notification.permission !== "denied") {
-        Notification.requestPermission(function (permission) {
+        Notification.requestPermission((permission) => {
           if (!("permission" in Notification)) {
             Notification.permission = permission;
           }
           if (permission === "granted") {
-            var options = {
+            const options = {
               body: message,
               dir: "auto",
               icon: msgIcon,

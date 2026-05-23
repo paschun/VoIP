@@ -71,7 +71,7 @@ export default {
   name: 'Signup',
   data () {
     return {
-      version: process.env.VERSION,
+      version: import.meta.env.DEV ? __APP_VERSION__ : '',
       user: {
         email: '',
         password: ''

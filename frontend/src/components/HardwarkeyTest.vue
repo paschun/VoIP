@@ -10,7 +10,7 @@
 
 import { post } from '../core/module/common.module'
 // import { parseAuthData, bufToHex } from '../helper'
-const { decode } = require('cbor-x/decode')
+import { decode } from 'cbor-x/decode'
 export default {
   data () {
     return {

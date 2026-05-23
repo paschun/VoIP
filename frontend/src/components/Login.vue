@@ -120,8 +120,6 @@
 </template>
 
 <script>
-// import { decode } from '../../../base64url-arraybuffer'
-import { decode, encode } from '../base64url-arraybuffer'
 import { post } from '../core/module/common.module'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
@@ -354,7 +352,7 @@ methods: {
     }
 
     if (pubKeyCred instanceof ArrayBuffer) {
-      return encode(pubKeyCred)
+      return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url' })
     }
 
     if (pubKeyCred instanceof Object) {
@@ -371,11 +369,11 @@ methods: {
   },
   preformatGetAssertReq (getAssert) {
     return new Promise((resolve, reject) => {
-      getAssert.challenge = decode(getAssert.challenge)
+      getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
       if (getAssert.allowCredentials) {
         for (let allowCred of getAssert.allowCredentials) {
           console.log(allowCred.id)
-          allowCred.id = decode(allowCred.id)
+          allowCred.id = Uint8Array.fromBase64(allowCred.id, { alphabet: 'base64url' })
         }
       }
       resolve(getAssert)
