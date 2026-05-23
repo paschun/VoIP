@@ -2,11 +2,9 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const Validator = require('validatorjs');
 
-const moment = require('moment')
-const fs = require('fs')
+const fs = require('node:fs')
 
 var User = require('../model/user.model');
-const nodemailer = require('nodemailer');
 var Hardwarekey = require('../model/hardwarekey.model');
 var Contact = require('../model/contact.model');
 var Email = require('../model/email.model');

@@ -1,16 +1,17 @@
-const crypto = require("crypto");
-const algorithm = "aes-256-cbc"; 
+const crypto = require("node:crypto");
 const nodemailer = require("nodemailer")
 const openpgpEncrypt = require('nodemailer-openpgp').openpgpEncrypt;
 const twilio = require('twilio')
 
+const algorithm = "aes-256-cbc";
+
 const encryptedString = (message) => {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         try {
             const initVector = crypto.randomBytes(16);
             const Securitykey = process.env.COOKIE_KEY;
             const cipher = crypto.createCipheriv(algorithm, Securitykey, initVector);
-            let encryptedData = cipher.update(message, "utf-8", "hex");
+            const encryptedData = cipher.update(message, "utf-8", "hex");
             resolve(encryptedData);
         }catch (e){
             console.log(e);
@@ -20,11 +21,11 @@ const encryptedString = (message) => {
 }
 
 const decryptedString = (message) => {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         try {
             const Securitykey = process.env.COOKIE_KEY;
             const cipher = crypto.createCipheriv(algorithm, Securitykey, initVector);
-            let encryptedData = cipher.update(message, "utf-8", "hex");
+            const encryptedData = cipher.update(message, "utf-8", "hex");
             resolve(encryptedData);
         }catch (e){
             console.log(e);
@@ -34,7 +35,7 @@ const decryptedString = (message) => {
 }
 
 const sendEmail = (setting, email) => {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         try {
             const transporter = nodemailer.createTransport({
                 host: setting.host, // "smtp.gmail.com",
@@ -69,21 +70,19 @@ const sendEmail = (setting, email) => {
     });
 }
 
-const creatTwiml = (sid, token) => {
-    return new Promise(async (resolve) => {
-        try {
-            const client = twilio(sid, token);
-            var twiml = await client.applications.create({
-                voiceMethod: 'POST',
-                voiceUrl: '',
-                friendlyName: 'Operation Privacy VoIPSuite'
-            })
-            resolve(twiml.sid)
-        }catch (e){
-            console.log(e);
-            resolve(false);
-        }
-    });
+const creatTwiml = async (sid, token) => {
+    try {
+        const client = twilio(sid, token);
+        const twiml = await client.applications.create({
+            voiceMethod: 'POST',
+            voiceUrl: '',
+            friendlyName: 'Operation Privacy VoIPSuite'
+        })
+        return twiml.sid
+    }catch (e){
+        console.log(e);
+        return false;
+    }
 }
 
 const combineURLs = (...urls)  => {
