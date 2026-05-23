@@ -24,11 +24,15 @@ app.use(session({
 }))
 
 const setCache = (req, res, next) => {
-  const period = 60 * 60 * 24
-  if (req.method === 'GET') {
-    res.set('Cache-control', `public, max-age=${period}`)
+  if (req.method !== 'GET') {
+    // Mutating requests should never be cached.
+    res.set('Cache-Control', 'no-store')
+  } else if (req.path.startsWith('/static/')) {
+    // Hashed build assets (e.g. /static/index-DIsi5uhx.js) are content-addressed, so they can be cached aggressively.
+    res.set('Cache-Control', 'public, max-age=31536000, immutable')
   } else {
-    res.set('Cache-control', `no-store`)
+    // Everything else (index.html, API JSON, etc.) must revalidate so users see new deploys immediately.
+    res.set('Cache-Control', 'no-store')
   }
   next()
 }
@@ -39,8 +43,7 @@ app.use(
     useDefaults: true,
     reportOnly: false,
     directives: {
-      "default-src": ["'self'", "sdk.twilio.com","wss:","ws:","eventgw.twilio.com"
-    ],
+      "default-src": ["'self'", "sdk.twilio.com","wss:","ws:","eventgw.twilio.com"],
       "object-src": ["'self'"],
       "script-src": ["'self'","'unsafe-eval'", "'unsafe-inline'"]
     },
@@ -92,10 +95,11 @@ io.on('connection', socket => {
   });
 });
 
-app.use('/frontend/dist/index.html', express.static('frontend/dist/index.html'));
-app.use('/version.md', express.static('version.md'));
+app.get('/version.md', (_req, res) => {
+  res.sendFile(path.join(__dirname, './version.md'));
+});
 // app.enable('trust proxy')
-if (process.env.HTTPS.trim() === 'true') {
+if (process.env.HTTPS?.trim() === 'true') {
   app.use((req, res, next) => {
     if (req.header('x-forwarded-proto') !== 'https'){
       if(req.url === '/get-base-url'){
@@ -121,27 +125,18 @@ if (process.env.HTTPS.trim() === 'true') {
     }
   }) */
 }
+
 // parse requests of content-type - application/json
 app.use(express.json({ limit: '500mb' }));
-
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 10000000 }));
-app.use('/uploads', express.static('uploads'));
-app.use('/src', express.static('src'));
-app.use('/frontend', express.static('frontend'));
-// app.use('/frontend', express.static('frontend'));
-app.use('/frontend/dist/static/', express.static('frontend/dist/static'));
-app.get(`/error`, (_req, res) => {
-  res.sendFile(path.join(__dirname, './error/index.html'));
-})
-app.get(`/:id`, (_req, res) => {
-  res.sendFile(path.join(__dirname, './frontend/dist/index.html'));
-})
-app.get(`/:id/:name`, (_req, res) => {
-  res.sendFile(path.join(__dirname, './frontend/dist/index.html'));
-})
-app.use(express.static(path.join(__dirname, './frontend/dist')));
 
+// Serve built frontend assets BEFORE the catch-all routes below,
+// otherwise requests like /static/index-XXX.js fall through to the wildcard handler and get index.html (causing MIME type errors).
+app.use(express.static(path.join(__dirname, './frontend/dist')));
+app.use('/uploads', express.static('uploads'));
+
+// API + explicit routes must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
 require("./app/routes/auth.route")(app);
 require("./app/routes/setting.route")(app);
 require("./app/routes/profile.route")(app);
@@ -151,13 +146,25 @@ require("./app/routes/email.route")(app);
 require("./app/routes/call.route")(app);
 require("./app/routes/hardwarekey.route")(app);
 
-
 app.get('/api/users/', (_req, res) => {
   res.status(200).json({message: 'success'});
-})
+});
 
 app.get('/get-base-url', (_req, res) => {
   res.status(200).json({url: process.env.BASE_URL.trim()});
 });
+
+app.get('/error', (_req, res) => {
+  res.sendFile(path.join(__dirname, './error/index.html'));
+});
+
+// SPA history-mode fallback — MUST be last.
+// Any URL that wasn't matched by a static file or API route above lands
+// here and gets index.html so the client-side router (Vue) can take over.
+// This is what makes deep links like /profile/john or /settings/foo/bar work on page refresh.
+app.get('/{*splat}', (_req, res) => {
+  res.sendFile(path.join(__dirname, './frontend/dist/index.html'));
+});
+
 console.log('express listening on PORT', process.env.PORT)
 server.listen(process.env.PORT)

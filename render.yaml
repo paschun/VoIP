@@ -27,3 +27,4 @@ services:
   startCommand: set -x; npm -v; node -v; pnpm -v; npm start
   autoDeployTrigger: commit
   healthCheckPath: /api/users/
+  # or maybe /version.md
