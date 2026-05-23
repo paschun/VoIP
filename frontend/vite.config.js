@@ -15,12 +15,16 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // twilio-client uses util.inherits and events.EventsEmitter
+      // So npm packages with those names are installed as dependencies and vite is able to resolve them.
     },
     // Vue 2 SFC imports written without extensions (e.g. `import App from './App'`) still work because `.vue` is listed here.
     extensions: ['.mjs', '.js', '.json', '.vue'],
   },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    // vuelidate 0.x branches on `process.env.BUILD` to pick its browser entry point.
+    'process.env.BUILD': JSON.stringify('web'),
   },
   css: {
     transformer: 'lightningcss',

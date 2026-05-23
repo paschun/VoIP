@@ -27,6 +27,5 @@ new Vue({
   el: '#app',
   router,
   store,
-  components: { App },
-  template: '<App/>'
+  render: (h) => h(App) // https://v2.vuejs.org/v2/guide/installation.html#Runtime-Compiler-vs-Runtime-only
 })
