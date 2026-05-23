@@ -1,16 +1,16 @@
 const base64url = require('base64url');
-var baseUrl = process.env.BASE_URL.trim()
-const APP_ID = baseUrl.substr(0, baseUrl.length - 1);
-var Hardwarekey = require('../model/hardwarekey.model');
-var User = require('../model/user.model');
-var Handel = require('../model/handel.model');
+// const baseUrl = process.env.BASE_URL.trim()
+// const APP_ID = baseUrl.substr(0, baseUrl.length - 1);
+const Hardwarekey = require('../model/hardwarekey.model');
+const User = require('../model/user.model');
+const Handel = require('../model/handel.model');
 
-var sessData = {};
+let sessData = {};
 exports.registerSession = async (req, res) => {
     try{
-        var payload = req.body;
-        var userexists = await userExists(payload.title, req.user.id);
-        var getuser = await Hardwarekey.findOne({title: payload.title, user: req.user.id, id: sessData.id});
+        const payload = req.body;
+        const userexists = await userExists(payload.title, req.user.id);
+        const getuser = await Hardwarekey.findOne({title: payload.title, user: req.user.id, id: sessData.id});
         // console.log(getuser)
         if(userexists && getuser && getuser.registrationComplete){
             res.status(400).send({'status': 'false', 'message': 'Title already exists!'});
@@ -18,7 +18,7 @@ exports.registerSession = async (req, res) => {
             await deleteUser(payload.title, req.user.id);
             payload.id = base64url.encode(generateRandomBuffer(32));
             payload.credentials = [];
-            var user = await addUser(payload.title, payload, req.user.id);
+            const user = await addUser(payload.title, payload, req.user.id);
             console.log(user);
             sessData = req.session;
             sessData.title = payload.title;
@@ -36,10 +36,10 @@ exports.register = async (req, res) => {
             res.status(400).send({'status': 'failed', 'message': 'Access denied!'});
             return;
         }
-        let user = await getUser(sessData.title, sessData.user);
-        var userData = await User.findOne({_id: sessData.user});
+        const user = await getUser(sessData.title, sessData.user);
+        const userData = await User.findOne({_id: sessData.user});
         sessData.challenge = base64url.encode(generateRandomBuffer(32));
-        var publicKey = {
+        const publicKey = {
             challenge: sessData.challenge,
             'rp': {
                 'name': 'Operation Privacy'
@@ -56,7 +56,7 @@ exports.register = async (req, res) => {
             'attestation': 'direct'
         };
         if(req.body.options) {
-            var options = req.body.options
+            const options = req.body.options
             if(!publicKey.authenticatorSelection)
                 publicKey.authenticatorSelection = {};
 
@@ -76,7 +76,7 @@ exports.register = async (req, res) => {
 
             publicKey.authenticatorSelection.requireResidentKey = true;
         }
-        var hardwarekey = await Hardwarekey.find({user: req.user.id, registrationComplete:true});
+        const hardwarekey = await Hardwarekey.find({user: req.user.id, registrationComplete:true});
         res.send({publicKey:publicKey, hardwarekey:hardwarekey});
     }catch(error){
         res.status(400).json({status:'false',message:'something is wrong'});
@@ -85,15 +85,15 @@ exports.register = async (req, res) => {
 
 exports.verify = async (req, res) => {
     try{
-        var payload = req.body;
+        const payload = req.body;
 
         if(!sessData.title){
             return res.status(400).send({'status': 'false', message:'Access denied!', 'errorMessage': 'Access denied!'});
         }
-        let user = await getUser(sessData.title, sessData.user);
-        var cr = user.credentials;
+        const user = await getUser(sessData.title, sessData.user);
+        const cr = user.credentials;
         cr.push(payload.id);
-        var updateData = {
+        const updateData = {
             registrationComplete: true,
             credentials: cr, 
             aaguid: payload.aaguid
@@ -112,8 +112,8 @@ exports.verify = async (req, res) => {
 
 exports.loginSession = async (req, res) => {
     try{
-        var payload = req.body
-        var userexit = await userExists(payload.title, payload.user)
+        const payload = req.body
+        const userexit = await userExists(payload.title, payload.user)
         if(!userexit){
             res.status(400).send({status: 'error', message: 'Wrong username or password!'});
             return;
@@ -122,7 +122,7 @@ exports.loginSession = async (req, res) => {
             sessData.user = payload.user;
         }
         sessData.challenge = base64url.encode(generateRandomBuffer(32));
-        var publicKey = {
+        const publicKey = {
             'challenge': sessData.challenge,
             'status': 'ok'
         }
@@ -157,9 +157,9 @@ function preformatGetAssertReq (getAssert) {
 
 exports.login = async (req, res) => {
     try{
-        var payload = req.body
-        var userwhere = sessData.user
-        var checkHandel = await getUserByUserHandle(payload.response.userHandle, userwhere);
+        const payload = req.body
+        const userwhere = sessData.user
+        const checkHandel = await getUserByUserHandle(payload.response.userHandle, userwhere);
         if(!sessData.title && !checkHandel){
             res.status(400).send({'status': 'false', message: 'Something is wrong!'});
         }else{
@@ -173,7 +173,7 @@ exports.login = async (req, res) => {
 
 exports.getKey = async (req, res) => {
     try{
-        var harewarekeys = await Hardwarekey.find({user:req.user.id, registrationComplete: true});
+        const harewarekeys = await Hardwarekey.find({user:req.user.id, registrationComplete: true});
         res.send({status:'true', message:'hardware key list!', data:harewarekeys});
     }catch(error){
         res.status(400).json({status:'false',message:'something is wrong'});
@@ -181,12 +181,12 @@ exports.getKey = async (req, res) => {
 }
 exports.delete = async (req, res) => {
     try{
-        var harewarekey = await Hardwarekey.findOne({_id: req.body.id});
+        const harewarekey = await Hardwarekey.findOne({_id: req.body.id});
         if(harewarekey){
             await Handel.deleteOne({username: harewarekey.title, user: harewarekey.user});
             await harewarekey.deleteOne()
         }
-        var harewarekeys = await Hardwarekey.findOne({user:req.user.id, registrationComplete: true});
+        const harewarekeys = await Hardwarekey.findOne({user:req.user.id, registrationComplete: true});
         if(!harewarekeys){
             await User.updateOne({_id: req.user.id}, {hardwarekey: 'false'});
         }
@@ -198,7 +198,7 @@ exports.delete = async (req, res) => {
 
 async function getUserByUserHandle(userHandle, userwhere) {
     try {
-        var user = await Handel.findOne({id:userHandle});
+        const user = await Handel.findOne({id:userHandle});
         if(user){
             userwhere.title = user.username;
             let userJSON = Hardwarekey.findOne(userwhere);
@@ -232,17 +232,17 @@ async function deleteUser(title, user){
 }
 
 async function userExists(title, user) {
-    var user = await Hardwarekey.findOne({title: title, user: user});
-    if(!user){
+    const foundUser = await Hardwarekey.findOne({title: title, user: user});
+    if(!foundUser){
         return false;
     }
     return true;
 };
 
 async function getUser(title, user){
-    var user = await Hardwarekey.findOne({title: title, user: user});
-    if(user){
-        return user;
+    const foundUser = await Hardwarekey.findOne({title: title, user: user});
+    if(foundUser){
+        return foundUser;
     }else{
         return false;
     }
@@ -253,14 +253,14 @@ async function updateUser(title, user, struct){
     console.log("session title => "+title)
     console.log("session user => "+user)
     console.log(struct)
-    var user = await Hardwarekey.findOne({title: title, user: user});
-    if(user){
-        user.registrationComplete = struct.registrationComplete;
-        user.credentials = struct.credentials;
-        user.aaguid = struct.aaguid;
-        await user.save();
+    const foundUser = await Hardwarekey.findOne({title: title, user: user});
+    if(foundUser){
+        foundUser.registrationComplete = struct.registrationComplete;
+        foundUser.credentials = struct.credentials;
+        foundUser.aaguid = struct.aaguid;
+        await foundUser.save();
         // var user2 = await Hardwarekey.updateOne({ title: title, user: user}, struct);
-        return user;
+        return foundUser;
     }else{
         return false;
     }
