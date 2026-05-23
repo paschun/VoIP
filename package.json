@@ -21,7 +21,6 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
-    "get-random-values": "^1.2.2",
     "helmet": "^8.1.0",
     "jose": "^6.2.3",
     "moment": "^2.30.1",

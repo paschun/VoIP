@@ -16,7 +16,7 @@ exports.registerSession = async (req, res) => {
             res.status(400).send({'status': 'false', 'message': 'Title already exists!'});
         }else{
             await deleteUser(payload.title, req.user.id);
-            payload.id = base64url.encode(await generateRandomBuffer(32));
+            payload.id = base64url.encode(generateRandomBuffer(32));
             payload.credentials = [];
             var user = await addUser(payload.title, payload, req.user.id);
             console.log(user);
@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
         }
         let user = await getUser(sessData.title, sessData.user);
         var userData = await User.findOne({_id: sessData.user});
-        sessData.challenge = base64url.encode(await generateRandomBuffer(32));
+        sessData.challenge = base64url.encode(generateRandomBuffer(32));
         var publicKey = {
             challenge: sessData.challenge,
             'rp': {
@@ -121,7 +121,7 @@ exports.loginSession = async (req, res) => {
             sessData.title = payload.title;
             sessData.user = payload.user;
         }
-        sessData.challenge = base64url.encode(await generateRandomBuffer(32));
+        sessData.challenge = base64url.encode(generateRandomBuffer(32));
         var publicKey = {
             'challenge': sessData.challenge,
             'status': 'ok'
@@ -214,18 +214,9 @@ async function getUserByUserHandle(userHandle, userwhere) {
     }
 };
 
-async function generateRandomBuffer(length) {
-    if(!length)
-        length = 32;
-
-    //var randomBuff = new Uint32Array(length);
-    let randomBuff = new Uint8Array(length);
-    var getRandomValues = require('get-random-values');
-    getRandomValues(randomBuff);
-    //var crypto = require('crypto');
-    //console.log(crypto.getRandomValues(a));
-    return randomBuff
-};
+function generateRandomBuffer(length = 32) {
+    return crypto.getRandomValues(new Uint8Array(length));
+}
 
 async function addUser(username, struct, user){
     var handel = await Handel.create({id:struct.id, username:username, user:user});
@@ -273,17 +264,4 @@ async function updateUser(title, user, struct){
     }else{
         return false;
     }
-};
-
-async function generateRandomBuffer(length) {
-    if(!length)
-        length = 32;
-
-    //var randomBuff = new Uint32Array(length);
-    let randomBuff = new Uint8Array(length);
-    var getRandomValues = require('get-random-values');
-    getRandomValues(randomBuff);
-    //var crypto = require('crypto');
-    //console.log(crypto.getRandomValues(a));
-    return randomBuff
 };
