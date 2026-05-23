@@ -92,7 +92,7 @@ var publicKeyCredentialToJSON = (pubKeyCred) => {
     }
 
     if(pubKeyCred instanceof ArrayBuffer) {
-        return base64url.encode(pubKeyCred)
+        return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url', omitPadding: true })
     }
 
     if(pubKeyCred instanceof Object) {
@@ -109,18 +109,18 @@ var publicKeyCredentialToJSON = (pubKeyCred) => {
 }
 
 var preformatMakeCredReq = (makeCredReq) => {
-    makeCredReq.challenge = base64url.decode(makeCredReq.challenge);
-    makeCredReq.user.id   = base64url.decode(makeCredReq.user.id);
+    makeCredReq.challenge = Uint8Array.fromBase64(makeCredReq.challenge, { alphabet: 'base64url' });
+    makeCredReq.user.id   = Uint8Array.fromBase64(makeCredReq.user.id, { alphabet: 'base64url' });
 
     return makeCredReq
 }
 
 var preformatGetAssertReq = (getAssert) => {
-    getAssert.challenge = base64url.decode(getAssert.challenge);
-    
+    getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' });
+
     if(getAssert.allowCredentials) {
         for(let allowCred of getAssert.allowCredentials) {
-            allowCred.id = base64url.decode(allowCred.id);
+            allowCred.id = Uint8Array.fromBase64(allowCred.id, { alphabet: 'base64url' });
         }
     }
 

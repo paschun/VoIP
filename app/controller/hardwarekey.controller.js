@@ -1,4 +1,3 @@
-const base64url = require('base64url');
 // const baseUrl = process.env.BASE_URL.trim()
 // const APP_ID = baseUrl.substr(0, baseUrl.length - 1);
 const Hardwarekey = require('../model/hardwarekey.model');
@@ -16,7 +15,7 @@ exports.registerSession = async (req, res) => {
             res.status(400).send({'status': 'false', 'message': 'Title already exists!'});
         }else{
             await deleteUser(payload.title, req.user.id);
-            payload.id = base64url.encode(generateRandomBuffer(32));
+            payload.id = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
             payload.credentials = [];
             const user = await addUser(payload.title, payload, req.user.id);
             console.log(user);
@@ -38,7 +37,7 @@ exports.register = async (req, res) => {
         }
         const user = await getUser(sessData.title, sessData.user);
         const userData = await User.findOne({_id: sessData.user});
-        sessData.challenge = base64url.encode(generateRandomBuffer(32));
+        sessData.challenge = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
         const publicKey = {
             challenge: sessData.challenge,
             'rp': {
@@ -121,7 +120,7 @@ exports.loginSession = async (req, res) => {
             sessData.title = payload.title;
             sessData.user = payload.user;
         }
-        sessData.challenge = base64url.encode(generateRandomBuffer(32));
+        sessData.challenge = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
         const publicKey = {
             'challenge': sessData.challenge,
             'status': 'ok'
@@ -146,10 +145,10 @@ exports.loginSession = async (req, res) => {
 }
 
 function preformatGetAssertReq (getAssert) {
-    getAssert.challenge = base64url.decode(getAssert.challenge)
+    getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
     if (getAssert.allowCredentials) {
       for (let allowCred of getAssert.allowCredentials) {
-        allowCred.id = base64url.decode(allowCred.id)
+        allowCred.id = Uint8Array.fromBase64(allowCred.id, { alphabet: 'base64url' })
       }
     }
     return getAssert

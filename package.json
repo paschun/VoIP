@@ -14,7 +14,6 @@
   "author": "Operation Privacy",
   "license": "",
   "dependencies": {
-    "base64url": "^3.0.1",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-session": "^2.1.1",
