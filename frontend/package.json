@@ -14,7 +14,6 @@
   "dependencies": {
     "@johmun/vue-tags-input": "^2.1.0",
     "@telnyx/webrtc": "^2.26.4",
-    "axios": "^1.16.1",
     "bootstrap": "^5.3.8",
     "bootstrap-vue": "^2.23.1",
     "cbor-x": "^1.6.4",
@@ -26,7 +25,6 @@
     "twilio-client": "^1.15.1",
     "util": "^0.12.5",
     "vue": "^2.7.16",
-    "vue-axios": "^3.5.2",
     "vue-chat-scroll": "^1.4.0",
     "vue-cookie": "^1.1.4",
     "vue-input-tag": "^2.0.7",
@@ -50,7 +48,7 @@
     "vite": "^7.0.0"
   },
   "engines": {
-    "node": ">= 25.2.0",
+    "node": ">= 25.0.0",
     "npm": ">= 10.0.0"
   },
   "browserslist": [

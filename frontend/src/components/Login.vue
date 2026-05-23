@@ -220,7 +220,7 @@ methods: {
     this.$store
       .dispatch(post, request)
       .then((response) => {
-        if (response && response.data === 'on') {
+        if (response?.data === 'on') {
           this.signUpOption = true
         } else {
           this.signUpOption = false

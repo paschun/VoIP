@@ -13,7 +13,7 @@ services:
   - key: HTTPS
     value: "true"
   - key: SIGNUPS
-    value: "false"
+    value: off
   - key: NODE_VERSION
     value: lts
   - key: DB

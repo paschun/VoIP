@@ -1,6 +1,7 @@
-import ApiService from '@/core/services/api.service'
+import { api } from '@/core/services/api.service'
 import router from '../../router'
 import Vue from 'vue'
+
 // action types
 export const VERIFY_AUTH = 'verifyAuth'
 export const LOGIN = 'login'
@@ -11,77 +12,34 @@ export const UPDATE_PASSWORD = 'updateUser'
 export const post = 'post'
 export const get = 'get'
 
+const swalError = (text) => Vue.swal.fire({
+  title: 'Error',
+  text,
+  icon: 'error',
+  confirmButtonClass: 'btn btn-secondary',
+  heightAuto: false
+})
+
+const handleError = (err) => {
+  if (err.status === 401) {
+    swalError(err.data?.error ?? 'Unauthorized Access!')
+    Vue.cookie.delete('access_token')
+    Vue.cookie.delete('userdata')
+    const path = window.location.pathname.split('/')[1]
+    router.push(`/${path}/`)
+  } else if (err.status === 400) {
+    swalError(err.data?.message)
+  }
+  return false
+}
+
 export default {
   actions: {
-    [post] (context, request) {
-      return new Promise(resolve => {
-        ApiService.setHeader()
-        ApiService.post(request.url, request.data)
-          .then(({ data }) => {
-            resolve(data)
-          })
-          .catch(({ response }) => {
-            if (response.status === 401) {
-              Vue.swal.fire({
-                title: 'Error',
-                text: 'Unauthorized Access!',
-                icon: 'error',
-                confirmButtonClass: 'btn btn-secondary',
-                heightAuto: false
-              })
-              Vue.cookie.delete('access_token')
-              Vue.cookie.delete('userdata')
-              var path = window.location.pathname.split('/')[1]
-              router.push(`/${path}/`)
-            }
-            if (response.status === 400) {
-              Vue.swal.fire({
-                title: 'Error',
-                text: response.data.message,
-                icon: 'error',
-                confirmButtonClass: 'btn btn-secondary',
-                heightAuto: false
-              })
-            }
-            resolve(false)
-          })
-      })
+    [post] (_ctx, request) {
+      return api.post(request.url, request.data).catch(handleError)
     },
-    [get] (context, request) {
-      console.log(window.location.pathname)
-      console.log(request)
-      return new Promise(resolve => {
-        ApiService.setHeader()
-        ApiService.get(request.url)
-          .then(({ data }) => {
-            resolve(data)
-          })
-          .catch(({ response }) => {
-            if (response.status === 401) {
-              Vue.swal.fire({
-                title: 'Error',
-                text: response.data.error,
-                icon: 'error',
-                confirmButtonClass: 'btn btn-secondary',
-                heightAuto: false
-              })
-              Vue.cookie.delete('access_token')
-              Vue.cookie.delete('userdata')
-              var path = window.location.pathname.split('/')[1]
-              router.push(`/${path}/`)
-            }
-            if (response.status === 400) {
-              Vue.swal.fire({
-                title: 'Error',
-                text: response.data.message,
-                icon: 'error',
-                confirmButtonClass: 'btn btn-secondary',
-                heightAuto: false
-              })
-            }
-            resolve(false)
-          })
-      })
+    [get] (_ctx, request) {
+      return api.get(`${request.url}/`).catch(handleError)
     }
   },
 

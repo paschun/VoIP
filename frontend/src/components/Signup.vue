@@ -58,14 +58,14 @@
                  </a>
               </div>
         </div>
-                <p class="version">{{ version }}</p>
+        <p class="version">{{ version }}</p>
     </div>
 </template>
 
 <script>
 
 import { required, minLength, sameAs } from 'vuelidate/lib/validators'
-import { combineURLs } from '@/helper'
+import { api } from '@/core/services/api.service'
 
 export default {
   name: 'Signup',
@@ -77,7 +77,6 @@ export default {
         password: ''
       },
       submitted: false,
-      baseurl: '',
       loginRoute: ''
     }
   },
@@ -85,16 +84,11 @@ export default {
     user: {
       email: { required, minLength: minLength(2) },
       password: { required, minLength: minLength(6) },
-      // eslint-disable-next-line standard/object-curly-even-spacing
-      c_password: {required, sameAsPassword: sameAs('password') }
+      c_password: { required, sameAsPassword: sameAs('password') },
     }
   },
   mounted: function () {
     this.loginRoute = `/${this.$route.params.appdirectory}`
-    var baseUrl = window.location.origin
-    if (baseUrl === 'http://localhost:8080') {
-      this.baseurl = 'http://localhost:3000'
-    }
     this.getsignup()
   },
   methods: {
@@ -106,34 +100,31 @@ export default {
         return
       }
 
-      // eslint-disable-next-line no-undef
-      axios.post(`auth/register`, this.user)
-        .then(response => {
+      api.post('auth/register', this.user)
+        .then(() => {
           this.$router.push(`/${this.$route.params.appdirectory}/`)
         })
         .catch(error => {
-          if (error.response.status === 401) {
+          if (error.status === 401) {
             this.$swal({
               icon: 'error',
               title: 'Oops...',
-              text: error.response.data.message
+              text: error.data?.message
             })
-          }
-          if (error.response.status === 400) {
+          } else if (error.status === 400) {
             this.$swal({
               icon: 'error',
               title: 'Oops...',
-              text: error.response.data.errors.errors.email[0]
+              text: error.data?.errors?.errors?.email?.[0]
             })
           }
         })
     },
+
     getsignup () {
-      // eslint-disable-next-line no-undef
-      const signUpURL = combineURLs(this.baseurl, '/api/auth/get-signup');
-      axios.post(signUpURL, {})
+      api.post('auth/get-signup', {})
         .then(response => {
-          if (response.data.data === 'on') {
+          if (response?.data === 'on') {
             this.signUpOption = true
           } else {
             this.$router.push(`/${this.$route.params.appdirectory}/`)

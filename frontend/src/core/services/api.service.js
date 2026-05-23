@@ -1,104 +1,77 @@
 import Vue from 'vue'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
 import { combineURLs } from '../../helper'
 
 /**
- * Service to call HTTP request via Axios
+ * Tiny fetch wrapper.
+ *
+ *   await api.post('auth/register', { ... })  // → parsed JSON body
+ *   await api.get('users/me')
+ *
+ * On non-2xx responses, throws an Error with `.status` and `.data`.
+ * Network failures throw a regular Error with no `.status`.
  */
-const ApiService = {
-  init () {
-    // eslint-disable-next-line no-unused-vars
-    var baseurl2 = ''
-    var baseUrl = window.location.origin
-    if (baseUrl === 'http://localhost:8080') {
-      baseurl2 = 'http://localhost:3000'
-    }
-    console.log(baseurl2)
-    Vue.use(VueAxios, axios)
-    Vue.axios.defaults.baseURL = combineURLs(baseurl2, '/api')
-  },
 
-  /**
-   * Set the default HTTP request headers
-   */
-  setHeader () {
-    // eslint-disable-next-line standard/computed-property-even-spacing
-    Vue.axios.defaults.headers.common[
-      'Cache-Control'
-    // eslint-disable-next-line camelcase
-    ] = 'no-cache'
-    // eslint-disable-next-line camelcase
-    var access_token = Vue.cookie.get('access_token')
-    // eslint-disable-next-line standard/computed-property-even-spacing
-    Vue.axios.defaults.headers.common[
-      'token'
-    // eslint-disable-next-line camelcase
-    ] = `${access_token}`
-  },
+const baseURL = combineURLs(
+  window.location.origin === 'http://localhost:8080' ? 'http://localhost:3000' : '',
+  '/api'
+)
 
-  query (resource, params) {
-    return Vue.axios.get(resource, params).catch(error => {
-      console.log(error)
-      throw new Error(`ApiService ${error}`)
-    })
-  },
+/**
+ * Error thrown by `api.*` calls on non-2xx responses.
+ * @typedef {Error & { status?: number, data?: * }} ApiError
+ */
 
-  /**
-   * Send the GET HTTP request
-   * @param resource
-   * @param slug
-   * @returns {*}
-   */
-  get (resource, slug = '') {
-    return Vue.axios.get(`${resource}/${slug}`).catch(error => {
-      // console.log(error);
-      throw new Error(`ApiService ${error}`)
-    })
-  },
+/**
+ * Issue a fetch request and return the parsed JSON body.
+ * @param {'GET'|'POST'|'PUT'|'DELETE'} method  HTTP method.
+ * @param {string} resource  Relative path (gets baseURL prepended) or absolute URL.
+ * @param {*}      [body]    JSON-serializable request body.
+ * @returns {Promise<*>}     Parsed JSON response body (or the raw text if not JSON).
+ * @throws  {ApiError}       On non-2xx responses; `status` and `data` are populated.
+ */
+async function request(method, resource, body) {
+  const url = /^https?:\/\//i.test(resource)
+    ? resource
+    : combineURLs(baseURL, resource)
 
-  /**
-   * Set the POST HTTP request
-   * @param resource
-   * @param params
-   * @returns {*}
-   */
-  post (url, params) {
-    return Vue.axios.post(`${url}`, params)
-  },
-
-  /**
-   * Send the UPDATE HTTP request
-   * @param resource
-   * @param slug
-   * @param params
-   * @returns {IDBRequest<IDBValidKey> | Promise<void>}
-   */
-  update (resource, slug, params) {
-    return Vue.axios.put(`${resource}/${slug}`, params)
-  },
-
-  /**
-   * Send the PUT HTTP request
-   * @param resource
-   * @param params
-   * @returns {IDBRequest<IDBValidKey> | Promise<void>}
-   */
-  put (resource, params) {
-    return Vue.axios.put(`${resource}`, params)
-  },
-
-  /**
-   * Send the DELETE HTTP request
-   * @param resource
-   * @returns {*}
-   */
-  delete (resource) {
-    return Vue.axios.delete(resource).catch(error => {
-      // console.log(error);
-      throw new Error(`[RWV] ApiService ${error}`)
-    })
+  const headers = {
+    'Cache-Control': 'no-cache',
+    token: Vue.cookie.get('access_token') ?? ''
   }
+  const init = { method, headers }
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+    init.body = JSON.stringify(body)
+  }
+
+  const response = await fetch(url, init)
+  const isJson = (response.headers.get('Content-Type') ?? '').includes('application/json')
+  const data = isJson
+    ? await response.json().catch(() => null)
+    : (await response.text()) || null
+
+  if (!response.ok) {
+    const err = new Error(`HTTP ${response.status}`)
+    err.status = response.status
+    err.data = data
+    throw err
+  }
+  return data
 }
 
-export default ApiService
+export const api = {
+  /**
+   * Send a GET request.
+   * @param {string} url  Relative path or absolute URL.
+   * @returns {Promise<*>} Parsed JSON response body.
+   */
+  get: (url) => request('GET', url),
+
+  /**
+   * Send a POST request with a JSON body.
+   * @param {string} url   Relative path or absolute URL.
+   * @param {*}     [body] JSON-serializable request body.
+   * @returns {Promise<*>} Parsed JSON response body.
+   */
+  post: (url, body) => request('POST', url, body)
+}
