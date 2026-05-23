@@ -31,7 +31,6 @@
     "nodemailer-openpgp": "^2.2.1",
     "openpgp": "^6.3.0",
     "qrcode": "^1.5.4",
-    "request": "^2.88.2",
     "socket.io": "^4.8.3",
     "speakeasy": "^2.0.0",
     "telnyx": "^2.1.1",

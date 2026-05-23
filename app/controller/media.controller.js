@@ -5,11 +5,9 @@ const multer = require("multer")
 const moment = require('moment')
 const cron = require('node-cron');
 const Media = require('../model/media.model');
-const { combineURLs } = require("../helper/common.helper")
+const { combineURLs, uploadFolderFormat } = require("../helper/common.helper")
 
-const uploadFolderFormat = 'YYYYMMDD'
-
-var storage = multer.diskStorage({
+const storage = multer.diskStorage({
     destination: async (_req, _file, cb) => {
         const date = moment().format(uploadFolderFormat);
         try {
@@ -31,7 +29,7 @@ var storage = multer.diskStorage({
 
 const maxSize = 1000 * 1000 * 1000;
 
-var upload = multer({
+const upload = multer({
     storage: storage,
     limits: { fileSize: maxSize },
     fileFilter: (_req, file, cb) => {

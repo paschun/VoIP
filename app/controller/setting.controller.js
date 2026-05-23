@@ -1,24 +1,29 @@
+const fs = require("node:fs");
+const crypto = require("node:crypto");
 const Validator = require("validatorjs");
 const telnyx = require("telnyx");
 const moment = require("moment");
-var mongoose = require("mongoose");
+const mongoose = require("mongoose");
 const twilio = require("twilio");
-const path = require("path");
-const http = require("https");
-const fs = require("fs");
-const request = require("request");
-const crypto = require("crypto");
 
-var Setting = require("../model/setting.model");
-var User = require("../model/user.model");
-var Message = require("../model/message.model");
+const Setting = require("../model/setting.model");
+const User = require("../model/user.model");
+const Message = require("../model/message.model");
 const Numbers = require("twilio/lib/rest/Numbers");
-var Contact = require("../model/contact.model");
-var Email = require("../model/email.model");
+const Contact = require("../model/contact.model");
+const Email = require("../model/email.model");
 const { exists } = require("../model/setting.model");
-const {sendEmail, combineURLs } = require("../helper/common.helper");
+const { sendEmail, combineURLs, uploadFolderFormat } = require("../helper/common.helper");
 const telnyxHelper = require("../helper/telnyx.helper");
 const twilioHelper = require("../helper/twilio.helper");
+
+async function downloadToFile(url, destPath) {
+  const response = await fetch(url);
+  if (!response.ok || !response.body) {
+    throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
+  }
+  await fs.promises.writeFile(destPath, response.body);
+}
 
 exports.deleteKey = async (req, res) => {
   try {
@@ -757,16 +762,16 @@ exports.receiveSms = async (req, res) => {
           } else {
             var name = `${crypto.randomBytes(24).toString("hex")}.png`;
           }
-          var date = moment(new Date()).format("MMDDYYYY");
+          const date = moment().format(uploadFolderFormat);
           try {
             await fs.promises.access("./uploads/" + date);
           } catch (e) {
             await fs.promises.mkdir("./uploads/" + date);
           }
 
-          request(url)
-            .pipe(fs.createWriteStream(`./uploads/${date}/${name}`))
-            .on("close", () => console.log("Image downloaded."));
+          downloadToFile(url, `./uploads/${date}/${name}`)
+            .then(() => console.log("Image downloaded."))
+            .catch((err) => console.error("Image download failed:", err));
           savedName = combineURLs(
             process.env.BASE_URL.trim(),
             "uploads",
@@ -794,7 +799,7 @@ exports.receiveSms = async (req, res) => {
       var messageText = messageData.text;
       if (messageData.media.length > 0) {
         var fackMedia = [];
-        for (var i = 0; i < messageData.media.length; i++) {
+        for (let i = 0; i < messageData.media.length; i++) {
           const url = messageData.media[i].url; // link to file you want to download
           // var name = `uploads/${Date.now()}${sid}.png`;
           if (messageData.media[i].content_type == "image/gif") {
@@ -805,22 +810,22 @@ exports.receiveSms = async (req, res) => {
             var name = `${crypto.randomBytes(24).toString("hex")}.png`;
           }
 
-          var date = moment(new Date()).format("MMDDYYYY");
+          const date = moment().format(uploadFolderFormat);
           try {
             await fs.promises.access("./uploads/" + date);
           } catch (e) {
             await fs.promises.mkdir("./uploads/" + date);
           }
 
-          request(url)
-            .pipe(fs.createWriteStream(`./uploads/${date}/${name}`))
-            .on("close", () => console.log("Image downloaded."));
-            savedName = combineURLs(
-              process.env.BASE_URL.trim(),
-              "uploads",
-              date,
-              name
-            );
+          downloadToFile(url, `./uploads/${date}/${name}`)
+            .then(() => console.log("Image downloaded."))
+            .catch((err) => console.error("Image download failed:", err));
+          savedName = combineURLs(
+            process.env.BASE_URL.trim(),
+            "uploads",
+            date,
+            name
+          );
           fackMedia.push(savedName);
           // fackMedia.push(messageData.media[i].url)
         }
@@ -907,27 +912,26 @@ exports.receiveSms = async (req, res) => {
     res.status(400).json({ status: "false", message: "something went wrong" });
   }
 };
+
 function sleep(settingCheck, sid) {
   return new Promise((resolve) => {
-    setTimeout(async function () {
+    setTimeout(async () => {
       const client = twilio(settingCheck.twilio_sid, settingCheck.twilio_token);
 
-      for (var i = 0; i < 5; i++) {
+      for (let i = 0; i < 5; i++) {
         try {
-          var deleteMessage = await client.messages(sid).remove();
+          const deleteMessage = await client.messages(sid).remove();
           if (deleteMessage) {
-            break;
+            resolve(true)
+            return
           }
         } catch (error) {}
       }
-      if (deleteMessage) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
+      resolve(false);
     }, 5000);
   });
 }
+
 exports.smsStatus = async (req, res) => {
   try {
     if (req.params.type !== undefined && req.params.type === "twilio") {
@@ -963,7 +967,7 @@ exports.smsStatus = async (req, res) => {
       var status = data.to[0].status;
       var sid = data.id;
     }
-    var message = await Message.findOne({ sid: { $eq: sid } });
+    const message = await Message.findOne({ sid: { $eq: sid } });
     if (message) {
       message.status = status;
       message.save();
@@ -980,10 +984,10 @@ exports.smsStatus = async (req, res) => {
 
 exports.getNumberList = async (req, res) => {
   try {
-    var user_id = new mongoose.Types.ObjectId(req.body.user);
-    var setting = new mongoose.Types.ObjectId(req.body.setting);
-    var message = await Message.aggregate([
-      { $match: { user: user_id, setting: setting } },
+    const user_id = new mongoose.Types.ObjectId(req.body.user);
+    const setting = new mongoose.Types.ObjectId(req.body.setting);
+    const message = await Message.aggregate([
+      { $match: { user: user_id, setting } },
       { $sort: { _id: -1 } },
       {
         $group: {
@@ -995,7 +999,6 @@ exports.getNumberList = async (req, res) => {
           message_type: { $first: "$datatype" },
           type: { $first: "$type" },
           telnyx_number: { $first: "$telnyx_number" },
-          id: { $first: "$_id" },
           isview: {
             $sum: {
               $cond: { if: { $eq: ["$isview", "false"] }, then: 1, else: 0 },
@@ -1005,7 +1008,7 @@ exports.getNumberList = async (req, res) => {
       },
     ]);
     await Contact.populate(message, { path: "contact" });
-    message.sort(function (a, b) {
+    message.sort((a, b) => {
       return b.created_at - a.created_at;
     });
     res.status(200).json(message);
@@ -1015,11 +1018,11 @@ exports.getNumberList = async (req, res) => {
 };
 exports.messageDelete = async (req, res) => {
   try {
-    var deletecon = {
+    const deletecon = {
       user: { $eq: req.body.user },
       number: { $eq: req.body.number },
     };
-    var messages = await Message.deleteMany(deletecon);
+    const messages = await Message.deleteMany(deletecon);
     if (messages) {
       res.status(200).send({ status: true, errors: "", data: messages });
     } else {
@@ -1034,7 +1037,7 @@ exports.messageDelete = async (req, res) => {
 
 exports.messageList = async (req, res) => {
   try {
-    var filterObject = {
+    const filterObject = {
       user: { $eq: req.body.user },
       telnyx_number: { $eq: req.body.number.telnyx_number },
       number: { $eq: req.body.number._id },
@@ -1045,7 +1048,7 @@ exports.messageList = async (req, res) => {
       { ...filterObject, isview: { $eq: "false" } },
       { isview: "true" }
     );
-    var messages = await Message.find(filterObject);
+    const messages = await Message.find(filterObject);
 
     res.send(messages);
   } catch (error) {

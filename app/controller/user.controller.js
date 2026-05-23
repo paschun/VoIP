@@ -13,7 +13,7 @@ var Setting = require('../model/setting.model');
 const telnyxHelper = require('../helper/telnyx.helper');
 const twilioHelper = require('../helper/twilio.helper');
 
-const remoteVersion = 'https://raw.githubusercontent.com/0perationPrivacy/VoIP/main/version.md';
+const remoteVersion = 'https://raw.githubusercontent.com/paschun/VoIP/main/version.md';
 const currentVersion = 'version.md'; // read from local file version.md
 
 const { SignJWT } = require('jose');
@@ -204,51 +204,34 @@ exports.checkDirectoryName = (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
-exports.getUpdateVersion = (_req, res) => {
+exports.getUpdateVersion = async (_req, res) => {
     try{
-        var request = require('request');
-        request.get(remoteVersion, async function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                if(isNaN(body)){
-                    res.send({update: 'false'});
-                }else{
-                    // var curruntv = process.env.APP_VERSION
-                    // curruntv = curruntv.replace("v", "").replace("-beta", "");
-                    // console.log(body)
-                    //console.log(currentVersion)
-                    try {
-                        const body2 = fs.readFileSync(currentVersion, 'utf8')
-                        if(body2 < body){
-                            res.send({update: 'true'});
-                        }else{
-                            res.send({update: 'false'});
-                        }
-                    } catch (err) {
-                        console.error(err)
+        const response = await fetch(remoteVersion);
+        if (response.ok) {
+            const body = await response.text();
+            if(isNaN(body)){
+                res.send({update: 'false'});
+            }else{
+                // var curruntv = process.env.APP_VERSION
+                // curruntv = curruntv.replace("v", "").replace("-beta", "");
+                // console.log(body)
+                try {
+                    const body2 = fs.readFileSync(currentVersion, 'utf8')
+                    if(body2 < body){
+                        res.send({update: 'true'});
+                    }else{
                         res.send({update: 'false'});
                     }
-                    // request.get(currentVersion, async function (error, response, body2) {
-                    //     if (!error && response.statusCode == 200) {
-                    //         if(isNaN(body2)){
-                    //             res.send({update: 'false'});
-                    //         }else{
-                    //             if(body2 < body){
-                    //                 res.send({update: 'true'});
-                    //             }else{
-                    //                 res.send({update: 'false'});
-                    //             }
-                    //         }
-                    //     }else{
-                    //         res.send({update: 'false'});
-                    //     }
-                    // });
-                    // console.log(currentVersion)
-                    // var current
+                } catch (err) {
+                    console.error(err)
+                    res.send({update: 'false'});
                 }
-            }else{
-                res.send({update: 'false'});
+                // request.get(currentVersion, async function (error, response, body2) {
+                //console.log(currentVersion)
             }
-        });
+        }else{
+            res.send({update: 'false'});
+        }
     }catch(error){
         res.status(400).json({status:'false',message:'something is wrong'});
     }
@@ -261,7 +244,7 @@ exports.updateUserName = async (req, res) => {
         };
         let validation = new Validator(req.body, rules);
         if(validation.passes()){
-            var user = await User.findOne({ email: { $eq: req.body.email } , _id: { $ne: req.user.id } });
+            const user = await User.findOne({ email: { $eq: req.body.email } , _id: { $ne: req.user.id } });
             if(user){
                 res.status(400).json({status:'false',message:'username already exists!'});
             }else{
@@ -287,7 +270,7 @@ exports.updateUserName = async (req, res) => {
 
 exports.getUser = async (req, res) => {
     try{
-        var user = await User.findOne({ _id: { $eq: req.user.id } });
+        const user = await User.findOne({ _id: { $eq: req.user.id } });
         if(user){
             const userDataResponse = userDataResponseGen(user);
             res.status(200).json({ status: "true", data: userDataResponse, message: "user get!" });

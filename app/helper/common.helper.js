@@ -3,8 +3,9 @@ const nodemailer = require("nodemailer")
 const openpgpEncrypt = require('nodemailer-openpgp').openpgpEncrypt;
 const twilio = require('twilio')
 
-const algorithm = "aes-256-cbc";
+const uploadFolderFormat = 'YYYYMMDD' // exported
 
+const algorithm = "aes-256-cbc";
 const encryptedString = (message) => {
     return new Promise((resolve) => {
         try {
@@ -94,5 +95,5 @@ const combineURLs = (...urls)  => {
 }
 
 module.exports = {
-    encryptedString, decryptedString, sendEmail, creatTwiml, combineURLs
+    encryptedString, decryptedString, sendEmail, creatTwiml, combineURLs, uploadFolderFormat,
 }
