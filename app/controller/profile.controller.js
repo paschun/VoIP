@@ -10,15 +10,15 @@ exports.crateProfile = async (req, res) => {
         let rules = {
             profile: 'required'
         };
-        let validation = new Validator(req.body, rules);
+        const validation = new Validator(req.body, rules);
         if(validation.passes()){
-            var checkprofile = {user: { $eq: req.user.id }, profile: { $eq: req.body.profile} };
-            var checkProfileData = await Setting.findOne(checkprofile)
+            const checkprofile = {user: { $eq: req.user.id }, profile: { $eq: req.body.profile} };
+            const checkProfileData = await Setting.findOne(checkprofile)
             if(checkProfileData){
                 res.status(400).json({status:'false',message:'Profile already exists!'});
             }else{
-                var storeData = {user: req.user.id , profile: req.body.profile };
-                var isSave = await Setting.create(storeData);
+                const storeData = {user: req.user.id , profile: req.body.profile };
+                const isSave = await Setting.create(storeData);
                 if(isSave){
                     res.send({status:true, message:'Profile saved!', data:isSave});
                 }else{

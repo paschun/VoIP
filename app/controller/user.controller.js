@@ -206,7 +206,7 @@ exports.checkDirectoryName = (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
-exports.getUpdateVersion = (req, res) => {
+exports.getUpdateVersion = (_req, res) => {
     try{
         var request = require('request');
         request.get(remoteVersion, async function (error, response, body) {

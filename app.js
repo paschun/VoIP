@@ -1,10 +1,9 @@
 const express = require('express')
 const app = express()
-var bodyParser = require('body-parser')
 const cors = require("cors");
 const path = require('path');
-var session = require('cookie-session')
-var compression = require('compression')
+const session = require('cookie-session')
+const compression = require('compression')
 app.use(compression())
 
 var expiryDate = new Date(Date.now() + 60 * 60 * (1000 * 12 * 30)) // 30 day
@@ -29,7 +28,7 @@ let setCache = function (req, res, next) {
 }
 app.use(setCache)
 
-var RateLimit = require('express-rate-limit');
+const RateLimit = require('express-rate-limit');
 const helmet = require("helmet");
 app.use(
   helmet.contentSecurityPolicy({
@@ -59,7 +58,7 @@ const server = require('http').createServer(app);
 
 global.io = require('socket.io')(server,{ cors: { origin: '*' } });
 
-var mongoose = require('./config/db.config');
+const mongoose = require('./config/db.config');
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -70,11 +69,12 @@ db.once('open', function() {
 //app.use(cors());
 app.use(cors({ origin: ['http://localhost:8080'], }))
 
-var limiter = new RateLimit({
+const limiter = new RateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100,
+  limit: 100,
   message: "Slow down your requests!",
-  headers: false
+  legacyHeaders: false,
+  standardHeaders: 'draft-8',
 });
   
 // apply rate limiter to all requests
@@ -121,10 +121,10 @@ if( process.env.HTTPS.trim() === 'true'){
   }) */
 }
 // parse requests of content-type - application/json
-app.use(bodyParser.json({limit: '500mb',parameterLimit: 10000000})); 
+app.use(express.json({ limit: '500mb' }));
 
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: true, limit: '500mb',parameterLimit: 10000000 }));
+app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 10000000 }));
 app.use('/uploads', express.static('uploads'));
 app.use('/src', express.static('src'));
 app.use('/frontend', express.static('frontend'));
