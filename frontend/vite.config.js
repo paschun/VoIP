@@ -9,6 +9,9 @@ import pkg from './package.json' with { type: 'json' }
 // Both use the `browserslist` field in package.json.
 const cssTargets = browserslistToTargets(browserslist(pkg.browserslist))
 const jsTargets = browserslistToEsbuild(pkg.browserslist)
+// console.log(browserslist(pkg.browserslist))
+// console.log(cssTargets)
+// console.log(jsTargets)
 
 export default defineConfig({
   plugins: [vue2()],
