@@ -79,7 +79,7 @@ const limiter = rateLimit({
 // apply rate limiter to all requests
 app.use(limiter);
 
-global.io = Server(server, { cors: { origin: '*' } });
+global.io = new Server(server, { cors: { origin: '*' } });
 io.on('connection', socket => {
   console.log('a user connected');
   socket.on('join_channel', (channel) => {
