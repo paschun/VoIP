@@ -26,7 +26,7 @@ export default {
   },
   methods: {
     getVersion () {
-      var request = {
+      const request = {
         url: 'auth/get-update-version'
       }
       this.$store
@@ -41,7 +41,7 @@ export default {
         })
         .catch((e) => {
           this.old_version = false
-          console.log(e)
+          console.error(e)
           // resolve(false)
         })
     }
