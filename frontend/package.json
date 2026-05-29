@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{js,vue}\""
+    "lint": "eslint 'src/**/*.{js,vue}'"
   },
   "dependencies": {
     "@johmun/vue-tags-input": "^2.1.0",
