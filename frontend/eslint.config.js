@@ -8,7 +8,7 @@ export default defineConfig([
     ignores: ['dist/**', 'node_modules/**', 'public/**'],
   },
   js.configs.recommended,
-  vue.configs['flat/essential'],
+  vue.configs['flat/vue2-essential'],
   {
     languageOptions: {
       ecmaVersion: 'latest',

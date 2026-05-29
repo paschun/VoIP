@@ -14,6 +14,7 @@
   "dependencies": {
     "@johmun/vue-tags-input": "^2.1.0",
     "@telnyx/webrtc": "^2.26.4",
+    "@twilio/voice-sdk": "^2.18.3",
     "bootstrap": "^5.3.8",
     "bootstrap-vue": "^2.23.1",
     "cbor-x": "^1.6.4",
@@ -22,7 +23,6 @@
     "pulltorefreshjs": "^0.1.22",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.24",
-    "twilio-client": "^1.15.1",
     "util": "^0.12.5",
     "vue": "^2.7.16",
     "vue-chat-scroll": "^1.4.0",
