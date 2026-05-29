@@ -201,18 +201,18 @@ export default {
         fileReader.readAsText(file, 'UTF-8')
         fileReader.onload = (e) => {
           const textFromFileLoaded = e.target.result
-          let options = {
+          const options = {
             complete: (results, file) => {
               this.csvUploadArray = results.data
             }
           }
           Papa.parse(textFromFileLoaded, options)
-          var array = []
-          var csvdata = this.csvUploadArray
-          for (var i = 0; i < csvdata.length; ++i) {
+          const array = []
+          const csvdata = this.csvUploadArray
+          for (let i = 0; i < csvdata.length; ++i) {
             if (i !== 0) {
-              if (csvdata[i][0] !== '' && csvdata[i][0] !== undefined && isNaN(csvdata[i][0])) {
-                var arrayData = {
+              if (csvdata[i][0] !== '' && csvdata[i][0] !== undefined && Number.isNaN(csvdata[i][0])) {
+                const arrayData = {
                   'first_name': csvdata[i][0],
                   'last_name': csvdata[i][1],
                   'number': csvdata[i][2],
@@ -284,18 +284,17 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      // eslint-disable-next-line no-undef
+      let data;
+      let request;
       if (this.editId) {
-        var data = this.form
-        // eslint-disable-next-line no-undef
+        data = this.form
         data.contact_id = this.editId
-        var request = {
+        request = {
           data: data,
           url: 'contact/update'
         }
       } else {
-        // eslint-disable-next-line no-redeclare
-        var request = {
+        request = {
           data: this.form,
           url: 'contact/create'
         }
@@ -319,16 +318,16 @@ export default {
 
     handleSubmit2 () {
       if (this.csvUploadArray2.length > 0) {
-        var data = {
+        const data = {
           contacts: this.csvUploadArray2
         }
-        var request = {
+        const request = {
           data: data,
           url: 'contact/multiple-add'
         }
         this.$store
           .dispatch(post, request)
-          .then((data) => {
+          .then((_data) => {
             this.$refs['modal-contact'].hide()
             this.$emit('onaddContact', true)
             this.modelFileValu = ''
@@ -345,7 +344,6 @@ export default {
       }
     },
     deletechat (id) {
-      // eslint-disable-next-line no-undef
       this.$swal.fire({
         icon: 'info',
         title: 'Do you want to delete this contact?',
@@ -355,7 +353,7 @@ export default {
         denyButtonText: `No`
       }).then((result) => {
         if (result.isConfirmed) {
-          var request = {
+          const request = {
             data: {contact_id: id},
             url: 'contact/delete'
           }
@@ -373,13 +371,11 @@ export default {
               // this.$refs['modal-contact'].hide()
             })
             .catch((e) => {
-              console.log(e)
+              console.error(e)
             })
           // contact/delete
           // var messageData = {user: this.userdata._id, number: this.activeChat}
-          // eslint-disable-next-line no-undef
         } else if (result.isDenied) {
-          // eslint-disable-next-line no-undef
           this.$swal.fire('contact not deleted', '', 'info')
         }
       })
@@ -404,7 +400,7 @@ export default {
         denyButtonText: `No`
       }).then((result) => {
         if (result.isConfirmed) {
-          var request = {
+          const request = {
             data: {},
             url: 'contact/deleteall'
           }
@@ -421,19 +417,17 @@ export default {
               // this.$refs['modal-contact'].hide()
             })
             .catch((e) => {
-              console.log(e)
+              console.error(e)
             })
           // contact/delete
           // var messageData = {user: this.userdata._id, number: this.activeChat}
-          // eslint-disable-next-line no-undef
         } else if (result.isDenied) {
-          // eslint-disable-next-line no-undef
           this.$swal.fire('contacts not deleted', '', 'info')
         }
       })
     },
     searchContact () {
-      var search = new RegExp(this.query, 'i')
+      const search = new RegExp(this.query, 'i')
       this.search_contacts = this.contacts.filter(item => {
         if (search.test(item.first_name)) {
           return search.test(item.first_name)
@@ -446,7 +440,7 @@ export default {
     }
   },
   watch: {
-    contacts: function (newVal, oldVal) {
+    contacts(newVal, oldVal) {
       this.searchContact()
       // console.log('Prop changed: ', newVal, ' | was: ', oldVal)
     }

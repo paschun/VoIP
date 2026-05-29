@@ -61,10 +61,9 @@
 </template>
 <script>
 import { post } from '../../../core/module/common.module'
-import CallSetting from '../CallSetting.vue'
 import HardwareKey from './HardwareKey.vue'
 export default {
-components: { CallSetting, HardwareKey },
+components: { HardwareKey },
 data () {
   return {
     mfaStatus: false,
@@ -74,12 +73,12 @@ data () {
     secret: ''
   }
 },
-mounted: function () {
+mounted () {
   this.getMfaStatus()
 },
 methods: {
   mfaStatusChange () {
-    var status = this.mfaStatus ? 'true' : 'false'
+    const status = this.mfaStatus ? 'true' : 'false'
     if (!this.mfaStatus) {
       this.$swal.fire({
         title: 'Are you sure?',
@@ -102,7 +101,7 @@ methods: {
     }
   },
   commonMfa (data) {
-    var request = {
+    const request = {
       data: data,
       url: 'auth/mfa/save'
     }
@@ -127,7 +126,7 @@ methods: {
       this.$swal.fire('Please enter verification code', '', 'error')
       return
     }
-    var request = {
+    const request = {
       data: {status: 'true', qr: 'false', code: this.verification_code},
       url: 'auth/mfa/save'
     }
@@ -154,15 +153,15 @@ methods: {
     }
   },
   getMfaStatus () {
-    var request = {
+    const request = {
       data: {},
       url: 'auth/user/get'
     }
     this.$store
       .dispatch(post, request)
       .then((response) => {
-        var trueVar = true
-        var falseVar = false
+        const trueVar = true
+        const falseVar = false
         this.realMfs = (response && response.data.mfa === 'true') ? trueVar : falseVar
         this.mfaStatus = (response && response.data.mfa === 'true') ? trueVar : falseVar
       })

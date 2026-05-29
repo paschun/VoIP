@@ -112,7 +112,7 @@ export default {
       port: {required}
     }
   },
-  mounted: function () {
+  mounted () {
     this.getEmailSetting()
   },
   methods: {
@@ -122,7 +122,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      var request = {
+      const request = {
         data: this.form,
         url: 'email/create'
       }
@@ -144,32 +144,13 @@ export default {
         })
     },
     getEmailSetting () {
-      var request = {
+      const request = {
         url: 'email/setting-get'
       }
-      // eslint-disable-next-line no-undef
-      // axios
-      //   .get('http://localhost:3000/api/email/setting-get')
-      //   .then(response => {
-      //     // response.data = response.data.data
-      //     if (response.data && response.data.data) {
-      //       this.form = response.data.data
-      //       this.showProfile = true
-      //       this.getProfiles()
-      //     } else {
-      //       this.form.email = ''
-      //       this.form.password = ''
-      //       this.form.to_email = ''
-      //       this.form.host = ''
-      //       this.form.port = ''
-      //       this.form.secure = false
-      //       this.form.sender_email = ''
-      //     }
-      //   })
       this.$store
         .dispatch(get, request)
         .then((response) => {
-          if (response && response.data) {
+          if (response?.data) {
             this.form = response.data
             this.showProfile = true
             this.getProfiles()
@@ -186,11 +167,11 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     },
     getProfiles () {
-      var request = {
+      const request = {
         data: {},
         url: 'profile/getdata'
       }
@@ -202,11 +183,11 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     },
     profileUpdate (status, id) {
-      var request = {
+      const request = {
         data: {setting_id: id, status: status},
         url: 'email/save/setting'
       }
@@ -219,7 +200,7 @@ export default {
           // this.profiles = response.data
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     }
   }

@@ -59,16 +59,16 @@ export default {
       sms_url: { required, url }
     }
   },
-  mounted: function () {
+  mounted () {
     this.getCallSetting()
   },
   methods: {
     getCallSetting () {
-      var profileLocal = localStorage.getItem('activeProfile')
+      const profileLocal = localStorage.getItem('activeProfile')
       if (profileLocal) {
-        var activeProfile = JSON.parse(profileLocal)
+        const activeProfile = JSON.parse(profileLocal)
         this.setting = activeProfile._id
-        var request = {
+        const request = {
           data: {setting_id: this.setting},
           url: 'setting/twilio/number/get'
         }
@@ -86,7 +86,7 @@ export default {
             }
           })
           .catch((e) => {
-            console.log(e)
+            console.error(e)
           })
         // this.setting = activeProfile
       }
@@ -99,13 +99,12 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      var data = this.form
+      const data = this.form
       data.setting_id = this.setting
-      var request = {
+      const request = {
         data: data,
         url: 'setting/twilio/number/fallback'
       }
-      // eslint-disable-next-line no-undef
       this.$store
         .dispatch(post, request)
         .then((data) => {
@@ -119,7 +118,7 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     }
   }

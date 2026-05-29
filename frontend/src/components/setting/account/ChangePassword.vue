@@ -44,13 +44,12 @@ export default {
   },
   validations: {
     user: {
-      old_password: {required},
+      old_password: { required },
       password: { required, minLength: minLength(6) },
-      // eslint-disable-next-line standard/object-curly-even-spacing
-      c_password: {required, sameAsPassword: sameAs('password') }
+      c_password: { required, sameAsPassword: sameAs('password') }
     }
   },
-  mounted: function () {
+  mounted() {
     // this.getContacts()
   },
   methods: {
@@ -60,7 +59,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      var request = {
+      const request = {
         data: this.user,
         url: 'auth/password/update'
       }
@@ -82,7 +81,7 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     }
   }

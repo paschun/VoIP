@@ -42,16 +42,16 @@ export default {
       url: { required, url }
     }
   },
-  mounted: function () {
+  mounted () {
     this.getCallSetting()
   },
   methods: {
     getCallSetting () {
-      var profileLocal = localStorage.getItem('activeProfile')
+      const profileLocal = localStorage.getItem('activeProfile')
       if (profileLocal) {
-        var activeProfile = JSON.parse(profileLocal)
+        const activeProfile = JSON.parse(profileLocal)
         this.setting = activeProfile._id
-        var request = {
+        const request = {
           data: {setting_id: this.setting},
           url: 'setting/telnyx/message/get'
         }
@@ -64,13 +64,13 @@ export default {
             this.form.main_url = `${protocol}//${urlhost}`
             if (response.data.data.webhook_failover_url) {
               const url2 = new URL(response.data.data.webhook_failover_url)
-              var urlhost2 = url2.hostname
-              var protocol2 = url2.protocol
+              const urlhost2 = url2.hostname
+              const protocol2 = url2.protocol
               this.form.url = `${protocol2}//${urlhost2}`
             }
           })
           .catch((e) => {
-            console.log(e)
+            console.error(e)
           })
         // this.setting = activeProfile
       }
@@ -83,21 +83,20 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      var data = this.form
+      const data = this.form
       const url2 = new URL(data.url)
-      var urlhost2 = url2.hostname
-      var protocol2 = url2.protocol
+      const urlhost2 = url2.hostname
+      const protocol2 = url2.protocol
       data.url = `${protocol2}//${urlhost2}`
       data.setting_id = this.setting
-      var request = {
-        data: data,
+      const request = {
+        data,
         url: 'setting/telnyx/message/fallback'
       }
-      // eslint-disable-next-line no-undef
       this.$store
         .dispatch(post, request)
-        .then((data) => {
-          if (data) {
+        .then((setting) => {
+          if (setting) {
             this.$swal({
               icon: 'success',
               title: 'Success',
@@ -107,7 +106,7 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     }
   }

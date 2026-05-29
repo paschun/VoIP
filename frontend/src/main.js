@@ -18,7 +18,6 @@ Vue.config.productionTip = false
 Vue.use(VueSweetalert2)
 Vue.use(VueMoment)
 
-/* eslint-disable no-new */
 new Vue({
   el: '#app',
   router,

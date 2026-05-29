@@ -541,8 +541,8 @@ export default {
       profile: { required }
     }
   },
-  mounted: function() {
-    var baseUrl = window.location.origin;
+  mounted() {
+    const baseUrl = window.location.origin;
     if (baseUrl === "http://localhost:8080") {
       this.baseurl = "http://localhost:3000";
     }
@@ -554,12 +554,11 @@ export default {
       }
     };
     this.onaddContact();
-    var $this = this;
     PullToRefresh.init({
       mainElement: ".contact-list",
       triggerElement: ".contact-list",
-      onRefresh() {
-        $this.pullRefreshFunction($this);
+      onRefresh: () => {
+        this.pullRefreshFunction(this);
         // $this.getNumberList()
         // $this.getOneProfile()
       },
@@ -581,7 +580,7 @@ export default {
       this.getNumberList();
       setTimeout(() => {
         if (number === "delete" || this.activeItem._id === number) {
-          var numberClass = document.getElementsByClassName(`activeChat`);
+          const numberClass = document.getElementsByClassName(`activeChat`);
           if (numberClass.length > 0) {
             numberClass[0].click();
           }
@@ -597,7 +596,7 @@ export default {
     },
     searchContact() {
       // console.log(this.numbers)
-      var search = new RegExp(this.query, "i");
+      const search = new RegExp(this.query, "i");
       this.search_numbers = this.numbers.filter(item => {
         if (search.test(item._id)) {
           return search.test(item._id);
@@ -611,7 +610,7 @@ export default {
       });
     },
     onaddContact() {
-      var request = {
+      const request = {
         url: "contact/get-all"
       };
       this.$emit("my_signal");
@@ -624,21 +623,21 @@ export default {
           }
         })
         .catch(e => {
-          console.log(e);
+          console.error(e);
         });
     },
     getValidString(str) {
+      let newStr2
       if (str.length > 10) {
-        var newStr2 = str.substring(0, str.length - (str.length - 10)) + "..";
+        newStr2 = str.substring(0, str.length - (str.length - 10)) + "..";
       } else {
-        // eslint-disable-next-line no-redeclare
-        var newStr2 = str;
+        newStr2 = str;
       }
       return newStr2;
     },
     getOneProfile() {
       if (this.activeProfile._id !== undefined) {
-        var request = {
+        const request = {
           data: { setting: this.activeProfile._id },
           url: "profile/getdata-one"
         };
@@ -650,7 +649,7 @@ export default {
             }
           })
           .catch(e => {
-            console.log(e);
+            console.error(e);
           });
       }
     },
@@ -670,7 +669,7 @@ export default {
       this.getSetting();
     },
     firstChatShow(id) {
-      var element = document.getElementById(id.id);
+      const element = document.getElementById(id.id);
       if (element) {
         element.style.display = "none";
       }
@@ -688,7 +687,7 @@ export default {
     },
     getNumberList() {
       this.numbers = [];
-      var request = {
+      const request = {
         data: { user: this.userdata._id, setting: this.activeProfile._id },
         url: "setting/sms-number-list"
       };
@@ -702,7 +701,7 @@ export default {
           }
         })
         .catch(e => {
-          console.log(e);
+          console.error(e);
         });
     },
     hideShowDeleteIcon(response) {
@@ -715,14 +714,14 @@ export default {
       }
     },
     getSetting() {
-      var request = {
+      const request = {
         data: { user: this.userdata._id, setting: this.activeProfile._id },
         url: "setting/get-setting"
       };
       this.$store
         .dispatch(post, request)
         .then(response => {
-          if (response && response.data) {
+          if (response?.data) {
             this.user = response.data;
             this.hideShowDeleteIcon(response.data);
             this.user.twilio_number = response.data.number;
@@ -734,7 +733,7 @@ export default {
           }
         })
         .catch(e => {
-          console.log(e);
+          console.error(e);
         });
     },
     deleteProfile() {
@@ -749,7 +748,7 @@ export default {
         })
         .then(result => {
           if (result.isConfirmed) {
-            var request = {
+            const request = {
               data: {
                 user: this.userdata._id,
                 profile_id: this.activeProfile._id
@@ -776,17 +775,15 @@ export default {
                   localStorage.removeItem("activeProfile");
                   this.$refs["my-modal"].hide();
                   this.$refs.childComponent.getallProfile();
-                  var $this = this;
-                  setTimeout(function() {
-                    $this.$refs.childComponent.activeFirstProfile();
+                  setTimeout(() => {
+                    this.$refs.childComponent.activeFirstProfile();
                   }, 2000);
                 }
               })
               .catch(e => {
-                console.log(e);
+                console.error(e);
               });
           } else if (result.isDenied) {
-            // eslint-disable-next-line no-undef
             this.$swal.fire("Profile not deleted", "", "info");
           }
         });
@@ -803,7 +800,7 @@ export default {
         })
         .then(result => {
           if (result.isConfirmed) {
-            var request = {
+            const request = {
               data: {
                 user: this.userdata._id,
                 profile_id: this.activeProfile._id
@@ -830,18 +827,17 @@ export default {
                 this.$refs.childComponent.getallProfile();
               })
               .catch(e => {
-                console.log(e);
+                console.error(e);
               });
           } else if (result.isDenied) {
-            // eslint-disable-next-line no-undef
             this.$swal.fire("setting not deleted", "", "info");
           }
         });
     },
     getNumbers(type) {
-      var settings = this.user;
+      const settings = this.user;
       settings.type = type;
-      var request = {
+      const request = {
         data: settings,
         url: "setting/get-number"
       };
@@ -862,7 +858,7 @@ export default {
           }
         })
         .catch(e => {
-          console.log(e);
+          console.error(e);
         });
     },
     handleSubmit(e) {
@@ -885,23 +881,23 @@ export default {
       ) {
         let sid = "";
         if (this.selected === "telnyx") {
-          for (var i = 0; i < this.tNumbers.length; i++) {
+          for (let i = 0; i < this.tNumbers.length; i++) {
             if (this.tNumbers[i].phone_number === this.user.number) {
               sid = this.tNumbers[i].id;
             }
           }
         } else {
-          for (var j = 0; j < this.twilioNumbers.length; j++) {
+          for (let j = 0; j < this.twilioNumbers.length; j++) {
             if (this.twilioNumbers[j].phoneNumber === this.user.twilio_number) {
               sid = this.twilioNumbers[j].sid;
             }
           }
         }
-        var sendData = {
+        const sendData = {
           api_key: this.user.api_key,
           number: this.user.number,
           user: this.userdata._id,
-          sid: sid,
+          sid,
           type: this.selected,
           twilio_sid: this.user.twilio_sid,
           twilio_token: this.user.twilio_token,
@@ -910,14 +906,14 @@ export default {
           profile: this.user.profile
         };
         this.isLoading = true;
-        var request = {
+        const request = {
           data: sendData,
           url: "setting/check-setting"
         };
         this.$store
           .dispatch(post, request)
           .then(response => {
-            var isCall = false;
+            let isCall = false;
             if (response) {
               if (
                 this.selected === "telnyx" &&
@@ -929,7 +925,7 @@ export default {
               }
 
               if (this.selected === "twilio") {
-                var appSidavilable = false;
+                let appSidavilable = false;
                 if (
                   response.data.voiceApplicationSid !== undefined &&
                   response.data.voiceApplicationSid &&
@@ -960,7 +956,7 @@ export default {
                     denyButtonText: `No, Keep old`
                   })
                   .then(result => {
-                    var updateCallSetting = false;
+                    let updateCallSetting = false;
                     if (result.isConfirmed) {
                       updateCallSetting = true;
                       sendData.override = "true";
@@ -970,7 +966,7 @@ export default {
                     }
                     if (updateCallSetting) {
                       this.isLoading = true;
-                      var request = {
+                      const request = {
                         data: sendData,
                         url: "setting/create"
                       };
@@ -990,13 +986,13 @@ export default {
                         })
                         .catch(e => {
                           this.isLoading = false;
-                          console.log(e);
+                          console.error(e);
                         });
                     }
                   });
               } else {
                 sendData.override = "true";
-                var request = {
+                const request = {
                   data: sendData,
                   url: "setting/create"
                 };
@@ -1016,7 +1012,7 @@ export default {
                   })
                   .catch(e => {
                     this.isLoading = false;
-                    console.log(e);
+                    console.error(e);
                   });
               }
               // console.log(response)
@@ -1025,7 +1021,7 @@ export default {
           })
           .catch(e => {
             this.isLoading = false;
-            console.log(e);
+            console.error(e);
           });
       }
     }

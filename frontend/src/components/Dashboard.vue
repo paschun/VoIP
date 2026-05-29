@@ -356,7 +356,6 @@ import NumberList from "./inbox/NumberList.vue";
 import VueTagsInput from "@johmun/vue-tags-input";
 import ThemeButton from "@/components/ThemeButton.vue";
 import { post } from "../core/module/common.module";
-import Setting from "./setting/Setting.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus";
@@ -369,7 +368,6 @@ export default {
     NumberList,
     VueTagsInput,
     ThemeButton,
-    Setting,
     CallView,
     CheckDir,
   },

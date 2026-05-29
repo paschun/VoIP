@@ -42,16 +42,16 @@ export default {
       url: { required, url }
     }
   },
-  mounted: function () {
+  mounted () {
     this.getCallSetting()
   },
   methods: {
     getCallSetting () {
-      var profileLocal = localStorage.getItem('activeProfile')
+      const profileLocal = localStorage.getItem('activeProfile')
       if (profileLocal) {
-        var activeProfile = JSON.parse(profileLocal)
+        const activeProfile = JSON.parse(profileLocal)
         this.setting = activeProfile._id
-        var request = {
+        const request = {
           data: {setting_id: this.setting},
           url: 'setting/twilio/twiml/get'
         }
@@ -59,18 +59,18 @@ export default {
           .dispatch(post, request)
           .then((response) => {
             const url = new URL(response.data.voiceUrl)
-            var urlhost = url.hostname
-            var protocol = url.protocol
+            const urlhost = url.hostname
+            const protocol = url.protocol
             this.form.main_url = `${protocol}//${urlhost}`
             if (response.data.voiceFallbackUrl) {
               const url2 = new URL(response.data.voiceFallbackUrl)
-              var urlhost2 = url2.hostname
-              var protocol2 = url2.protocol
+              const urlhost2 = url2.hostname
+              const protocol2 = url2.protocol
               this.form.url = `${protocol2}//${urlhost2}`
             }
           })
           .catch((e) => {
-            console.log(e)
+            console.error(e)
           })
         // this.setting = activeProfile
       }
@@ -83,13 +83,12 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      var data = this.form
+      const data = this.form
       data.setting_id = this.setting
-      var request = {
+      const request = {
         data: data,
         url: 'setting/twilio/twiml/fallback'
       }
-      // eslint-disable-next-line no-undef
       this.$store
         .dispatch(post, request)
         .then((data) => {
@@ -103,7 +102,7 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
         })
     }
   }

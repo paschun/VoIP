@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <span v-if="old_version" class="update_ribbon"><a href="https://github.com/0perationPrivacy/VoIP/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">update</a></span>
-    <!--<theme-button style="display:none" />-->
     <!--<refresh></refresh>-->
     <router-view/>
   </div>
@@ -9,11 +8,9 @@
 
 <script>
 import { get } from './core/module/common.module'
-import ThemeButton from '@/components/ThemeButton.vue'
 
 export default {
   name: 'App',
-  components: { ThemeButton },
   data () {
     return {
       old_version: false,
@@ -32,7 +29,7 @@ export default {
       this.$store
         .dispatch(get, request)
         .then((response) => {
-          console.log(response.update)
+          console.log('update available:', response.update)
           if (response.update === 'true') {
             this.old_version = true
           } else {
@@ -42,7 +39,6 @@ export default {
         .catch((e) => {
           this.old_version = false
           console.error(e)
-          // resolve(false)
         })
     }
   }
