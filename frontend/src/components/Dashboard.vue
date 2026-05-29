@@ -419,7 +419,7 @@ export default {
   destroyed() {
     window.removeEventListener("resize", this.updateVw, { passive: true });
   },
-  mounted: function () {
+  mounted() {
     EventBus.$on("toggleLoader", () => {
       this.toggleLoader();
     });
@@ -453,11 +453,10 @@ export default {
     }
     const socket = io(this.baseurl, { transports: ["websocket"] });
     this.socket = socket;
-    var $this = this;
-    this.socket.on("new_message", function (data) {
-      $this.getNumberList();
-      if ($this.activeChatData) {
-        $this.showChat($this.activeChat);
+    this.socket.on("new_message", (data) => {
+      this.getNumberList();
+      if (this.activeChatData) {
+        this.showChat(this.activeChat);
       }
     });
     // this.userdata = JSON.parse(localStorage.getItem('userdata'))
@@ -465,15 +464,15 @@ export default {
     this.access_token = this.$cookie.get("access_token");
     this.socket.emit("join_profile_channel", this.userdata._id.toString());
 
-    this.socket.on("user_message", function (data) {
-      if ($this.activeChatData) {
-        $this.showChat($this.activeChat);
+    this.socket.on("user_message", (data) => {
+      if (this.activeChatData) {
+        this.showChat(this.activeChat);
       } else {
-        $this.$refs.numberList.getOneProfile();
-        $this.$refs.numberList.refreshProfile();
+        this.$refs.numberList.getOneProfile();
+        this.$refs.numberList.refreshProfile();
       }
-      $this.$refs.numberList.getNumberList();
-      $this.notifyMe(data.number, data.message);
+      this.$refs.numberList.getNumberList();
+      this.notifyMe(data.number, data.message);
     });
     this.headers = {
       headers: {
@@ -519,7 +518,7 @@ export default {
       this.messages = [];
     },
     contactChangeEvent(e) {
-      var inputText = { text: e.code, tiClasses: ["ti-valid"] };
+      const inputText = { text: e.code, tiClasses: ["ti-valid"] };
       this.tags.push(inputText);
       // this.sms.numbers = e.target.value
 
@@ -531,9 +530,9 @@ export default {
       this.formatecontact(data);
     },
     formatecontact(contacts) {
-      var arrContact = [];
-      for (var i = 0; i < contacts.length; i++) {
-        var contact = {
+      const arrContact = [];
+      for (let i = 0; i < contacts.length; i++) {
+        const contact = {
           label: `${contacts[i].first_name} ${contacts[i].last_name}`,
           code: contacts[i].number,
         };
@@ -564,7 +563,7 @@ export default {
     },
     updateProgress(fileNumber, percent) {
       this.uploadProgress[fileNumber] = percent;
-      let total =
+      const total =
         this.uploadProgress.reduce((tot, curr) => tot + curr, 0) /
         this.uploadProgress.length;
       this.progressBar.value = total;
@@ -574,16 +573,16 @@ export default {
       this.progressBar.value = (this.filesDone / this.filesToDo) * 100;
     },
     handleDrop(e) {
-      let dt = e.dataTransfer;
-      let files = dt.files;
+      const dt = e.dataTransfer;
+      const files = dt.files;
 
       this.handleFiles(files);
     },
     handleFiles(files, modelFile = false) {
       if (modelFile) {
         this.modelMms = true;
-        var filesData = [];
-        for (var i = 0; i < files.length; i++) {
+        const filesData = [];
+        for (let i = 0; i < files.length; i++) {
           filesData.push(files[i].name);
         }
         this.modelFileValu = filesData.join();
@@ -595,18 +594,18 @@ export default {
       files.forEach(this.uploadFile);
     },
     previewFile(file) {
-      let reader = new FileReader();
+      const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onloadend = function () {
-        let img = document.createElement("img");
+      reader.onloadend = () => {
+        const img = document.createElement("img");
         img.style.width = "150px";
         img.src = reader.result;
         document.getElementById("gallery").appendChild(img);
       };
     },
     removeFromPrevie(image) {
-      var images = [];
-      for (var i = 0; i < this.uploadedImages.length; i++) {
+      const images = [];
+      for (let i = 0; i < this.uploadedImages.length; i++) {
         if (this.uploadedImages[i] !== image) {
           images.push(this.uploadedImages[i]);
         }
@@ -618,19 +617,18 @@ export default {
     },
     uploadFile(file, i) {
       const fileUploadURL = combineURLs(this.baseurl, '/api/media/upload-files');
-      var xhr = new XMLHttpRequest();
-      var formData = new FormData();
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
       xhr.open("POST", fileUploadURL, true);
       xhr.setRequestHeader("token", this.access_token);
-      var $this = this;
-      xhr.upload.addEventListener("progress", function (e) {
-        $this.updateProgress(i, (e.loaded * 100.0) / e.total || 100);
+      xhr.upload.addEventListener("progress", (e) => {
+        this.updateProgress(i, (e.loaded * 100.0) / e.total || 100);
       });
 
-      xhr.addEventListener("readystatechange", function (e) {
+      xhr.addEventListener("readystatechange", (e) => {
         if (xhr.readyState === 4 && xhr.status === 200) {
-          var response = JSON.parse(xhr.responseText);
-          $this.uploadedImages.push(`${response.data.media}`);
+          const response = JSON.parse(xhr.responseText);
+          this.uploadedImages.push(`${response.data.media}`);
         } else if (xhr.readyState === 4 && xhr.status !== 200) {
         }
       });
@@ -700,11 +698,11 @@ export default {
         })
         .then((result) => {
           if (result.isConfirmed) {
-            var messageData = {
+            const messageData = {
               user: this.userdata._id,
               number: this.activeChat,
             };
-            var request = {
+            const request = {
               data: messageData,
               url: "setting/message-list-delete",
             };
@@ -736,8 +734,8 @@ export default {
         this.isLoading = false;
         return;
       }
-      var activechat = JSON.parse(localStorage.getItem("activenumber"));
-      var numbers = [activechat._id];
+      const activechat = JSON.parse(localStorage.getItem("activenumber"));
+      const numbers = [activechat._id];
       this.commonSendMessage(numbers, this.messageBody);
     },
     hideImageDrag() {
@@ -745,14 +743,14 @@ export default {
       document.getElementById("drop-area").style.display = "none";
     },
     commonSendMessage(numbers, message) {
-      var messageData = {
+      const messageData = {
         user: this.userdata._id,
         numbers: numbers,
         message: message,
         profile: this.activeProfile,
         media: this.uploadedImages,
       };
-      var request = {
+      const request = {
         data: messageData,
         url: "setting/send-sms",
       };
@@ -785,7 +783,7 @@ export default {
     },
     firstChatShow(activechat) {
       this.chatListLoader = true;
-      var element = document.getElementById(activechat._id);
+      const element = document.getElementById(activechat._id);
       if (element) {
         element.remove();
       }
@@ -799,8 +797,8 @@ export default {
     showChat(activechat) {
       this.activeChat = activechat;
       this.activeChatData = true;
-      let { telnyx_number, _id } = activechat;
-      var request = {
+      const { telnyx_number, _id } = activechat;
+      const request = {
         data: {
           user: this.userdata._id,
           number: { telnyx_number, _id },
@@ -816,7 +814,7 @@ export default {
             // var container = this.$el.querySelector('#chat-container')
             // container.scrollTop = container.scrollHeight
             setTimeout(() => {
-              var scroll = document.getElementById("chat-container");
+              const scroll = document.getElementById("chat-container");
               scroll.scrollTop = scroll.scrollHeight;
               scroll.animate({ scrollTop: scroll.scrollHeight });
               this.chatListLoader = false;
@@ -841,8 +839,8 @@ export default {
         });
         return;
       }
-      var numbers = [];
-      for (var i = 0; i < this.tags.length; i++) {
+      const numbers = [];
+      for (let i = 0; i < this.tags.length; i++) {
         numbers.push(this.tags[i].text);
       }
       // return
@@ -860,7 +858,7 @@ export default {
     updateVw() {
       this.vw = this.getVw();
       this.vh = this.getVh();
-      var chatHeight = this.vh - 120;
+      const chatHeight = this.vh - 120;
       document.getElementById("wrapbody").style.height = `${this.vh}px`;
       document.getElementById("chat_body").style.height = `${chatHeight}px`;
     },
@@ -882,11 +880,11 @@ export default {
     },
     getMMSS(time) {
       // Hours, minutes and seconds
-      var mins = ~~((time % 3600) / 60);
-      var secs = ~~time % 60;
+      const mins = ~~((time % 3600) / 60);
+      const secs = ~~time % 60;
 
       // Output like "1:01" or "4:03:59" or "123:03:59"
-      var ret = "";
+      let ret = "";
       ret += "" + mins + ":" + (secs < 10 ? "0" : "");
       ret += "" + secs;
       return ret;
