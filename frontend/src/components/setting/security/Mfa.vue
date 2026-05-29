@@ -61,6 +61,7 @@
 </template>
 <script>
 import { post } from '../../../core/module/common.module'
+import { notifyError } from '@/notify'
 import HardwareKey from './HardwareKey.vue'
 export default {
 components: { HardwareKey },
@@ -123,7 +124,7 @@ methods: {
   },
   verifyStatusCode () {
     if (this.verification_code === '') {
-      this.$swal.fire('Please enter verification code', '', 'error')
+      notifyError('Please enter verification code')
       return
     }
     const request = {

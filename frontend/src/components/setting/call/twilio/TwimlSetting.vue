@@ -13,6 +13,7 @@
     normalize-host
   />
 </template>
+
 <script>
 import FallbackUrlSetting from '../FallbackUrlSetting.vue'
 export default { components: { FallbackUrlSetting } }

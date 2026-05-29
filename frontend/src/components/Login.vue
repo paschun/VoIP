@@ -121,6 +121,7 @@ import { post } from '../core/module/common.module'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import { publicKeyCredentialToJSON } from '@/helper'
+import { notifyError } from '@/notify'
 
 /** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
 const preformatGetAssertReq = (getAssert) => {
@@ -181,8 +182,7 @@ mounted () {
 },
 methods: {
   fnLogin () {
-    // console.log('login')
-    var request = {
+    const request = {
       url: 'auth/check-directoryname',
       data: {dirname: this.$route.params.appdirectory}
     }
@@ -190,7 +190,6 @@ methods: {
       .dispatch(post, request)
       .then((response) => {
         if (this.$cookie.get('access_token')) {
-          // alert('login')
           if (response.data.status === 'nodir' || response.data.status === 'no-name') {
             this.$router.push(`/${response.data.dir}/dashboard`)
           } else if (response.data.status === 'false') {
@@ -199,28 +198,22 @@ methods: {
             this.$router.push(`/${response.data.dir}/dashboard`)
           }
         } else {
-          // alert(JSON.stringify(response.data))
           if (response.data.status === 'nodir' && response.data.dir === 'voip') {
-            // this.$router.push(`/404`)
             this.$router.push(`/${response.data.dir}`)
           } else if (response.data.status === 'no-name' && response.data.dir === 'voip') {
             this.$router.push(`/${response.data.dir}`)
           } else if (response.data.status === 'false' || response.data.status === 'no-name') {
             this.$router.push(`/404`)
           }
-          // else if (response.data.status === 'nodir' && response.data.dir === 'voip') {
-          //   this.$router.push(`/${response.data.dir}`)
-          // }
         }
       })
       .catch((e) => {
         this.old_version = false
-        console.log(e)
-        // resolve(false)
+        console.error(e)
       })
   },
   getsignup () {
-    var request = {
+    const request = {
       data: {},
       url: 'auth/get-signup'
     }
@@ -238,7 +231,7 @@ methods: {
       })
   },
   getVersion () {
-    var request = {
+    const request = {
       data: {},
       url: 'auth/get-version'
     }
@@ -261,7 +254,7 @@ methods: {
       return
     }
 
-    var request = {
+    const request = {
       data: this.user,
       url: 'auth/login'
     }
@@ -278,8 +271,6 @@ methods: {
             this.keyScreen = true
             this.otpScreen = false
             this.activeKey = response.harwarekey[0]
-            // this.keys = response.harwarekey
-            // this.login()
           } else if (response.status === 'mfa') {
             this.activeUser.token = response.token
             this.activeUser.user = response.data
@@ -296,7 +287,7 @@ methods: {
       })
   },
   verifyKey (key) {
-    var request = {
+    const request = {
       data: { user: this.activeUser.user._id, title: key.title },
       url: 'hardwarekey/login-key'
     }
@@ -331,11 +322,7 @@ methods: {
           } catch (error) {
             console.error(error)
             // error.message
-            this.$swal.fire(
-              'Key!',
-              'Login failed with security key.',
-              'error'
-            )
+            notifyError('Login failed with security key.', 'Key!')
           }
         }
       })
@@ -344,7 +331,7 @@ methods: {
       })
   },
   handleSubmit2 (e) {
-    if (e && e.preventDefault) {
+    if (e?.preventDefault) {
       console.log("Prevented default!")
       e.preventDefault();
     }

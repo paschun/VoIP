@@ -63,6 +63,7 @@
 
 import { required, minLength, sameAs } from 'vuelidate/lib/validators'
 import { api } from '@/core/services/api.service'
+import { notifyError } from '@/notify'
 
 export default {
   name: 'Signup',
@@ -103,17 +104,9 @@ export default {
         })
         .catch(error => {
           if (error.status === 401) {
-            this.$swal({
-              icon: 'error',
-              title: 'Oops...',
-              text: error.data?.message
-            })
+            notifyError(error.data?.message, 'Oops...')
           } else if (error.status === 400) {
-            this.$swal({
-              icon: 'error',
-              title: 'Oops...',
-              text: error.data?.errors?.errors?.email?.[0]
-            })
+            notifyError(error.data?.errors?.errors?.email?.[0], 'Oops...')
           }
         })
     },

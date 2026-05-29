@@ -50,6 +50,7 @@
 <script>
 import { required } from 'vuelidate/lib/validators'
 import { post } from '../../core/module/common.module'
+import { notifySuccess } from '@/notify'
 import { EventBus } from '@/event-bus'
 
 export default {
@@ -160,11 +161,7 @@ export default {
         .dispatch(post, request)
         .then((response) => {
           if (response) {
-            this.$swal({
-              icon: 'success',
-              title: 'Success',
-              text: 'Profile added successfully!'
-            })
+            notifySuccess('Profile added successfully!')
             this.changeProfile(response.data)
             this.$refs['add-profile'].hide()
             this.getallProfile()

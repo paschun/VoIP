@@ -121,6 +121,7 @@
 </template>
 <script>
 import { post } from '../../core/module/common.module'
+import { notifySuccess, notifyError, notifyInfo } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 import Papa from 'papaparse'
 import { EventBus } from '@/event-bus'
@@ -336,11 +337,7 @@ export default {
             console.log(e)
           })
       } else {
-        this.$swal({
-          icon: 'error',
-          title: 'Error',
-          text: 'Please upload valid file!'
-        })
+        notifyError('Please upload valid file!')
       }
     },
     deletechat (id) {
@@ -360,11 +357,7 @@ export default {
           this.$store
             .dispatch(post, request)
             .then((data) => {
-              this.$swal({
-                icon: 'success',
-                title: 'Success',
-                text: 'Contact Deleted successfully!'
-              })
+              notifySuccess('Contact Deleted successfully!')
               this.$emit('onaddContact', true)
               EventBus.$emit('contactAdded', 'delete')
               // this.getContacts()
@@ -376,7 +369,7 @@ export default {
           // contact/delete
           // var messageData = {user: this.userdata._id, number: this.activeChat}
         } else if (result.isDenied) {
-          this.$swal.fire('contact not deleted', '', 'info')
+          notifyInfo('contact not deleted')
         }
       })
     },
@@ -407,11 +400,7 @@ export default {
           this.$store
             .dispatch(post, request)
             .then((data) => {
-              this.$swal({
-                icon: 'success',
-                title: 'Success',
-                text: 'All contacts deleted successfully'
-              })
+              notifySuccess('All contacts deleted successfully')
               this.$emit('onaddContact', true)
               // this.getContacts()
               // this.$refs['modal-contact'].hide()
@@ -422,7 +411,7 @@ export default {
           // contact/delete
           // var messageData = {user: this.userdata._id, number: this.activeChat}
         } else if (result.isDenied) {
-          this.$swal.fire('contacts not deleted', '', 'info')
+          notifyInfo('contacts not deleted')
         }
       })
     },

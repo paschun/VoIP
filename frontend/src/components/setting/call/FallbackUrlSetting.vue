@@ -27,6 +27,7 @@
 
 <script>
 import { post } from '../../../core/module/common.module'
+import { notifySuccess } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 
 // eslint-disable-next-line no-useless-escape
@@ -108,7 +109,7 @@ export default {
         .dispatch(post, request)
         .then((response) => {
           if (!response) return
-          this.$swal({ icon: 'success', title: 'Success', text: this.successMessage })
+          notifySuccess(this.successMessage)
           this.getCallSetting()
         })
         .catch((e) => console.error(e))

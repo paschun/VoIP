@@ -83,6 +83,7 @@
 <script>
 import { required, email } from 'vuelidate/lib/validators'
 import { post, get } from '../../core/module/common.module'
+import { notifySuccess } from '@/notify'
 export default {
   data () {
     return {
@@ -130,11 +131,7 @@ export default {
         .dispatch(post, request)
         .then((response) => {
           if (response) {
-            this.$swal({
-              icon: 'success',
-              title: 'Email Setting',
-              text: 'Setting saved successfully'
-            })
+            notifySuccess('Setting saved successfully', 'Email Setting')
             this.getEmailSetting()
           }
           // this.profiles = response.data

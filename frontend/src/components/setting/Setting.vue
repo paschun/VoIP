@@ -59,6 +59,7 @@ import AccountSetting from './account/AccountSetting.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
 import { post } from '../../core/module/common.module'
+import { notifyError } from '@/notify'
 
 export default {
 components: { EmailSetting, CallSetting, AccountSetting, Mfa, SettingsSection },
@@ -99,7 +100,7 @@ methods: {
   },
   checkPassword () {
     if (this.check_password === '') {
-      this.$swal.fire('please enter password', '', 'error')
+      notifyError('please enter password')
       return
     }
     const request = {

@@ -41,6 +41,7 @@
 <script>
 import { post } from '../../../core/module/common.module'
 import { publicKeyCredentialToJSON } from '../../../helper'
+import { notifySuccess, notifyError } from '@/notify'
 import { decode as cborDecode } from 'cbor-x/decode'
 
 // ---------------------------------------------------------------------------
@@ -133,11 +134,7 @@ export default {
             .dispatch(post, request2)
             .then((respose) => {
               if (respose) {
-                this.$swal.fire(
-                  'Deleted!',
-                  'Your key has been deleted.',
-                  'success'
-                )
+                notifySuccess('Your key has been deleted.', 'Deleted!')
                 this.getHardwarekey()
               }
             })
@@ -165,7 +162,7 @@ export default {
     },
     register () {
       if (this.title.trim() === '') {
-        this.$swal.fire('Please enter title', '', 'error')
+        notifyError('Please enter title')
       } else {
         const request = {
           data: { title: this.title.trim() },
@@ -176,7 +173,7 @@ export default {
           .then((serverResponse) => {
             if (serverResponse) {
               if (serverResponse.status !== 'startFIDOEnrolment') {
-                this.$swal.fire('Error registering user!', '', 'error')
+                notifyError('Error registering user!')
               } else {
                 const request2 = {
                   data: {},
@@ -203,11 +200,7 @@ export default {
                       newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
                       console.log(newCredentialInfo)
                     } catch (error) {
-                      this.$swal.fire(
-                        'Key!',
-                        error.message,
-                        'error'
-                      )
+                      notifyError(error.message, 'Key!')
                     }
 
                     // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
@@ -225,11 +218,7 @@ export default {
                         if (serverResponse.status !== 'ok') {
                           throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage)
                         } else {
-                          this.$swal.fire(
-                            'Key!',
-                            'Your key added successfully.',
-                            'success'
-                          )
+                          notifySuccess('Your key added successfully.', 'Key!')
                           this.getHardwarekey()
                           this.title = ''
                         }

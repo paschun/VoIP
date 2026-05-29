@@ -17,6 +17,7 @@
 <script>
 import { required } from 'vuelidate/lib/validators'
 import { post } from '../../../core/module/common.module'
+import { notifySuccess } from '@/notify'
 export default {
   data () {
     return {
@@ -54,11 +55,7 @@ export default {
         .then((response) => {
           if (response) {
             this.$cookie.set('userdata', JSON.stringify(response.data), 30)
-            this.$swal({
-              icon: 'success',
-              title: 'Success',
-              text: 'Username updated successfully'
-            })
+            notifySuccess('Username updated successfully')
           }
         })
         .catch((e) => {

@@ -36,6 +36,7 @@
 </template>
 <script>
 import { post } from '../../../../core/module/common.module'
+import { notifySuccess } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 // eslint-disable-next-line no-useless-escape
 const url = helpers.regex('phonenumber', /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/)
@@ -109,11 +110,7 @@ export default {
         .dispatch(post, request)
         .then((data) => {
           if (data) {
-            this.$swal({
-              icon: 'success',
-              title: 'Success',
-              text: 'Number Setting updated successfully!'
-            })
+            notifySuccess('Number Setting updated successfully!')
             this.getCallSetting()
           }
         })

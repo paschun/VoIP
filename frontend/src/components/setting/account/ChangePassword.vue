@@ -31,6 +31,7 @@
 <script>
 import { required, minLength, sameAs } from 'vuelidate/lib/validators'
 import { post } from '../../../core/module/common.module'
+import { notifySuccess } from '@/notify'
 export default {
   data () {
     return {
@@ -67,11 +68,7 @@ export default {
         .dispatch(post, request)
         .then((response) => {
           if (response) {
-            this.$swal({
-              icon: 'success',
-              title: 'Success',
-              text: 'Password updated successfully'
-            })
+            notifySuccess('Password updated successfully')
             this.submitted = false
             this.user = {
               password: '',

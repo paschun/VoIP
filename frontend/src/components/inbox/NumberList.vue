@@ -484,6 +484,7 @@ import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
 import { required } from "vuelidate/lib/validators";
 import { get, post } from "../../core/module/common.module";
+import { notifySuccess, notifyInfo } from "@/notify";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus";
@@ -759,11 +760,7 @@ export default {
               .dispatch(post, request)
               .then(response => {
                 if (response.data) {
-                  this.$swal({
-                    icon: "success",
-                    title: "Success",
-                    text: "Profile deleted successfully!"
-                  });
+                  notifySuccess("Profile deleted successfully!");
                   this.user.api_key = "";
                   this.user.number = "";
                   this.user.twilio_sid = "";
@@ -784,7 +781,7 @@ export default {
                 console.error(e);
               });
           } else if (result.isDenied) {
-            this.$swal.fire("Profile not deleted", "", "info");
+            notifyInfo("Profile not deleted");
           }
         });
     },
@@ -810,11 +807,7 @@ export default {
             this.$store
               .dispatch(post, request)
               .then(response => {
-                this.$swal({
-                  icon: "success",
-                  title: "Success",
-                  text: "Key deleted successfully!"
-                });
+                notifySuccess("Key deleted successfully!");
                 this.user.api_key = "";
                 this.user.number = "";
                 this.user.twilio_sid = "";
@@ -830,7 +823,7 @@ export default {
                 console.error(e);
               });
           } else if (result.isDenied) {
-            this.$swal.fire("setting not deleted", "", "info");
+            notifyInfo("setting not deleted");
           }
         });
     },

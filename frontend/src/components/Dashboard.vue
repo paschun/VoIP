@@ -361,6 +361,7 @@ import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus";
 import { io } from "socket.io-client";
 import { combineURLs } from '@/helper';
+import { notifyError, notifyInfo } from '@/notify';
 
 export default {
   name: "dashboard",
@@ -716,19 +717,14 @@ export default {
                 console.log(e);
               });
           } else if (result.isDenied) {
-            // eslint-disable-next-line no-undef
-            this.$swal.fire("chat not deleted", "", "info");
+            notifyInfo("chat not deleted");
           }
         });
     },
     sendSms() {
       this.isLoading = true;
       if (this.messageBody.trim() === "" && this.uploadedImages.length === 0) {
-        this.$swal({
-          icon: "error",
-          title: "Oops...",
-          text: "Message or file required",
-        });
+        notifyError("Message or file required", "Oops...");
         this.isLoading = false;
         return;
       }
@@ -830,11 +826,7 @@ export default {
       this.$v.$touch();
       this.isLoading = true;
       if (this.tags.length <= 0) {
-        this.$swal({
-          icon: "error",
-          title: "Oops...",
-          text: "please enter number!",
-        });
+        notifyError("please enter number!", "Oops...");
         return;
       }
       const numbers = [];
@@ -845,11 +837,7 @@ export default {
       if (!this.$v.sms.message.$error || this.uploadedImages.length > 0) {
         this.commonSendMessage(numbers, this.sms.message);
       } else {
-        this.$swal({
-          icon: "error",
-          title: "Oops...",
-          text: "Message or file required!",
-        });
+        notifyError("Message or file required!", "Oops...");
         this.isLoading = false;
       }
     },
