@@ -40,8 +40,69 @@
 
 <script>
 import { post } from '../../../core/module/common.module'
-import { parseAuthData, bufToHex } from '../../../helper'
+import { publicKeyCredentialToJSON } from '../../../helper'
 import { decode as cborDecode } from 'cbor-x/decode'
+
+// ---------------------------------------------------------------------------
+// Local WebAuthn helpers (only used by this component)
+// ---------------------------------------------------------------------------
+
+const getEndian = () => {
+  const buf = new ArrayBuffer(2)
+  const u8 = new Uint8Array(buf)
+  u8[0] = 0xAA
+  u8[1] = 0xBB
+  return new Uint16Array(buf)[0] === 0xBBAA ? 'little' : 'big'
+}
+
+const readBE16 = (buffer) => {
+  if (buffer.length !== 2) throw new Error('Only 2byte buffer allowed!')
+  if (getEndian() !== 'big') buffer = buffer.reverse()
+  return new Uint16Array(buffer.buffer)[0]
+}
+
+const readBE32 = (buffer) => {
+  if (buffer.length !== 4) throw new Error('Only 4byte buffers allowed!')
+  if (getEndian() !== 'big') buffer = buffer.reverse()
+  return new Uint32Array(buffer.buffer)[0]
+}
+
+const bufToHex = (buffer) =>
+  Array.prototype.map.call(new Uint8Array(buffer), x => x.toString(16).padStart(2, '0')).join('')
+
+/** Parse a WebAuthn authData buffer. https://gist.github.com/herrjemand/dbeb2c2b76362052e5268224660b6fbc */
+const parseAuthData = (buffer) => {
+  const rpIdHash  = buffer.slice(0, 32);  buffer = buffer.slice(32)
+  const flagsBuf  = buffer.slice(0, 1);   buffer = buffer.slice(1)
+  const flagsInt  = flagsBuf[0]
+  const flags = {
+    up: !!(flagsInt & 0x01),
+    uv: !!(flagsInt & 0x04),
+    at: !!(flagsInt & 0x40),
+    ed: !!(flagsInt & 0x80),
+    flagsInt
+  }
+  const counterBuf = buffer.slice(0, 4);  buffer = buffer.slice(4)
+  const counter = readBE32(counterBuf)
+
+  let aaguid, credID, COSEPublicKey
+  if (flags.at) {
+    aaguid          = buffer.slice(0, 16);         buffer = buffer.slice(16)
+    const lenBuf    = buffer.slice(0, 2);          buffer = buffer.slice(2)
+    const credIDLen = readBE16(lenBuf)
+    credID          = buffer.slice(0, credIDLen);  buffer = buffer.slice(credIDLen)
+    COSEPublicKey   = buffer
+  }
+  return { rpIdHash, flagsBuf, flags, counter, counterBuf, aaguid, credID, COSEPublicKey }
+}
+
+/** Convert challenge + user.id from base64url strings to Uint8Arrays in-place. */
+const preformatMakeCredReq = (req) => {
+  req.challenge = Uint8Array.fromBase64(req.challenge, { alphabet: 'base64url' })
+  req.user.id   = Uint8Array.fromBase64(req.user.id, { alphabet: 'base64url' })
+  return req
+}
+
 export default {
   data () {
     return {
@@ -49,7 +110,7 @@ export default {
       keys: []
     }
   },
-  mounted: function () {
+  mounted () {
     this.getHardwarekey()
   },
   methods: {
@@ -64,8 +125,8 @@ export default {
         confirmButtonText: 'Yes, remove it!'
       }).then((result) => {
         if (result.isConfirmed) {
-          var request2 = {
-            data: {id: id},
+          const request2 = {
+            data: { id },
             url: 'hardwarekey/delete'
           }
           this.$store
@@ -87,7 +148,7 @@ export default {
       })
     },
     getHardwarekey () {
-      var request2 = {
+      const request2 = {
         data: {},
         url: 'hardwarekey/get'
       }
@@ -106,7 +167,7 @@ export default {
       if (this.title.trim() === '') {
         this.$swal.fire('Please enter title', '', 'error')
       } else {
-        var request = {
+        const request = {
           data: { title: this.title.trim() },
           url: 'hardwarekey/register-key'
         }
@@ -116,69 +177,21 @@ export default {
             if (serverResponse) {
               if (serverResponse.status !== 'startFIDOEnrolment') {
                 this.$swal.fire('Error registering user!', '', 'error')
-                // throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage)
               } else {
-                var request2 = {
+                const request2 = {
                   data: {},
                   url: 'hardwarekey/register'
                 }
                 this.$store
                   .dispatch(post, request2)
                   .then(async (respnse) => {
-                    var hardwarekey = respnse.hardwarekey
-                    var makeCredChallenge = respnse.publicKey
-                    // var challenge = encode(this.generateRandomBuffer(32))
-                    // console.log(challenge)
-                    // var publicKey = {
-                    //   'challenge': challenge,
-
-                    //   'rp': {
-                    //     'name': 'Example Inc.'
-                    //   },
-
-                    //   'user': {
-                    //     'id': makeCredChallenge.user.id,
-                    //     'name': makeCredChallenge.user.name,
-                    //     'displayName': makeCredChallenge.user.displayName
-                    //   },
-
-                    //   'pubKeyCredParams': [
-                    //     { 'type': 'public-key', 'alg': -7 }
-                    //   ],
-
-                    //   'status': 'ok'
-                    // }
-
-                    // console.log(publicKey)
+                    const hardwarekey = respnse.hardwarekey
+                    let makeCredChallenge = respnse.publicKey
+                    let newCredentialInfo
                     try {
                       console.log(makeCredChallenge)
-                      makeCredChallenge = this.preformatMakeCredReq(makeCredChallenge)
-                      // var randomStringFromServer = encode(this.generateRandomBuffer(32))
-                      // var randomStringFromServer = this.generateRandomBuffer(32)
-                      // console.log(randomStringFromServer)
-                      // var userID = makeCredChallenge.user.id
-                      // console.log(userID)
-                      // const publicKeyCredentialCreationOptions = {
-                      //   challenge: Uint8Array.from(
-                      //     randomStringFromServer, c => c.charCodeAt(0)),
-                      //   rp: {
-                      //     name: 'Duo Security'
-                      //   // id: 'duosecurity.com'
-                      //   },
-                      //   user: {
-                      //     id: Uint8Array.from(
-                      //       userID, c => c.charCodeAt(0)),
-                      //     name: makeCredChallenge.user.name,
-                      //     displayName: makeCredChallenge.user.displayName
-                      //   },
-                      //   pubKeyCredParams: [{alg: -7, type: 'public-key'}],
-                      //   authenticatorSelection: {
-                      //     authenticatorAttachment: 'cross-platform'
-                      //   },
-                      //   timeout: 60000,
-                      //   attestation: 'direct'
-                      // }
-                      var excludeCredentials = []
+                      makeCredChallenge = preformatMakeCredReq(makeCredChallenge)
+                      const excludeCredentials = []
                       for (const key of hardwarekey) {
                         console.log(key)
                         excludeCredentials.push({
@@ -187,7 +200,7 @@ export default {
                         })
                       }
                       makeCredChallenge.excludeCredentials = excludeCredentials
-                      var newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
+                      newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
                       console.log(newCredentialInfo)
                     } catch (error) {
                       this.$swal.fire(
@@ -195,15 +208,14 @@ export default {
                         error.message,
                         'error'
                       )
-                      // console.log(error)
                     }
 
                     // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
                     const attestationObject = cborDecode(new Uint8Array(newCredentialInfo.response.attestationObject))
-                    let authData = parseAuthData(attestationObject.authData)
-                    let aaguid = bufToHex(authData.aaguid)
-                    newCredentialInfo = this.publicKeyCredentialToJSON(newCredentialInfo)
-                    var request3 = {
+                    const authData = parseAuthData(attestationObject.authData)
+                    const aaguid = bufToHex(authData.aaguid)
+                    newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
+                    const request3 = {
                       data: { id: newCredentialInfo.id, aaguid: aaguid },
                       url: 'hardwarekey/verify'
                     }
@@ -223,7 +235,7 @@ export default {
                         }
                       })
                       .catch((e) => {
-                        console.log(e)
+                        console.error(e)
                       })
                   })
                   .catch((e) => {
@@ -237,116 +249,6 @@ export default {
           })
       }
     },
-    preformatGetAssertReq (getAssert) {
-      return new Promise((resolve, reject) => {
-        // getAssert.challenge = decode(getAssert.challenge)
-        if (getAssert) {
-          // for (let allowCred of getAssert.allowCredentials) {
-          // console.log(allowCred.id)
-          // allowCred.id = decode(allowCred.id)
-          // }
-        }
-        resolve(getAssert)
-      })
-    },
-    generateRandomBuffer (length) {
-      if (!length) { length = 32 }
-
-      var randomBuff = new Uint8Array(length)
-      window.crypto.getRandomValues(randomBuff)
-      return randomBuff
-    },
-    preformatMakeCredReq (makeCredReq) {
-      makeCredReq.challenge = Uint8Array.fromBase64(makeCredReq.challenge, { alphabet: 'base64url' })
-      makeCredReq.user.id = Uint8Array.fromBase64(makeCredReq.user.id, { alphabet: 'base64url' })
-
-      return makeCredReq
-    },
-    // parseAuthData (buffer) {
-    //   let rpIdHash = buffer.slice(0, 32)
-    //   buffer = buffer.slice(32)
-    //   let flagsBuf = buffer.slice(0, 1)
-    //   buffer = buffer.slice(1)
-    //   let flagsInt = flagsBuf[0]
-    //   let flags = {
-    //     up: !!(flagsInt & 0x01),
-    //     uv: !!(flagsInt & 0x04),
-    //     at: !!(flagsInt & 0x40),
-    //     ed: !!(flagsInt & 0x80),
-    //     flagsInt
-    //   }
-
-    //   let counterBuf = buffer.slice(0, 4)
-    //   buffer = buffer.slice(4)
-    //   let counter = this.readBE32(counterBuf)
-    //   // eslint-disable-next-line no-undef-init
-    //   let aaguid = undefined
-    //   // eslint-disable-next-line no-undef-init
-    //   let credID = undefined
-    //   // eslint-disable-next-line no-undef-init
-    //   let COSEPublicKey = undefined
-    //   if (flags.at) {
-    //     aaguid = buffer.slice(0, 16)
-    //     buffer = buffer.slice(16)
-    //     let credIDLenBuf = buffer.slice(0, 2)
-    //     buffer = buffer.slice(2)
-    //     let credIDLen = this.readBE16(credIDLenBuf)
-    //     credID = buffer.slice(0, credIDLen)
-    //     buffer = buffer.slice(credIDLen)
-    //     COSEPublicKey = buffer
-    //   }
-    //   return {rpIdHash, flagsBuf, flags, counter, counterBuf, aaguid, credID, COSEPublicKey}
-    // },
-    bufToHex (buffer) {
-      return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('')
-    },
-    readBE32 (buffer) {
-      if (buffer.length !== 4) { throw new Error('Only 4byte buffers allowed!') }
-
-      if (this.getEndian() !== 'big') { buffer = buffer.reverse() }
-
-      return new Uint32Array(buffer.buffer)[0]
-    },
-    getEndian () {
-      let arrayBuffer = new ArrayBuffer(2)
-      let uint8Array = new Uint8Array(arrayBuffer)
-      let uint16array = new Uint16Array(arrayBuffer)
-      uint8Array[0] = 0xAA // set first byte
-      uint8Array[1] = 0xBB // set second byte
-
-      if (uint16array[0] === 0xBBAA) { return 'little' } else { return 'big' }
-    },
-    readBE16 (buffer) {
-      if (buffer.length !== 2) throw new Error('Only 2byte buffer allowed!')
-
-      if (this.getEndian() !== 'big') { buffer = buffer.reverse() }
-
-      return new Uint16Array(buffer.buffer)[0]
-    },
-    publicKeyCredentialToJSON (pubKeyCred) {
-      if (pubKeyCred instanceof Array) {
-        let arr = []
-        for (let i of pubKeyCred) { arr.push(this.publicKeyCredentialToJSON(i)) }
-
-        return arr
-      }
-
-      if (pubKeyCred instanceof ArrayBuffer) {
-        return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url' })
-      }
-
-      if (pubKeyCred instanceof Object) {
-        let obj = {}
-
-        for (let key in pubKeyCred) {
-          obj[key] = this.publicKeyCredentialToJSON(pubKeyCred[key])
-        }
-
-        return obj
-      }
-
-      return pubKeyCred
-    }
   }
 }
 </script>

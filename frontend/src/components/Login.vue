@@ -120,7 +120,17 @@
 import { post } from '../core/module/common.module'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
-// import { constants } from 'zlib'
+import { publicKeyCredentialToJSON } from '@/helper'
+
+/** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
+const preformatGetAssertReq = (getAssert) => {
+  getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
+  for (const cred of getAssert.allowCredentials ?? []) {
+    cred.id = Uint8Array.fromBase64(cred.id, { alphabet: 'base64url' })
+  }
+  return getAssert
+}
+
 export default {
 name: 'Login',
 components: { ThemeButton },
@@ -163,7 +173,7 @@ validations: {
     password: { required, minLength: minLength(6) }
   }
 },
-mounted: function () {
+mounted () {
   this.signupRoute = `/${this.$route.params.appdirectory}/signup`
   this.fnLogin()
   this.getsignup()
@@ -294,11 +304,11 @@ methods: {
       .dispatch(post, request)
       .then(async (getAssertionChallenge) => {
         if (getAssertionChallenge) {
-          getAssertionChallenge = await this.preformatGetAssertReq(getAssertionChallenge)
+          getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
           try {
-            var newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
-            newCredentialInfo = this.publicKeyCredentialToJSON(newCredentialInfo)
-            var request = {
+            let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
+            newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
+            const request = {
               data: newCredentialInfo,
               url: 'hardwarekey/login'
             }
@@ -319,7 +329,7 @@ methods: {
               })
             // console.log(data)
           } catch (error) {
-            console.log(error)
+            console.error(error)
             // error.message
             this.$swal.fire(
               'Key!',
@@ -333,49 +343,6 @@ methods: {
         // this.signUpOption = false
       })
   },
-  generateRandomBuffer (length) {
-    if (!length) { length = 32 }
-
-    var randomBuff = new Uint8Array(length)
-    window.crypto.getRandomValues(randomBuff)
-    return randomBuff
-  },
-  publicKeyCredentialToJSON (pubKeyCred) {
-    if (pubKeyCred instanceof Array) {
-      let arr = []
-      for (let i of pubKeyCred) { arr.push(this.publicKeyCredentialToJSON(i)) }
-
-      return arr
-    }
-
-    if (pubKeyCred instanceof ArrayBuffer) {
-      return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url' })
-    }
-
-    if (pubKeyCred instanceof Object) {
-      let obj = {}
-
-      for (let key in pubKeyCred) {
-        obj[key] = this.publicKeyCredentialToJSON(pubKeyCred[key])
-      }
-
-      return obj
-    }
-
-    return pubKeyCred
-  },
-  preformatGetAssertReq (getAssert) {
-    return new Promise((resolve, reject) => {
-      getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
-      if (getAssert.allowCredentials) {
-        for (let allowCred of getAssert.allowCredentials) {
-          console.log(allowCred.id)
-          allowCred.id = Uint8Array.fromBase64(allowCred.id, { alphabet: 'base64url' })
-        }
-      }
-      resolve(getAssert)
-    })
-  },
   handleSubmit2 (e) {
     if (e && e.preventDefault) {
       console.log("Prevented default!")
@@ -383,7 +350,7 @@ methods: {
     }
     this.submitted2 = true
     if (this.otpForm.otp.trim() !== '') {
-      var request = {
+      const request = {
         data: { user: this.activeUser.user._id, verification_code: this.otpForm.otp },
         url: 'auth/otp-verify'
       }
@@ -436,8 +403,3 @@ methods: {
 }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-
-</style>

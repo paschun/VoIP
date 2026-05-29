@@ -11,7 +11,6 @@
           <div>
             <div class="d-flex flex-column">
               <div>
-                <!-- {{ getValidString(profile.profile)}} -->
                 {{ profile.profile }}
               </div>
               <div>
@@ -31,8 +30,6 @@
         Add New Profile
     </b-dropdown-item-button>
     <b-dropdown-divider></b-dropdown-divider>
-    <!--</router-link>-->
-    <!-- modal -->
     <b-modal ref="add-profile" id="add-profile" size="lg" title="Add Profile" hide-footer>
       <span class="small text-secondary">Profile</span>
       <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
@@ -47,7 +44,6 @@
         </div>
       </form>
     </b-modal>
-    <!-- / modal -->
   </div>
 </template>
 
@@ -55,6 +51,7 @@
 import { required } from 'vuelidate/lib/validators'
 import { post } from '../../core/module/common.module'
 import { EventBus } from '@/event-bus'
+
 export default {
   data () {
     return {
@@ -83,7 +80,7 @@ export default {
         token: this.access_token
       }
     }
-    var baseUrl = window.location.origin
+    const baseUrl = window.location.origin
     if (baseUrl === 'http://localhost:8080') {
       this.baseurl = 'http://localhost:3000'
     }
@@ -100,7 +97,6 @@ export default {
       EventBus.$emit('clicked', true)
       EventBus.$emit('changeProfile', true)
       EventBus.$emit('getOneProfile', true)
-      // EventBus.$emit('changeProfile', true)
     },
     activeFirstProfile () {
       if (this.profiles.length > 0) {
@@ -111,7 +107,7 @@ export default {
       }
     },
     getallProfile () {
-      var request = {
+      const request = {
         data: {},
         url: 'profile/getdata'
       }
@@ -121,11 +117,11 @@ export default {
           if (response) {
             this.profiles = response.data
             if (!this.activeProfile) {
-              var profileLocal = localStorage.getItem('activeProfile')
+              const profileLocal = localStorage.getItem('activeProfile')
               if (profileLocal) {
-                var acPr = JSON.parse(profileLocal)
+                const acPr = JSON.parse(profileLocal)
                 if (acPr) {
-                  for (var i = 0; i < this.profiles.length; i++) {
+                  for (let i = 0; i < this.profiles.length; i++) {
                     if (this.profiles[i]._id === acPr._id) {
                       this.activeProfile = this.profiles[i]
                       EventBus.$emit('changeProfile2', true)
@@ -156,7 +152,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      var request = {
+      const request = {
         data: this.form,
         url: 'profile/create'
       }
@@ -177,7 +173,7 @@ export default {
           }
         })
         .catch((e) => {
-          console.log(e)
+          console.error(e)
           this.isLoading = false
           EventBus.$emit('toggleLoader', true)
         })
@@ -185,6 +181,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 #loader1{
   position: absolute;

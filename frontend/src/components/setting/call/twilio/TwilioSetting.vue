@@ -10,41 +10,27 @@
           </li>
         </ul>
       </div>
-      <div v-if="activeMenu == 'twiml'">
-        <div class="d-flex justify-content-between">
-          <div>
-            <h6>TwiML Setting</h6>
-          </div>
-          <div class="p-2 bd-highlight">
-            <b-icon icon="arrow-left" style="cursor: pointer" font-scale="1" aria-hidden="true" @click="enableMenu('setting')"></b-icon>
-          </div>
-        </div>
+      <settings-section v-if="activeMenu == 'twiml'" title="TwiML Setting" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
         <twiml-setting></twiml-setting>
-      </div>
-      <div v-if="activeMenu == 'number'">
-        <div class="d-flex justify-content-between">
-          <div class="p-2 bd-highlight">
-            <h6>Number Setting</h6>
-          </div>
-          <div class="p-2 bd-highlight">
-            <b-icon icon="arrow-left" style="cursor: pointer" font-scale="1" aria-hidden="true" @click="enableMenu('setting')"></b-icon>
-          </div>
-        </div>
+      </settings-section>
+      <settings-section v-if="activeMenu == 'number'" title="Number Setting" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
         <twilio-number-setting></twilio-number-setting>
-      </div>
+      </settings-section>
     </div>
 </template>
+
 <script>
 import TwilioNumberSetting from './TwilioNumberSetting.vue'
 import TwimlSetting from './TwimlSetting.vue'
+import SettingsSection from '../../SettingsSection.vue'
+
 export default {
-  components: { TwilioNumberSetting, TwimlSetting },
+  components: { TwilioNumberSetting, TwimlSetting, SettingsSection },
   data () {
     return {
       activeMenu: 'setting'
     }
   },
-  mounted: function () {},
   methods: {
     enableMenu (menu) {
       this.activeMenu = menu
@@ -52,6 +38,3 @@ export default {
   }
 }
 </script>
-<style>
-
-</style>
