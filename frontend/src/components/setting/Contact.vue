@@ -379,15 +379,11 @@ export default {
     },
     searchContact () {
       const search = new RegExp(this.query, 'i')
-      this.search_contacts = this.contacts.filter(item => {
-        if (search.test(item.first_name)) {
-          return search.test(item.first_name)
-        } else if (search.test(item.last_name)) {
-          return search.test(item.last_name)
-        } else if (search.test(item.number)) {
-          return search.test(item.number)
-        }
-      })
+      this.search_contacts = this.contacts.filter(item =>
+        search.test(item.first_name) ||
+        search.test(item.last_name) ||
+        search.test(item.number)
+      )
     }
   },
   watch: {

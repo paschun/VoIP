@@ -564,17 +564,12 @@ export default {
     searchContact() {
       // console.log(this.numbers)
       const search = new RegExp(this.query, "i");
-      this.search_numbers = this.numbers.filter(item => {
-        if (search.test(item._id)) {
-          return search.test(item._id);
-        } else if (item.contact && search.test(item.contact.first_name)) {
-          return search.test(item.contact.first_name);
-        } else if (item.contact && search.test(item.contact.last_name)) {
-          return search.test(item.contact.last_name);
-        } else if (search.test(item.message)) {
-          return search.test(item.message);
-        }
-      });
+      this.search_numbers = this.numbers.filter(item =>
+        search.test(item._id) ||
+        search.test(item.contact?.first_name ?? "") ||
+        search.test(item.contact?.last_name ?? "") ||
+        search.test(item.message)
+      );
     },
     onaddContact() {
       const request = {
