@@ -1,42 +1,29 @@
 <template>
-    <div>
-      <div v-if="setting && setting.type === 'twilio'">
-        <!-- <twilio-setting></twilio-setting> -->
-        <twiml-setting></twiml-setting>
-      </div>
-      <div v-if="setting && setting.type === 'telnyx'">
-        <message-setting></message-setting>
-      </div>
-    </div>
+  <div>
+    <twiml-setting v-if="setting?.type === 'twilio'" />
+    <message-setting v-if="setting?.type === 'telnyx'" />
+  </div>
 </template>
 
 <script>
 import { EventBus } from '@/event-bus'
 import MessageSetting from './call/telnyx/MessageSetting.vue'
 import TwimlSetting from './call/twilio/TwimlSetting.vue'
+
 export default {
   components: { MessageSetting, TwimlSetting },
   data () {
-    return {
-      setting: null,
-      activeMenu: 'setting'
-    }
+    return { setting: null }
   },
-  mounted: function () {
-    console.log('load data')
+  mounted () {
     EventBus.$on('changeProfile', this.getCallSetting)
     this.getCallSetting()
   },
   methods: {
     getCallSetting () {
       const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
-      console.log(profileLocal)
-      if (profileLocal) {
-        this.setting = profileLocal
-      }
-    },
-    enableMenu (menu) {
-      this.activeMenu = menu
+      console.log('localStorage.activeProfile', profileLocal)
+      if (profileLocal) this.setting = profileLocal
     }
   }
 }

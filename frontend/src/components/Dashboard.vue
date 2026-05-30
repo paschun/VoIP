@@ -375,30 +375,24 @@ export default {
   data() {
     return {
       isLoading: false,
-      fullPage: true,
       contacts: [],
       selectedContact: "",
       dropArea: null,
       progressBar: null,
-      filesDone: 0,
-      filesToDo: 0,
       uploadProgress: [],
       uploadedImages: [],
       activeChatData: false,
       activeProfile: null,
       activeChat: "",
-      msg: "Welcome to dashboard",
       tags: [],
       sms: {
         numbers: "",
         message: "",
       },
-      setting: {},
       chatListLoader: false,
       submitted2: false,
       userdata: null,
       access_token: null,
-      headers: null,
       messages: [],
       messageBody: "",
       socket: null,
@@ -446,19 +440,18 @@ export default {
       this.$router.push("/");
     }
     this.updateVw();
-    var baseUrl = window.location.origin;
+    const baseUrl = window.location.origin;
     if (baseUrl === "http://localhost:8080") {
       this.baseurl = "http://localhost:3000";
     }
     const socket = io(this.baseurl, { transports: ["websocket"] });
     this.socket = socket;
-    this.socket.on("new_message", (data) => {
-      this.getNumberList();
+    this.socket.on("new_message", () => {
+      this.$refs.numberList.getNumberList();
       if (this.activeChatData) {
         this.showChat(this.activeChat);
       }
     });
-    // this.userdata = JSON.parse(localStorage.getItem('userdata'))
     this.userdata = JSON.parse(this.$cookie.get("userdata"));
     this.access_token = this.$cookie.get("access_token");
     this.socket.emit("join_profile_channel", this.userdata._id.toString());
@@ -473,11 +466,6 @@ export default {
       this.$refs.numberList.getNumberList();
       this.notifyMe(data.number, data.message);
     });
-    this.headers = {
-      headers: {
-        token: this.access_token,
-      },
-    };
     this.dropArea = document.getElementById("drop-area1");
     ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
       this.dropArea.addEventListener(eventName, this.preventDefaults, false);
@@ -513,16 +501,9 @@ export default {
         this.$refs.callView.makeCall(this.activeChat._id);
       }
     },
-    messageRefresh() {
-      this.messages = [];
-    },
     contactChangeEvent(e) {
-      const inputText = { text: e.code, tiClasses: ["ti-valid"] };
-      this.tags.push(inputText);
-      // this.sms.numbers = e.target.value
-
+      this.tags.push({ text: e.code, tiClasses: ["ti-valid"] });
       this.selectedContact = "";
-      // console.log(e.target.value)
     },
     onaddContact(data) {
       this.contacts = data;
@@ -555,10 +536,7 @@ export default {
     },
     initializeProgress(numfiles) {
       this.progressBar.value = 0;
-      this.uploadProgress = [];
-      for (let i = this.numFiles; i > 0; i--) {
-        this.uploadProgress.push(0);
-      }
+      this.uploadProgress = Array.from({ length: numfiles }, () => 0);
     },
     updateProgress(fileNumber, percent) {
       this.uploadProgress[fileNumber] = percent;
@@ -566,10 +544,6 @@ export default {
         this.uploadProgress.reduce((tot, curr) => tot + curr, 0) /
         this.uploadProgress.length;
       this.progressBar.value = total;
-    },
-    progressDone() {
-      this.filesDone++;
-      this.progressBar.value = (this.filesDone / this.filesToDo) * 100;
     },
     handleDrop(e) {
       const dt = e.dataTransfer;
@@ -591,16 +565,6 @@ export default {
       files = [...files];
       this.initializeProgress(files.length);
       files.forEach(this.uploadFile);
-    },
-    previewFile(file) {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = () => {
-        const img = document.createElement("img");
-        img.style.width = "150px";
-        img.src = reader.result;
-        document.getElementById("gallery").appendChild(img);
-      };
     },
     removeFromPrevie(image) {
       const images = [];
@@ -624,22 +588,21 @@ export default {
         this.updateProgress(i, (e.loaded * 100.0) / e.total || 100);
       });
 
-      xhr.addEventListener("readystatechange", (e) => {
+      xhr.addEventListener("readystatechange", () => {
         if (xhr.readyState === 4 && xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
           this.uploadedImages.push(`${response.data.media}`);
-        } else if (xhr.readyState === 4 && xhr.status !== 200) {
         }
       });
 
       formData.append("file", file);
       xhr.send(formData);
     },
-    highlight(e) {
+    highlight() {
       document.getElementById("drop-area").style.display = "block";
       this.dropArea.classList.add("highlight");
     },
-    unhighlight(e) {
+    unhighlight() {
       this.dropArea.classList.remove("highlight");
     },
     preventDefaults(e) {
@@ -665,7 +628,6 @@ export default {
           dir: "auto",
           icon: msgIcon,
         };
-        // eslint-disable-next-line no-new
         new Notification("Message from " + user, options);
       } else if (Notification.permission !== "denied") {
         Notification.requestPermission((permission) => {
@@ -678,48 +640,36 @@ export default {
               dir: "auto",
               icon: msgIcon,
             };
-            // eslint-disable-next-line no-new
             new Notification("Message from " + user, options);
           }
         });
       }
     },
-    deletechat() {
-      // eslint-disable-next-line no-undef
-      this.$swal
-        .fire({
-          icon: "info",
-          title: "Do you want to delete this chat?",
-          showDenyButton: true,
-          showCancelButton: false,
-          confirmButtonText: `Yes, Delete`,
-          denyButtonText: `No`,
-        })
-        .then((result) => {
-          if (result.isConfirmed) {
-            const messageData = {
-              user: this.userdata._id,
-              number: this.activeChat,
-            };
-            const request = {
-              data: messageData,
-              url: "setting/message-list-delete",
-            };
-            this.$store
-              .dispatch(post, request)
-              .then((response) => {
-                if (this.activeChatData) {
-                  this.showChat(this.activeChat);
-                }
-                this.$refs.numberList.getNumberList();
-              })
-              .catch((e) => {
-                console.log(e);
-              });
-          } else if (result.isDenied) {
-            notifyInfo("chat not deleted");
-          }
+    async deletechat() {
+      const result = await this.$swal.fire({
+        icon: "info",
+        title: "Do you want to delete this chat?",
+        showDenyButton: true,
+        showCancelButton: false,
+        confirmButtonText: "Yes, Delete",
+        denyButtonText: "No",
+      });
+      if (result.isDenied) {
+        notifyInfo("chat not deleted");
+        return;
+      }
+      if (!result.isConfirmed) return;
+
+      try {
+        await this.$store.dispatch(post, {
+          data: { user: this.userdata._id, number: this.activeChat },
+          url: "setting/message-list-delete",
         });
+        if (this.activeChatData) this.showChat(this.activeChat);
+        this.$refs.numberList.getNumberList();
+      } catch (e) {
+        console.error(e);
+      }
     },
     sendSms() {
       this.isLoading = true;
@@ -771,9 +721,7 @@ export default {
           }
           this.isLoading = false;
         })
-        .catch((e) => {
-          console.log(e);
-        });
+        .catch((e) => console.error(e));
     },
     firstChatShow(activechat) {
       this.chatListLoader = true;
@@ -817,11 +765,9 @@ export default {
             this.$refs.numberList.getOneProfile();
           }
         })
-        .catch((e) => {
-          console.log(e);
-        });
+        .catch((e) => console.error(e));
     },
-    handleSubmit2(e) {
+    handleSubmit2() {
       this.submitted2 = true;
       this.$v.$touch();
       this.isLoading = true;
@@ -849,27 +795,22 @@ export default {
       document.getElementById("chat_body").style.height = `${chatHeight}px`;
     },
     getVw() {
-      return Math.round(
-        Math.max(
-          document.documentElement.clientWidth || 0,
-          window.innerWidth || 0
-        )
-      );
+      return Math.round(Math.max(
+        document.documentElement.clientWidth ?? 0,
+        window.innerWidth ?? 0
+      ));
     },
     getVh() {
-      return Math.round(
-        Math.max(
-          document.documentElement.innerHeight || 0,
-          window.innerHeight || 0
-        )
-      );
+      return Math.round(Math.max(
+        document.documentElement.innerHeight ?? 0,
+        window.innerHeight ?? 0
+      ));
     },
     getMMSS(time) {
-      // Hours, minutes and seconds
       const mins = ~~((time % 3600) / 60);
       const secs = ~~time % 60;
 
-      // Output like "1:01" or "4:03:59" or "123:03:59"
+      // Output like "1:01" or "03:59"
       let ret = "";
       ret += "" + mins + ":" + (secs < 10 ? "0" : "");
       ret += "" + secs;

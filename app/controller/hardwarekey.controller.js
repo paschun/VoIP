@@ -97,8 +97,8 @@ exports.verify = async (req, res) => {
             credentials: cr, 
             aaguid: payload.aaguid
         };
-        let updateuser = await updateUser(sessData.title, sessData.user, updateData);
-        if(updateuser.registrationComplete == true){
+        const updateuser = await updateUser(sessData.title, sessData.user, updateData);
+        if(updateuser.registrationComplete){
             await User.updateOne({_id: sessData.user}, {hardwarekey: 'true'});
         }
         console.log(updateuser)

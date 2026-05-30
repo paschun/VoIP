@@ -100,7 +100,7 @@ exports.multipleUpload = async (req, res) => {
 
 exports.getAllContact = async (req, res) => {
     try{
-        var contacts = await Contact.find({user: {$eq: req.user.id}}).collation({locale: "en" }).sort({first_name: 1});
+        const contacts = await Contact.find({user: {$eq: req.user.id}}).collation({locale: "en" }).sort({first_name: 1});
         res.send({status:true, message:'Contact data!', data:contacts});
     }catch(error){
         res.status(400).json({status:'false',message:'something is wrong'});
@@ -109,7 +109,7 @@ exports.getAllContact = async (req, res) => {
 
 exports.delete = async (req, res) => {
     try{
-        var deleteContact = await Contact.deleteOne({_id: { $eq: req.body.contact_id} })
+        const deleteContact = await Contact.deleteOne({_id: { $eq: req.body.contact_id} })
         if(deleteContact){
             res.send({status:true, message:'Contact deleted successfully!', data:deleteContact});
         }else{
@@ -161,7 +161,7 @@ exports.update = async (req, res) => {
 
 exports.deleteall = async (req, res) => {
     try{
-        var deleteContact = await Contact.deleteMany({user:req.user.id })
+        const deleteContact = await Contact.deleteMany({user:req.user.id })
         if(deleteContact){
             res.send({status:true, message:'All contacts deleted!', data:deleteContact});
         }else{

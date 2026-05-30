@@ -55,7 +55,7 @@ export default {
   },
   computed: {
     selectedOption() {
-      return this.options.find(option => option[this.valueProp] === this.value) || {};
+      return this.options.find(option => option[this.valueProp] === this.value) ?? {};
     },
     selectedValue: {
       get() {

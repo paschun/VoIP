@@ -56,9 +56,6 @@ import { EventBus } from '@/event-bus'
 export default {
   data () {
     return {
-      access_token: null,
-      headers: null,
-      baseurl: '',
       profiles: [],
       activeProfile: null,
       submitted3: false,
@@ -74,28 +71,13 @@ export default {
     }
   },
   mounted () {
-    this.userdata = JSON.parse(this.$cookie.get('userdata'))
-    this.access_token = this.$cookie.get('access_token')
-    this.headers = {
-      headers: {
-        token: this.access_token
-      }
-    }
-    const baseUrl = window.location.origin
-    if (baseUrl === 'http://localhost:8080') {
-      this.baseurl = 'http://localhost:3000'
-    }
     this.getallProfile()
   },
   methods: {
-    onClickButton (profile) {
-      this.$emit('clicked', profile)
-    },
     changeProfile (profile) {
       this.activeProfile = profile
       localStorage.setItem('activeProfile', JSON.stringify(profile))
       this.$emit('clicked', profile)
-      EventBus.$emit('clicked', true)
       EventBus.$emit('changeProfile', true)
       EventBus.$emit('getOneProfile', true)
     },
@@ -142,11 +124,9 @@ export default {
             }
           }
         })
-        .catch((e) => {
-          console.log(e)
-        })
+        .catch((e) => console.error(e))
     },
-    handleSubmit (e) {
+    handleSubmit () {
       this.submitted3 = true
       EventBus.$emit('toggleLoader', true)
       this.$v.$touch()

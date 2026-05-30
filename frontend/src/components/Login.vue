@@ -137,11 +137,8 @@ name: 'Login',
 components: { ThemeButton },
 data () {
   return {
-    baseurl: '',
-    switch1: true,
     otpScreen: false,
     otpError: false,
-    loginId: 0,
     signUpOption: false,
     versionOption: 'v1.0.0',
     activeUser: {
@@ -159,13 +156,9 @@ data () {
     submitted2: false,
     signupRoute: '',
     keyScreen: false,
-    keyTotpScreen: false,
     keys: [],
     mfa: false,
-    harwarekey: false,
-    activeKey: false,
-    verification_method: false,
-    crid: null
+    verification_method: false
   }
 },
 validations: {
@@ -184,51 +177,34 @@ methods: {
   fnLogin () {
     const request = {
       url: 'auth/check-directoryname',
-      data: {dirname: this.$route.params.appdirectory}
+      data: { dirname: this.$route.params.appdirectory }
     }
     this.$store
       .dispatch(post, request)
       .then((response) => {
-        if (this.$cookie.get('access_token')) {
-          if (response.data.status === 'nodir' || response.data.status === 'no-name') {
-            this.$router.push(`/${response.data.dir}/dashboard`)
-          } else if (response.data.status === 'false') {
-            this.$router.push(`/404`)
-          } else if (response.data.status === 'true') {
-            this.$router.push(`/${response.data.dir}/dashboard`)
+        const { status, dir } = response.data
+        const loggedIn = !!this.$cookie.get('access_token')
+
+        if (loggedIn) {
+          if (status === 'nodir' || status === 'no-name' || status === 'true') {
+            this.$router.push(`/${dir}/dashboard`)
+          } else if (status === 'false') {
+            this.$router.push('/404')
           }
-        } else {
-          if (response.data.status === 'nodir' && response.data.dir === 'voip') {
-            this.$router.push(`/${response.data.dir}`)
-          } else if (response.data.status === 'no-name' && response.data.dir === 'voip') {
-            this.$router.push(`/${response.data.dir}`)
-          } else if (response.data.status === 'false' || response.data.status === 'no-name') {
-            this.$router.push(`/404`)
-          }
+        } else if ((status === 'nodir' || status === 'no-name') && dir === 'voip') {
+          this.$router.push(`/${dir}`)
+        } else if (status === 'false' || status === 'no-name') {
+          this.$router.push('/404')
         }
       })
-      .catch((e) => {
-        this.old_version = false
-        console.error(e)
-      })
+      .catch((e) => console.error(e))
   },
   getsignup () {
-    const request = {
-      data: {},
-      url: 'auth/get-signup'
-    }
+    const request = { data: {}, url: 'auth/get-signup' }
     this.$store
       .dispatch(post, request)
-      .then((response) => {
-        if (response?.data === 'on') {
-          this.signUpOption = true
-        } else {
-          this.signUpOption = false
-        }
-      })
-      .catch((e) => {
-        this.signUpOption = false
-      })
+      .then((response) => { this.signUpOption = response?.data === 'on' })
+      .catch(() => { this.signUpOption = false })
   },
   getVersion () {
     const request = {
@@ -242,9 +218,7 @@ methods: {
           this.versionOption = response.data
         }
       })
-      .catch((e) => {
-        // this.signUpOption = false
-      })
+      .catch(() => {})
   },
   handleSubmit (e) {
     e.preventDefault()
@@ -270,7 +244,6 @@ methods: {
             this.activeUser.user = response.data
             this.keyScreen = true
             this.otpScreen = false
-            this.activeKey = response.harwarekey[0]
           } else if (response.status === 'mfa') {
             this.activeUser.token = response.token
             this.activeUser.user = response.data
@@ -282,9 +255,7 @@ methods: {
           }
         }
       })
-      .catch((e) => {
-        // this.signUpOption = false
-      })
+      .catch(() => {})
   },
   verifyKey (key) {
     const request = {
@@ -299,12 +270,12 @@ methods: {
           try {
             let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
             newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-            const request = {
+            const loginReq = {
               data: newCredentialInfo,
               url: 'hardwarekey/login'
             }
             this.$store
-              .dispatch(post, request)
+              .dispatch(post, loginReq)
               .then(async (serverResponse) => {
                 if (serverResponse) {
                   if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
@@ -315,20 +286,14 @@ methods: {
                   this.$router.push(`/${this.$route.params.appdirectory}/dashboard`)
                 }
               })
-              .catch((e) => {
-                // this.signUpOption = false
-              })
-            // console.log(data)
+              .catch(() => {})
           } catch (error) {
             console.error(error)
-            // error.message
             notifyError('Login failed with security key.', 'Key!')
           }
         }
       })
-      .catch((e) => {
-        // this.signUpOption = false
-      })
+      .catch(() => {})
   },
   handleSubmit2 (e) {
     if (e?.preventDefault) {
@@ -354,9 +319,7 @@ methods: {
             }
           }
         })
-        .catch((e) => {
-          // this.signUpOption = false
-        })
+        .catch(() => {})
     } else {
       this.otpError = true
     }

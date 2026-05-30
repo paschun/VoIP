@@ -54,7 +54,7 @@ export default {
     // this.getContacts()
   },
   methods: {
-    handleSubmit (e) {
+    handleSubmit () {
       this.submitted = true
       this.$v.$touch()
       if (this.$v.$invalid) {

@@ -65,16 +65,10 @@ export default {
           }
           return this.$store
             .dispatch(post, request)
-            .then((response) => {
-              return response
-            })
-            .catch((e) => {
-              return false
-            })
+            .catch(() => false)
         },
         allowOutsideClick: () => !this.$swal.isLoading()
       }).then((result) => {
-        console.log(result)
         if (result.isConfirmed) {
           this.$swal.fire({
             icon: 'success',
@@ -83,11 +77,10 @@ export default {
             showDenyButton: false,
             showCancelButton: false,
             confirmButtonText: 'Ok'
-          }).then((result) => {
+          }).then(() => {
             this.$cookie.delete('access_token')
             this.$cookie.delete('userdata')
             window.location.href = `/${this.$route.params.appdirectory}/`
-            // this.$router.push('/')
           })
         }
       })

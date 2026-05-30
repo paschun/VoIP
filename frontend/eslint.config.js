@@ -19,4 +19,13 @@ export default defineConfig([
       },
     },
   },
+  {
+    rules: {
+      eqeqeq: ['error', 'always'],
+      'no-shadow': 'error',
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'no-array-constructor': 'error',
+    },
+  },
 ])

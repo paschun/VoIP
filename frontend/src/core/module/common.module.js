@@ -2,13 +2,7 @@ import { api } from '@/core/services/api.service'
 import router from '../../router'
 import Vue from 'vue'
 
-// action types
-export const VERIFY_AUTH = 'verifyAuth'
-export const LOGIN = 'login'
-export const LOGOUT = 'logout'
-export const REGISTER = 'register'
-export const UPDATE_PASSWORD = 'updateUser'
-
+// Vuex action names dispatched by components.
 export const post = 'post'
 export const get = 'get'
 

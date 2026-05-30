@@ -34,19 +34,19 @@ export default {
   },
   mounted: function () {
     // this.getContacts()
-    var userdata = JSON.parse(this.$cookie.get('userdata'))
+    const userdata = JSON.parse(this.$cookie.get('userdata'))
     if (userdata.email !== undefined) {
       this.form.email = userdata.email
     }
   },
   methods: {
-    handleSubmit (e) {
+    handleSubmit () {
       this.submitted3 = true
       this.$v.$touch()
       if (this.$v.$invalid) {
         return
       }
-      var request = {
+      const request = {
         data: this.form,
         url: 'auth/username/update'
       }
@@ -58,9 +58,7 @@ export default {
             notifySuccess('Username updated successfully')
           }
         })
-        .catch((e) => {
-          console.log(e)
-        })
+        .catch((e) => console.error(e))
     }
   }
 }

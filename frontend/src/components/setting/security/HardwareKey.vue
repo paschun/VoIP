@@ -138,9 +138,7 @@ export default {
                 this.getHardwarekey()
               }
             })
-            .catch((e) => {
-
-            })
+            .catch(() => {})
         }
       })
     },
@@ -156,9 +154,7 @@ export default {
             this.keys = respose.data
           }
         })
-        .catch((e) => {
-
-        })
+        .catch(() => {})
     },
     register () {
       if (this.title.trim() === '') {
@@ -214,28 +210,22 @@ export default {
                     }
                     this.$store
                       .dispatch(post, request3)
-                      .then((serverResponse) => {
-                        if (serverResponse.status !== 'ok') {
-                          throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage)
+                      .then((verifyResponse) => {
+                        if (verifyResponse.status !== 'ok') {
+                          throw new Error('Error registering user! Server returned: ' + verifyResponse.errorMessage)
                         } else {
                           notifySuccess('Your key added successfully.', 'Key!')
                           this.getHardwarekey()
                           this.title = ''
                         }
                       })
-                      .catch((e) => {
-                        console.error(e)
-                      })
+                      .catch((e) => console.error(e))
                   })
-                  .catch((e) => {
-
-                  })
+                  .catch(() => {})
               }
             }
           })
-          .catch((e) => {
-
-          })
+          .catch(() => {})
       }
     },
   }

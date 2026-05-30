@@ -161,9 +161,7 @@
 </template>
 
 <script>
-// import Swal from 'sweetalert2'
 import { post } from '../core/module/common.module'
-import { EventBus } from '@/event-bus'
 import { TelnyxRTC } from '@telnyx/webrtc'
 import 'vue-select/dist/vue-select.css'
 import { Device } from '@twilio/voice-sdk'
@@ -171,9 +169,7 @@ export default {
   props: ['contacts'],
   data () {
     return {
-      twilio_number: null,
       number: null,
-      call_text: 'test',
       connection: null,
       name: '',
       mm: '00',
@@ -188,13 +184,7 @@ export default {
   },
   async mounted () {
     this.formatecontact(this.contacts)
-    // console.log(this.contacts)
-    EventBus.$on('clicked', () => {
-      // this.clickHandler()
-    })
-    // EventBus.$on('clicked', this.clickHandler)
     const tokenData = await this.getToken()
-    this.call_text = 'get token'
     this.deviceSetup(tokenData)
   },
   methods: {
@@ -203,17 +193,13 @@ export default {
         if (tokenData.type === 'twilio') {
           this.callType = 'twilio'
           this.device = new Device(tokenData.token)
-          this.device.on('registered', () => {
-            console.log('Connected')
-            this.call_text = 'Connected'
-          })
+          this.device.on('registered', () => console.log('Connected'))
           this.device.on('error', (error) => {
             console.error('error')
             console.error(error)
           })
           this.device.on('incoming', (call) => {
             this.$refs['modalTall'].show()
-            // document.getElementById('incomingCallModel').click()
             this.connection = call
             this.number = call.parameters.From
             this.incoming = true
@@ -238,7 +224,6 @@ export default {
                 switch (call.state) {
                   case 'ringing':
                     this.$refs['modalTall'].show()
-                    // document.getElementById('incomingCallModel').click()
                     this.number = call.options.remoteCallerNumber
                     this.incoming = true
                     break
@@ -264,17 +249,12 @@ export default {
         }
       }
     },
-    clickHandler () {
-      this.getSetting()
-    },
     getToken () {
       return new Promise(resolve => {
         const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
         if (profileLocal) {
-          // if (profileLocal.type === 'twilio') {
-          const messageData = {setting_id: profileLocal._id}
           const request = {
-            data: messageData,
+            data: { setting_id: profileLocal._id },
             url: 'call/token'
           }
           this.$store
@@ -319,9 +299,7 @@ export default {
               localStorage.setItem('activeProfile', JSON.stringify(response.data))
               this.distroyDevice()
               this.distroyDeviceTelnyx()
-              // .destroy()
               const tokenData = await this.getToken()
-
               this.deviceSetup(tokenData)
             }
           })
@@ -331,8 +309,6 @@ export default {
       }
     },
     async makeCall (number) {
-      this.muted = false
-      this.onPhone = true
       this.number = number
       const n = number.replace(/\D/g, '')
       const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
@@ -348,10 +324,7 @@ export default {
           callerNumber: profileLocal.number
         })
       }
-      this.call_text = 'Calling ' + n
       this.$refs['modalTall'].show()
-      // this.$refs.myModalRef.show()
-      // document.getElementById('incomingCallModel').click()
     },
     bindCallEvents (call) {
       call.on('accept', () => {
@@ -361,7 +334,6 @@ export default {
       })
       call.on('disconnect', () => {
         console.log('Awaiting incoming call...')
-        this.call_text = 'Awaiting incoming call...'
         this.dissconnected()
       })
       call.on('cancel', () => {
@@ -388,19 +360,16 @@ export default {
         this.connection?.reject()
         this.device?.disconnectAll()
       } else {
-        // this.connection.hangup()
         this.dissconnected()
       }
       this.connection = null
       this.incoming = false
     },
     async toggleCall () {
-      this.muted = false
-      this.onPhone = true
       const n = this.number.replace(/\D/g, '')
       const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
       if (this.callType === 'twilio') {
-        const call = await this.device.connect({ 
+        const call = await this.device.connect({
           params: { number: n, twilio_number: profileLocal.number }
         })
         this.connection = call
@@ -411,15 +380,12 @@ export default {
           callerNumber: profileLocal.number
         })
       }
-      this.call_text = 'Calling ' + n
     },
     startTimer () {
       let value = 0
       this.userDuration = setInterval(() => {
-        let h = Math.trunc(value / 3600)
         const m = Math.trunc(value / 60)
         const s = value % 60
-        h = h < 10 ? '0' + h : h
         this.mm = m < 10 ? '0' + m : m
         this.ss = s < 10 ? '0' + s : s
         value++
@@ -469,7 +435,6 @@ export default {
       this.selectedContact = ''
     },
     distroyDevice () {
-      // console.log('device disconnected')
       try {
         if (this.device) {
           this.device.destroy()
@@ -481,8 +446,10 @@ export default {
     },
     distroyDeviceTelnyx () {
       try {
-        this.client.disconnect()
-      } catch {}
+        this.client?.disconnect()
+      } catch (e) {
+        console.error(e)
+      }
     },
     formatecontact (contacts) {
       const arrContact = []
@@ -494,7 +461,7 @@ export default {
     }
   },
   watch: {
-    contacts: function (newVal, oldVal) {
+    contacts (newVal) {
       this.formatecontact(newVal)
     }
   },

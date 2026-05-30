@@ -125,8 +125,10 @@ import { notifySuccess, notifyError, notifyInfo } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 import Papa from 'papaparse'
 import { EventBus } from '@/event-bus'
+
 // eslint-disable-next-line no-useless-escape
 const phonenumber = helpers.regex('phonenumber', /^\+?[0-9\(\-\)\ ]{5,17}$/)
+
 export default {
   props: ['contacts'],
   data () {
@@ -157,7 +159,6 @@ export default {
         }
       ],
       csvUploadArray2: []
-      // contacts: []
     }
   },
   validations: {
@@ -168,7 +169,7 @@ export default {
       note: {}
     }
   },
-  mounted: function () {
+  mounted () {
     EventBus.$on('addContact', (number) => {
       this.editId = false
       this.emptyContact()
@@ -190,20 +191,19 @@ export default {
     async onSelect (event) {
       this.csvFile = true
       console.log(event)
-      this.modelFileValu = event.target.files[0].name
       const fileToRead = event.target.files[0]
-      var fileData = await this.readFile(fileToRead)
-      this.csvUploadArray2 = fileData
+      this.modelFileValu = fileToRead.name
+      this.csvUploadArray2 = await this.readFile(fileToRead)
       console.log(this.csvUploadArray2)
     },
     readFile (file) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const fileReader = new FileReader()
         fileReader.readAsText(file, 'UTF-8')
         fileReader.onload = (e) => {
           const textFromFileLoaded = e.target.result
           const options = {
-            complete: (results, file) => {
+            complete: (results) => {
               this.csvUploadArray = results.data
             }
           }
@@ -231,15 +231,13 @@ export default {
       document.getElementById('model_file_input2').click()
     },
     downloadFile (data, filename = 'data') {
-      let csvData = this.ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
+      const csvData = this.ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
       console.log(csvData)
-      let blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
-      let dwldLink = document.createElement('a')
-      let url = URL.createObjectURL(blob)
-      let isSafariBrowser = navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1
-      if (isSafariBrowser) {
-        dwldLink.setAttribute('target', '_blank')
-      }
+      const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const dwldLink = document.createElement('a')
+      const isSafariBrowser = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
+      if (isSafariBrowser) dwldLink.setAttribute('target', '_blank')
       dwldLink.setAttribute('href', url)
       dwldLink.setAttribute('download', filename + '.csv')
       dwldLink.style.visibility = 'hidden'
@@ -251,11 +249,11 @@ export default {
       this.downloadFile(this.jsonData, 'sample_file')
     },
     ConvertToCSV (objArray, headerList) {
-      let array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
+      const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
       let str = ''
       let row = ''
 
-      for (let index in headerList) {
+      for (const index in headerList) {
         console.log(index)
         console.log(headerList[index])
         row += headerList[index] + ','
@@ -264,8 +262,8 @@ export default {
       str += row + '\r\n'
       for (let i = 0; i < array.length; i++) {
         let line = ''
-        for (let index in headerList) {
-          let head = headerList[index]
+        for (const index in headerList) {
+          const head = headerList[index]
 
           line += array[i][head] + ','
         }
@@ -278,43 +276,28 @@ export default {
       this.emptyContact()
       this.$refs['modal-contact'].show()
     },
-    handleSubmit (e) {
+    handleSubmit () {
       this.submitted = true
       // stop here if form is invalid
       this.$v.$touch()
       if (this.$v.$invalid) {
         return
       }
-      let data;
-      let request;
-      if (this.editId) {
-        data = this.form
-        data.contact_id = this.editId
-        request = {
-          data: data,
-          url: 'contact/update'
-        }
-      } else {
-        request = {
-          data: this.form,
-          url: 'contact/create'
-        }
-      }
+      const request = this.editId
+        ? { data: { ...this.form, contact_id: this.editId }, url: 'contact/update' }
+        : { data: this.form, url: 'contact/create' }
       this.$store
         .dispatch(post, request)
-        .then((data) => {
-          if (data) {
+        .then((response) => {
+          if (response) {
             this.$refs['modal-contact'].hide()
-            // this.getContacts()
             this.$emit('onaddContact', true)
             EventBus.$emit('contactAdded', this.form.number)
             this.emptyContact()
             this.submitted = false
           }
         })
-        .catch((e) => {
-          console.log(e)
-        })
+        .catch((e) => console.error(e))
     },
 
     handleSubmit2 () {
@@ -328,50 +311,39 @@ export default {
         }
         this.$store
           .dispatch(post, request)
-          .then((_data) => {
+          .then(() => {
             this.$refs['modal-contact'].hide()
             this.$emit('onaddContact', true)
             this.modelFileValu = ''
           })
-          .catch((e) => {
-            console.log(e)
-          })
+          .catch((e) => console.error(e))
       } else {
         notifyError('Please upload valid file!')
       }
     },
-    deletechat (id) {
-      this.$swal.fire({
+    async deletechat (id) {
+      const result = await this.$swal.fire({
         icon: 'info',
         title: 'Do you want to delete this contact?',
         showDenyButton: true,
         showCancelButton: false,
-        confirmButtonText: `Yes, Delete`,
-        denyButtonText: `No`
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const request = {
-            data: {contact_id: id},
-            url: 'contact/delete'
-          }
-          this.$store
-            .dispatch(post, request)
-            .then((data) => {
-              notifySuccess('Contact Deleted successfully!')
-              this.$emit('onaddContact', true)
-              EventBus.$emit('contactAdded', 'delete')
-              // this.getContacts()
-              // this.$refs['modal-contact'].hide()
-            })
-            .catch((e) => {
-              console.error(e)
-            })
-          // contact/delete
-          // var messageData = {user: this.userdata._id, number: this.activeChat}
-        } else if (result.isDenied) {
-          notifyInfo('contact not deleted')
-        }
+        confirmButtonText: 'Yes, Delete',
+        denyButtonText: 'No'
       })
+      if (result.isDenied) { notifyInfo('contact not deleted'); return }
+      if (!result.isConfirmed) return
+
+      try {
+        await this.$store.dispatch(post, {
+          data: { contact_id: id },
+          url: 'contact/delete'
+        })
+        notifySuccess('Contact Deleted successfully!')
+        this.$emit('onaddContact', true)
+        EventBus.$emit('contactAdded', 'delete')
+      } catch (e) {
+        console.error(e)
+      }
     },
     updateContact (contact) {
       this.editId = contact._id
@@ -383,37 +355,25 @@ export default {
       }
       this.$refs['modal-contact'].show()
     },
-    deleteAll () {
-      this.$swal.fire({
+    async deleteAll () {
+      const result = await this.$swal.fire({
         icon: 'info',
         title: 'Are you sure you want to delete ALL contacts?',
         showDenyButton: true,
         showCancelButton: false,
-        confirmButtonText: `Yes, Delete all`,
-        denyButtonText: `No`
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const request = {
-            data: {},
-            url: 'contact/deleteall'
-          }
-          this.$store
-            .dispatch(post, request)
-            .then((data) => {
-              notifySuccess('All contacts deleted successfully')
-              this.$emit('onaddContact', true)
-              // this.getContacts()
-              // this.$refs['modal-contact'].hide()
-            })
-            .catch((e) => {
-              console.error(e)
-            })
-          // contact/delete
-          // var messageData = {user: this.userdata._id, number: this.activeChat}
-        } else if (result.isDenied) {
-          notifyInfo('contacts not deleted')
-        }
+        confirmButtonText: 'Yes, Delete all',
+        denyButtonText: 'No'
       })
+      if (result.isDenied) { notifyInfo('contacts not deleted'); return }
+      if (!result.isConfirmed) return
+
+      try {
+        await this.$store.dispatch(post, { data: {}, url: 'contact/deleteall' })
+        notifySuccess('All contacts deleted successfully')
+        this.$emit('onaddContact', true)
+      } catch (e) {
+        console.error(e)
+      }
     },
     searchContact () {
       const search = new RegExp(this.query, 'i')
@@ -429,13 +389,13 @@ export default {
     }
   },
   watch: {
-    contacts(newVal, oldVal) {
+    contacts() {
       this.searchContact()
-      // console.log('Prop changed: ', newVal, ' | was: ', oldVal)
     }
   }
 }
 </script>
+
 <style scoped>
  .pointer-icon{
      cursor: pointer;

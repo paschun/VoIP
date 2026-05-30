@@ -118,9 +118,7 @@ methods: {
           }
         }
       })
-      .catch((e) => {
-
-      })
+      .catch(() => {})
   },
   verifyStatusCode () {
     if (this.verification_code === '') {
@@ -140,9 +138,7 @@ methods: {
           this.getMfaStatus()
         }
       })
-      .catch((e) => {
-
-      })
+      .catch(() => {})
   },
   copySecret () {
     try {
@@ -161,12 +157,11 @@ methods: {
     this.$store
       .dispatch(post, request)
       .then((response) => {
-        const trueVar = true
-        const falseVar = false
-        this.realMfs = (response && response.data.mfa === 'true') ? trueVar : falseVar
-        this.mfaStatus = (response && response.data.mfa === 'true') ? trueVar : falseVar
+        const enabled = response?.data?.mfa === 'true'
+        this.realMfs = enabled
+        this.mfaStatus = enabled
       })
-      .catch((e) => {
+      .catch(() => {
         this.realMfs = false
         this.mfaStatus = false
       })

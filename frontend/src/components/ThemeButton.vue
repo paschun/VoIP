@@ -21,14 +21,7 @@
 export default {
   props: ['idHide'],
   mounted () {
-    var getTheme = localStorage.getItem('user-theme')
-    let initUserTheme
-    if (getTheme) {
-      initUserTheme = getTheme
-    } else {
-      initUserTheme = this.getMediaPreference()
-    }
-    this.setTheme(initUserTheme)
+    this.setTheme(localStorage.getItem('user-theme') ?? this.getMediaPreference())
   },
 
   data () {
@@ -40,11 +33,7 @@ export default {
   methods: {
     toggleTheme () {
       const activeTheme = localStorage.getItem('user-theme')
-      if (activeTheme === 'light-theme') {
-        this.setTheme('dark-theme')
-      } else {
-        this.setTheme('light-theme')
-      }
+      this.setTheme(activeTheme === 'light-theme' ? 'dark-theme' : 'light-theme')
     },
 
     setTheme (theme) {
@@ -54,20 +43,12 @@ export default {
     },
 
     getMediaPreference () {
-      const hasDarkPreference = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      ).matches
-      if (hasDarkPreference) {
-        return 'dark-theme'
-      } else {
-        return 'light-theme'
-      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
     }
   }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .switch-checkbox {
   display: none;

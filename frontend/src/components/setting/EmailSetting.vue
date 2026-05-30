@@ -117,7 +117,7 @@ export default {
     this.getEmailSetting()
   },
   methods: {
-    handleSubmit (e) {
+    handleSubmit () {
       this.submitted3 = true
       this.$v.$touch()
       if (this.$v.$invalid) {
@@ -136,9 +136,7 @@ export default {
           }
           // this.profiles = response.data
         })
-        .catch((e) => {
-          console.log(e)
-        })
+        .catch((e) => console.error(e))
     },
     getEmailSetting () {
       const request = {

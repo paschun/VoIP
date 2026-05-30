@@ -90,9 +90,7 @@ methods: {
           this.versionOption = response.data
         }
       })
-      .catch((e) => {
-
-      })
+      .catch(() => {})
   },
   passwordEnable (menu) {
     this.checkpasswordMenu = menu
@@ -115,9 +113,7 @@ methods: {
           this.enableMenu(this.checkpasswordMenu)
         }
       })
-      .catch((e) => {
-
-      })
+      .catch(() => {})
   }
 }
 }

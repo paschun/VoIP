@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <span v-if="old_version" class="update_ribbon"><a href="https://github.com/0perationPrivacy/VoIP/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">update</a></span>
-    <!--<refresh></refresh>-->
     <router-view/>
   </div>
 </template>
@@ -13,13 +12,11 @@ export default {
   name: 'App',
   data () {
     return {
-      old_version: false,
-      dir: ''
+      old_version: false
     }
   },
   mounted () {
     this.getVersion()
-    // this.checkDirectoryName()
   },
   methods: {
     getVersion () {

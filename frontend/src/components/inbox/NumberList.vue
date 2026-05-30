@@ -74,14 +74,8 @@
               </div>
             </template>
             <b-dropdown-divider></b-dropdown-divider>
-            <!-- <b-dropdown-item-button v-b-modal.modal-1  v-if="activeProfile">
-              <b-icon icon="gear-fill" aria-hidden="true"></b-icon>
-              Settings
-            </b-dropdown-item-button>
-            <b-dropdown-divider  v-if="activeProfile"></b-dropdown-divider> -->
             <profile-view
               ref="childComponent"
-              @clicked2="onClickChild2"
               @clicked="onClickChild"
             />
             <b-dropdown-item-button @click="logout()">
@@ -516,11 +510,8 @@ export default {
       messageListLoader: true,
       numbers: [],
       search_numbers: [],
-      baseurl: "",
       userdata: null,
-      access_token: null,
       activeProfile: null,
-      headers: null,
       tNumbers: [],
       twilioNumbers: [],
       activeItem: null,
@@ -543,40 +534,16 @@ export default {
     }
   },
   mounted() {
-    const baseUrl = window.location.origin;
-    if (baseUrl === "http://localhost:8080") {
-      this.baseurl = "http://localhost:3000";
-    }
     this.userdata = JSON.parse(this.$cookie.get("userdata"));
-    this.access_token = this.$cookie.get("access_token");
-    this.headers = {
-      headers: {
-        token: this.access_token
-      }
-    };
     this.onaddContact();
     PullToRefresh.init({
       mainElement: ".contact-list",
       triggerElement: ".contact-list",
-      onRefresh: () => {
-        this.pullRefreshFunction(this);
-        // $this.getNumberList()
-        // $this.getOneProfile()
-      },
+      onRefresh: () => this.pullRefreshFunction(this),
       distThreshold: 120,
       distMax: 140
     });
-    EventBus.$on("getOneProfile", data => {
-      try {
-        this.getOneProfile();
-      } catch (e) {
-        // console.log(e)
-      }
-    });
-    EventBus.$on("changeProfile", data => {
-      // console.log(data)
-      // this.getOneProfile()
-    });
+    EventBus.$on("getOneProfile", () => this.getOneProfile());
     EventBus.$on("contactAdded", number => {
       this.getNumberList();
       setTimeout(() => {
@@ -614,7 +581,6 @@ export default {
       const request = {
         url: "contact/get-all"
       };
-      this.$emit("my_signal");
       this.$store
         .dispatch(get, request)
         .then(data => {
@@ -637,7 +603,7 @@ export default {
       return newStr2;
     },
     getOneProfile() {
-      if (this.activeProfile._id !== undefined) {
+      if (this.activeProfile?._id !== undefined) {
         const request = {
           data: { setting: this.activeProfile._id },
           url: "profile/getdata-one"
@@ -657,10 +623,6 @@ export default {
     refreshProfile() {
       this.$refs.childComponent.getallProfile();
     },
-    onClickChild2(value) {
-      this.activeProfile = value;
-      // this.getSetting()
-    },
     onClickChild(value) {
       this.activeProfile = value;
       this.messageListLoader = true;
@@ -678,8 +640,6 @@ export default {
       this.activeItem = id;
       localStorage.setItem("activenumber", JSON.stringify(id));
       this.$emit("clicked", id);
-      // this.$emit('messageRefresh', true)
-      // this.$emit('message', id)
     },
     logout() {
       this.$cookie.delete("access_token");
@@ -726,9 +686,6 @@ export default {
             this.user = response.data;
             this.hideShowDeleteIcon(response.data);
             this.user.twilio_number = response.data.number;
-            if (response.data.number) {
-              // this.socket.emit('join_channel', this.user.number)
-            }
             this.getNumbers(response.data.type);
             this.selected = response.data.type;
           }
@@ -854,18 +811,15 @@ export default {
           console.error(e);
         });
     },
-    handleSubmit(e) {
+    handleSubmit() {
       this.submitted = true;
       this.$v.$touch();
       if (
-        // eslint-disable-next-line eqeqeq
-        this.user.profile != "" ||
+        this.user.profile !== "" ||
         (this.selected === "telnyx" &&
           !this.$v.user.api_key.$error &&
           !this.$v.user.number.$error &&
           !this.$v.user.profile.$error) ||
-        // eslint-disable-next-line eqeqeq
-        this.user.profile != "" ||
         (this.selected === "twilio" &&
           !this.$v.user.twilio_sid.$error &&
           !this.$v.user.twilio_token.$error &&
@@ -957,56 +911,11 @@ export default {
                       updateCallSetting = true;
                       sendData.override = "false";
                     }
-                    if (updateCallSetting) {
-                      this.isLoading = true;
-                      const request = {
-                        data: sendData,
-                        url: "setting/create"
-                      };
-                      this.$store
-                        .dispatch(post, request)
-                        .then(response => {
-                          if (response) {
-                            this.$refs["my-modal"].hide();
-                            this.activeProfile = response.data;
-                            this.hideShowDeleteIcon(response.data);
-                            this.$refs.childComponent.getallProfile();
-                            EventBus.$emit("clicked", true);
-                            EventBus.$emit("changeProfile2", true);
-                            this.$v.$reset();
-                          }
-                          this.isLoading = false;
-                        })
-                        .catch(e => {
-                          this.isLoading = false;
-                          console.error(e);
-                        });
-                    }
+                    if (updateCallSetting) this.submitCreateSetting(sendData);
                   });
               } else {
                 sendData.override = "true";
-                const request = {
-                  data: sendData,
-                  url: "setting/create"
-                };
-                this.$store
-                  .dispatch(post, request)
-                  .then(response => {
-                    if (response) {
-                      this.$refs["my-modal"].hide();
-                      this.activeProfile = response.data;
-                      this.hideShowDeleteIcon(response.data);
-                      this.$refs.childComponent.getallProfile();
-                      EventBus.$emit("clicked", true);
-                      EventBus.$emit("changeProfile2", true);
-                      this.$v.$reset();
-                    }
-                    this.isLoading = false;
-                  })
-                  .catch(e => {
-                    this.isLoading = false;
-                    console.error(e);
-                  });
+                this.submitCreateSetting(sendData);
               }
               // console.log(response)
             }
@@ -1017,6 +926,26 @@ export default {
             console.error(e);
           });
       }
+    },
+    submitCreateSetting(sendData) {
+      this.isLoading = true;
+      this.$store
+        .dispatch(post, { data: sendData, url: "setting/create" })
+        .then(response => {
+          if (response) {
+            this.$refs["my-modal"].hide();
+            this.activeProfile = response.data;
+            this.hideShowDeleteIcon(response.data);
+            this.$refs.childComponent.getallProfile();
+            EventBus.$emit("changeProfile2", true);
+            this.$v.$reset();
+          }
+          this.isLoading = false;
+        })
+        .catch(e => {
+          this.isLoading = false;
+          console.error(e);
+        });
     }
   }
 };

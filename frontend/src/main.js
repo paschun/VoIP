@@ -11,7 +11,6 @@ import VueCookie from 'vue-cookie'
 import VueMoment from 'vue-moment'
 Vue.use(VueChatScroll)
 Vue.component('v-select', vSelect)
-// Vue.use(Vuex)
 Vue.use(formLoading)
 Vue.use(VueCookie)
 Vue.config.productionTip = false
