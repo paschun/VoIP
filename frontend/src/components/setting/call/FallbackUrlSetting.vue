@@ -59,6 +59,8 @@ export default {
     fallbackPath: { type: String, required: true },
     /** When true, GET response URLs are stripped to `${protocol}//${hostname}`. */
     normalizeHost: { type: Boolean, default: false },
+    /** When true, the user-entered fallback URL is stripped to `${protocol}//${hostname}` before submit. */
+    normalizeSubmit: { type: Boolean, default: false },
     /** Toast text shown after a successful save. */
     successMessage: { type: String, required: true },
     mainLabel: { type: String, default: 'Webhook URL' },
@@ -103,7 +105,8 @@ export default {
       this.$v.$touch()
       if (this.$v.$invalid) return
 
-      const data = { ...this.form, setting_id: this.setting }
+      const submitUrl = this.normalizeSubmit ? toOrigin(this.form.url) : this.form.url
+      const data = { ...this.form, url: submitUrl, setting_id: this.setting }
       const request = { data, url: this.saveUrl }
       this.$store
         .dispatch(post, request)

@@ -7,6 +7,7 @@
     main-label="Primary Webhook URL"
     success-message=" Profile updated successfully!"
     normalize-host
+    normalize-submit
   />
 </template>
 
