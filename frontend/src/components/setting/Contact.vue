@@ -153,6 +153,10 @@ function ConvertToCSV (objArray, headerList) {
   return str
 }
 
+function choseFile2 () {
+  document.getElementById('model_file_input2').click()
+}
+
 function downloadFile (data, filename = 'data') {
   const csvData = ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
   console.log(csvData)
@@ -267,9 +271,7 @@ export default {
         }
       })
     },
-    choseFile2 () {
-      document.getElementById('model_file_input2').click()
-    },
+    choseFile2,
     download () {
       downloadFile(this.jsonData, 'sample_file')
     },

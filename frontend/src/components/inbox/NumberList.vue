@@ -483,6 +483,10 @@ import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
 
+function getValidString(str) {
+  return str.length > 10 ? str.substring(0, 10) + ".." : str;
+}
+
 export default {
   components: {
     ProfileView,
@@ -587,15 +591,7 @@ export default {
           console.error(e);
         });
     },
-    getValidString(str) {
-      let newStr2
-      if (str.length > 10) {
-        newStr2 = str.substring(0, str.length - (str.length - 10)) + "..";
-      } else {
-        newStr2 = str;
-      }
-      return newStr2;
-    },
+    getValidString,
     getOneProfile() {
       if (this.activeProfile?._id !== undefined) {
         const request = {

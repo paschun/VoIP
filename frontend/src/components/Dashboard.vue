@@ -382,6 +382,25 @@ function getVh() {
   ));
 }
 
+function choseFile2() {
+  document.getElementById("model_file_input").click();
+}
+
+function file_upload() {
+  document.getElementById("fileElem").click();
+}
+
+function getMMSS(time) {
+  const mins = ~~((time % 3600) / 60);
+  const secs = ~~time % 60;
+
+  // Output like "1:01" or "03:59"
+  let ret = "";
+  ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+  ret += "" + secs;
+  return ret;
+}
+
 export default {
   name: "dashboard",
   components: {
@@ -547,12 +566,8 @@ export default {
       this.zoomImage = image;
       document.getElementById("hidden").style.display = "block";
     },
-    choseFile2() {
-      document.getElementById("model_file_input").click();
-    },
-    file_upload() {
-      document.getElementById("fileElem").click();
-    },
+    choseFile2,
+    file_upload,
     initializeProgress(numfiles) {
       this.progressBar.value = 0;
       this.uploadProgress = Array.from({ length: numfiles }, () => 0);
@@ -809,16 +824,7 @@ export default {
       document.getElementById("wrapbody").style.height = `${this.vh}px`;
       document.getElementById("chat_body").style.height = `${chatHeight}px`;
     },
-    getMMSS(time) {
-      const mins = ~~((time % 3600) / 60);
-      const secs = ~~time % 60;
-
-      // Output like "1:01" or "03:59"
-      let ret = "";
-      ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-      ret += "" + secs;
-      return ret;
-    },
+    getMMSS,
   },
 };
 </script>
