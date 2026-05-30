@@ -10,7 +10,7 @@
  * Used by both the login flow (assertion) and the hardware-key registration
  * flow.
  */
-export const publicKeyCredentialToJSON = (pubKeyCred) => {
+export const publicKeyCredentialToJSON = (pubKeyCred: any): any => {
   if (Array.isArray(pubKeyCred)) {
     return pubKeyCred.map(publicKeyCredentialToJSON)
   }
@@ -18,7 +18,7 @@ export const publicKeyCredentialToJSON = (pubKeyCred) => {
     return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url' })
   }
   if (pubKeyCred && typeof pubKeyCred === 'object') {
-    const obj = {}
+    const obj: Record<string, any> = {}
     for (const key in pubKeyCred) {
       obj[key] = publicKeyCredentialToJSON(pubKeyCred[key])
     }
@@ -28,6 +28,6 @@ export const publicKeyCredentialToJSON = (pubKeyCred) => {
 }
 
 /** Join URL fragments with exactly one `/` between them. */
-export const combineURLs = (...urls) => urls.reduce(
+export const combineURLs = (...urls: string[]): string => urls.reduce(
   (acc, part) => acc.replace(/\/+$/, '') + '/' + part.replace(/^\/+/, '')
 )

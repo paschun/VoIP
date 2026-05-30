@@ -20,7 +20,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
     // Vue 2 SFC imports written without extensions (e.g. `import App from './App'`) still work because `.vue` is listed here.
-    extensions: ['.mjs', '.js', '.json', '.vue'],
+    // `.ts` lets extensionless imports of converted modules (e.g. `@/helper`, `./router`) resolve.
+    extensions: ['.mjs', '.js', '.ts', '.json', '.vue'],
   },
   define: {
     // vuelidate 0.x branches on `process.env.BUILD` to pick its browser entry point.

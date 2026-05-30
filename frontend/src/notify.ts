@@ -11,9 +11,10 @@
  * cover the simple notification case.
  */
 import Vue from 'vue'
+import type { SweetAlertIcon } from 'sweetalert2'
 
-const fire = (icon, text, title) => Vue.swal.fire({ icon, title, text })
+const fire = (icon: SweetAlertIcon, text?: string, title?: string) => Vue.swal.fire({ icon, title, text })
 
-export const notifySuccess = (text, title = 'Success') => fire('success', text, title)
-export const notifyError   = (text, title = 'Error')   => fire('error',   text, title)
-export const notifyInfo    = (text, title = '')        => fire('info',    text, title)
+export const notifySuccess = (text?: string, title = 'Success') => fire('success', text, title)
+export const notifyError   = (text?: string, title = 'Error')   => fire('error',   text, title)
+export const notifyInfo    = (text?: string, title = '')        => fire('info',    text, title)

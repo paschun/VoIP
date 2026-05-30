@@ -20,8 +20,18 @@ export default defineConfig([
     },
   }, {
     rules: {
-      // Migration shims intentionally use `any` (vuelidate, SDKs). Re-tighten later.
+      // The migration intentionally uses `any` at untyped boundaries (vuelidate,
+      // the telephony SDKs, the untyped JSON REST layer, recursive WebAuthn
+      // JSON). `no-explicit-any` plus the type-aware `no-unsafe-*` family (which
+      // v8 bundles into recommended/recommendedTypeChecked) are off for now and
+      // get re-enabled in the final strict pass. Every other type-aware rule
+      // (no-floating-promises, no-misused-promises, await-thenable, …) stays on.
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   vue.configs['flat/vue2-essential'],

@@ -3,7 +3,7 @@
     "target": "ES2025",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2025", "DOM"],
+    "lib": ["ESNext", "DOM"],
     "types": ["node", "vite/client"],
 
     // Incremental migration: .js and .ts coexist. We load .js (so imports
