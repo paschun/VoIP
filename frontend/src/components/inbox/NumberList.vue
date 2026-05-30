@@ -693,95 +693,89 @@ export default {
           console.error(e);
         });
     },
-    deleteProfile() {
-      this.$swal
-        .fire({
-          icon: "info",
-          title: "Do you want to delete this Profile?",
-          showDenyButton: true,
-          showCancelButton: false,
-          confirmButtonText: `Yes, Delete`,
-          denyButtonText: `No`
-        })
-        .then(result => {
-          if (result.isConfirmed) {
-            const request = {
-              data: {
-                user: this.userdata._id,
-                profile_id: this.activeProfile._id
-              },
-              url: "profile/delete-profile"
-            };
-            this.$store
-              .dispatch(post, request)
-              .then(response => {
-                if (response.data) {
-                  notifySuccess("Profile deleted successfully!");
-                  this.user.api_key = "";
-                  this.user.number = "";
-                  this.user.twilio_sid = "";
-                  this.user.twilio_token = "";
-                  this.user.twilio_number = "";
-                  this.tNumbers = [];
-                  this.twilioNumbers = [];
-                  this.activeProfile = response.data;
-                  localStorage.removeItem("activeProfile");
-                  this.$refs["my-modal"].hide();
-                  this.$refs.childComponent.getallProfile();
-                  setTimeout(() => {
-                    this.$refs.childComponent.activeFirstProfile();
-                  }, 2000);
-                }
-              })
-              .catch(e => {
-                console.error(e);
-              });
-          } else if (result.isDenied) {
-            notifyInfo("Profile not deleted");
-          }
-        });
+    async deleteProfile() {
+      const result = await this.$swal.fire({
+        icon: "info",
+        title: "Do you want to delete this Profile?",
+        showDenyButton: true,
+        showCancelButton: false,
+        confirmButtonText: `Yes, Delete`,
+        denyButtonText: `No`
+      });
+      if (result.isDenied) {
+        notifyInfo("Profile not deleted");
+        return;
+      }
+      if (!result.isConfirmed) return;
+
+      const request = {
+        data: {
+          user: this.userdata._id,
+          profile_id: this.activeProfile._id
+        },
+        url: "profile/delete-profile"
+      };
+      try {
+        const response = await this.$store.dispatch(post, request);
+        if (response.data) {
+          notifySuccess("Profile deleted successfully!");
+          this.user.api_key = "";
+          this.user.number = "";
+          this.user.twilio_sid = "";
+          this.user.twilio_token = "";
+          this.user.twilio_number = "";
+          this.tNumbers = [];
+          this.twilioNumbers = [];
+          this.activeProfile = response.data;
+          localStorage.removeItem("activeProfile");
+          this.$refs["my-modal"].hide();
+          this.$refs.childComponent.getallProfile();
+          setTimeout(() => {
+            this.$refs.childComponent.activeFirstProfile();
+          }, 2000);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     },
-    deleteApiKey() {
-      this.$swal
-        .fire({
-          icon: "info",
-          title: "Do you want to delete this setting?",
-          showDenyButton: true,
-          showCancelButton: false,
-          confirmButtonText: `Yes, Delete`,
-          denyButtonText: `No`
-        })
-        .then(result => {
-          if (result.isConfirmed) {
-            const request = {
-              data: {
-                user: this.userdata._id,
-                profile_id: this.activeProfile._id
-              },
-              url: "setting/delete-key"
-            };
-            this.$store
-              .dispatch(post, request)
-              .then(response => {
-                notifySuccess("Key deleted successfully!");
-                this.user.api_key = "";
-                this.user.number = "";
-                this.user.twilio_sid = "";
-                this.user.twilio_token = "";
-                this.user.twilio_number = "";
-                this.tNumbers = [];
-                this.twilioNumbers = [];
-                this.activeProfile = response.data;
-                this.hideShowDeleteIcon(response.data);
-                this.$refs.childComponent.getallProfile();
-              })
-              .catch(e => {
-                console.error(e);
-              });
-          } else if (result.isDenied) {
-            notifyInfo("setting not deleted");
-          }
-        });
+    async deleteApiKey() {
+      const result = await this.$swal.fire({
+        icon: "info",
+        title: "Do you want to delete this setting?",
+        showDenyButton: true,
+        showCancelButton: false,
+        confirmButtonText: `Yes, Delete`,
+        denyButtonText: `No`
+      });
+      if (result.isDenied) {
+        notifyInfo("setting not deleted");
+        return;
+      }
+      if (!result.isConfirmed) return;
+
+      const request = {
+        data: {
+          user: this.userdata._id,
+          profile_id: this.activeProfile._id
+        },
+        url: "setting/delete-key"
+      };
+      try {
+        const response = await this.$store.dispatch(post, request);
+        notifySuccess("Key deleted successfully!");
+        this.user.api_key = "";
+        this.user.number = "";
+        this.user.twilio_sid = "";
+        this.user.twilio_token = "";
+        this.user.twilio_number = "";
+        this.tNumbers = [];
+        this.twilioNumbers = [];
+        this.activeProfile = response.data;
+        this.hideShowDeleteIcon(response.data);
+        this.$refs.childComponent.getallProfile();
+      } catch (e) {
+        console.error(e);
+      }
     },
     getNumbers(type) {
       const settings = this.user;
@@ -810,7 +804,7 @@ export default {
           console.error(e);
         });
     },
-    handleSubmit() {
+    async handleSubmit() {
       this.submitted = true;
       this.$v.$touch();
       if (
@@ -856,95 +850,90 @@ export default {
           data: sendData,
           url: "setting/check-setting"
         };
-        this.$store
-          .dispatch(post, request)
-          .then(response => {
-            let isCall = false;
-            if (response) {
+        try {
+          const response = await this.$store.dispatch(post, request);
+          let isCall = false;
+          if (response) {
+            if (
+              this.selected === "telnyx" &&
+              response.data.data.connection_id !== undefined &&
+              response.data.data.connection_id &&
+              response.data.data.connection_id !== ""
+            ) {
+              isCall = true;
+            }
+
+            if (this.selected === "twilio") {
+              let appSidavilable = false;
               if (
-                this.selected === "telnyx" &&
-                response.data.data.connection_id !== undefined &&
-                response.data.data.connection_id &&
-                response.data.data.connection_id !== ""
+                response.data.voiceApplicationSid !== undefined &&
+                response.data.voiceApplicationSid &&
+                response.data.voiceApplicationSid !== ""
               ) {
                 isCall = true;
+                appSidavilable = true;
               }
-
-              if (this.selected === "twilio") {
-                let appSidavilable = false;
+              if (!appSidavilable) {
                 if (
-                  response.data.voiceApplicationSid !== undefined &&
-                  response.data.voiceApplicationSid &&
-                  response.data.voiceApplicationSid !== ""
+                  response.data.voiceUrl !== undefined &&
+                  response.data.voiceUrl &&
+                  response.data.voiceUrl !== ""
                 ) {
                   isCall = true;
-                  appSidavilable = true;
-                }
-                if (!appSidavilable) {
-                  if (
-                    response.data.voiceUrl !== undefined &&
-                    response.data.voiceUrl &&
-                    response.data.voiceUrl !== ""
-                  ) {
-                    isCall = true;
-                  }
                 }
               }
-              if (isCall) {
-                this.$swal
-                  .fire({
-                    icon: "warning",
-                    title: "Call Setting",
-                    text:
-                      "The call setting is already available. Do you want to override the call setting?",
-                    showDenyButton: true,
-                    confirmButtonText: "Yes, override it",
-                    denyButtonText: `No, Keep old`
-                  })
-                  .then(result => {
-                    let updateCallSetting = false;
-                    if (result.isConfirmed) {
-                      updateCallSetting = true;
-                      sendData.override = "true";
-                    } else if (result.isDenied) {
-                      updateCallSetting = true;
-                      sendData.override = "false";
-                    }
-                    if (updateCallSetting) this.submitCreateSetting(sendData);
-                  });
-              } else {
-                sendData.override = "true";
-                this.submitCreateSetting(sendData);
-              }
-              // console.log(response)
             }
-            this.isLoading = false;
-          })
-          .catch(e => {
-            this.isLoading = false;
-            console.error(e);
-          });
+            if (isCall) {
+              // runs after the `finally` block which sets `isLoading = false`
+              this.$swal
+                .fire({
+                  icon: "warning",
+                  title: "Call Setting",
+                  text: "The call setting is already available. Do you want to override the call setting?",
+                  showDenyButton: true,
+                  confirmButtonText: "Yes, override it",
+                  denyButtonText: `No, Keep old`
+                })
+                .then(result => {
+                  let updateCallSetting = false;
+                  if (result.isConfirmed) {
+                    updateCallSetting = true;
+                    sendData.override = "true";
+                  } else if (result.isDenied) {
+                    updateCallSetting = true;
+                    sendData.override = "false";
+                  }
+                  if (updateCallSetting) this.submitCreateSetting(sendData);
+                });
+            } else {
+              sendData.override = "true";
+              await this.submitCreateSetting(sendData);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          this.isLoading = false;
+        }
       }
     },
-    submitCreateSetting(sendData) {
+    async submitCreateSetting(sendData) {
       this.isLoading = true;
-      this.$store
-        .dispatch(post, { data: sendData, url: "setting/create" })
-        .then(response => {
-          if (response) {
-            this.$refs["my-modal"].hide();
-            this.activeProfile = response.data;
-            this.hideShowDeleteIcon(response.data);
-            this.$refs.childComponent.getallProfile();
-            EventBus.$emit("changeProfile2", true);
-            this.$v.$reset();
-          }
-          this.isLoading = false;
-        })
-        .catch(e => {
-          this.isLoading = false;
-          console.error(e);
-        });
+      try {
+        const response = await this.$store.dispatch(post, { data: sendData, url: "setting/create" });
+        if (response) {
+          this.$refs["my-modal"].hide();
+          this.activeProfile = response.data;
+          this.hideShowDeleteIcon(response.data);
+          this.$refs.childComponent.getallProfile();
+          EventBus.$emit("changeProfile2", true);
+          this.$v.$reset();
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.isLoading = false;
+      }
     }
   }
 };

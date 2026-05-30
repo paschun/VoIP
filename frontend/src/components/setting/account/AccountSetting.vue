@@ -46,8 +46,8 @@ export default {
     enableMenu (menu) {
       this.activeMenu = menu
     },
-    deleteAccount () {
-      this.$swal.fire({
+    async deleteAccount () {
+      const result = await this.$swal.fire({
         icon: 'warning',
         text: 'Please enter your account password to delete account. This process is irreversible',
         title: 'Delete Account',
@@ -68,22 +68,19 @@ export default {
             .catch(() => false)
         },
         allowOutsideClick: () => !this.$swal.isLoading()
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.$swal.fire({
-            icon: 'success',
-            title: 'Account Delete',
-            text: `Your account deleted successfully`,
-            showDenyButton: false,
-            showCancelButton: false,
-            confirmButtonText: 'Ok'
-          }).then(() => {
-            this.$cookie.delete('access_token')
-            this.$cookie.delete('userdata')
-            window.location.href = `/${this.$route.params.appdirectory}/`
-          })
-        }
       })
+      if (!result.isConfirmed) return
+      await this.$swal.fire({
+        icon: 'success',
+        title: 'Account Delete',
+        text: `Your account deleted successfully`,
+        showDenyButton: false,
+        showCancelButton: false,
+        confirmButtonText: 'Ok'
+      })
+      this.$cookie.delete('access_token')
+      this.$cookie.delete('userdata')
+      window.location.href = `/${this.$route.params.appdirectory}/`
     }
   }
 }

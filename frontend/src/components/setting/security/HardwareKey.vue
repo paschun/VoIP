@@ -115,8 +115,8 @@ export default {
     this.getHardwarekey()
   },
   methods: {
-    deleteKey (id) {
-      this.$swal.fire({
+    async deleteKey (id) {
+      const result = await this.$swal.fire({
         title: 'Are you sure?',
         text: "Hardware key will be deleted. You will have to set it up again!",
         icon: 'warning',
@@ -124,23 +124,19 @@ export default {
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Yes, remove it!'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const request2 = {
-            data: { id },
-            url: 'hardwarekey/delete'
-          }
-          this.$store
-            .dispatch(post, request2)
-            .then((respose) => {
-              if (respose) {
-                notifySuccess('Your key has been deleted.', 'Deleted!')
-                this.getHardwarekey()
-              }
-            })
-            .catch(() => {})
-        }
       })
+      if (!result.isConfirmed) return
+      const request2 = {
+        data: { id },
+        url: 'hardwarekey/delete'
+      }
+      try {
+        const respose = await this.$store.dispatch(post, request2)
+        if (respose) {
+          notifySuccess('Your key has been deleted.', 'Deleted!')
+          this.getHardwarekey()
+        }
+      } catch { /* ignore */ }
     },
     getHardwarekey () {
       const request2 = {
@@ -156,77 +152,74 @@ export default {
         })
         .catch(() => {})
     },
-    register () {
+    async register () {
       if (this.title.trim() === '') {
         notifyError('Please enter title')
-      } else {
-        const request = {
-          data: { title: this.title.trim() },
-          url: 'hardwarekey/register-key'
-        }
-        this.$store
-          .dispatch(post, request)
-          .then((serverResponse) => {
-            if (serverResponse) {
-              if (serverResponse.status !== 'startFIDOEnrolment') {
-                notifyError('Error registering user!')
-              } else {
-                const request2 = {
-                  data: {},
-                  url: 'hardwarekey/register'
-                }
-                this.$store
-                  .dispatch(post, request2)
-                  .then(async (respnse) => {
-                    const hardwarekey = respnse.hardwarekey
-                    let makeCredChallenge = respnse.publicKey
-                    let newCredentialInfo
-                    try {
-                      console.log(makeCredChallenge)
-                      makeCredChallenge = preformatMakeCredReq(makeCredChallenge)
-                      const excludeCredentials = []
-                      for (const key of hardwarekey) {
-                        console.log(key)
-                        excludeCredentials.push({
-                          id: Uint8Array.fromBase64(key.credentials[0], { alphabet: 'base64url' }),
-                          type: 'public-key'
-                        })
-                      }
-                      makeCredChallenge.excludeCredentials = excludeCredentials
-                      newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
-                      console.log(newCredentialInfo)
-                    } catch (error) {
-                      notifyError(error.message, 'Key!')
-                    }
-
-                    // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
-                    const attestationObject = cborDecode(new Uint8Array(newCredentialInfo.response.attestationObject))
-                    const authData = parseAuthData(attestationObject.authData)
-                    const aaguid = bufToHex(authData.aaguid)
-                    newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-                    const request3 = {
-                      data: { id: newCredentialInfo.id, aaguid: aaguid },
-                      url: 'hardwarekey/verify'
-                    }
-                    this.$store
-                      .dispatch(post, request3)
-                      .then((verifyResponse) => {
-                        if (verifyResponse.status !== 'ok') {
-                          throw new Error('Error registering user! Server returned: ' + verifyResponse.errorMessage)
-                        } else {
-                          notifySuccess('Your key added successfully.', 'Key!')
-                          this.getHardwarekey()
-                          this.title = ''
-                        }
-                      })
-                      .catch((e) => console.error(e))
-                  })
-                  .catch(() => {})
-              }
-            }
-          })
-          .catch(() => {})
+        return
       }
+      const request = {
+        data: { title: this.title.trim() },
+        url: 'hardwarekey/register-key'
+      }
+      let serverResponse
+      try {
+        serverResponse = await this.$store.dispatch(post, request)
+      } catch { /* ignore */ }
+      if (!serverResponse) return
+      if (serverResponse.status !== 'startFIDOEnrolment') {
+        notifyError('Error registering user!')
+        return
+      }
+
+      const request2 = {
+        data: {},
+        url: 'hardwarekey/register'
+      }
+      try {
+        const respnse = await this.$store.dispatch(post, request2)
+        const hardwarekey = respnse.hardwarekey
+        let makeCredChallenge = respnse.publicKey
+        let newCredentialInfo
+        try {
+          console.log(makeCredChallenge)
+          makeCredChallenge = preformatMakeCredReq(makeCredChallenge)
+          const excludeCredentials = []
+          for (const key of hardwarekey) {
+            console.log(key)
+            excludeCredentials.push({
+              id: Uint8Array.fromBase64(key.credentials[0], { alphabet: 'base64url' }),
+              type: 'public-key'
+            })
+          }
+          makeCredChallenge.excludeCredentials = excludeCredentials
+          newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
+          console.log(newCredentialInfo)
+        } catch (error) {
+          notifyError(error.message, 'Key!')
+        }
+
+        // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
+        const attestationObject = cborDecode(new Uint8Array(newCredentialInfo.response.attestationObject))
+        const authData = parseAuthData(attestationObject.authData)
+        const aaguid = bufToHex(authData.aaguid)
+        newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
+        const request3 = {
+          data: { id: newCredentialInfo.id, aaguid },
+          url: 'hardwarekey/verify'
+        }
+        try {
+          const verifyResponse = await this.$store.dispatch(post, request3)
+          if (verifyResponse.status !== 'ok') {
+            throw new Error('Error registering user! Server returned: ' + verifyResponse.errorMessage)
+          } else {
+            notifySuccess('Your key added successfully.', 'Key!')
+            this.getHardwarekey()
+            this.title = ''
+          }
+        } catch (e) {
+          console.error(e)
+        }
+      } catch { /* ignore */ }
     },
   }
 }

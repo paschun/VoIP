@@ -257,43 +257,39 @@ methods: {
       })
       .catch(() => {})
   },
-  verifyKey (key) {
+  async verifyKey (key) {
     const request = {
       data: { user: this.activeUser.user._id, title: key.title },
       url: 'hardwarekey/login-key'
     }
-    this.$store
-      .dispatch(post, request)
-      .then(async (getAssertionChallenge) => {
-        if (getAssertionChallenge) {
-          getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
-          try {
-            let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
-            newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-            const loginReq = {
-              data: newCredentialInfo,
-              url: 'hardwarekey/login'
-            }
-            this.$store
-              .dispatch(post, loginReq)
-              .then(async (serverResponse) => {
-                if (serverResponse) {
-                  if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
-                  this.$cookie.set('access_token', this.activeUser.token, 30)
-                  this.$cookie.set('userdata', JSON.stringify(this.activeUser.user), 30)
-                  this.activeUser.token = ''
-                  this.activeUser.user = null
-                  this.$router.push(`/${this.$route.params.appdirectory}/dashboard`)
-                }
-              })
-              .catch(() => {})
-          } catch (error) {
-            console.error(error)
-            notifyError('Login failed with security key.', 'Key!')
-          }
+    let getAssertionChallenge
+    try {
+      getAssertionChallenge = await this.$store.dispatch(post, request)
+    } catch { /* ignore */ }
+    if (!getAssertionChallenge) return
+    getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
+    try {
+      let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
+      newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
+      const loginReq = {
+        data: newCredentialInfo,
+        url: 'hardwarekey/login'
+      }
+      try {
+        const serverResponse = await this.$store.dispatch(post, loginReq)
+        if (serverResponse) {
+          if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
+          this.$cookie.set('access_token', this.activeUser.token, 30)
+          this.$cookie.set('userdata', JSON.stringify(this.activeUser.user), 30)
+          this.activeUser.token = ''
+          this.activeUser.user = null
+          this.$router.push(`/${this.$route.params.appdirectory}/dashboard`)
         }
-      })
-      .catch(() => {})
+      } catch { /* ignore */ }
+    } catch (error) {
+      console.error(error)
+      notifyError('Login failed with security key.', 'Key!')
+    }
   },
   handleSubmit2 (e) {
     if (e?.preventDefault) {
