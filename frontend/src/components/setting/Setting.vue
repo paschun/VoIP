@@ -77,14 +77,9 @@ methods: {
   enableMenu (menu) {
     this.activeMenu = menu
   },
-  getVersion () {
-    this.$post('auth/get-version', {})
-      .then((response) => {
-        if (response) {
-          this.versionOption = response.data
-        }
-      })
-      .catch(() => {})
+  async getVersion() {
+    const res = await this.$get("auth/get-version")
+    if (res?.status) this.versionOption = res.data
   },
   passwordEnable (menu) {
     this.checkpasswordMenu = menu

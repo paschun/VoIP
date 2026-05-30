@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint 'src/**/*.{js,vue}'"
+    "lint": "eslint 'src/**/*.{js,ts,vue}'",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@johmun/vue-tags-input": "^2.1.0",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "@types/node": "^25.9.1",
     "@vitejs/plugin-vue2": "^2.3.4",
     "browserslist": "^4.24.0",
     "browserslist-to-esbuild": "^2.1.1",
@@ -41,7 +43,10 @@
     "eslint-plugin-vue": "^10.0.0",
     "globals": "^17.6.0",
     "lightningcss": "^1.30.0",
-    "vite": "^7.0.0"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vite": "^7.0.0",
+    "vue-tsc": "^3.3.2"
   },
   "engines": {
     "node": ">= 25.0.0",

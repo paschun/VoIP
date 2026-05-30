@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const Validator = require('validatorjs');
 
-const fs = require('node:fs')
+const { execSync } = require('node:child_process')
 
 var User = require('../model/user.model');
 var Hardwarekey = require('../model/hardwarekey.model');
@@ -12,9 +12,6 @@ var Message = require('../model/message.model');
 var Setting = require('../model/setting.model'); 
 const telnyxHelper = require('../helper/telnyx.helper');
 const twilioHelper = require('../helper/twilio.helper');
-
-const remoteVersion = 'https://raw.githubusercontent.com/paschun/VoIP/main/version.md';
-const currentVersion = 'version.md'; // read from local file version.md
 
 const { SignJWT } = require('jose');
 const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY)
@@ -26,6 +23,18 @@ const userDataResponseGen = (userDataObj) => {
   const { _id, name, email, token } = userDataObj;
   return { _id, name, email, token };
 };
+
+const remoteVersionURL = 'https://raw.githubusercontent.com/paschun/VoIP/main/version.md';
+// latest git commit short hash, fallback to package.json version.
+const currentVersion = (() => {
+    try {
+        return execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim()
+    } catch (err) {
+        console.error(err)
+        // import pkg from './package.json' with { type: 'json' }
+        return require('../../package.json').version
+    }
+})()
 
 exports.login = async (req, res) => {
     try{
@@ -150,32 +159,9 @@ exports.getSignUpOption = async (req, res) => {
 };
 
 exports.getVersionOption = (req, res) => {
-    // var request = require('request');
-    // console.log(currentVersion);
-    try {
-        const data = fs.readFileSync(currentVersion, 'utf8')
-        console.log(data)
-        res.send({status:true, message:'version defined.', data:`v${data}`});
-      } catch (err) {
-        console.error(err)
-        res.send({status:true, message:'version file not found!', data:'v0.0'});
-      }
-    // request.get(currentVersion, async function (error, response, body) {
-    //     console.log('currentVersion check');
-    //     console.log(error);
-    //     console.log('status => '+ response.statusCode);
-    //     if (!error && response.statusCode == 200) {
-    //         console.log('body =>'+body);
-    //         if(isNaN(body)){
-    //             res.send({status:true, message:'Not a numeric value!', data:'v0.0'});
-    //         }else{
-    //             res.send({status:true, message:'version defined.', data:`v${body}`});
-    //         }
-    //     }else{
-    //         res.send({status:true, message:'version file not found!', data:'v0.0'});
-    //     }
-    // });
+    res.send({ status: true, message: "version defined.", data: currentVersion });
 };
+
 exports.checkDirectoryName = (req, res) => {
     try{
         var dir = process.env.APPDIRECTORY
@@ -204,20 +190,18 @@ exports.checkDirectoryName = (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
+
 exports.getUpdateVersion = async (_req, res) => {
     try{
-        const response = await fetch(remoteVersion);
+        const response = await fetch(remoteVersionURL);
         if (response.ok) {
-            const body = await response.text();
-            if(isNaN(body)){
+            const remoteVersion = await response.text();
+            if(isNaN(remoteVersion)){
                 res.send({update: 'false'});
             }else{
-                // var curruntv = process.env.APP_VERSION
-                // curruntv = curruntv.replace("v", "").replace("-beta", "");
-                // console.log(body)
                 try {
-                    const body2 = fs.readFileSync(currentVersion, 'utf8')
-                    if(body2 < body){
+                    // todo: does basic string comparison work here?
+                    if(currentVersion < remoteVersion){
                         res.send({update: 'true'});
                     }else{
                         res.send({update: 'false'});
@@ -226,8 +210,6 @@ exports.getUpdateVersion = async (_req, res) => {
                     console.error(err)
                     res.send({update: 'false'});
                 }
-                // request.get(currentVersion, async function (error, response, body2) {
-                //console.log(currentVersion)
             }
         }else{
             res.send({update: 'false'});

@@ -8,7 +8,7 @@ module.exports = app => {
     router.post("/register", user.register);
     router.post("/otp-verify", user.otpVerify);
     router.post("/get-signup", user.getSignUpOption);
-    router.post("/get-version", user.getVersionOption);
+    router.get("/get-version", user.getVersionOption);
     router.get("/get-update-version", user.getUpdateVersion);
     router.post("/check-directoryname", user.checkDirectoryName);
     

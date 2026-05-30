@@ -23,7 +23,6 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.json', '.vue'],
   },
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
     // vuelidate 0.x branches on `process.env.BUILD` to pick its browser entry point.
     'process.env.BUILD': JSON.stringify('web'),
   },

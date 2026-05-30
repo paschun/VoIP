@@ -199,7 +199,7 @@ methods: {
       .catch(() => { this.signUpOption = false })
   },
   getVersion () {
-    this.$post('auth/get-version', {})
+    this.$get('auth/get-version')
       .then((response) => {
         if (response) {
           this.versionOption = response.data

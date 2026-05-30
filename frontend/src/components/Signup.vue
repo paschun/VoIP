@@ -55,7 +55,6 @@
                  </a>
               </div>
         </div>
-        <p class="version">{{ version }}</p>
     </div>
 </template>
 
@@ -69,7 +68,6 @@ export default {
   name: 'Signup',
   data () {
     return {
-      version: import.meta.env.DEV ? __APP_VERSION__ : '',
       user: {
         email: '',
         password: ''
@@ -85,7 +83,7 @@ export default {
       c_password: { required, sameAsPassword: sameAs('password') },
     }
   },
-  mounted: function () {
+  mounted () {
     this.loginRoute = `/${this.$route.params.appdirectory}`
     this.getsignup()
   },

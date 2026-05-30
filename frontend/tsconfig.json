@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2025",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2025", "DOM"],
+    "types": ["node", "vite/client"],
+
+    // Incremental migration: .js and .ts coexist. We load .js (so imports
+    // resolve) but do NOT type-check it yet. Flip checkJs/strict on later.
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "noImplicitThis": true,
+    "noImplicitAny": false,
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "noEmit": true,
+    "sourceMap": true,
+
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  // vue-tsc: typecheck SFCs against Vue 2.7's template/types.
+  "vueCompilerOptions": {
+    "target": 2.7
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "*.js", "*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
