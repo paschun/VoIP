@@ -271,22 +271,6 @@
               </div>
               <div class="col col-lg-6 m-auto">
                 <div class="form-group">
-                  <!-- <select
-                    class=""
-                    v-model="user.number"
-                    :class="{
-                      'is-invalid':
-                        submitted && $v.user.number.$error && user.profile == ''
-                    }"
-                  >
-                    <option
-                      v-for="tNumber in tNumbers"
-                      :key="tNumber.id"
-                      :value="tNumber.phone_number"
-                    >
-                      {{ tNumber.phone_number }}
-                    </option>
-                  </select> -->
                   <custom-autocomplete-select
                     v-model="user.number"
                     :options="tNumbers"
@@ -412,23 +396,6 @@
                   labelProp="phoneNumber"
                   valueProp="phoneNumber"
                 ></custom-autocomplete-select>
-                  <!-- <select
-                    class=""
-                    v-model="user.twilio_number"
-                    :class="{
-                      'is-invalid':
-                        submitted &&
-                        $v.user.twilio_number.$error &&
-                        user.profile == ''
-                    }"
-                  >
-                    <option
-                      v-for="twilioNumber in twilioNumbers"
-                      :key="twilioNumber.sid"
-                      :value="twilioNumber.phoneNumber"
-                      >{{ twilioNumber.phoneNumber }}</option
-                    >
-                  </select> -->
                   <div
                     v-if="
                       submitted &&

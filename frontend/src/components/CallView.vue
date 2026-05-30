@@ -162,7 +162,6 @@
 
 <script>
 import { TelnyxRTC } from '@telnyx/webrtc'
-import 'vue-select/dist/vue-select.css'
 import { Device } from '@twilio/voice-sdk'
 export default {
   props: ['contacts'],

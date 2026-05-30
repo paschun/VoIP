@@ -161,7 +161,6 @@
         <div class="loading-bar" v-if="chatListLoader">
           <div class="blue-bar"></div>
         </div>
-        <!-- v-chat-scroll="{smooth: true, notSmoothOnInit: true}" -->
         <div
           class="chat"
           id="chat-container"

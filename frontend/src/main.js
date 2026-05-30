@@ -1,22 +1,41 @@
 import Vue from 'vue'
-import App from './App.vue'
-import router from './router'
+
+// Global plugins
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
+import Vuelidate from 'vuelidate'
 import VueSweetalert2 from 'vue-sweetalert2'
-import 'sweetalert2/dist/sweetalert2.min.css'
-import ApiPlugin from '@/core/api.plugin'
-import VueChatScroll from 'vue-chat-scroll'
 import formLoading from 'vue2-form-loading'
-import vSelect from 'vue-select'
 import VueCookie from 'vue-cookie'
 import VueMoment from 'vue-moment'
-Vue.use(ApiPlugin)
-Vue.use(VueChatScroll)
-Vue.component('v-select', vSelect)
+import ApiPlugin from '@/core/api.plugin'
+
+// Global components
+import vSelect from 'vue-select'
+import InputTag from 'vue-input-tag'
+
+// Global styles (order matters)
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+import 'vue-select/dist/vue-select.css'
+import 'sweetalert2/dist/sweetalert2.min.css'
+import '@/assets/css/main.css'
+
+import router from './router'
+import App from './App.vue'
+
+Vue.use(BootstrapVue)
+Vue.use(IconsPlugin)
+Vue.use(Vuelidate)
+Vue.use(VueSweetalert2)
 Vue.use(formLoading)
 Vue.use(VueCookie)
-Vue.config.productionTip = false
-Vue.use(VueSweetalert2)
 Vue.use(VueMoment)
+Vue.use(ApiPlugin)
+
+Vue.component('v-select', vSelect)
+Vue.component('input-tag', InputTag)
+
+Vue.config.productionTip = false
 
 new Vue({
   el: '#app',

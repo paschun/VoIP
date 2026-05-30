@@ -5,7 +5,6 @@
                 <input class="form-control" name="email" v-model="form.email" placeholder="Enter Username" :class="{ 'is-invalid': submitted3 && $v.form.email.$error }" />
                 <div v-if="submitted3 && $v.form.email.$error" class="invalid-feedback">
                     <span v-if="!$v.form.email.required">Email Is Required</span>
-                    <!-- <span v-if="!$v.form.email.email">Please enter valid email</span> -->
                 </div>
             </div>
             <div class="form-group">
@@ -17,6 +16,7 @@
 <script>
 import { required } from 'vuelidate/lib/validators'
 import { notifySuccess } from '@/notify'
+
 export default {
   data () {
     return {

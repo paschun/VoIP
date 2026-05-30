@@ -1,12 +1,10 @@
 <template>
     <div class="p-1">
-        <!-- @submit.prevent="handleSubmit2" -->
         <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
            <div class="form-group mt-2">
                 <input class="form-control" name="email" v-model="form.email" placeholder="Enter Username" :class="{ 'is-invalid': submitted3 && $v.form.email.$error }" />
                 <div v-if="submitted3 && $v.form.email.$error" class="invalid-feedback">
                     <span v-if="!$v.form.email.required">Email Is Required</span>
-                    <!-- <span v-if="!$v.form.email.email">Please enter valid email</span> -->
                 </div>
             </div>
             <div class="form-group mt-2">
@@ -83,6 +81,7 @@
 <script>
 import { required, email } from 'vuelidate/lib/validators'
 import { notifySuccess } from '@/notify'
+
 export default {
   data () {
     return {
@@ -128,7 +127,6 @@ export default {
             notifySuccess('Setting saved successfully', 'Email Setting')
             this.getEmailSetting()
           }
-          // this.profiles = response.data
         })
         .catch((e) => console.error(e))
     },
@@ -172,7 +170,6 @@ export default {
           if (response) {
             this.getProfiles()
           }
-          // this.profiles = response.data
         })
         .catch((e) => {
           console.error(e)
@@ -181,5 +178,4 @@ export default {
   }
 }
 </script>
-<style>
-</style>
+
