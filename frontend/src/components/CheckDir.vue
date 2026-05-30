@@ -3,7 +3,6 @@
 </template>
 
 <script>
-import { post } from '../core/module/common.module'
 
 export default {
   mounted () {
@@ -11,12 +10,7 @@ export default {
   },
   methods: {
     checkDirectoryName () {
-      const request = {
-        url: 'auth/check-directoryname',
-        data: { dirname: this.$route.params.appdirectory }
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('auth/check-directoryname', { dirname: this.$route.params.appdirectory })
         .then((response) => {
           console.log('CheckDir', response)
           const status = response?.data?.status

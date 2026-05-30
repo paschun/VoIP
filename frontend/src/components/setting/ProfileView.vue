@@ -49,7 +49,6 @@
 
 <script>
 import { required } from 'vuelidate/lib/validators'
-import { post } from '../../core/module/common.module'
 import { notifySuccess } from '@/notify'
 import { EventBus } from '@/event-bus'
 
@@ -90,12 +89,7 @@ export default {
       }
     },
     getallProfile () {
-      const request = {
-        data: {},
-        url: 'profile/getdata'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('profile/getdata', {})
         .then((response) => {
           if (response) {
             this.profiles = response.data
@@ -133,12 +127,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      const request = {
-        data: this.form,
-        url: 'profile/create'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('profile/create', this.form)
         .then((response) => {
           if (response) {
             notifySuccess('Profile added successfully!')

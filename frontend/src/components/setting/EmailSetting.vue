@@ -82,7 +82,6 @@
 </template>
 <script>
 import { required, email } from 'vuelidate/lib/validators'
-import { post, get } from '../../core/module/common.module'
 import { notifySuccess } from '@/notify'
 export default {
   data () {
@@ -123,12 +122,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      const request = {
-        data: this.form,
-        url: 'email/create'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('email/create', this.form)
         .then((response) => {
           if (response) {
             notifySuccess('Setting saved successfully', 'Email Setting')
@@ -139,11 +133,7 @@ export default {
         .catch((e) => console.error(e))
     },
     getEmailSetting () {
-      const request = {
-        url: 'email/setting-get'
-      }
-      this.$store
-        .dispatch(get, request)
+      this.$get('email/setting-get')
         .then((response) => {
           if (response?.data) {
             this.form = response.data
@@ -166,12 +156,7 @@ export default {
         })
     },
     getProfiles () {
-      const request = {
-        data: {},
-        url: 'profile/getdata'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('profile/getdata', {})
         .then((response) => {
           if (response) {
             this.profiles = response.data
@@ -182,12 +167,7 @@ export default {
         })
     },
     profileUpdate (status, id) {
-      const request = {
-        data: {setting_id: id, status: status},
-        url: 'email/save/setting'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('email/save/setting', { setting_id: id, status })
         .then((response) => {
           if (response) {
             this.getProfiles()

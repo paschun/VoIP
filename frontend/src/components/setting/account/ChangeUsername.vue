@@ -16,7 +16,6 @@
 </template>
 <script>
 import { required } from 'vuelidate/lib/validators'
-import { post } from '../../../core/module/common.module'
 import { notifySuccess } from '@/notify'
 export default {
   data () {
@@ -46,12 +45,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      const request = {
-        data: this.form,
-        url: 'auth/username/update'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('auth/username/update', this.form)
         .then((response) => {
           if (response) {
             this.$cookie.set('userdata', JSON.stringify(response.data), 30)

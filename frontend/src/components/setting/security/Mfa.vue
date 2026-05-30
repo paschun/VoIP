@@ -60,7 +60,6 @@
   </div>
 </template>
 <script>
-import { post } from '../../../core/module/common.module'
 import { notifyError } from '@/notify'
 import HardwareKey from './HardwareKey.vue'
 export default {
@@ -91,23 +90,18 @@ methods: {
         confirmButtonText: 'Yes, remove it!'
       }).then((result) => {
         if (result.isConfirmed) {
-          this.commonMfa({status: status, qr: 'true'})
+          this.commonMfa({ status, qr: 'true' })
           this.qr = false
         } else {
           this.mfaStatus = true
         }
       })
     } else {
-      this.commonMfa({status: status, qr: 'true'})
+      this.commonMfa({ status, qr: 'true' })
     }
   },
   commonMfa (data) {
-    const request = {
-      data: data,
-      url: 'auth/mfa/save'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/mfa/save', data)
       .then((response) => {
         if (response) {
           if (data.status === 'true') {
@@ -125,12 +119,7 @@ methods: {
       notifyError('Please enter verification code')
       return
     }
-    const request = {
-      data: {status: 'true', qr: 'false', code: this.verification_code},
-      url: 'auth/mfa/save'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/mfa/save', { status: 'true', qr: 'false', code: this.verification_code })
       .then((response) => {
         if (response) {
           this.qr = null
@@ -150,12 +139,7 @@ methods: {
     }
   },
   getMfaStatus () {
-    const request = {
-      data: {},
-      url: 'auth/user/get'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/user/get', {})
       .then((response) => {
         const enabled = response?.data?.mfa === 'true'
         this.realMfs = enabled

@@ -58,7 +58,6 @@ import CallSetting from './CallSetting.vue'
 import AccountSetting from './account/AccountSetting.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
-import { post } from '../../core/module/common.module'
 import { notifyError } from '@/notify'
 
 export default {
@@ -79,12 +78,7 @@ methods: {
     this.activeMenu = menu
   },
   getVersion () {
-    const request = {
-      data: {},
-      url: 'auth/get-version'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/get-version', {})
       .then((response) => {
         if (response) {
           this.versionOption = response.data
@@ -101,12 +95,7 @@ methods: {
       notifyError('please enter password')
       return
     }
-    const request = {
-      data: {password: this.check_password},
-      url: 'auth/password/verify'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/password/verify', { password: this.check_password })
       .then((response) => {
         if (response) {
           this.check_password = ''

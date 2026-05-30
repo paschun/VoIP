@@ -476,7 +476,6 @@ import ThemeButton from "@/components/ThemeButton.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
 import { required } from "vuelidate/lib/validators";
-import { get, post } from "../../core/module/common.module";
 import { notifySuccess, notifyInfo } from "@/notify";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
@@ -576,11 +575,7 @@ export default {
       );
     },
     onaddContact() {
-      const request = {
-        url: "contact/get-all"
-      };
-      this.$store
-        .dispatch(get, request)
+      this.$get("contact/get-all")
         .then(data => {
           if (data) {
             this.contacts = data.data;
@@ -594,12 +589,7 @@ export default {
     getValidString,
     getOneProfile() {
       if (this.activeProfile?._id !== undefined) {
-        const request = {
-          data: { setting: this.activeProfile._id },
-          url: "profile/getdata-one"
-        };
-        this.$store
-          .dispatch(post, request)
+        this.$post("profile/getdata-one", { setting: this.activeProfile._id })
           .then(response => {
             if (response) {
               this.activeProfile = response.data;
@@ -638,12 +628,7 @@ export default {
     },
     getNumberList() {
       this.numbers = [];
-      const request = {
-        data: { user: this.userdata._id, setting: this.activeProfile._id },
-        url: "setting/sms-number-list"
-      };
-      this.$store
-        .dispatch(post, request)
+      this.$post("setting/sms-number-list", { user: this.userdata._id, setting: this.activeProfile._id })
         .then(response => {
           if (response) {
             this.numbers = response;
@@ -665,12 +650,7 @@ export default {
       }
     },
     getSetting() {
-      const request = {
-        data: { user: this.userdata._id, setting: this.activeProfile._id },
-        url: "setting/get-setting"
-      };
-      this.$store
-        .dispatch(post, request)
+      this.$post("setting/get-setting", { user: this.userdata._id, setting: this.activeProfile._id })
         .then(response => {
           if (response?.data) {
             this.user = response.data;
@@ -699,15 +679,11 @@ export default {
       }
       if (!result.isConfirmed) return;
 
-      const request = {
-        data: {
+      try {
+        const response = await this.$post("profile/delete-profile", {
           user: this.userdata._id,
           profile_id: this.activeProfile._id
-        },
-        url: "profile/delete-profile"
-      };
-      try {
-        const response = await this.$store.dispatch(post, request);
+        });
         if (response.data) {
           notifySuccess("Profile deleted successfully!");
           this.user.api_key = "";
@@ -744,15 +720,11 @@ export default {
       }
       if (!result.isConfirmed) return;
 
-      const request = {
-        data: {
+      try {
+        const response = await this.$post("setting/delete-key", {
           user: this.userdata._id,
           profile_id: this.activeProfile._id
-        },
-        url: "setting/delete-key"
-      };
-      try {
-        const response = await this.$store.dispatch(post, request);
+        });
         notifySuccess("Key deleted successfully!");
         this.user.api_key = "";
         this.user.number = "";
@@ -771,17 +743,12 @@ export default {
     getNumbers(type) {
       const settings = this.user;
       settings.type = type;
-      const request = {
-        data: settings,
-        url: "setting/get-number"
-      };
       if (type === "telnyx") {
         this.tNumbers = [];
       } else {
         this.twilioNumbers = [];
       }
-      this.$store
-        .dispatch(post, request)
+      this.$post("setting/get-number", settings)
         .then(response => {
           if (response) {
             if (type === "telnyx") {
@@ -837,12 +804,8 @@ export default {
           profile: this.user.profile
         };
         this.isLoading = true;
-        const request = {
-          data: sendData,
-          url: "setting/check-setting"
-        };
         try {
-          const response = await this.$store.dispatch(post, request);
+          const response = await this.$post("setting/check-setting", sendData);
           let isCall = false;
           if (response) {
             if (
@@ -911,7 +874,7 @@ export default {
     async submitCreateSetting(sendData) {
       this.isLoading = true;
       try {
-        const response = await this.$store.dispatch(post, { data: sendData, url: "setting/create" });
+        const response = await this.$post("setting/create", sendData);
         if (response) {
           this.$refs["my-modal"].hide();
           this.activeProfile = response.data;

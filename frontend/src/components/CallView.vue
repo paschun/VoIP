@@ -161,7 +161,6 @@
 </template>
 
 <script>
-import { post } from '../core/module/common.module'
 import { TelnyxRTC } from '@telnyx/webrtc'
 import 'vue-select/dist/vue-select.css'
 import { Device } from '@twilio/voice-sdk'
@@ -253,12 +252,7 @@ export default {
       return new Promise(resolve => {
         const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
         if (profileLocal) {
-          const request = {
-            data: { setting_id: profileLocal._id },
-            url: 'call/token'
-          }
-          this.$store
-            .dispatch(post, request)
+          this.$post('call/token', { setting_id: profileLocal._id })
             .then((response) => {
               resolve(response.data)
             })
@@ -270,12 +264,7 @@ export default {
       })
     },
     getContact () {
-      const request = {
-        url: 'contact/get-one',
-        data: {number: this.number}
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('contact/get-one', { number: this.number })
         .then((response) => {
           if (response?.data) {
             this.name = response.data.first_name + ' ' + response.data.last_name
@@ -288,12 +277,7 @@ export default {
     getSetting () {
       const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
       if (profileLocal) {
-        const request = {
-          url: 'setting/get-setting',
-          data: {setting: profileLocal._id}
-        }
-        this.$store
-          .dispatch(post, request)
+        this.$post('setting/get-setting', { setting: profileLocal._id })
           .then(async (response) => {
             if (response.data) {
               localStorage.setItem('activeProfile', JSON.stringify(response.data))

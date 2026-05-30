@@ -31,7 +31,6 @@
 <script>
 import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
-import { post } from '../../../core/module/common.module'
 import CallSetting from '../CallSetting.vue'
 import SettingsSection from '../SettingsSection.vue'
 
@@ -59,12 +58,7 @@ export default {
         confirmButtonText: 'Submit',
         showLoaderOnConfirm: true,
         preConfirm: (login) => {
-          const request = {
-            data: {password: login},
-            url: 'auth/password/check'
-          }
-          return this.$store
-            .dispatch(post, request)
+          return this.$post('auth/password/check', { password: login })
             .catch(() => false)
         },
         allowOutsideClick: () => !this.$swal.isLoading()

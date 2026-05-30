@@ -39,7 +39,6 @@
 </template>
 
 <script>
-import { post } from '../../../core/module/common.module'
 import { publicKeyCredentialToJSON } from '../../../helper'
 import { notifySuccess, notifyError } from '@/notify'
 import { decode as cborDecode } from 'cbor-x/decode'
@@ -126,12 +125,8 @@ export default {
         confirmButtonText: 'Yes, remove it!'
       })
       if (!result.isConfirmed) return
-      const request2 = {
-        data: { id },
-        url: 'hardwarekey/delete'
-      }
       try {
-        const respose = await this.$store.dispatch(post, request2)
+        const respose = await this.$post('hardwarekey/delete', { id })
         if (respose) {
           notifySuccess('Your key has been deleted.', 'Deleted!')
           this.getHardwarekey()
@@ -139,12 +134,7 @@ export default {
       } catch { /* ignore */ }
     },
     getHardwarekey () {
-      const request2 = {
-        data: {},
-        url: 'hardwarekey/get'
-      }
-      this.$store
-        .dispatch(post, request2)
+      this.$post('hardwarekey/get', {})
         .then((respose) => {
           if (respose) {
             this.keys = respose.data
@@ -157,13 +147,9 @@ export default {
         notifyError('Please enter title')
         return
       }
-      const request = {
-        data: { title: this.title.trim() },
-        url: 'hardwarekey/register-key'
-      }
       let serverResponse
       try {
-        serverResponse = await this.$store.dispatch(post, request)
+        serverResponse = await this.$post('hardwarekey/register-key', { title: this.title.trim() })
       } catch { /* ignore */ }
       if (!serverResponse) return
       if (serverResponse.status !== 'startFIDOEnrolment') {
@@ -171,12 +157,8 @@ export default {
         return
       }
 
-      const request2 = {
-        data: {},
-        url: 'hardwarekey/register'
-      }
       try {
-        const respnse = await this.$store.dispatch(post, request2)
+        const respnse = await this.$post('hardwarekey/register', {})
         const hardwarekey = respnse.hardwarekey
         let makeCredChallenge = respnse.publicKey
         let newCredentialInfo
@@ -203,12 +185,8 @@ export default {
         const authData = parseAuthData(attestationObject.authData)
         const aaguid = bufToHex(authData.aaguid)
         newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-        const request3 = {
-          data: { id: newCredentialInfo.id, aaguid },
-          url: 'hardwarekey/verify'
-        }
         try {
-          const verifyResponse = await this.$store.dispatch(post, request3)
+          const verifyResponse = await this.$post('hardwarekey/verify', { id: newCredentialInfo.id, aaguid })
           if (verifyResponse.status !== 'ok') {
             throw new Error('Error registering user! Server returned: ' + verifyResponse.errorMessage)
           } else {

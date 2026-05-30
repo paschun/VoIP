@@ -117,7 +117,6 @@
 </template>
 
 <script>
-import { post } from '../core/module/common.module'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import { publicKeyCredentialToJSON } from '@/helper'
@@ -175,12 +174,7 @@ mounted () {
 },
 methods: {
   fnLogin () {
-    const request = {
-      url: 'auth/check-directoryname',
-      data: { dirname: this.$route.params.appdirectory }
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/check-directoryname', { dirname: this.$route.params.appdirectory })
       .then((response) => {
         const { status, dir } = response.data
         const loggedIn = !!this.$cookie.get('access_token')
@@ -200,19 +194,12 @@ methods: {
       .catch((e) => console.error(e))
   },
   getsignup () {
-    const request = { data: {}, url: 'auth/get-signup' }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/get-signup', {})
       .then((response) => { this.signUpOption = response?.data === 'on' })
       .catch(() => { this.signUpOption = false })
   },
   getVersion () {
-    const request = {
-      data: {},
-      url: 'auth/get-version'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/get-version', {})
       .then((response) => {
         if (response) {
           this.versionOption = response.data
@@ -228,12 +215,7 @@ methods: {
       return
     }
 
-    const request = {
-      data: this.user,
-      url: 'auth/login'
-    }
-    this.$store
-      .dispatch(post, request)
+    this.$post('auth/login', this.user)
       .then((response) => {
         if (response) {
           this.keys = response.harwarekey
@@ -258,25 +240,17 @@ methods: {
       .catch(() => {})
   },
   async verifyKey (key) {
-    const request = {
-      data: { user: this.activeUser.user._id, title: key.title },
-      url: 'hardwarekey/login-key'
-    }
     let getAssertionChallenge
     try {
-      getAssertionChallenge = await this.$store.dispatch(post, request)
+      getAssertionChallenge = await this.$post('hardwarekey/login-key', { user: this.activeUser.user._id, title: key.title })
     } catch { /* ignore */ }
     if (!getAssertionChallenge) return
     getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
     try {
       let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
       newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-      const loginReq = {
-        data: newCredentialInfo,
-        url: 'hardwarekey/login'
-      }
       try {
-        const serverResponse = await this.$store.dispatch(post, loginReq)
+        const serverResponse = await this.$post('hardwarekey/login', newCredentialInfo)
         if (serverResponse) {
           if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
           this.$cookie.set('access_token', this.activeUser.token, 30)
@@ -298,12 +272,7 @@ methods: {
     }
     this.submitted2 = true
     if (this.otpForm.otp.trim() !== '') {
-      const request = {
-        data: { user: this.activeUser.user._id, verification_code: this.otpForm.otp },
-        url: 'auth/otp-verify'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('auth/otp-verify', { user: this.activeUser.user._id, verification_code: this.otpForm.otp })
         .then((response) => {
           if (response) {
             if (response.status === 'true') {

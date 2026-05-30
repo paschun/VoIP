@@ -6,7 +6,6 @@
 </template>
 
 <script>
-import { get } from './core/module/common.module'
 
 export default {
   name: 'App',
@@ -20,11 +19,7 @@ export default {
   },
   methods: {
     getVersion () {
-      const request = {
-        url: 'auth/get-update-version'
-      }
-      this.$store
-        .dispatch(get, request)
+      this.$get('auth/get-update-version')
         .then((response) => {
           console.log('update available:', response.update)
           if (response.update === 'true') {

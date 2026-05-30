@@ -120,7 +120,6 @@
     </div>
 </template>
 <script>
-import { post } from '../../core/module/common.module'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 import Papa from 'papaparse'
@@ -290,8 +289,7 @@ export default {
       const request = this.editId
         ? { data: { ...this.form, contact_id: this.editId }, url: 'contact/update' }
         : { data: this.form, url: 'contact/create' }
-      this.$store
-        .dispatch(post, request)
+      this.$post(request.url, request.data)
         .then((response) => {
           if (response) {
             this.$refs['modal-contact'].hide()
@@ -306,15 +304,7 @@ export default {
 
     handleSubmit2 () {
       if (this.csvUploadArray2.length > 0) {
-        const data = {
-          contacts: this.csvUploadArray2
-        }
-        const request = {
-          data: data,
-          url: 'contact/multiple-add'
-        }
-        this.$store
-          .dispatch(post, request)
+        this.$post('contact/multiple-add', { contacts: this.csvUploadArray2 })
           .then(() => {
             this.$refs['modal-contact'].hide()
             this.$emit('onaddContact', true)
@@ -338,10 +328,7 @@ export default {
       if (!result.isConfirmed) return
 
       try {
-        await this.$store.dispatch(post, {
-          data: { contact_id: id },
-          url: 'contact/delete'
-        })
+        await this.$post('contact/delete', { contact_id: id })
         notifySuccess('Contact Deleted successfully!')
         this.$emit('onaddContact', true)
         EventBus.$emit('contactAdded', 'delete')
@@ -372,7 +359,7 @@ export default {
       if (!result.isConfirmed) return
 
       try {
-        await this.$store.dispatch(post, { data: {}, url: 'contact/deleteall' })
+        await this.$post('contact/deleteall', {})
         notifySuccess('All contacts deleted successfully')
         this.$emit('onaddContact', true)
       } catch (e) {

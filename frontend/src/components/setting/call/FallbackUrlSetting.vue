@@ -26,7 +26,6 @@
 </template>
 
 <script>
-import { post } from '../../../core/module/common.module'
 import { notifySuccess } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 
@@ -88,9 +87,7 @@ export default {
       if (!profileLocal) return
       this.setting = JSON.parse(profileLocal)?._id
 
-      const request = { data: { setting_id: this.setting }, url: this.getUrl }
-      this.$store
-        .dispatch(post, request)
+      this.$post(this.getUrl, { setting_id: this.setting })
         .then((response) => {
           const main = pickPath(response, this.mainPath)
           const fallback = pickPath(response, this.fallbackPath)
@@ -107,9 +104,7 @@ export default {
 
       const submitUrl = this.normalizeSubmit ? toOrigin(this.form.url) : this.form.url
       const data = { ...this.form, url: submitUrl, setting_id: this.setting }
-      const request = { data, url: this.saveUrl }
-      this.$store
-        .dispatch(post, request)
+      this.$post(this.saveUrl, data)
         .then((response) => {
           if (!response) return
           notifySuccess(this.successMessage)

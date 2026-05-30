@@ -355,7 +355,6 @@ import { required } from "vuelidate/lib/validators";
 import NumberList from "./inbox/NumberList.vue";
 import VueTagsInput from "@johmun/vue-tags-input";
 import ThemeButton from "@/components/ThemeButton.vue";
-import { post } from "../core/module/common.module";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus";
@@ -691,9 +690,9 @@ export default {
       if (!result.isConfirmed) return;
 
       try {
-        await this.$store.dispatch(post, {
-          data: { user: this.userdata._id, number: this.activeChat },
-          url: "setting/message-list-delete",
+        await this.$post("setting/message-list-delete", {
+          user: this.userdata._id,
+          number: this.activeChat,
         });
         if (this.activeChatData) this.showChat(this.activeChat);
         this.$refs.numberList.getNumberList();
@@ -719,17 +718,12 @@ export default {
     commonSendMessage(numbers, message) {
       const messageData = {
         user: this.userdata._id,
-        numbers: numbers,
-        message: message,
+        numbers,
+        message,
         profile: this.activeProfile,
         media: this.uploadedImages,
       };
-      const request = {
-        data: messageData,
-        url: "setting/send-sms",
-      };
-      this.$store
-        .dispatch(post, request)
+      this.$post("setting/send-sms", messageData)
         .then((response) => {
           if (response) {
             this.messageBody = "";
@@ -770,16 +764,11 @@ export default {
       this.activeChat = activechat;
       this.activeChatData = true;
       const { telnyx_number, _id } = activechat;
-      const request = {
-        data: {
-          user: this.userdata._id,
-          number: { telnyx_number, _id },
-          profile: this.activeProfile.id,
-        },
-        url: "setting/message-list",
-      };
-      this.$store
-        .dispatch(post, request)
+      this.$post("setting/message-list", {
+        user: this.userdata._id,
+        number: { telnyx_number, _id },
+        profile: this.activeProfile.id,
+      })
         .then((response) => {
           if (response) {
             this.messages = response;

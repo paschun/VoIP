@@ -30,7 +30,6 @@
 </template>
 <script>
 import { required, minLength, sameAs } from 'vuelidate/lib/validators'
-import { post } from '../../../core/module/common.module'
 import { notifySuccess } from '@/notify'
 export default {
   data () {
@@ -60,12 +59,7 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-      const request = {
-        data: this.user,
-        url: 'auth/password/update'
-      }
-      this.$store
-        .dispatch(post, request)
+      this.$post('auth/password/update', this.user)
         .then((response) => {
           if (response) {
             notifySuccess('Password updated successfully')
