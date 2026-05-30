@@ -59,16 +59,17 @@
     <hardware-key />
   </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { notifyError } from '@/notify'
 import HardwareKey from './HardwareKey.vue'
-export default {
+export default defineComponent({
 components: { HardwareKey },
 data () {
   return {
     mfaStatus: false,
     realMfs: false,
-    qr: null,
+    qr: null as any,
     verification_code: '',
     secret: ''
   }
@@ -100,7 +101,8 @@ methods: {
       this.commonMfa({ status, qr: 'true' })
     }
   },
-  commonMfa (data) {
+  commonMfa (data: { status: string; qr: string }) {
+    // todo: this data type should be defined in shared api contract
     this.$post('auth/mfa/save', data)
       .then((response) => {
         if (response) {
@@ -132,7 +134,7 @@ methods: {
   copySecret () {
     try {
       navigator.clipboard.writeText(this.secret)
-      const answer = document.getElementById('clickText')
+      const answer = document.getElementById('clickText')!
       answer.innerHTML = 'Copied!'
     } catch (err) {
       console.error('Failed to copy!', err)
@@ -151,7 +153,7 @@ methods: {
       })
   }
 }
-}
+})
 </script>
 
 <style scoped>

@@ -17,12 +17,14 @@
   </div>
 </template>
 
-<script>
-function getMediaPreference () {
+<script lang="ts">
+import { defineComponent } from 'vue'
+
+function getMediaPreference (): string {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
 }
 
-export default {
+export default defineComponent({
   props: ['idHide'],
   mounted () {
     this.setTheme(localStorage.getItem('user-theme') ?? getMediaPreference())
@@ -40,13 +42,13 @@ export default {
       this.setTheme(activeTheme === 'light-theme' ? 'dark-theme' : 'light-theme')
     },
 
-    setTheme (theme) {
+    setTheme (theme: string) {
       localStorage.setItem('user-theme', theme)
       this.userTheme = theme
       document.documentElement.className = theme
     }
   }
-}
+})
 </script>
 
 <style scoped>

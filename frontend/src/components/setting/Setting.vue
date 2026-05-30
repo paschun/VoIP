@@ -52,15 +52,17 @@
       </b-sidebar>
   </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import EmailSetting from './EmailSetting.vue'
 import CallSetting from './CallSetting.vue'
 import AccountSetting from './account/AccountSetting.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
 import { notifyError } from '@/notify'
+import type { VersionResponse } from '@shared/api-contracts'
 
-export default {
+export default defineComponent({
 components: { EmailSetting, CallSetting, AccountSetting, Mfa, SettingsSection },
 data () {
   return {
@@ -74,14 +76,14 @@ mounted () {
   this.getVersion()
 },
 methods: {
-  enableMenu (menu) {
+  enableMenu (menu: string) {
     this.activeMenu = menu
   },
   async getVersion() {
-    const res = await this.$get("auth/get-version")
-    if (res?.status) this.versionOption = res.data
+    const res = await this.$get<VersionResponse>("auth/get-version")
+    if (res && res.status) this.versionOption = res.data
   },
-  passwordEnable (menu) {
+  passwordEnable (menu: string) {
     this.checkpasswordMenu = menu
     this.enableMenu('password')
   },
@@ -100,5 +102,5 @@ methods: {
       .catch(() => {})
   }
 }
-}
+})
 </script>

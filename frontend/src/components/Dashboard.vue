@@ -11,7 +11,7 @@
         <div class="sp sp-circle"></div>
       </div>
     </div>
-    <theme-button id-hide="true"></theme-button>
+    <theme-button id-hide="false"></theme-button>
     <b-sidebar
       v-if="vw < 576"
       class="d-sm-none"
@@ -102,7 +102,7 @@
           </span>
         </div>
       </div>
-      <div :class="!this.activeChat || modelMms ? 'd-none' : ''">
+      <div :class="!activeChat || modelMms ? 'd-none' : ''">
         <div
           id="drop-area"
           style="z-index: 1"
@@ -127,7 +127,7 @@
               id="fileElem"
               multiple
               accept="image/*"
-              @change="handleFiles($event.target.files)"
+              @change="onFilesPick($event)"
             />
             <!-- <label class="button" for="fileElem">Select some files</label> -->
           </form>
@@ -278,7 +278,7 @@
             v-model="sms.numbers"
             :tags="tags"
             placeholder="Enter phone number"
-            @tags-changed="(newTags) => (tags = newTags)"
+            @tags-changed="onTagsChanged"
           />
           <div v-if="tags.length <= 0" class="invalid-feedback">
             <span>Numbers are required</span>
@@ -327,7 +327,7 @@
             class="form-control chat-input"
             multiple
             accept="image/*"
-            @change="handleFiles($event.target.files, true)"
+            @change="onFilesPick($event, true)"
           />
         </div>
 
@@ -349,7 +349,8 @@
     <!-- / modal -->
   </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent } from "vue";
 import { required } from "vuelidate/lib/validators";
 import NumberList from "./inbox/NumberList.vue";
 import VueTagsInput from "@johmun/vue-tags-input";
@@ -358,37 +359,37 @@ import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus";
 import { io } from "socket.io-client";
-import { combineURLs } from '@/helper';
+import { combineURLs, parseJSON } from '@/helper';
 import { notifyError, notifyInfo } from '@/notify';
 
-function preventDefaults(e) {
+function preventDefaults(e: Event) {
   e.preventDefault();
   e.stopPropagation();
 }
 
-function getVw() {
+function getVw(): number {
   return Math.round(Math.max(
     document.documentElement.clientWidth ?? 0,
     window.innerWidth ?? 0
   ));
 }
 
-function getVh() {
+function getVh(): number {
   return Math.round(Math.max(
-    document.documentElement.innerHeight ?? 0,
+    (document.documentElement as any).innerHeight ?? 0,
     window.innerHeight ?? 0
   ));
 }
 
 function choseFile2() {
-  document.getElementById("model_file_input").click();
+  document.getElementById("model_file_input")!.click();
 }
 
 function file_upload() {
-  document.getElementById("fileElem").click();
+  document.getElementById("fileElem")!.click();
 }
 
-function getMMSS(time) {
+function getMMSS(time: number): string {
   const mins = ~~((time % 3600) / 60);
   const secs = ~~time % 60;
 
@@ -399,7 +400,7 @@ function getMMSS(time) {
   return ret;
 }
 
-export default {
+export default defineComponent({
   name: "dashboard",
   components: {
     NumberList,
@@ -411,34 +412,34 @@ export default {
   data() {
     return {
       isLoading: false,
-      contacts: [],
+      contacts: [] as any[],
       selectedContact: "",
-      dropArea: null,
-      progressBar: null,
-      uploadProgress: [],
-      uploadedImages: [],
+      dropArea: null as any,
+      progressBar: null as any,
+      uploadProgress: [] as number[],
+      uploadedImages: [] as any[],
       activeChatData: false,
-      activeProfile: null,
-      activeChat: "",
-      tags: [],
+      activeProfile: null as any,
+      activeChat: "" as any,
+      tags: [] as any[],
       sms: {
         numbers: "",
         message: "",
       },
       chatListLoader: false,
       submitted2: false,
-      userdata: null,
-      access_token: null,
-      messages: [],
+      userdata: null as any,
+      access_token: null as any,
+      messages: [] as any[],
       messageBody: "",
-      socket: null,
+      socket: null as any,
       baseurl: "",
       vw: 0,
       vh: 0,
       modelMms: false,
       modelFileValu: "",
       zoomImage: "",
-      searchContacts: [],
+      searchContacts: [] as any[],
       activeCallTab: false,
     };
   },
@@ -446,13 +447,13 @@ export default {
     window.addEventListener("resize", this.updateVw, { passive: true });
   },
   destroyed() {
-    window.removeEventListener("resize", this.updateVw, { passive: true });
+    window.removeEventListener("resize", this.updateVw);
   },
   mounted() {
     EventBus.$on("toggleLoader", () => {
       this.toggleLoader();
     });
-    EventBus.$on("contactAdded", (number) => {
+    EventBus.$on("contactAdded", (number: any) => {
       if (this.activeChat._id === number) {
         this.showChat(this.activeChat);
       }
@@ -483,23 +484,23 @@ export default {
     const socket = io(this.baseurl, { transports: ["websocket"] });
     this.socket = socket;
     this.socket.on("new_message", () => {
-      this.$refs.numberList.getNumberList();
+      (this.$refs.numberList as any).getNumberList();
       if (this.activeChatData) {
         this.showChat(this.activeChat);
       }
     });
-    this.userdata = JSON.parse(this.$cookie.get("userdata"));
+    this.userdata = parseJSON(this.$cookie.get("userdata"));
     this.access_token = this.$cookie.get("access_token");
     this.socket.emit("join_profile_channel", this.userdata._id.toString());
 
-    this.socket.on("user_message", (data) => {
+    this.socket.on("user_message", (data: any) => {
       if (this.activeChatData) {
         this.showChat(this.activeChat);
       } else {
-        this.$refs.numberList.getOneProfile();
-        this.$refs.numberList.refreshProfile();
+        (this.$refs.numberList as any).getOneProfile();
+        (this.$refs.numberList as any).refreshProfile();
       }
-      this.$refs.numberList.getNumberList();
+      (this.$refs.numberList as any).getNumberList();
       this.notifyMe(data.number, data.message);
     });
     this.dropArea = document.getElementById("drop-area1");
@@ -522,8 +523,11 @@ export default {
     },
   },
   methods: {
-    addContact(number) {
+    addContact(number: any) {
       EventBus.$emit("addContact", number);
+    },
+    onTagsChanged(newTags: any) {
+      this.tags = newTags;
     },
     toggleLoader() {
       if (this.isLoading) {
@@ -534,19 +538,19 @@ export default {
     },
     makeCall() {
       if (this.activeChat) {
-        this.$refs.callView.makeCall(this.activeChat._id);
+        (this.$refs.callView as any).makeCall(this.activeChat._id);
       }
     },
-    contactChangeEvent(e) {
+    contactChangeEvent(e: any) {
       this.tags.push({ text: e.code, tiClasses: ["ti-valid"] });
       this.selectedContact = "";
     },
-    onaddContact(data) {
+    onaddContact(data: any) {
       this.contacts = data;
       this.formatecontact(data);
     },
-    formatecontact(contacts) {
-      const arrContact = [];
+    formatecontact(contacts: any) {
+      const arrContact: any[] = [];
       for (let i = 0; i < contacts.length; i++) {
         const contact = {
           label: `${contacts[i].first_name} ${contacts[i].last_name}`,
@@ -558,35 +562,40 @@ export default {
     },
     hiddenImage() {
       this.zoomImage = "";
-      document.getElementById("hidden").style.display = "none";
+      document.getElementById("hidden")!.style.display = "none";
     },
-    showImage(image) {
+    showImage(image: any) {
       this.zoomImage = image;
-      document.getElementById("hidden").style.display = "block";
+      document.getElementById("hidden")!.style.display = "block";
     },
     choseFile2,
     file_upload,
-    initializeProgress(numfiles) {
+    initializeProgress(numfiles: number) {
       this.progressBar.value = 0;
       this.uploadProgress = Array.from({ length: numfiles }, () => 0);
     },
-    updateProgress(fileNumber, percent) {
+    updateProgress(fileNumber: number, percent: number) {
       this.uploadProgress[fileNumber] = percent;
       const total =
         this.uploadProgress.reduce((tot, curr) => tot + curr, 0) /
         this.uploadProgress.length;
       this.progressBar.value = total;
     },
-    handleDrop(e) {
+    handleDrop(e: any) {
       const dt = e.dataTransfer;
       const files = dt.files;
 
       this.handleFiles(files);
     },
-    handleFiles(files, modelFile = false) {
+    // Cast lives here (not in the template): the Vue 2 template compiler can't
+    // parse TS `as` syntax, only vue-tsc can.
+    onFilesPick(e: Event, modelFile = false) {
+      this.handleFiles((e.target as HTMLInputElement).files, modelFile);
+    },
+    handleFiles(files: any, modelFile = false) {
       if (modelFile) {
         this.modelMms = true;
-        const filesData = [];
+        const filesData: any[] = [];
         for (let i = 0; i < files.length; i++) {
           filesData.push(files[i].name);
         }
@@ -598,7 +607,7 @@ export default {
       this.initializeProgress(files.length);
       files.forEach(this.uploadFile);
     },
-    removeFromPrevie(image) {
+    removeFromPrevie(image: any) {
       const images = [];
       for (let i = 0; i < this.uploadedImages.length; i++) {
         if (this.uploadedImages[i] !== image) {
@@ -607,10 +616,10 @@ export default {
       }
       this.uploadedImages = images;
       if (this.uploadedImages.length <= 0) {
-        document.getElementById("drop-area").style.display = "none";
+        document.getElementById("drop-area")!.style.display = "none";
       }
     },
-    uploadFile(file, i) {
+    uploadFile(file: any, i: number) {
       const fileUploadURL = combineURLs(this.baseurl, '/api/media/upload-files');
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
@@ -631,43 +640,43 @@ export default {
       xhr.send(formData);
     },
     highlight() {
-      document.getElementById("drop-area").style.display = "block";
+      document.getElementById("drop-area")!.style.display = "block";
       this.dropArea.classList.add("highlight");
     },
     unhighlight() {
       this.dropArea.classList.remove("highlight");
     },
-    activeProfileView(profile) {
+    activeProfileView(profile: any) {
       if (profile.refresh !== undefined && profile.refresh) {
         this.messages = [];
       }
       this.activeProfile = profile;
     },
-    onClickChild(value) {
+    onClickChild(value: any) {
       this.firstChatShow(value);
     },
-    notifyMe(user, message) {
+    notifyMe(user: any, message: any) {
       const msgIcon = new URL('@/assets/img/icon.png', import.meta.url).href;
       if (!("Notification" in window)) {
         alert("This browser does not support desktop notification");
       } else if (Notification.permission === "granted") {
         const options = {
           body: message,
-          dir: "auto",
+          dir: "auto" as const,
           icon: msgIcon,
         };
         new Notification("Message from " + user, options);
       } else if (Notification.permission !== "denied") {
         Notification.requestPermission((permission) => {
           if (!("permission" in Notification)) {
-            Notification.permission = permission;
+            (Notification as any).permission = permission;
           }
           if (permission === "granted") {
             const options = {
               body: message,
               dir: "auto",
               icon: msgIcon,
-            };
+            } as const
             new Notification("Message from " + user, options);
           }
         });
@@ -694,7 +703,7 @@ export default {
           number: this.activeChat,
         });
         if (this.activeChatData) this.showChat(this.activeChat);
-        this.$refs.numberList.getNumberList();
+        (this.$refs.numberList as any).getNumberList();
       } catch (e) {
         console.error(e);
       }
@@ -706,15 +715,15 @@ export default {
         this.isLoading = false;
         return;
       }
-      const activechat = JSON.parse(localStorage.getItem("activenumber"));
+      const activechat = parseJSON(localStorage.getItem("activenumber"));
       const numbers = [activechat._id];
       this.commonSendMessage(numbers, this.messageBody);
     },
     hideImageDrag() {
       this.uploadedImages = [];
-      document.getElementById("drop-area").style.display = "none";
+      document.getElementById("drop-area")!.style.display = "none";
     },
-    commonSendMessage(numbers, message) {
+    commonSendMessage(numbers: any, message: any) {
       const messageData = {
         user: this.userdata._id,
         numbers,
@@ -730,36 +739,36 @@ export default {
             this.sms.message = "";
             this.uploadedImages = [];
             this.modelFileValu = "";
-            document.getElementById("drop-area").style.display = "none";
+            document.getElementById("drop-area")!.style.display = "none";
             this.tags = [];
-            this.$refs.numberList.getNumberList();
+            (this.$refs.numberList as any).getNumberList();
             // this.showChat(activechat)
             if (this.activeChatData) {
               this.showChat(this.activeChat);
             }
-            this.$refs["my-modal2"].hide();
+            (this.$refs["my-modal2"] as any).hide();
             if (this.vw < 576) {
-              this.$refs["mySidebar2"].hide();
+              (this.$refs["mySidebar2"] as any).hide();
             }
           }
           this.isLoading = false;
         })
         .catch((e) => console.error(e));
     },
-    firstChatShow(activechat) {
+    firstChatShow(activechat: any) {
       this.chatListLoader = true;
       const element = document.getElementById(activechat._id);
       if (element) {
         element.remove();
       }
       this.showChat(activechat);
-      document.getElementById("drop-area").style.display = "none";
+      document.getElementById("drop-area")!.style.display = "none";
       this.uploadedImages = [];
       if (this.vw < 576) {
-        this.$refs["mySidebar2"].hide();
+        (this.$refs["mySidebar2"] as any).hide();
       }
     },
-    showChat(activechat) {
+    showChat(activechat: any) {
       this.activeChat = activechat;
       this.activeChatData = true;
       const { telnyx_number, _id } = activechat;
@@ -774,13 +783,13 @@ export default {
             // var container = this.$el.querySelector('#chat-container')
             // container.scrollTop = container.scrollHeight
             setTimeout(() => {
-              const scroll = document.getElementById("chat-container");
+              const scroll = document.getElementById("chat-container")!;
               scroll.scrollTop = scroll.scrollHeight;
               scroll.animate({ scrollTop: scroll.scrollHeight });
               this.chatListLoader = false;
             }, 1000);
-            this.$refs.numberList.refreshProfile();
-            this.$refs.numberList.getOneProfile();
+            (this.$refs.numberList as any).refreshProfile();
+            (this.$refs.numberList as any).getOneProfile();
           }
         })
         .catch((e) => console.error(e));
@@ -793,7 +802,7 @@ export default {
         notifyError("please enter number!", "Oops...");
         return;
       }
-      const numbers = [];
+      const numbers: any[] = [];
       for (let i = 0; i < this.tags.length; i++) {
         numbers.push(this.tags[i].text);
       }
@@ -809,12 +818,12 @@ export default {
       this.vw = getVw();
       this.vh = getVh();
       const chatHeight = this.vh - 120;
-      document.getElementById("wrapbody").style.height = `${this.vh}px`;
-      document.getElementById("chat_body").style.height = `${chatHeight}px`;
+      document.getElementById("wrapbody")!.style.height = `${this.vh}px`;
+      document.getElementById("chat_body")!.style.height = `${chatHeight}px`;
     },
     getMMSS,
   },
-};
+});
 </script>
 <style scoped>
 .opacitynone {

@@ -116,14 +116,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import { publicKeyCredentialToJSON } from '@/helper'
 import { notifyError } from '@/notify'
+import type { VersionResponse } from '@shared/api-contracts'
 
 /** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
-const preformatGetAssertReq = (getAssert) => {
+const preformatGetAssertReq = (getAssert: any): any => {
   getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
   for (const cred of getAssert.allowCredentials ?? []) {
     cred.id = Uint8Array.fromBase64(cred.id, { alphabet: 'base64url' })
@@ -131,7 +133,7 @@ const preformatGetAssertReq = (getAssert) => {
   return getAssert
 }
 
-export default {
+export default defineComponent({
 name: 'Login',
 components: { ThemeButton },
 data () {
@@ -141,7 +143,7 @@ data () {
     signUpOption: false,
     versionOption: 'v1.0.0',
     activeUser: {
-      user: null,
+      user: null as any,
       token: ''
     },
     user: {
@@ -155,7 +157,7 @@ data () {
     submitted2: false,
     signupRoute: '',
     keyScreen: false,
-    keys: [],
+    keys: [] as any[],
     mfa: false,
     verification_method: false
   }
@@ -199,7 +201,7 @@ methods: {
       .catch(() => { this.signUpOption = false })
   },
   getVersion () {
-    this.$get('auth/get-version')
+    this.$get<VersionResponse>('auth/get-version')
       .then((response) => {
         if (response) {
           this.versionOption = response.data
@@ -207,7 +209,7 @@ methods: {
       })
       .catch(() => {})
   },
-  handleSubmit (e) {
+  handleSubmit (e: Event) {
     e.preventDefault()
     this.submitted = true
     this.$v.$touch()
@@ -239,7 +241,7 @@ methods: {
       })
       .catch(() => {})
   },
-  async verifyKey (key) {
+  async verifyKey (key: any) {
     let getAssertionChallenge
     try {
       getAssertionChallenge = await this.$post('hardwarekey/login-key', { user: this.activeUser.user._id, title: key.title })
@@ -265,7 +267,7 @@ methods: {
       notifyError('Login failed with security key.', 'Key!')
     }
   },
-  handleSubmit2 (e) {
+  handleSubmit2 (e?: Event) {
     if (e?.preventDefault) {
       console.log("Prevented default!")
       e.preventDefault();
@@ -289,7 +291,7 @@ methods: {
       this.otpError = true
     }
   },
-  chooseMethods (method) {
+  chooseMethods (method: string) {
     if (method === 'hardware_key') {
       this.otpScreen = false
       this.keyScreen = true
@@ -316,5 +318,5 @@ methods: {
     }
   }
 }
-}
+})
 </script>

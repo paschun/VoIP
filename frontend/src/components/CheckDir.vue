@@ -2,9 +2,10 @@
   <div></div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 
-export default {
+export default defineComponent({
   mounted () {
     this.checkDirectoryName()
   },
@@ -23,5 +24,5 @@ export default {
         .catch((e) => console.error(e))
     }
   }
-}
+})
 </script>

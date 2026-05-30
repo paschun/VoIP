@@ -38,7 +38,8 @@
     </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { publicKeyCredentialToJSON } from '../../../helper'
 import { notifySuccess, notifyError } from '@/notify'
 import { decode as cborDecode } from 'cbor-x/decode'
@@ -47,7 +48,7 @@ import { decode as cborDecode } from 'cbor-x/decode'
 // Local WebAuthn helpers (only used by this component)
 // ---------------------------------------------------------------------------
 
-const getEndian = () => {
+const getEndian = (): 'little' | 'big' => {
   const buf = new ArrayBuffer(2)
   const u8 = new Uint8Array(buf)
   u8[0] = 0xAA
@@ -55,23 +56,23 @@ const getEndian = () => {
   return new Uint16Array(buf)[0] === 0xBBAA ? 'little' : 'big'
 }
 
-const readBE16 = (buffer) => {
+const readBE16 = (buffer: Uint8Array): number => {
   if (buffer.length !== 2) throw new Error('Only 2byte buffer allowed!')
   if (getEndian() !== 'big') buffer = buffer.reverse()
   return new Uint16Array(buffer.buffer)[0]
 }
 
-const readBE32 = (buffer) => {
+const readBE32 = (buffer: Uint8Array): number => {
   if (buffer.length !== 4) throw new Error('Only 4byte buffers allowed!')
   if (getEndian() !== 'big') buffer = buffer.reverse()
   return new Uint32Array(buffer.buffer)[0]
 }
 
-const bufToHex = (buffer) =>
-  Array.prototype.map.call(new Uint8Array(buffer), x => x.toString(16).padStart(2, '0')).join('')
+const bufToHex = (buffer: Uint8Array): string =>
+  Array.prototype.map.call(new Uint8Array(buffer), (x: number) => x.toString(16).padStart(2, '0')).join('')
 
 /** Parse a WebAuthn authData buffer. https://gist.github.com/herrjemand/dbeb2c2b76362052e5268224660b6fbc */
-const parseAuthData = (buffer) => {
+const parseAuthData = (buffer: Uint8Array) => {
   const rpIdHash  = buffer.slice(0, 32);  buffer = buffer.slice(32)
   const flagsBuf  = buffer.slice(0, 1);   buffer = buffer.slice(1)
   const flagsInt  = flagsBuf[0]
@@ -97,24 +98,24 @@ const parseAuthData = (buffer) => {
 }
 
 /** Convert challenge + user.id from base64url strings to Uint8Arrays in-place. */
-const preformatMakeCredReq = (req) => {
+const preformatMakeCredReq = (req: any): any => {
   req.challenge = Uint8Array.fromBase64(req.challenge, { alphabet: 'base64url' })
   req.user.id   = Uint8Array.fromBase64(req.user.id, { alphabet: 'base64url' })
   return req
 }
 
-export default {
+export default defineComponent({
   data () {
     return {
       title: '',
-      keys: []
+      keys: [] as any[]
     }
   },
   mounted () {
     this.getHardwarekey()
   },
   methods: {
-    async deleteKey (id) {
+    async deleteKey (id: any) {
       const result = await this.$swal.fire({
         title: 'Are you sure?',
         text: "Hardware key will be deleted. You will have to set it up again!",
@@ -161,11 +162,11 @@ export default {
         const respnse = await this.$post('hardwarekey/register', {})
         const hardwarekey = respnse.hardwarekey
         let makeCredChallenge = respnse.publicKey
-        let newCredentialInfo
+        let newCredentialInfo: any
         try {
           console.log(makeCredChallenge)
           makeCredChallenge = preformatMakeCredReq(makeCredChallenge)
-          const excludeCredentials = []
+          const excludeCredentials: any[] = []
           for (const key of hardwarekey) {
             console.log(key)
             excludeCredentials.push({
@@ -177,13 +178,13 @@ export default {
           newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
           console.log(newCredentialInfo)
         } catch (error) {
-          notifyError(error.message, 'Key!')
+          notifyError((error as Error).message, 'Key!')
         }
 
         // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
         const attestationObject = cborDecode(new Uint8Array(newCredentialInfo.response.attestationObject))
         const authData = parseAuthData(attestationObject.authData)
-        const aaguid = bufToHex(authData.aaguid)
+        const aaguid = bufToHex(authData.aaguid!)
         newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
         try {
           const verifyResponse = await this.$post('hardwarekey/verify', { id: newCredentialInfo.id, aaguid })
@@ -200,5 +201,5 @@ export default {
       } catch { /* ignore */ }
     },
   }
-}
+})
 </script>

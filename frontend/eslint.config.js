@@ -16,17 +16,24 @@ export default defineConfig([
     languageOptions: {
       parserOptions: {
         projectService: true,
+        // Required so the type-aware project service can load `<script lang="ts">` SFCs.
+        extraFileExtensions: ['.vue'],
       },
     },
   }, {
     rules: {
-      // The migration intentionally uses `any` at untyped boundaries (vuelidate,
-      // the telephony SDKs, the untyped JSON REST layer, recursive WebAuthn
-      // JSON). `no-explicit-any` plus the type-aware `no-unsafe-*` family (which
-      // v8 bundles into recommended/recommendedTypeChecked) are off for now and
-      // get re-enabled in the final strict pass. Every other type-aware rule
-      // (no-floating-promises, no-misused-promises, await-thenable, …) stays on.
-      '@typescript-eslint/no-explicit-any': 'off',
+      // The migration still uses escape hatches at untyped boundaries (vuelidate,
+      // the telephony SDKs, the untyped JSON REST layer, recursive WebAuthn JSON,
+      // DOM lookups). These three are surfaced as **warnings** so they stay
+      // visible and shrink over time — do not silence them, type the boundary
+      // instead (prefer a `@shared/api-contracts` type or an SDK's own types).
+      '@typescript-eslint/no-explicit-any': 'warn', // `: any`, `as any`, `any[]`
+      '@typescript-eslint/no-non-null-assertion': 'warn', // `foo!`
+      // Flags every `as` cast (assertionStyle 'never' disallows all assertions).
+      '@typescript-eslint/consistent-type-assertions': ['warn', { assertionStyle: 'never' }],
+      // The type-aware `no-unsafe-*` family (bundled into recommendedTypeChecked)
+      // stays off for now — it fires on every read off an `any`, which is noise
+      // until the boundaries above are typed. Re-enable in the final strict pass.
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -41,6 +48,19 @@ export default defineConfig([
     files: ['**/*.vue'],
     languageOptions: {
       parserOptions: { parser: tseslint.parser },
+    },
+    rules: {
+      // Vue 2 Options API relies on fire-and-forget promises throughout
+      // (intentional, per AGENTS.md): `this.$post(...).then(...)` without await,
+      // `this.$router.push()`, `swal.fire()`, and async `@click` handlers. These
+      // two type-aware rules directly conflict with that documented convention,
+      // so they are relaxed for SFCs only (both stay on for plain `.ts`).
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      // Vue 2 auto-binds Options-API methods to the instance, so passing
+      // `this.method` as a callback (EventBus.$on, addEventListener, …) is safe.
+      // `unbound-method` doesn't know that, so it's a false positive in SFCs.
+      '@typescript-eslint/unbound-method': 'off',
     },
   }, {
     languageOptions: {

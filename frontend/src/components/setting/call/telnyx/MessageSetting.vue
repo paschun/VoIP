@@ -11,7 +11,8 @@
   />
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import FallbackUrlSetting from '../FallbackUrlSetting.vue'
-export default { components: { FallbackUrlSetting } }
+export default defineComponent({ components: { FallbackUrlSetting } })
 </script>

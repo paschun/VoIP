@@ -438,7 +438,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from "vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
@@ -448,12 +449,13 @@ import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
+import { parseJSON } from "@/helper";
 
-function getValidString(str) {
+function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;
 }
 
-export default {
+export default defineComponent({
   components: {
     ProfileView,
     ThemeButton,
@@ -473,17 +475,17 @@ export default {
       },
       query: "",
       isLoading: false,
-      contacts: [],
+      contacts: [] as any[],
       activeChat: "",
       submitted: false,
       messageListLoader: true,
-      numbers: [],
-      search_numbers: [],
-      userdata: null,
-      activeProfile: null,
-      tNumbers: [],
-      twilioNumbers: [],
-      activeItem: null,
+      numbers: [] as any[],
+      search_numbers: [] as any[],
+      userdata: null as any,
+      activeProfile: null as any,
+      tNumbers: [] as any[],
+      twilioNumbers: [] as any[],
+      activeItem: null as any,
       options: [
         { text: "Telnyx", value: "telnyx" },
         { text: "Twilio", value: "twilio" }
@@ -503,7 +505,7 @@ export default {
     }
   },
   mounted() {
-    this.userdata = JSON.parse(this.$cookie.get("userdata"));
+    this.userdata = parseJSON(this.$cookie.get("userdata"));
     this.onaddContact();
     PullToRefresh.init({
       mainElement: ".contact-list",
@@ -513,13 +515,13 @@ export default {
       distMax: 140
     });
     EventBus.$on("getOneProfile", () => this.getOneProfile());
-    EventBus.$on("contactAdded", number => {
+    EventBus.$on("contactAdded", (number: any) => {
       this.getNumberList();
       setTimeout(() => {
         if (number === "delete" || this.activeItem._id === number) {
           const numberClass = document.getElementsByClassName(`activeChat`);
           if (numberClass.length > 0) {
-            numberClass[0].click();
+            (numberClass[0] as HTMLElement).click();
           }
         }
       }, 1500);
@@ -568,9 +570,9 @@ export default {
       }
     },
     refreshProfile() {
-      this.$refs.childComponent.getallProfile();
+      (this.$refs.childComponent as any).getallProfile();
     },
-    onClickChild(value) {
+    onClickChild(value: any) {
       this.activeProfile = value;
       this.messageListLoader = true;
       this.getNumberList();
@@ -578,7 +580,7 @@ export default {
       this.$emit("activeChat", value);
       this.getSetting();
     },
-    firstChatShow(id) {
+    firstChatShow(id: any) {
       const element = document.getElementById(id.id);
       if (element) {
         element.style.display = "none";
@@ -607,7 +609,7 @@ export default {
           console.error(e);
         });
     },
-    hideShowDeleteIcon(response) {
+    hideShowDeleteIcon(response: any) {
       if (response.type === "telnyx" && response.api_key) {
         this.showDelete = true;
       } else if (response.type === "twilio" && response.twilio_sid) {
@@ -662,10 +664,10 @@ export default {
           this.twilioNumbers = [];
           this.activeProfile = response.data;
           localStorage.removeItem("activeProfile");
-          this.$refs["my-modal"].hide();
-          this.$refs.childComponent.getallProfile();
+          (this.$refs["my-modal"] as any).hide();
+          (this.$refs.childComponent as any).getallProfile();
           setTimeout(() => {
-            this.$refs.childComponent.activeFirstProfile();
+            (this.$refs.childComponent as any).activeFirstProfile();
           }, 2000);
         }
       } catch (e) {
@@ -702,13 +704,13 @@ export default {
         this.twilioNumbers = [];
         this.activeProfile = response.data;
         this.hideShowDeleteIcon(response.data);
-        this.$refs.childComponent.getallProfile();
+        (this.$refs.childComponent as any).getallProfile();
       } catch (e) {
         console.error(e);
       }
     },
-    getNumbers(type) {
-      const settings = this.user;
+    getNumbers(type: any) {
+      const settings = this.user as any;
       settings.type = type;
       if (type === "telnyx") {
         this.tNumbers = [];
@@ -758,7 +760,7 @@ export default {
             }
           }
         }
-        const sendData = {
+        const sendData: any = {
           api_key: this.user.api_key,
           number: this.user.number,
           user: this.userdata._id,
@@ -838,15 +840,15 @@ export default {
         }
       }
     },
-    async submitCreateSetting(sendData) {
+    async submitCreateSetting(sendData: any) {
       this.isLoading = true;
       try {
         const response = await this.$post("setting/create", sendData);
         if (response) {
-          this.$refs["my-modal"].hide();
+          (this.$refs["my-modal"] as any).hide();
           this.activeProfile = response.data;
           this.hideShowDeleteIcon(response.data);
-          this.$refs.childComponent.getallProfile();
+          (this.$refs.childComponent as any).getallProfile();
           EventBus.$emit("changeProfile2", true);
           this.$v.$reset();
         }
@@ -857,7 +859,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style scoped>

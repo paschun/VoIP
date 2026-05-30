@@ -28,10 +28,11 @@
         </form>
     </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { required, minLength, sameAs } from 'vuelidate/lib/validators'
 import { notifySuccess } from '@/notify'
-export default {
+export default defineComponent({
   data () {
     return {
       user: {
@@ -65,6 +66,7 @@ export default {
             notifySuccess('Password updated successfully')
             this.submitted = false
             this.user = {
+              old_password: '',
               password: '',
               c_password: ''
             }
@@ -76,5 +78,5 @@ export default {
         })
     }
   }
-}
+})
 </script>

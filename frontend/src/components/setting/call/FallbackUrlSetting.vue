@@ -25,7 +25,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { notifySuccess } from '@/notify'
 import { required, helpers } from 'vuelidate/lib/validators'
 
@@ -33,10 +34,10 @@ import { required, helpers } from 'vuelidate/lib/validators'
 const url = helpers.regex('phonenumber', /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/)
 
 /** Read a property out of an object using a dotted path (e.g. "data.data.webhook_url"). */
-const pickPath = (obj, path) => path.split('.').reduce((acc, k) => acc?.[k], obj)
+const pickPath = (obj: any, path: string): any => path.split('.').reduce((acc, k) => acc?.[k], obj)
 
 /** Strip everything but `${protocol}//${hostname}` from a URL string. */
-const toOrigin = (str) => {
+const toOrigin = (str: string): string => {
   const u = new URL(str)
   return `${u.protocol}//${u.hostname}`
 }
@@ -45,7 +46,7 @@ const toOrigin = (str) => {
  * Shared "webhook URL + fallback URL" settings form, used by the Telnyx
  * SIP/TeXML/Message and Twilio TwiML settings panels.
  */
-export default {
+export default defineComponent({
   name: 'FallbackUrlSetting',
   props: {
     /** Endpoint to load current setting values from (POST). */
@@ -72,7 +73,7 @@ export default {
     return {
       form: { url: '', main_url: '' },
       submitted: false,
-      setting: null
+      setting: null as any
     }
   },
   validations: {
@@ -91,7 +92,7 @@ export default {
         .then((response) => {
           const main = pickPath(response, this.mainPath)
           const fallback = pickPath(response, this.fallbackPath)
-          const normalize = (v) => this.normalizeHost && v ? toOrigin(v) : v
+          const normalize = (v: any) => this.normalizeHost && v ? toOrigin(v) : v
           this.form.main_url = normalize(main) ?? ''
           if (fallback) this.form.url = normalize(fallback)
         })
@@ -113,7 +114,7 @@ export default {
         .catch((e) => console.error(e))
     }
   }
-}
+})
 </script>
 
 <style scoped>

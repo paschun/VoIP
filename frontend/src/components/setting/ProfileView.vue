@@ -47,16 +47,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { required } from 'vuelidate/lib/validators'
 import { notifySuccess } from '@/notify'
 import { EventBus } from '@/event-bus'
 
-export default {
+export default defineComponent({
   data () {
     return {
-      profiles: [],
-      activeProfile: null,
+      profiles: [] as any[],
+      activeProfile: null as any,
       submitted3: false,
       isLoading: false,
       form: {
@@ -73,7 +74,7 @@ export default {
     this.getallProfile()
   },
   methods: {
-    changeProfile (profile) {
+    changeProfile (profile: any) {
       this.activeProfile = profile
       localStorage.setItem('activeProfile', JSON.stringify(profile))
       this.$emit('clicked', profile)
@@ -132,7 +133,7 @@ export default {
           if (response) {
             notifySuccess('Profile added successfully!')
             this.changeProfile(response.data)
-            this.$refs['add-profile'].hide()
+            ;(this.$refs['add-profile'] as any).hide()
             this.getallProfile()
             this.isLoading = false
             EventBus.$emit('toggleLoader', true)
@@ -145,7 +146,7 @@ export default {
         })
     }
   }
-}
+})
 </script>
 
 <style scoped>

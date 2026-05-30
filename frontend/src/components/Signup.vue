@@ -58,22 +58,25 @@
     </div>
 </template>
 
-<script>
-
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { required, minLength, sameAs } from 'vuelidate/lib/validators'
 import { api } from '@/core/services/api.service'
 import { notifyError } from '@/notify'
+import type { ApiEnvelope } from '@shared/api-contracts'
 
-export default {
+export default defineComponent({
   name: 'Signup',
   data () {
     return {
       user: {
         email: '',
-        password: ''
+        password: '',
+        c_password: ''
       },
       submitted: false,
-      loginRoute: ''
+      loginRoute: '',
+      signUpOption: false
     }
   },
   validations: {
@@ -88,7 +91,7 @@ export default {
     this.getsignup()
   },
   methods: {
-    handleSubmit (e) {
+    handleSubmit (e: Event) {
       e.preventDefault()
       this.submitted = true
       this.$v.$touch()
@@ -110,7 +113,7 @@ export default {
     },
 
     getsignup () {
-      api.post('auth/get-signup', {})
+      api.post<ApiEnvelope<string>>('auth/get-signup', {})
         .then(response => {
           if (response?.data === 'on') {
             this.signUpOption = true
@@ -123,6 +126,6 @@ export default {
         })
     }
   }
-}
+})
 </script>
 

@@ -28,7 +28,7 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
  * Issue a fetch request and return the parsed JSON body (or raw text if not
  * JSON). Throws an `ApiError` (with `status`/`data`) on non-2xx responses.
  */
-async function request(method: HttpMethod, resource: string, body?: unknown): Promise<any> {
+async function request<T = unknown>(method: HttpMethod, resource: string, body?: unknown): Promise<T> {
   const url = /^https?:\/\//i.test(resource)
     ? resource
     : combineURLs(baseURL, resource)
@@ -55,13 +55,13 @@ async function request(method: HttpMethod, resource: string, body?: unknown): Pr
     err.data = data
     throw err
   }
-  return data
+  return data as T
 }
 
 export const api = {
   /** Send a GET request. Returns the parsed JSON response body. */
-  get: (url: string): Promise<any> => request('GET', url),
+  get: <T = unknown>(url: string): Promise<T> => request<T>('GET', url),
 
   /** Send a POST request with a JSON body. Returns the parsed JSON response body. */
-  post: (url: string, body?: unknown): Promise<any> => request('POST', url, body)
+  post: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('POST', url, body)
 }

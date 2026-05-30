@@ -18,6 +18,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // API contracts shared with the backend (repo-root ../shared).
+      '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
     },
     // Vue 2 SFC imports written without extensions (e.g. `import App from './App'`) still work because `.vue` is listed here.
     // `.ts` lets extensionless imports of converted modules (e.g. `@/helper`, `./router`) resolve.
@@ -37,6 +39,8 @@ export default defineConfig({
     host: 'localhost',
     port: 8080,
     strictPort: true,
+    // Allow importing ../shared (above the Vite root) in dev.
+    fs: { allow: ['..'] },
   },
   preview: {
     port: 8080,

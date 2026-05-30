@@ -28,13 +28,14 @@
     </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
 import CallSetting from '../CallSetting.vue'
 import SettingsSection from '../SettingsSection.vue'
 
-export default {
+export default defineComponent({
   components: { ChangeUsername, ChangePassword, CallSetting, SettingsSection },
   data () {
     return {
@@ -42,7 +43,7 @@ export default {
     }
   },
   methods: {
-    enableMenu (menu) {
+    enableMenu (menu: string) {
       this.activeMenu = menu
     },
     async deleteAccount () {
@@ -77,5 +78,5 @@ export default {
       window.location.href = `/${this.$route.params.appdirectory}/`
     }
   }
-}
+})
 </script>

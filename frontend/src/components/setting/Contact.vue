@@ -119,8 +119,10 @@
         </b-modal>
     </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify'
+import type { Contact } from '@shared/api-contracts'
 import { required, helpers } from 'vuelidate/lib/validators'
 import Papa from 'papaparse'
 import { EventBus } from '@/event-bus'
@@ -128,23 +130,19 @@ import { EventBus } from '@/event-bus'
 // eslint-disable-next-line no-useless-escape
 const phonenumber = helpers.regex('phonenumber', /^\+?[0-9\(\-\)\ ]{5,17}$/)
 
-function ConvertToCSV (objArray, headerList) {
+function ConvertToCSV (objArray: any, headerList: string[]): string {
   const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
   let str = ''
   let row = ''
 
-  for (const index in headerList) {
-    console.log(index)
-    console.log(headerList[index])
-    row += headerList[index] + ','
+  for (const head of headerList) {
+    row += head + ','
   }
   row = row.slice(0, -1)
   str += row + '\r\n'
   for (let i = 0; i < array.length; i++) {
     let line = ''
-    for (const index in headerList) {
-      const head = headerList[index]
-
+    for (const head of headerList) {
       line += array[i][head] + ','
     }
     str += line + '\r\n'
@@ -153,10 +151,10 @@ function ConvertToCSV (objArray, headerList) {
 }
 
 function choseFile2 () {
-  document.getElementById('model_file_input2').click()
+  document.getElementById('model_file_input2')!.click()
 }
 
-function downloadFile (data, filename = 'data') {
+function downloadFile (data: any, filename = 'data') {
   const csvData = ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
   console.log(csvData)
   const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
@@ -172,8 +170,10 @@ function downloadFile (data, filename = 'data') {
   document.body.removeChild(dwldLink)
 }
 
-export default {
-  props: ['contacts'],
+export default defineComponent({
+  props: {
+    contacts: { type: Array as PropType<Contact[]>, default: () => [] as Contact[] }
+  },
   data () {
     return {
       access_token: null,
@@ -182,10 +182,10 @@ export default {
       modelFileValu: '',
       submitted: false,
       userdata: null,
-      editId: false,
-      csvFile: null,
+      editId: false as any,
+      csvFile: null as any,
       submitted2: false,
-      search_contacts: [],
+      search_contacts: [] as Contact[],
       form: {
         first_name: '',
         last_name: '',
@@ -201,7 +201,8 @@ export default {
           'note': 'notes go here'
         }
       ],
-      csvUploadArray2: []
+      csvUploadArray2: [] as any[],
+      csvUploadArray: [] as any[]
     }
   },
   validations: {
@@ -213,10 +214,10 @@ export default {
     }
   },
   mounted () {
-    EventBus.$on('addContact', (number) => {
+    EventBus.$on('addContact', (number: any) => {
       this.editId = false
       this.emptyContact()
-      this.$refs['modal-contact'].show()
+      ;(this.$refs['modal-contact'] as any).show()
       this.form.number = number
     })
   },
@@ -231,7 +232,7 @@ export default {
       this.form.note = ''
     },
 
-    async onSelect (event) {
+    async onSelect (event: any) {
       this.csvFile = true
       console.log(event)
       const fileToRead = event.target.files[0]
@@ -239,19 +240,19 @@ export default {
       this.csvUploadArray2 = await this.readFile(fileToRead)
       console.log(this.csvUploadArray2)
     },
-    readFile (file) {
-      return new Promise((resolve) => {
+    readFile (file: any) {
+      return new Promise<any[]>((resolve) => {
         const fileReader = new FileReader()
         fileReader.readAsText(file, 'UTF-8')
-        fileReader.onload = (e) => {
+        fileReader.onload = (e: any) => {
           const textFromFileLoaded = e.target.result
           const options = {
-            complete: (results) => {
+            complete: (results: any) => {
               this.csvUploadArray = results.data
             }
           }
           Papa.parse(textFromFileLoaded, options)
-          const array = []
+          const array: any[] = []
           const csvdata = this.csvUploadArray
           for (let i = 0; i < csvdata.length; ++i) {
             if (i !== 0) {
@@ -277,7 +278,7 @@ export default {
     openContactModel () {
       this.editId = false
       this.emptyContact()
-      this.$refs['modal-contact'].show()
+      ;(this.$refs['modal-contact'] as any).show()
     },
     handleSubmit () {
       this.submitted = true
@@ -292,7 +293,7 @@ export default {
       this.$post(request.url, request.data)
         .then((response) => {
           if (response) {
-            this.$refs['modal-contact'].hide()
+            ;(this.$refs['modal-contact'] as any).hide()
             this.$emit('onaddContact', true)
             EventBus.$emit('contactAdded', this.form.number)
             this.emptyContact()
@@ -306,7 +307,7 @@ export default {
       if (this.csvUploadArray2.length > 0) {
         this.$post('contact/multiple-add', { contacts: this.csvUploadArray2 })
           .then(() => {
-            this.$refs['modal-contact'].hide()
+            ;(this.$refs['modal-contact'] as any).hide()
             this.$emit('onaddContact', true)
             this.modelFileValu = ''
           })
@@ -315,7 +316,7 @@ export default {
         notifyError('Please upload valid file!')
       }
     },
-    async deletechat (id) {
+    async deletechat (id: any) {
       const result = await this.$swal.fire({
         icon: 'info',
         title: 'Do you want to delete this contact?',
@@ -336,7 +337,7 @@ export default {
         console.error(e)
       }
     },
-    updateContact (contact) {
+    updateContact (contact: any) {
       this.editId = contact._id
       this.form = {
         first_name: contact.first_name,
@@ -344,7 +345,7 @@ export default {
         number: contact.number,
         note: contact.note
       }
-      this.$refs['modal-contact'].show()
+      ;(this.$refs['modal-contact'] as any).show()
     },
     async deleteAll () {
       const result = await this.$swal.fire({
@@ -368,7 +369,7 @@ export default {
     },
     searchContact () {
       const search = new RegExp(this.query, 'i')
-      this.search_contacts = this.contacts.filter(item =>
+      this.search_contacts = this.contacts.filter((item: Contact) =>
         search.test(item.first_name) ||
         search.test(item.last_name) ||
         search.test(item.number)
@@ -380,7 +381,7 @@ export default {
       this.searchContact()
     }
   }
-}
+})
 </script>
 
 <style scoped>

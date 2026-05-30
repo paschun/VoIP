@@ -6,13 +6,10 @@
     "lib": ["ESNext", "DOM"],
     "types": ["node", "vite/client"],
 
-    // Incremental migration: .js and .ts coexist. We load .js (so imports
-    // resolve) but do NOT type-check it yet. Flip checkJs/strict on later.
+    // .js (vite/eslint config) is allowed but not type-checked.
     "allowJs": true,
     "checkJs": false,
-    "strict": false,
-    "noImplicitThis": true,
-    "noImplicitAny": false,
+    "strict": true,
 
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -25,13 +22,14 @@
     "sourceMap": true,
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/*"]
     }
   },
   // vue-tsc: typecheck SFCs against Vue 2.7's template/types.
   "vueCompilerOptions": {
     "target": 2.7
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "*.js", "*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "../shared/**/*.ts", "*.js", "*.ts"],
   "exclude": ["node_modules", "dist"]
 }

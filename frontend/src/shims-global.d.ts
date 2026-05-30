@@ -9,8 +9,10 @@ declare module 'vue/types/vue' {
   interface Vue {
     // core/api.plugin — resolve to the parsed body on success, or `false` on
     // failure (401/400 are swallowed there). Guard on a falsy return.
-    $post(url: string, data?: unknown): Promise<any>
-    $get(url: string): Promise<any>
+    // Pass a contract type to get a typed response: `this.$post<ApiEnvelope<Foo>>(url)`.
+    // Default `T = any` keeps untyped call sites returning `any`.
+    $post<T = any>(url: string, data?: unknown): Promise<T | false>
+    $get<T = any>(url: string): Promise<T | false>
 
     // vue-cookie (no bundled types).
     $cookie: {
@@ -29,6 +31,11 @@ declare module 'vue/types/vue' {
 
     // vue-moment — proxies the `moment` factory.
     $moment: (...args: any[]) => any
+
+    // vue-moment also registers a global `moment` filter (`{{ x | moment(...) }}`).
+    // vue-tsc resolves the filter to this instance member; type-only (at runtime
+    // Vue 2's filter mechanism handles it).
+    moment: (...args: any[]) => any
 
     // NOTE: `$swal` is contributed by vue-sweetalert2's own types. If, once you
     // convert a component, `this.$swal` is reported as unknown, uncomment:

@@ -16,17 +16,18 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 /**
  * Standard "section header with back arrow" layout used by the settings
  * sidebars. Slot is the section body.
  */
-export default {
+export default defineComponent({
   name: 'SettingsSection',
   props: {
     title: { type: String, required: true },
     titleTag: { type: String, default: 'h4' },
     iconScale: { type: [String, Number], default: 2 }
   }
-}
+})
 </script>

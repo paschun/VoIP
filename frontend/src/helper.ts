@@ -27,6 +27,16 @@ export const publicKeyCredentialToJSON = (pubKeyCred: any): any => {
   return pubKeyCred
 }
 
+/**
+ * `JSON.parse` a value that may be absent — e.g. `localStorage.getItem(...)` or
+ * `$cookie.get(...)`, which return `string | null`. Returns `null` for a
+ * null/undefined input (mirroring the old `JSON.parse(null)` → null behavior)
+ * instead of the awkward `?? 'null'` dance. Throws on malformed JSON, like
+ * `JSON.parse` itself.
+ */
+export const parseJSON = (value: string | null): any =>
+  value === null ? null : JSON.parse(value)
+
 /** Join URL fragments with exactly one `/` between them. */
 export const combineURLs = (...urls: string[]): string => urls.reduce(
   (acc, part) => acc.replace(/\/+$/, '') + '/' + part.replace(/^\/+/, '')

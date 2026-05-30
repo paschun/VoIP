@@ -13,11 +13,13 @@
         </form>
     </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { required } from 'vuelidate/lib/validators'
 import { notifySuccess } from '@/notify'
+import { parseJSON } from '@/helper'
 
-export default {
+export default defineComponent({
   data () {
     return {
       form: {
@@ -33,7 +35,7 @@ export default {
   },
   mounted: function () {
     // this.getContacts()
-    const userdata = JSON.parse(this.$cookie.get('userdata'))
+    const userdata = parseJSON(this.$cookie.get('userdata'))
     if (userdata.email !== undefined) {
       this.form.email = userdata.email
     }
@@ -55,5 +57,5 @@ export default {
         .catch((e) => console.error(e))
     }
   }
-}
+})
 </script>

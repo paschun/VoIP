@@ -160,12 +160,30 @@
     </div>
 </template>
 
-<script>
-import { TelnyxRTC } from '@telnyx/webrtc'
-import { Device } from '@twilio/voice-sdk'
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
+import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
+import { parseJSON } from '@/helper'
+import type { ApiEnvelope, CallToken } from '@shared/api-contracts'
+
+export default defineComponent({
   props: ['contacts'],
-  data () {
+  data (): {
+    number: any
+    connection: any
+    name: string
+    mm: string | number
+    ss: string | number
+    incoming: boolean
+    callType: string
+    newCall: TelnyxCall | null
+    searchContacts: any[]
+    device: Device | null
+    client: TelnyxRTC | null
+    userDuration: any
+    selectedContact: string
+  } {
     return {
       number: null,
       connection: null,
@@ -177,6 +195,8 @@ export default {
       newCall: null,
       searchContacts: [],
       device: null,
+      client: null,
+      userDuration: null,
       selectedContact: ''
     }
   },
@@ -186,42 +206,43 @@ export default {
     this.deviceSetup(tokenData)
   },
   methods: {
-    deviceSetup (tokenData) {
+    deviceSetup (tokenData: CallToken | false) {
       if (tokenData) {
         if (tokenData.type === 'twilio') {
           this.callType = 'twilio'
-          this.device = new Device(tokenData.token)
-          this.device.on('registered', () => console.log('Connected'))
-          this.device.on('error', (error) => {
+          const device = new Device(tokenData.token)
+          device.on('registered', () => console.log('Connected'))
+          device.on('error', (error: Error) => {
             console.error('error')
             console.error(error)
           })
-          this.device.on('incoming', (call) => {
-            this.$refs['modalTall'].show()
+          device.on('incoming', (call: TwilioCall) => {
+            ;(this.$refs['modalTall'] as any).show()
             this.connection = call
             this.number = call.parameters.From
             this.incoming = true
             this.bindCallEvents(call)
           })
-          this.device.register()
+          device.register()
+          this.device = device
         } else if (tokenData.type === 'telnyx' && tokenData.setting.sip_username && tokenData.setting.sip_password) {
           this.callType = 'telnyx'
-          this.client = new TelnyxRTC({
+          const client = new TelnyxRTC({
             login: tokenData.setting.sip_username,
             password: tokenData.setting.sip_password
           })
-          this.client.connect()
-          this.client.remoteElement = 'remoteMedia'
-          this.client
+          client.connect()
+          client.remoteElement = 'remoteMedia'
+          client
             .on('telnyx.ready', () => console.log('ready to call'))
             .on('telnyx.error', () => console.error('error'))
             .on('telnyx.notification', (notification) => {
               const call = notification.call
-              if (notification.type === 'callUpdate') {
+              if (notification.type === 'callUpdate' && call) {
                 this.connection = call
                 switch (call.state) {
                   case 'ringing':
-                    this.$refs['modalTall'].show()
+                    ;(this.$refs['modalTall'] as any).show()
                     this.number = call.options.remoteCallerNumber
                     this.incoming = true
                     break
@@ -244,16 +265,17 @@ export default {
                 }
               }
             })
+          this.client = client
         }
       }
     },
-    getToken () {
-      return new Promise(resolve => {
-        const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
+    getToken (): Promise<CallToken | false> {
+      return new Promise<CallToken | false>(resolve => {
+        const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
         if (profileLocal) {
-          this.$post('call/token', { setting_id: profileLocal._id })
+          this.$post<ApiEnvelope<CallToken>>('call/token', { setting_id: profileLocal._id })
             .then((response) => {
-              resolve(response.data)
+              resolve(response ? response.data : false)
             })
             .catch((e) => {
               console.error(e)
@@ -274,7 +296,7 @@ export default {
         })
     },
     getSetting () {
-      const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
+      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
       if (profileLocal) {
         this.$post('setting/get-setting', { setting: profileLocal._id })
           .then(async (response) => {
@@ -291,25 +313,28 @@ export default {
           })
       }
     },
-    async makeCall (number) {
+    async makeCall (number: any) {
       this.number = number
       const n = number.replace(/\D/g, '')
-      const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
+      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
       if (this.callType === 'twilio') {
-        const call = await this.device.connect({
+        const call = await this.device?.connect({
           params: { number: n, twilio_number: profileLocal.number }
         })
-        this.connection = call
-        this.bindCallEvents(call)
-      } else {
+        if (call) {
+          this.connection = call
+          this.bindCallEvents(call)
+        }
+      } else if (this.client) {
+        // todo: is there any point to storing newCall on `this`?
         this.newCall = this.client.newCall({
           destinationNumber: n,
           callerNumber: profileLocal.number
         })
       }
-      this.$refs['modalTall'].show()
+      ;(this.$refs['modalTall'] as any).show()
     },
-    bindCallEvents (call) {
+    bindCallEvents (call: TwilioCall) {
       call.on('accept', () => {
         this.connection = call
         this.startTimer()
@@ -325,7 +350,7 @@ export default {
       call.on('reject', () => {
         this.dissconnected()
       })
-      call.on('error', (error) => {
+      call.on('error', (error: Error) => {
         console.error('call error')
         console.error(error)
       })
@@ -350,14 +375,16 @@ export default {
     },
     async toggleCall () {
       const n = this.number.replace(/\D/g, '')
-      const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
+      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
       if (this.callType === 'twilio') {
-        const call = await this.device.connect({
+        const call = await this.device?.connect({
           params: { number: n, twilio_number: profileLocal.number }
         })
-        this.connection = call
-        this.bindCallEvents(call)
-      } else {
+        if (call) {
+          this.connection = call
+          this.bindCallEvents(call)
+        }
+      } else if (this.client) {
         this.newCall = this.client.newCall({
           destinationNumber: n,
           callerNumber: profileLocal.number
@@ -393,7 +420,7 @@ export default {
     callHangup () {
       this.dissconnected()
     },
-    clickDailer (number) {
+    clickDailer (number: any) {
       if (this.connection) {
         console.log(number)
         if (this.callType === 'twilio') {
@@ -413,7 +440,7 @@ export default {
     removeNumber () {
       this.number = this.number.slice(0, -1)
     },
-    contactChangeEvent (e) {
+    contactChangeEvent (e: any) {
       this.number = e.code.replace('+', '')
       this.selectedContact = ''
     },
@@ -434,8 +461,8 @@ export default {
         console.error(e)
       }
     },
-    formatecontact (contacts) {
-      const arrContact = []
+    formatecontact (contacts: any) {
+      const arrContact: any[] = []
       for (let i = 0; i < contacts.length; i++) {
         const contact = {label: `${contacts[i].first_name} ${contacts[i].last_name}`, code: contacts[i].number}
         arrContact.push(contact)
@@ -444,12 +471,12 @@ export default {
     }
   },
   watch: {
-    contacts (newVal) {
+    contacts (newVal: any) {
       this.formatecontact(newVal)
     }
   },
   beforeDestroy() {
-    const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
+    const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
     if (profileLocal) {
       if (profileLocal.type === 'telnyx') {
         this.distroyDeviceTelnyx()
@@ -459,7 +486,7 @@ export default {
       }
     }
   }
-}
+})
 </script>
 <style scoped>
   .number{

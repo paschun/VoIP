@@ -26,15 +26,20 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
+export default defineComponent({
   props: {
     options: {
-      type: Array,
+      type: Array as PropType<any[]>,
       required: true
     },
     value: {
-      required: true
+      // Optional for type-checking: vue-tsc models `v-model` as `modelValue` (Vue 3
+      // semantics) even at target 2.7, so a required `value` reads as "missing".
+      // The Vue 2 compiler still wires v-model to `value`/`input` at runtime.
+      // In Vue 3 migration, set this to required: true if possible
+      required: false
     },
     labelProp: {
       type: String,
@@ -48,7 +53,7 @@ export default {
   data() {
     return {
       searchTerm: "",
-      filteredOptions: [],
+      filteredOptions: [] as any[],
       showDropdown: false,
       highlightedIndex: -1,
     };
@@ -61,7 +66,7 @@ export default {
       get() {
         return this.value;
       },
-      set(newValue) {
+      set(newValue: any) {
         this.$emit('input', newValue);
       },
     },
@@ -86,7 +91,7 @@ export default {
       this.searchTerm = '';
       this.filterOptions();
     },
-    selectOption(option) {
+    selectOption(option: any) {
       this.hideOptions();
 
       this.searchTerm = option[this.labelProp];
@@ -96,10 +101,10 @@ export default {
     toggleDropdown() {
       this.showDropdown = !this.showDropdown;
       if (this.showDropdown) {
-        this.$nextTick(() => this.$refs.autocompleteInput.focus());
+        this.$nextTick(() => (this.$refs.autocompleteInput as HTMLInputElement).focus());
       }
     },
-    handleKeyDown(event) {
+    handleKeyDown(event: KeyboardEvent) {
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
@@ -132,7 +137,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style scoped>

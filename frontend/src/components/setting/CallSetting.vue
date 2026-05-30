@@ -5,15 +5,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { EventBus } from '@/event-bus'
+import { parseJSON } from '@/helper'
 import MessageSetting from './call/telnyx/MessageSetting.vue'
 import TwimlSetting from './call/twilio/TwimlSetting.vue'
 
-export default {
+export default defineComponent({
   components: { MessageSetting, TwimlSetting },
   data () {
-    return { setting: null }
+    return { setting: null as Record<string, any> | null }
   },
   mounted () {
     EventBus.$on('changeProfile', this.getCallSetting)
@@ -21,10 +23,10 @@ export default {
   },
   methods: {
     getCallSetting () {
-      const profileLocal = JSON.parse(localStorage.getItem('activeProfile'))
+      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
       console.log('localStorage.activeProfile', profileLocal)
       if (profileLocal) this.setting = profileLocal
     }
   }
-}
+})
 </script>

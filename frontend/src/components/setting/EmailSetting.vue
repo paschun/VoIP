@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="form-group mt-2">
-               <b-form-checkbox id="checkbox-11" v-model="form.secure"  name="secure" :value="true" plain checked="true"  v-b-tooltip.hover.bottomright="'for 465 only'" variant="primary">
+               <b-form-checkbox id="checkbox-11" v-model="form.secure" name="secure" plain v-b-tooltip.hover.bottomright="'for 465 only'" variant="primary">
                 Secure
               </b-form-checkbox>
             </div>
@@ -52,7 +52,7 @@
                 </div>
             </div>
             <div class="form-group mt-2">
-              <b-form-checkbox v-model="form.pgpEncryptEnabled"  name="pgpEncryptEnabled" :value="true" plain v-b-tooltip.hover.bottomright="'for PGP encrypted emails'" variant="primary">
+              <b-form-checkbox v-model="form.pgpEncryptEnabled" name="pgpEncryptEnabled" plain v-b-tooltip.hover.bottomright="'for PGP encrypted emails'" variant="primary">
                 Encrypt with PGP
               </b-form-checkbox>
             </div>
@@ -78,11 +78,12 @@
         </div>
     </div>
 </template>
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { required, email } from 'vuelidate/lib/validators'
 import { notifySuccess } from '@/notify'
 
-export default {
+export default defineComponent({
   data () {
     return {
       form: {
@@ -98,7 +99,7 @@ export default {
       },
       submitted3: false,
       showProfile: false,
-      profiles: []
+      profiles: [] as any[]
     }
   },
   validations: {
@@ -164,7 +165,7 @@ export default {
           console.error(e)
         })
     },
-    profileUpdate (status, id) {
+    profileUpdate (status: any, id: any) {
       this.$post('email/save/setting', { setting_id: id, status })
         .then((response) => {
           if (response) {
@@ -176,6 +177,6 @@ export default {
         })
     }
   }
-}
+})
 </script>
 
