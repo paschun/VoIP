@@ -363,6 +363,25 @@ import { io } from "socket.io-client";
 import { combineURLs } from '@/helper';
 import { notifyError, notifyInfo } from '@/notify';
 
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function getVw() {
+  return Math.round(Math.max(
+    document.documentElement.clientWidth ?? 0,
+    window.innerWidth ?? 0
+  ));
+}
+
+function getVh() {
+  return Math.round(Math.max(
+    document.documentElement.innerHeight ?? 0,
+    window.innerHeight ?? 0
+  ));
+}
+
 export default {
   name: "dashboard",
   components: {
@@ -468,7 +487,7 @@ export default {
     });
     this.dropArea = document.getElementById("drop-area1");
     ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-      this.dropArea.addEventListener(eventName, this.preventDefaults, false);
+      this.dropArea.addEventListener(eventName, preventDefaults, false);
     });
     ["dragenter", "dragover"].forEach((eventName) => {
       this.dropArea.addEventListener(eventName, this.highlight, false);
@@ -604,10 +623,6 @@ export default {
     },
     unhighlight() {
       this.dropArea.classList.remove("highlight");
-    },
-    preventDefaults(e) {
-      e.preventDefault();
-      e.stopPropagation();
     },
     activeProfileView(profile) {
       if (profile.refresh !== undefined && profile.refresh) {
@@ -788,23 +803,11 @@ export default {
       }
     },
     updateVw() {
-      this.vw = this.getVw();
-      this.vh = this.getVh();
+      this.vw = getVw();
+      this.vh = getVh();
       const chatHeight = this.vh - 120;
       document.getElementById("wrapbody").style.height = `${this.vh}px`;
       document.getElementById("chat_body").style.height = `${chatHeight}px`;
-    },
-    getVw() {
-      return Math.round(Math.max(
-        document.documentElement.clientWidth ?? 0,
-        window.innerWidth ?? 0
-      ));
-    },
-    getVh() {
-      return Math.round(Math.max(
-        document.documentElement.innerHeight ?? 0,
-        window.innerHeight ?? 0
-      ));
     },
     getMMSS(time) {
       const mins = ~~((time % 3600) / 60);

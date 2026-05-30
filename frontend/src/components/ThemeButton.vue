@@ -18,10 +18,14 @@
 </template>
 
 <script>
+function getMediaPreference () {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
+}
+
 export default {
   props: ['idHide'],
   mounted () {
-    this.setTheme(localStorage.getItem('user-theme') ?? this.getMediaPreference())
+    this.setTheme(localStorage.getItem('user-theme') ?? getMediaPreference())
   },
 
   data () {
@@ -40,10 +44,6 @@ export default {
       localStorage.setItem('user-theme', theme)
       this.userTheme = theme
       document.documentElement.className = theme
-    },
-
-    getMediaPreference () {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
     }
   }
 }

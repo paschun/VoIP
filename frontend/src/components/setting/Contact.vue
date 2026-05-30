@@ -129,6 +129,46 @@ import { EventBus } from '@/event-bus'
 // eslint-disable-next-line no-useless-escape
 const phonenumber = helpers.regex('phonenumber', /^\+?[0-9\(\-\)\ ]{5,17}$/)
 
+function ConvertToCSV (objArray, headerList) {
+  const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
+  let str = ''
+  let row = ''
+
+  for (const index in headerList) {
+    console.log(index)
+    console.log(headerList[index])
+    row += headerList[index] + ','
+  }
+  row = row.slice(0, -1)
+  str += row + '\r\n'
+  for (let i = 0; i < array.length; i++) {
+    let line = ''
+    for (const index in headerList) {
+      const head = headerList[index]
+
+      line += array[i][head] + ','
+    }
+    str += line + '\r\n'
+  }
+  return str
+}
+
+function downloadFile (data, filename = 'data') {
+  const csvData = ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
+  console.log(csvData)
+  const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const dwldLink = document.createElement('a')
+  const isSafariBrowser = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
+  if (isSafariBrowser) dwldLink.setAttribute('target', '_blank')
+  dwldLink.setAttribute('href', url)
+  dwldLink.setAttribute('download', filename + '.csv')
+  dwldLink.style.visibility = 'hidden'
+  document.body.appendChild(dwldLink)
+  dwldLink.click()
+  document.body.removeChild(dwldLink)
+}
+
 export default {
   props: ['contacts'],
   data () {
@@ -179,7 +219,7 @@ export default {
   },
   methods: {
     exportContact () {
-      this.downloadFile(this.contacts, 'contacts')
+      downloadFile(this.contacts, 'contacts')
     },
     emptyContact () {
       this.form.first_name = ''
@@ -230,46 +270,8 @@ export default {
     choseFile2 () {
       document.getElementById('model_file_input2').click()
     },
-    downloadFile (data, filename = 'data') {
-      const csvData = this.ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
-      console.log(csvData)
-      const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const dwldLink = document.createElement('a')
-      const isSafariBrowser = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
-      if (isSafariBrowser) dwldLink.setAttribute('target', '_blank')
-      dwldLink.setAttribute('href', url)
-      dwldLink.setAttribute('download', filename + '.csv')
-      dwldLink.style.visibility = 'hidden'
-      document.body.appendChild(dwldLink)
-      dwldLink.click()
-      document.body.removeChild(dwldLink)
-    },
     download () {
-      this.downloadFile(this.jsonData, 'sample_file')
-    },
-    ConvertToCSV (objArray, headerList) {
-      const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
-      let str = ''
-      let row = ''
-
-      for (const index in headerList) {
-        console.log(index)
-        console.log(headerList[index])
-        row += headerList[index] + ','
-      }
-      row = row.slice(0, -1)
-      str += row + '\r\n'
-      for (let i = 0; i < array.length; i++) {
-        let line = ''
-        for (const index in headerList) {
-          const head = headerList[index]
-
-          line += array[i][head] + ','
-        }
-        str += line + '\r\n'
-      }
-      return str
+      downloadFile(this.jsonData, 'sample_file')
     },
     openContactModel () {
       this.editId = false

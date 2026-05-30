@@ -468,7 +468,6 @@
         </div>
       </form>
     </b-modal>
-    <!-- / modal -->
   </div>
 </template>
 
@@ -539,7 +538,7 @@ export default {
     PullToRefresh.init({
       mainElement: ".contact-list",
       triggerElement: ".contact-list",
-      onRefresh: () => this.pullRefreshFunction(this),
+      onRefresh: () => this.pullRefreshFunction(),
       distThreshold: 120,
       distMax: 140
     });
@@ -557,10 +556,10 @@ export default {
     });
   },
   methods: {
-    pullRefreshFunction($this) {
-      $this.getNumberList();
-      $this.getOneProfile();
-      $this.refreshProfile();
+    pullRefreshFunction() {
+      this.getNumberList();
+      this.getOneProfile();
+      this.refreshProfile();
     },
     searchContact() {
       // console.log(this.numbers)
