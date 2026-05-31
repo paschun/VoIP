@@ -64,6 +64,7 @@ import { defineComponent } from 'vue'
 import { notifyError } from '@/notify.ts'
 import HardwareKey from './HardwareKey.vue'
 export default defineComponent({
+name: 'MfaSetting',
 components: { HardwareKey },
 data () {
   return {

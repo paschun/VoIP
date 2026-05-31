@@ -399,7 +399,7 @@ function getMMSS(time: number): string {
 }
 
 export default defineComponent({
-  name: "dashboard",
+  name: "DashboardView",
   components: {
     NumberList,
     VueTagsInput,

@@ -63,6 +63,7 @@ import { notifyError } from '@/notify.ts'
 import type { VersionResponse } from '@shared/api-contracts.ts'
 
 export default defineComponent({
+name: 'SettingPanel',
 components: { EmailSetting, CallSetting, AccountSetting, Mfa, SettingsSection },
 data () {
   return {

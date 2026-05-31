@@ -69,7 +69,7 @@ import type { RouteLocationRaw } from 'vue-router'
 import type { ApiEnvelope } from '@shared/api-contracts.ts'
 
 export default defineComponent({
-  name: 'Signup',
+  name: 'SignupView',
   setup () {
     return { v$: useVuelidate() }
   },

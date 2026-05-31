@@ -180,6 +180,7 @@ function downloadFile (data: any, filename = 'data') {
 }
 
 export default defineComponent({
+  name: 'ContactList',
   setup () {
     return { v$: useVuelidate() }
   },

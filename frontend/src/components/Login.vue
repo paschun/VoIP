@@ -137,7 +137,7 @@ const preformatGetAssertReq = (getAssert: any): any => {
 }
 
 export default defineComponent({
-name: 'Login',
+name: 'LoginView',
 components: { ThemeButton },
 setup () {
   return { v$: useVuelidate() }
