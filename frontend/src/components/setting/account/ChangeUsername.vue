@@ -17,8 +17,8 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
-import { notifySuccess } from '@/notify'
-import { parseJSON } from '@/helper'
+import { notifySuccess } from '@/notify.ts'
+import { parseJSON } from '@/helper.ts'
 
 export default defineComponent({
   setup () {

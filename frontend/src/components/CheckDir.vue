@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { appDirectory } from '@/router/helpers'
+import { appDirectory } from '@/router/helpers.ts'
 
 export default defineComponent({
   mounted () {

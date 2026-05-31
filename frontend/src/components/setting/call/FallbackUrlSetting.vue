@@ -28,7 +28,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
-import { notifySuccess } from '@/notify'
+import { notifySuccess } from '@/notify.ts'
 import { required, helpers } from '@vuelidate/validators'
 
 // eslint-disable-next-line no-useless-escape

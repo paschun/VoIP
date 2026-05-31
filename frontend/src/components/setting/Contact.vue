@@ -121,12 +121,12 @@
 </template>
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
-import { notifySuccess, notifyError, notifyInfo } from '@/notify'
-import type { Contact } from '@shared/api-contracts'
+import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
+import type { Contact } from '@shared/api-contracts.ts'
 import { useVuelidate } from '@vuelidate/core'
 import { required, helpers } from '@vuelidate/validators'
 import Papa from 'papaparse'
-import { EventBus } from '@/event-bus'
+import { EventBus } from '@/event-bus.ts'
 
 // type TContact = Omit<Contact, '_id'>
 type TContact = {

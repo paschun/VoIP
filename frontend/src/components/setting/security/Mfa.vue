@@ -61,7 +61,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { notifyError } from '@/notify'
+import { notifyError } from '@/notify.ts'
 import HardwareKey from './HardwareKey.vue'
 export default defineComponent({
 components: { HardwareKey },

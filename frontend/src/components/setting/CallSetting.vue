@@ -7,8 +7,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { EventBus } from '@/event-bus'
-import { parseJSON } from '@/helper'
+import { EventBus } from '@/event-bus.ts'
+import { parseJSON } from '@/helper.ts'
 import MessageSetting from './call/telnyx/MessageSetting.vue'
 import TwimlSetting from './call/twilio/TwimlSetting.vue'
 

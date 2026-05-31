@@ -1,9 +1,9 @@
 import type { App } from 'vue'
 import Swal from 'sweetalert2'
-import router from '@/router'
-import { cookie } from '@/core/cookie.plugin'
-import { api } from '@/core/services/api.service'
-import type { ApiError } from '@/core/services/api.service'
+import router from '@/router/index.ts'
+import { cookie } from '@/core/cookie.plugin.ts'
+import { api } from '@/core/services/api.service.ts'
+import type { ApiError } from '@/core/services/api.service.ts'
 
 // Shared API error handler (formerly in core/module/common.module.js).
 // 401 → notify + clear auth + bounce to the app login; 400 → notify.

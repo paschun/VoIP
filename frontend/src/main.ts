@@ -3,8 +3,8 @@ import { createApp } from 'vue'
 // Global plugins
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import VueSweetalert2 from 'vue-sweetalert2'
-import ApiPlugin from '@/core/api.plugin'
-import CookiePlugin from '@/core/cookie.plugin'
+import ApiPlugin from '@/core/api.plugin.ts'
+import CookiePlugin from '@/core/cookie.plugin.ts'
 
 // Global styles (order matters)
 import 'bootstrap/dist/css/bootstrap.css'
@@ -13,7 +13,7 @@ import 'sweetalert2/dist/sweetalert2.min.css'
 import 'vue3-select-component/dist/styles.css'
 import '@/assets/css/main.css'
 
-import router from './router'
+import router from './router/index.ts'
 import App from './App.vue'
 
 const app = createApp(App)

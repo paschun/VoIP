@@ -32,7 +32,7 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength, sameAs } from '@vuelidate/validators'
-import { notifySuccess } from '@/notify'
+import { notifySuccess } from '@/notify.ts'
 
 export default defineComponent({
   setup () {

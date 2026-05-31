@@ -62,11 +62,11 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength, sameAs } from '@vuelidate/validators'
-import { api } from '@/core/services/api.service'
-import { appDirectory } from '@/router/helpers'
-import { notifyError } from '@/notify'
+import { api } from '@/core/services/api.service.ts'
+import { appDirectory } from '@/router/helpers.ts'
+import { notifyError } from '@/notify.ts'
 import type { RouteLocationRaw } from 'vue-router'
-import type { ApiEnvelope } from '@shared/api-contracts'
+import type { ApiEnvelope } from '@shared/api-contracts.ts'
 
 export default defineComponent({
   name: 'Signup',

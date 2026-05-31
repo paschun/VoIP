@@ -356,9 +356,9 @@ import NumberList from "./inbox/NumberList.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
-import { EventBus } from "@/event-bus";
-import { combineURLs, parseJSON, formatMoment } from '@/helper';
-import { notifyError, notifyInfo } from '@/notify';
+import { EventBus } from "@/event-bus.ts";
+import { combineURLs, parseJSON, formatMoment } from '@/helper.ts';
+import { notifyError, notifyInfo } from '@/notify.ts';
 
 function preventDefaults(e: Event) {
   e.preventDefault();
@@ -582,8 +582,6 @@ export default defineComponent({
 
       this.handleFiles(files);
     },
-    // Cast lives here (not in the template): the Vue 2 template compiler can't
-    // parse TS `as` syntax, only vue-tsc can.
     onFilesPick(e: Event, modelFile = false) {
       this.handleFiles((e.target as HTMLInputElement).files, modelFile);
     },

@@ -35,8 +35,8 @@ export default defineConfig({
       // API contracts shared with the backend
       '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
     },
-    // Extensionless imports of `.vue` and `.ts` modules (e.g. `@/helper`, `./router`).
-    extensions: ['.mjs', '.js', '.ts', '.json', '.vue'],
+    // An empty list disables extensionless resolution.
+    extensions: [],
   },
   css: {
     transformer: 'lightningcss',

@@ -40,8 +40,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { publicKeyCredentialToJSON } from '../../../helper'
-import { notifySuccess, notifyError } from '@/notify'
+import { publicKeyCredentialToJSON } from '../../../helper.ts'
+import { notifySuccess, notifyError } from '@/notify.ts'
 import { decode as cborDecode } from 'cbor-x/decode'
 
 // ---------------------------------------------------------------------------

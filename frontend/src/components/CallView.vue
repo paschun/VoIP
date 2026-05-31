@@ -165,8 +165,8 @@ import { defineComponent } from 'vue'
 import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
 import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
 import VueSelect, { type Option } from 'vue3-select-component'
-import { parseJSON } from '@/helper'
-import type { ApiEnvelope, CallToken } from '@shared/api-contracts'
+import { parseJSON } from '@/helper.ts'
+import type { ApiEnvelope, CallToken } from '@shared/api-contracts.ts'
 
 export default defineComponent({
   props: ['contacts'],

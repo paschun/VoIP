@@ -121,11 +121,11 @@ import { defineComponent } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength } from '@vuelidate/validators'
-import { publicKeyCredentialToJSON } from '@/helper'
-import { appDirectory } from '@/router/helpers'
-import { notifyError } from '@/notify'
+import { publicKeyCredentialToJSON } from '@/helper.ts'
+import { appDirectory } from '@/router/helpers.ts'
+import { notifyError } from '@/notify.ts'
 import type { RouteLocationRaw } from 'vue-router'
-import type { VersionResponse } from '@shared/api-contracts'
+import type { VersionResponse } from '@shared/api-contracts.ts'
 
 /** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
 const preformatGetAssertReq = (getAssert: any): any => {

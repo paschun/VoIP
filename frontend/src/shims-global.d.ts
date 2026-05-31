@@ -4,7 +4,7 @@
 export {}
 
 import type Swal from 'sweetalert2'
-import type { CookieApi } from '@/core/cookie.plugin'
+import type { CookieApi } from '@/core/cookie.plugin.ts'
 
 declare module 'vue' {
   interface ComponentCustomProperties {

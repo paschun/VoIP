@@ -51,8 +51,8 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
-import { notifySuccess } from '@/notify'
-import { EventBus } from '@/event-bus'
+import { notifySuccess } from '@/notify.ts'
+import { EventBus } from '@/event-bus.ts'
 
 export default defineComponent({
   emits: ['clicked'],

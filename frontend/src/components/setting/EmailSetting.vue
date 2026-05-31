@@ -80,8 +80,8 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email } from '@vuelidate/validators'
-import { notifySuccess } from '@/notify'
-import type { Profile, ProfilesResponse, SaveEmailSettingResponse, StringBoolean } from '@shared/api-contracts'
+import { notifySuccess } from '@/notify.ts'
+import type { Profile, ProfilesResponse, SaveEmailSettingResponse, StringBoolean } from '@shared/api-contracts.ts'
 
 /** SMTP credentials form (mirrors the `email/setting-get` / `email/create` payload). */
 interface EmailForm {

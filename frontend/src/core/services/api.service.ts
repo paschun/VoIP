@@ -1,5 +1,5 @@
-import { cookie } from '@/core/cookie.plugin'
-import { combineURLs } from '../../helper'
+import { cookie } from '@/core/cookie.plugin.ts'
+import { combineURLs } from '../../helper.ts'
 
 /**
  * Tiny fetch wrapper.

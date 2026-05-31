@@ -425,13 +425,13 @@ import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
 import { useVuelidate } from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
-import { notifySuccess, notifyInfo } from "@/notify";
+import { notifySuccess, notifyInfo } from "@/notify.ts";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
-import { EventBus } from "@/event-bus";
+import { EventBus } from "@/event-bus.ts";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
-import { parseJSON, formatMoment } from "@/helper";
-import { appDirectory } from "@/router/helpers";
+import { parseJSON, formatMoment } from "@/helper.ts";
+import { appDirectory } from "@/router/helpers.ts";
 
 function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;

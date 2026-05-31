@@ -30,7 +30,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { appDirectory } from '@/router/helpers'
+import { appDirectory } from '@/router/helpers.ts'
 import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
 import CallSetting from '../CallSetting.vue'

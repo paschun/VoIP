@@ -59,8 +59,8 @@ import CallSetting from './CallSetting.vue'
 import AccountSetting from './account/AccountSetting.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
-import { notifyError } from '@/notify'
-import type { VersionResponse } from '@shared/api-contracts'
+import { notifyError } from '@/notify.ts'
+import type { VersionResponse } from '@shared/api-contracts.ts'
 
 export default defineComponent({
 components: { EmailSetting, CallSetting, AccountSetting, Mfa, SettingsSection },
