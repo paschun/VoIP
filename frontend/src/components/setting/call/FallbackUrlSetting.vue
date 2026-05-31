@@ -11,11 +11,11 @@
           class="form-control"
           v-model="form.url"
           :placeholder="fallbackPlaceholder"
-          :class="{ 'is-invalid': submitted && $v.form.url.$error }"
+          :class="{ 'is-invalid': submitted && v$.form.url.$error }"
         />
-        <div v-if="submitted && $v.form.url.$error" class="invalid-feedback">
-          <span v-if="!$v.form.url.required">{{ requiredMessage }}</span>
-          <span v-if="!$v.form.url.url">{{ invalidMessage }}</span>
+        <div v-if="submitted && v$.form.url.$error" class="invalid-feedback">
+          <span v-if="v$.form.url.required.$invalid">{{ requiredMessage }}</span>
+          <span v-if="v$.form.url.url.$invalid">{{ invalidMessage }}</span>
         </div>
       </div>
       <div class="form-group">
@@ -27,11 +27,12 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { useVuelidate } from '@vuelidate/core'
 import { notifySuccess } from '@/notify'
-import { required, helpers } from 'vuelidate/lib/validators'
+import { required, helpers } from '@vuelidate/validators'
 
 // eslint-disable-next-line no-useless-escape
-const url = helpers.regex('phonenumber', /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/)
+const url = helpers.regex(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/)
 
 /** Read a property out of an object using a dotted path (e.g. "data.data.webhook_url"). */
 const pickPath = (obj: any, path: string): any => path.split('.').reduce((acc, k) => acc?.[k], obj)
@@ -48,6 +49,9 @@ const toOrigin = (str: string): string => {
  */
 export default defineComponent({
   name: 'FallbackUrlSetting',
+  setup () {
+    return { v$: useVuelidate() }
+  },
   props: {
     /** Endpoint to load current setting values from (POST). */
     getUrl: { type: String, required: true },
@@ -100,8 +104,8 @@ export default defineComponent({
     },
     handleSubmit () {
       this.submitted = true
-      this.$v.$touch()
-      if (this.$v.$invalid) return
+      this.v$.$touch()
+      if (this.v$.$invalid) return
 
       const submitUrl = this.normalizeSubmit ? toOrigin(this.form.url) : this.form.url
       const data = { ...this.form, url: submitUrl, setting_id: this.setting }

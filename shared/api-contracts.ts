@@ -17,11 +17,18 @@ export interface ApiEnvelope<T = unknown> {
   data: T
 }
 
+/**
+ * Several Mongoose models persist booleans as the string enum `'true' | 'false'`
+ * (e.g. `Setting.emailnotification`, `User.mfa`, `Message.isview`). Type them as
+ * this so the frontend can compare/bind against the literal strings.
+ */
+export type StringBoolean = 'true' | 'false'
+
 export interface User {
   _id: string
   email: string
   name?: string
-  mfa?: 'true' | 'false' | string
+  mfa?: StringBoolean
 }
 
 /** A messaging/calling profile and its provider Setting (Twilio or Telnyx). */
@@ -30,8 +37,12 @@ export interface Profile {
   profile: string
   number?: string
   type?: 'twilio' | 'telnyx' | string
+  /** Unviewed-message count for this profile (Mongoose virtual). */
   messageCount?: number
-  emailnotification?: 'true' | 'false' | string
+  /** Total-message count for the owning user (Mongoose virtual). */
+  totalCount?: number
+  /** Whether email notifications are on. Mongoose enum, so a string not a boolean. */
+  emailnotification?: StringBoolean
   /** Provider credentials, present once the profile is configured. */
   api_key?: string
   twilio_sid?: string
@@ -61,6 +72,12 @@ export interface HardwareKey {
   title: string
   credentials?: string[]
 }
+
+/** Response of `profile/getdata` — every Setting/profile the signed-in user owns. */
+export type ProfilesResponse = ApiEnvelope<Profile[]>
+
+/** Response of `email/save/setting` — the profile after toggling its email-notification flag. */
+export type SaveEmailSettingResponse = ApiEnvelope<Profile>
 
 /** Response of `auth/get-version` — the latest git short hash (or fallback). */
 export type VersionResponse = ApiEnvelope<string>

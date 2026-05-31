@@ -7,8 +7,8 @@
     </main>
   </div>
 </template>
-<style>
 
+<style>
   #error {
   display: flex;
   width: 100vw;

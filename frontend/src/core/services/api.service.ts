@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { cookie } from '@/core/cookie.plugin'
 import { combineURLs } from '../../helper'
 
 /**
@@ -35,7 +35,7 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
 
   const headers: Record<string, string> = {
     'Cache-Control': 'no-cache',
-    token: Vue.cookie.get('access_token') ?? ''
+    token: cookie.get('access_token') ?? ''
   }
   const init: RequestInit = { method, headers }
   if (body !== undefined) {

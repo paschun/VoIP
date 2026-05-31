@@ -1,0 +1,21 @@
+// TSConfig for tooling configs that run in Node (Vite, ESLint).
+{
+  "extends": "@tsconfig/node26/tsconfig.json",
+  "include": ["vite.config.*", "eslint.config.*"],
+  "compilerOptions": {
+    // Bundler mode: tools transpile rather than rely on Node's type-stripping.
+    "module": "preserve",
+    "moduleResolution": "bundler",
+
+    // vite.config.ts does `import pkg from './package.json'`.
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+
+    "types": ["node"],
+    "noEmit": true,
+    
+    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
+    // Specified here to keep it out of the root directory.
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
+  }
+}

@@ -1,33 +1,42 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
-import vue2 from '@vitejs/plugin-vue2'
+import type { UserConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import Components from 'unplugin-vue-components/vite'
+import Icons from 'unplugin-icons/vite'
+import IconsResolver from 'unplugin-icons/resolver'
+import { BootstrapVueNextResolver } from 'bootstrap-vue-next/resolvers'
 import { browserslistToTargets } from 'lightningcss'
 import browserslist from 'browserslist'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
-import { fileURLToPath, URL } from 'node:url'
 import pkg from './package.json' with { type: 'json' }
 
 // Both use the `browserslist` field in package.json.
 const cssTargets = browserslistToTargets(browserslist(pkg.browserslist))
 const jsTargets = browserslistToEsbuild(pkg.browserslist)
-// console.log(browserslist(pkg.browserslist))
-// console.log(cssTargets)
-// console.log(jsTargets)
 
 export default defineConfig({
-  plugins: [vue2()],
+  plugins: [
+    vue(),
+    // Auto-imports the icon components used in templates (`<i-bi-x />`) via the
+    // IconsResolver; no manual per-icon import needed. Replaces bootstrap-vue's
+    // `<b-icon icon="x">`. See unplugin-icons docs.
+    Components({
+      resolvers: [IconsResolver(), BootstrapVueNextResolver()],
+      dts: 'src/components.d.ts', // this setting generates the file
+    }),
+    Icons({
+      compiler: 'vue3',
+    }),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // API contracts shared with the backend (repo-root ../shared).
+      // API contracts shared with the backend
       '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
     },
-    // Vue 2 SFC imports written without extensions (e.g. `import App from './App'`) still work because `.vue` is listed here.
-    // `.ts` lets extensionless imports of converted modules (e.g. `@/helper`, `./router`) resolve.
+    // Extensionless imports of `.vue` and `.ts` modules (e.g. `@/helper`, `./router`).
     extensions: ['.mjs', '.js', '.ts', '.json', '.vue'],
-  },
-  define: {
-    // vuelidate 0.x branches on `process.env.BUILD` to pick its browser entry point.
-    'process.env.BUILD': JSON.stringify('web'),
   },
   css: {
     transformer: 'lightningcss',
@@ -55,4 +64,4 @@ export default defineConfig({
     cssMinify: 'lightningcss',
     target: jsTargets,
   },
-})
+}) satisfies UserConfig

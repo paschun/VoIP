@@ -1,5 +1,7 @@
-import Vue from 'vue'
+import type { App } from 'vue'
+import Swal from 'sweetalert2'
 import router from '@/router'
+import { cookie } from '@/core/cookie.plugin'
 import { api } from '@/core/services/api.service'
 import type { ApiError } from '@/core/services/api.service'
 
@@ -7,7 +9,7 @@ import type { ApiError } from '@/core/services/api.service'
 // 401 → notify + clear auth + bounce to the app login; 400 → notify.
 // Always resolves to `false` so callers can guard on a falsy return
 // instead of try/catch — i.e. $post/$get never reject in normal operation.
-const swalError = (text?: string) => Vue.swal.fire({
+const swalError = (text?: string) => Swal.fire({
   title: 'Error',
   text,
   icon: 'error',
@@ -18,8 +20,8 @@ const swalError = (text?: string) => Vue.swal.fire({
 const handleError = (err: ApiError): false => {
   if (err.status === 401) {
     void swalError(err.data?.error ?? 'Unauthorized Access!')
-    Vue.cookie.delete('access_token')
-    Vue.cookie.delete('userdata')
+    cookie.delete('access_token')
+    cookie.delete('userdata')
     const path = window.location.pathname.split('/')[1]
     void router.push(`/${path}/`)
   } else if (err.status === 400) {
@@ -34,8 +36,10 @@ const handleError = (err: ApiError): false => {
  * resolving to the parsed body on success or `false` on failure.
  */
 export default {
-  install () {
-    Vue.prototype.$post = (url: string, data?: unknown) => api.post(url, data).catch(handleError)
-    Vue.prototype.$get = (url: string) => api.get(url).catch(handleError)
+  install (app: App) {
+    app.config.globalProperties.$post = <T = any>(url: string, data?: unknown): Promise<T | false> =>
+      api.post<T>(url, data).catch(handleError)
+    app.config.globalProperties.$get = <T = any>(url: string): Promise<T | false> =>
+      api.get<T>(url).catch(handleError)
   }
 }

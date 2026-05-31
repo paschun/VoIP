@@ -1,31 +1,58 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordInfo } from 'vue-router'
 
-Vue.use(Router)
+// Manually-typed route map (vue-router "typed routes"). Each entry pairs a route
+// name with its path + raw params (what you pass to router.push) + normalized
+// params (what you read from this.$route.params). Keep this in sync with the
+// `routes` array below. Augmenting `TypesConfig` makes `this.$route`/`router.push`
+// param-aware, so e.g. `appdirectory` reads as `string` instead of `string | string[]`.
+export interface RouteNamedMap {
+  error: RouteRecordInfo<'error', '/404', Record<never, never>, Record<never, never>>
+  home: RouteRecordInfo<'home', '/', Record<never, never>, Record<never, never>>
+  login: RouteRecordInfo<'login', '/:appdirectory', { appdirectory: string }, { appdirectory: string }>
+  signup: RouteRecordInfo<'signup', '/:appdirectory/signup', { appdirectory: string }, { appdirectory: string }>
+  dashboard: RouteRecordInfo<'dashboard', '/:appdirectory/dashboard', { appdirectory: string }, { appdirectory: string }>
+  'not-found': RouteRecordInfo<'not-found', '/:pathMatch(.*)*', { pathMatch: string | string[] }, { pathMatch: string[] }>
+}
 
-export default new Router({
-  mode: 'history',
+declare module 'vue-router' {
+  interface TypesConfig {
+    RouteNamedMap: RouteNamedMap
+  }
+}
+
+export default createRouter({
+  history: createWebHistory(),
   routes: [
     {
       path: '/404',
+      name: 'error',
       component: () => import('@/components/ErrorPage.vue')
     },
     {
       path: '/',
+      name: 'home',
       component: () => import('@/components/Login.vue')
     },
     {
       path: '/:appdirectory',
+      name: 'login',
       component: () => import('@/components/Login.vue')
     },
     {
       path: '/:appdirectory/signup',
+      name: 'signup',
       component: () => import('@/components/Signup.vue')
     },
     {
       path: '/:appdirectory/dashboard',
+      name: 'dashboard',
       component: () => import('@/components/Dashboard.vue')
     },
-    { path: '*', component: () => import('@/components/ErrorPage.vue') }
+    {
+      // https://router.vuejs.org/guide/essentials/dynamic-matching.html#Catch-all-404-Not-found-Route
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/components/ErrorPage.vue')
+    },
   ]
 })

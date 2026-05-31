@@ -26,17 +26,17 @@
       <b-dropdown-divider></b-dropdown-divider>
     </div>
     <b-dropdown-item-button v-b-modal.add-profile>
-      <b-icon icon="person-plus-fill" aria-hidden="true"></b-icon>
+      <i-bi-person-plus-fill aria-hidden="true" />
         Add New Profile
     </b-dropdown-item-button>
     <b-dropdown-divider></b-dropdown-divider>
-    <b-modal ref="add-profile" id="add-profile" size="lg" title="Add Profile" hide-footer>
+    <b-modal ref="add-profile" id="add-profile" size="lg" title="Add Profile" no-footer>
       <span class="small text-secondary">Profile</span>
       <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
         <div class="form-group mt-2">
-          <input class="form-control chat-input" v-model="form.profile" name="profile" placeholder="Enter Profile" :class="{ 'is-invalid': submitted3 && $v.form.profile.$error }" />
-          <div v-if="submitted3 && $v.form.profile.$error" class="invalid-feedback">
-            <span v-if="!$v.form.profile.required">Profile are required</span>
+          <input class="form-control chat-input" v-model="form.profile" name="profile" placeholder="Enter Profile" :class="{ 'is-invalid': submitted3 && v$.form.profile.$error }" />
+          <div v-if="submitted3 && v$.form.profile.$error" class="invalid-feedback">
+            <span v-if="v$.form.profile.required.$invalid">Profile are required</span>
           </div>
         </div>
         <div class="d-grid d-md-flex mt-3">
@@ -49,11 +49,16 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { required } from 'vuelidate/lib/validators'
+import { useVuelidate } from '@vuelidate/core'
+import { required } from '@vuelidate/validators'
 import { notifySuccess } from '@/notify'
 import { EventBus } from '@/event-bus'
 
 export default defineComponent({
+  emits: ['clicked'],
+  setup () {
+    return { v$: useVuelidate() }
+  },
   data () {
     return {
       profiles: [] as any[],
@@ -124,8 +129,8 @@ export default defineComponent({
     handleSubmit () {
       this.submitted3 = true
       EventBus.$emit('toggleLoader', true)
-      this.$v.$touch()
-      if (this.$v.$invalid) {
+      this.v$.$touch()
+      if (this.v$.$invalid) {
         return
       }
       this.$post('profile/create', this.form)

@@ -3,16 +3,16 @@
       <div v-if="activeMenu == 'setting'">
         <ul class="list-group">
           <li class="list-group-item" @click="enableMenu('username')" style="cursor: pointer">
-            <b-icon icon="person" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Change Username
+            <i-bi-person aria-hidden="true" class="mx-2" />Change Username
           </li>
           <li class="list-group-item" @click="enableMenu('password')" style="cursor: pointer">
-            <b-icon icon="key" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Change Password
+            <i-bi-key aria-hidden="true" class="mx-2" />Change Password
           </li>
           <li class="list-group-item" @click="deleteAccount()" style="cursor: pointer">
-            <b-icon icon="trash" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Delete Account
+            <i-bi-trash aria-hidden="true" class="mx-2" />Delete Account
           </li>
           <li class="list-group-item" @click="enableMenu('fallback')" style="cursor: pointer">
-            <b-icon icon="exclamation-circle" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Fallback Setting
+            <i-bi-exclamation-circle aria-hidden="true" class="mx-2" />Fallback Setting
           </li>
         </ul>
       </div>
@@ -30,6 +30,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { appDirectory } from '@/router/helpers'
 import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
 import CallSetting from '../CallSetting.vue'
@@ -75,7 +76,7 @@ export default defineComponent({
       })
       this.$cookie.delete('access_token')
       this.$cookie.delete('userdata')
-      window.location.href = `/${this.$route.params.appdirectory}/`
+      window.location.href = `/${appDirectory(this.$route)}/`
     }
   }
 })

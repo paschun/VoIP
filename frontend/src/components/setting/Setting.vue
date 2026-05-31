@@ -1,19 +1,19 @@
 <template>
   <div>
-      <b-icon font-scale="1" icon="gear-fill" aria-hidden="true" class="m-2" title="Settings" style="cursor:pointer;" v-b-toggle.sidebar-email-setting></b-icon>
-      <b-sidebar id="sidebar-email-setting" title="Settings" shadow backdrop>
+      <i-bi-gear-fill aria-hidden="true" class="m-2" title="Settings" style="cursor:pointer;" v-b-toggle.sidebar-email-setting />
+      <b-offcanvas id="sidebar-email-setting" title="Settings" backdrop>
           <div class="px-3 py-2" v-if="activeMenu == 'setting'">
             <ul class="list-group">
               <li class="list-group-item" @click="enableMenu('email')" style="cursor: pointer">
-                <b-icon icon="envelope" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Email Settings</li>
+                <i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
               <li class="list-group-item" v-b-modal.modal-1 style="cursor: pointer">
-                <b-icon icon="person-badge" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Profile Settings
+                <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
               </li>
               <li class="list-group-item" @click="enableMenu('account')" style="cursor: pointer">
-                <b-icon icon="person" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>Account Settings
+                <i-bi-person aria-hidden="true" class="mx-2" />Account Settings
               </li>
               <li class="list-group-item" @click="passwordEnable('mfa')" style="cursor: pointer">
-                <b-icon icon="shield-lock" font-scale="1" aria-hidden="true" class="mx-2"></b-icon>MFA Settings
+                <i-bi-shield-lock aria-hidden="true" class="mx-2" />MFA Settings
               </li>
             </ul>
             <div class="version">{{ versionOption }}</div>
@@ -49,7 +49,7 @@
               </div>
             </div>
           </settings-section>
-      </b-sidebar>
+      </b-offcanvas>
   </div>
 </template>
 <script lang="ts">

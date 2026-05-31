@@ -6,26 +6,26 @@
           <form @submit.prevent="handleSubmit" class="ml-2 mr-2" v-if="!otpScreen && !keyScreen">
             <div class="form-group mt-4">
               <b-input-group>
-                <b-input-group-prepend is-text>
-                  <b-icon icon="person-fill"></b-icon>
-                </b-input-group-prepend>
-              <input class="form-control chat-input" type="text" placeholder="Username" v-model="user.email" :class="{ 'is-invalid': submitted && $v.user.email.$error }" title="Enter Username">
+                <b-input-group-text>
+                  <i-bi-person-fill />
+                </b-input-group-text>
+              <input class="form-control chat-input" type="text" placeholder="Username" v-model="user.email" :class="{ 'is-invalid': submitted && v$.user.email.$error }" title="Enter Username">
                </b-input-group>
-              <div v-if="submitted && $v.user.email.$error" class="invalid-feedback">
-                <span v-if="!$v.user.email.required">Username is required</span>
-                <span v-if="!$v.user.email.minLength">Username is invalid</span>
+              <div v-if="submitted && v$.user.email.$error" class="invalid-feedback">
+                <span v-if="v$.user.email.required.$invalid">Username is required</span>
+                <span v-if="v$.user.email.minLength.$invalid">Username is invalid</span>
               </div>
             </div>
             <div class="form-group mb-2 mt-4">
               <b-input-group>
-                <b-input-group-prepend is-text>
-                  <b-icon icon="shield-lock"></b-icon>
-                </b-input-group-prepend>
-              <input class="chat-input form-control" v-model="user.password"  type="password" placeholder="Password" :class="{ 'is-invalid': submitted && $v.user.password.$error }" title="Enter Password">
+                <b-input-group-text>
+                  <i-bi-shield-lock />
+                </b-input-group-text>
+              <input class="chat-input form-control" v-model="user.password"  type="password" placeholder="Password" :class="{ 'is-invalid': submitted && v$.user.password.$error }" title="Enter Password">
              </b-input-group>
-              <div v-if="submitted && $v.user.password.$error" class="invalid-feedback">
-                  <span v-if="!$v.user.password.required">Password is required</span>
-                  <span v-if="!$v.user.password.minLength">Password is invalid</span>
+              <div v-if="submitted && v$.user.password.$error" class="invalid-feedback">
+                  <span v-if="v$.user.password.required.$invalid">Password is required</span>
+                  <span v-if="v$.user.password.minLength.$invalid">Password is invalid</span>
               </div>
             </div>
             <div class="d-grid">
@@ -60,7 +60,7 @@
                 <div class="card-body" style="cursor: pointer;" @click="chooseMethods('hardware_key')">
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="px-4">
-                      <b-icon icon="key"></b-icon>
+                      <i-bi-key />
                     </div>
                     <div class="border-dark px-2" style="border-left: 1px solid;">
                       <h4>Security Key</h4>
@@ -73,7 +73,7 @@
                 <div class="card-body" style="cursor: pointer;" @click="chooseMethods('mfa')" >
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="px-4">
-                      <b-icon icon="calculator-fill"></b-icon>
+                      <i-bi-calculator-fill />
                     </div>
                     <div class="border-dark px-2" style="border-left: 1px solid;">
                       <h4>TOTP Code</h4>
@@ -91,7 +91,7 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <b-icon icon="key"></b-icon><span class="mr-2"> {{key.title}} </span>
+                      <i-bi-key /><span class="mr-2"> {{key.title}} </span>
                     </div>
                     <div>
                       <button type="button" @click="verifyKey(key)" class="btn btn-success">Verify</button>
@@ -105,10 +105,10 @@
 
           <div class="d-flex my-4 justify-content-center">
                <a href="https://www.twitter.com/0perationP" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
-                  <b-icon font-scale="2" icon="twitter" variant="secondary" class="mx-2"></b-icon>
+                  <i-bi-twitter class="mx-2 text-secondary" style="font-size: 2em" />
                </a>
                <a href="https://github.com/0perationPrivacy/" target="_blank" rel="noopener noreferrer" aria-label="Github" title="Github">
-                <b-icon font-scale="2" icon="github" variant="secondary" class="mx-2"></b-icon>
+                <i-bi-github class="mx-2 text-secondary" style="font-size: 2em" />
                </a>
             </div>
       </div>
@@ -119,9 +119,12 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
-import { required, minLength } from 'vuelidate/lib/validators'
+import { useVuelidate } from '@vuelidate/core'
+import { required, minLength } from '@vuelidate/validators'
 import { publicKeyCredentialToJSON } from '@/helper'
+import { appDirectory } from '@/router/helpers'
 import { notifyError } from '@/notify'
+import type { RouteLocationRaw } from 'vue-router'
 import type { VersionResponse } from '@shared/api-contracts'
 
 /** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
@@ -136,6 +139,9 @@ const preformatGetAssertReq = (getAssert: any): any => {
 export default defineComponent({
 name: 'Login',
 components: { ThemeButton },
+setup () {
+  return { v$: useVuelidate() }
+},
 data () {
   return {
     otpScreen: false,
@@ -155,7 +161,6 @@ data () {
     },
     submitted: false,
     submitted2: false,
-    signupRoute: '',
     keyScreen: false,
     keys: [] as any[],
     mfa: false,
@@ -168,29 +173,33 @@ validations: {
     password: { required, minLength: minLength(6) }
   }
 },
+computed: {
+  signupRoute (): RouteLocationRaw {
+    return { name: 'signup', params: { appdirectory: appDirectory(this.$route) } }
+  }
+},
 mounted () {
-  this.signupRoute = `/${this.$route.params.appdirectory}/signup`
   this.fnLogin()
   this.getsignup()
   this.getVersion()
 },
 methods: {
   fnLogin () {
-    this.$post('auth/check-directoryname', { dirname: this.$route.params.appdirectory })
+    this.$post('auth/check-directoryname', { dirname: appDirectory(this.$route) })
       .then((response) => {
         const { status, dir } = response.data
         const loggedIn = !!this.$cookie.get('access_token')
 
         if (loggedIn) {
           if (status === 'nodir' || status === 'no-name' || status === 'true') {
-            this.$router.push(`/${dir}/dashboard`)
+            this.$router.push({ name: 'dashboard', params: { appdirectory: dir } })
           } else if (status === 'false') {
-            this.$router.push('/404')
+            this.$router.push({ name: 'error' })
           }
         } else if ((status === 'nodir' || status === 'no-name') && dir === 'voip') {
-          this.$router.push(`/${dir}`)
+          this.$router.push({ name: 'login', params: { appdirectory: dir } })
         } else if (status === 'false' || status === 'no-name') {
-          this.$router.push('/404')
+          this.$router.push({ name: 'error' })
         }
       })
       .catch((e) => console.error(e))
@@ -212,8 +221,8 @@ methods: {
   handleSubmit (e: Event) {
     e.preventDefault()
     this.submitted = true
-    this.$v.$touch()
-    if (this.$v.$invalid) {
+    this.v$.$touch()
+    if (this.v$.$invalid) {
       return
     }
 
@@ -235,7 +244,7 @@ methods: {
           } else {
             this.$cookie.set('access_token', response.token, 30)
             this.$cookie.set('userdata', JSON.stringify(response.data), 30)
-            this.$router.push(`/${this.$route.params.appdirectory}/dashboard`)
+            this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
           }
         }
       })
@@ -245,7 +254,7 @@ methods: {
     let getAssertionChallenge
     try {
       getAssertionChallenge = await this.$post('hardwarekey/login-key', { user: this.activeUser.user._id, title: key.title })
-    } catch { /* ignore */ }
+    } catch {}
     if (!getAssertionChallenge) return
     getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
     try {
@@ -259,9 +268,9 @@ methods: {
           this.$cookie.set('userdata', JSON.stringify(this.activeUser.user), 30)
           this.activeUser.token = ''
           this.activeUser.user = null
-          this.$router.push(`/${this.$route.params.appdirectory}/dashboard`)
+          this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
         }
-      } catch { /* ignore */ }
+      } catch {}
     } catch (error) {
       console.error(error)
       notifyError('Login failed with security key.', 'Key!')
@@ -282,7 +291,7 @@ methods: {
               this.$cookie.set('userdata', JSON.stringify(this.activeUser.user), 30)
               this.activeUser.token = ''
               this.activeUser.user = null
-              this.$router.push(`/${this.$route.params.appdirectory}/dashboard`)
+              this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
             }
           }
         })

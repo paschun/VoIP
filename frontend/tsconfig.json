@@ -1,35 +1,7 @@
 {
-  "compilerOptions": {
-    "target": "ES2025",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ESNext", "DOM"],
-    "types": ["node", "vite/client"],
-
-    // .js (vite/eslint config) is allowed but not type-checked.
-    "allowJs": true,
-    "checkJs": false,
-    "strict": true,
-
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-
-    "noEmit": true,
-    "sourceMap": true,
-
-    "paths": {
-      "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"]
-    }
-  },
-  // vue-tsc: typecheck SFCs against Vue 2.7's template/types.
-  "vueCompilerOptions": {
-    "target": 2.7
-  },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "../shared/**/*.ts", "*.js", "*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.app.json" }
+  ]
 }

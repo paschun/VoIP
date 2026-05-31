@@ -4,6 +4,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { appDirectory } from '@/router/helpers'
 
 export default defineComponent({
   mounted () {
@@ -11,14 +12,14 @@ export default defineComponent({
   },
   methods: {
     checkDirectoryName () {
-      this.$post('auth/check-directoryname', { dirname: this.$route.params.appdirectory })
+      this.$post('auth/check-directoryname', { dirname: appDirectory(this.$route) })
         .then((response) => {
           console.log('CheckDir', response)
           const status = response?.data?.status
           if (status === 'nodir' || status === 'no-name') {
-            this.$router.push('/voip/dashboard')
+            this.$router.push({ name: 'dashboard', params: { appdirectory: 'voip' } })
           } else if (status === 'false') {
-            this.$router.push('/404')
+            this.$router.push({ name: 'error' })
           }
         })
         .catch((e) => console.error(e))

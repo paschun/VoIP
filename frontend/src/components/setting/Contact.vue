@@ -1,29 +1,29 @@
 <template>
     <div>
-        <b-icon class="pointer-icon m-2" font-scale="1" icon="person-lines-fill" aria-hidden="true" title="Contacts" v-b-toggle.sidebar-right></b-icon>
-        <b-sidebar id="sidebar-right" right shadow no-header backdrop>
+        <i-bi-person-lines-fill class="pointer-icon m-2" aria-hidden="true" title="Contacts" v-b-toggle.sidebar-right />
+        <b-offcanvas id="sidebar-right" placement="end" shadow no-header>
             <template #default="{ hide }">
                 <div class="d-flex flex-row mt-2 justify-content-between bd-highlight">
                     <div class="bd-highlight dropDown">
                         <b-button class="float-left d-flex m-1" size="sm" variant="primary">
-                          <b-icon @click="hide" icon="x" scale="1"></b-icon>
+                          <i-bi-x @click="hide()" />
                         </b-button>
                     </div>
                     <div >
                         <div class="d-flex justify-content-start">
                             <div class="ml-1">
                                 <b-button v-b-tooltip.hover title="Add Contact" @click="openContactModel()" class="float-left d-flex m-1" size="sm" variant="primary">
-                                    <b-icon icon="plus-circle" scale="1"></b-icon>
+                                    <i-bi-plus-circle />
                                 </b-button>
                             </div>
                             <div class="ml-2">
                               <b-button v-b-tooltip.hover title="Export Contact" @click="exportContact()" class="float-left d-flex m-1" size="sm" variant="primary">
-                                    <b-icon icon="cloud-download" scale="1"></b-icon>
+                                    <i-bi-cloud-download />
                                 </b-button>
                             </div>
                             <div class="ml-2">
                               <b-button v-b-tooltip.hover title="Delete All Contact" @click="deleteAll()" class="float-left d-flex m-1" size="sm" variant="danger">
-                                    <b-icon icon="trash-fill" scale="1"></b-icon>
+                                    <i-bi-trash-fill />
                                 </b-button>
                             </div>
                             <div>
@@ -39,7 +39,7 @@
                     <div class="search">
                       <div class="d-flex flex-row bd-highlight">
                         <div class="bd-highlight">
-                          &nbsp;&nbsp;<b-icon icon="search"></b-icon>&nbsp;&nbsp;
+                          &nbsp;&nbsp;<i-bi-search />&nbsp;&nbsp;
                         </div>
                         <div class="bd-highlight">
                           <input type="text" class="input-search" v-model="query" @keyup="searchContact()" placeholder="Search" />
@@ -56,16 +56,16 @@
                         <div class="bd-highlight">{{contact.number}}</div>
                       </div>
                       <div>
-                        <b-icon icon="pencil-square" title="Update" style="cursor: pointer;" @click="updateContact(contact)"></b-icon>
-                        <b-icon icon="trash-fill" title="Delete" style="cursor: pointer;" @click="deletechat(contact._id)"></b-icon>
+                        <i-bi-pencil-square title="Update" style="cursor: pointer;" @click="updateContact(contact)" />
+                        <i-bi-trash-fill title="Delete" style="cursor: pointer;" @click="deletechat(contact._id)" />
                       </div>
                     </li>
                   </ul>
                 </div>
             </template>
-        </b-sidebar>
+        </b-offcanvas>
 
-        <b-modal  ref="modal-contact" id="modal-contact" title="Contact" hide-footer>
+        <b-modal  ref="modal-contact" id="modal-contact" title="Contact" no-footer>
            <div class="card mt-4">
           <div class="card-body">
             <b-tabs content-class="mt-3">
@@ -73,8 +73,8 @@
                 <form @submit.prevent="handleSubmit">
                   <div class=" form-group m-auto mb-2">
                     <label>First Name</label>
-                    <input class="form-control" type="text" placeholder="First Name" v-model="form.first_name" id="first_name" name="first_name" :class="{ 'is-invalid': submitted && $v.form.first_name.$error }"  />
-                    <div v-if="submitted && !$v.form.first_name.required" class="invalid-feedback">First Name is required</div>
+                    <input class="form-control" type="text" placeholder="First Name" v-model="form.first_name" id="first_name" name="first_name" :class="{ 'is-invalid': submitted && v$.form.first_name.$error }"  />
+                    <div v-if="submitted && v$.form.first_name.required.$invalid" class="invalid-feedback">First Name is required</div>
                   </div>
                   <div class="form-group m-auto mb-2">
                     <label>Last Name</label>
@@ -82,9 +82,9 @@
                   </div>
                   <div class="form-group m-auto mb-2">
                     <label>Number</label>
-                    <input class="form-control" type="text" placeholder="Number" v-model="form.number" id="number" name="number" :class="{ 'is-invalid': submitted && $v.form.number.$error }"  />
-                    <div v-if="submitted && !$v.form.number.required" class="invalid-feedback">Number is required</div>
-                    <div v-if="submitted && !$v.form.number.phonenumber" class="invalid-feedback">Please enter valid number. </div>
+                    <input class="form-control" type="text" placeholder="Number" v-model="form.number" id="number" name="number" :class="{ 'is-invalid': submitted && v$.form.number.$error }"  />
+                    <div v-if="submitted && v$.form.number.required.$invalid" class="invalid-feedback">Number is required</div>
+                    <div v-if="submitted && v$.form.number.phonenumber.$invalid" class="invalid-feedback">Please enter valid number. </div>
                   </div>
 
                   <div class="form-group m-auto mb-2">
@@ -102,9 +102,9 @@
                 </div>
                 <div class="input-group mb-3">
                   <div class="input-group-prepend">
-                    <span class="input-group-text paperClip chat-input" @click="choseFile2()" id="basic-addon1"><b-icon icon="paperclip" ></b-icon></span>
+                    <span class="input-group-text paperClip chat-input" @click="choseFile2()" id="basic-addon1"><i-bi-paperclip /></span>
                   </div>
-                  <input type="text" class="form-control csv_field_input chat-input" @click="choseFile2()" placeholder="Choose file" v-model="modelFileValu" aria-label="Username" readonly aria-describedby="basic-addon1">
+                  <input type="text" class="form-control csv_field_input chat-input" @click="choseFile2()" placeholder="Choose file" v-model="modelFileValue" aria-label="Username" readonly aria-describedby="basic-addon1">
                 </div>
                 <div class="form-group mb-2 mt-4 d-none">
                   <input type="file" id="model_file_input2" class="form-control chat-input" name="csvFile" accept=".csv" @change="onSelect($event)">
@@ -123,12 +123,21 @@
 import { defineComponent, type PropType } from 'vue'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify'
 import type { Contact } from '@shared/api-contracts'
-import { required, helpers } from 'vuelidate/lib/validators'
+import { useVuelidate } from '@vuelidate/core'
+import { required, helpers } from '@vuelidate/validators'
 import Papa from 'papaparse'
 import { EventBus } from '@/event-bus'
 
+// type TContact = Omit<Contact, '_id'>
+type TContact = {
+  first_name: string
+  last_name: string
+  number: string
+  note: string
+}
+
 // eslint-disable-next-line no-useless-escape
-const phonenumber = helpers.regex('phonenumber', /^\+?[0-9\(\-\)\ ]{5,17}$/)
+const phonenumber = helpers.regex(/^\+?[0-9\(\-\)\ ]{5,17}$/)
 
 function ConvertToCSV (objArray: any, headerList: string[]): string {
   const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
@@ -171,6 +180,9 @@ function downloadFile (data: any, filename = 'data') {
 }
 
 export default defineComponent({
+  setup () {
+    return { v$: useVuelidate() }
+  },
   props: {
     contacts: { type: Array as PropType<Contact[]>, default: () => [] as Contact[] }
   },
@@ -179,11 +191,10 @@ export default defineComponent({
       access_token: null,
       headers: null,
       baseurl: '',
-      modelFileValu: '',
+      modelFileValue: '',
       submitted: false,
       userdata: null,
       editId: false as any,
-      csvFile: null as any,
       submitted2: false,
       search_contacts: [] as Contact[],
       form: {
@@ -200,9 +211,8 @@ export default defineComponent({
           'number': '12300XXXXX',
           'note': 'notes go here'
         }
-      ],
-      csvUploadArray2: [] as any[],
-      csvUploadArray: [] as any[]
+      ] satisfies TContact[],
+      csvUploadArray2: [] as TContact[],
     }
   },
   validations: {
@@ -232,44 +242,44 @@ export default defineComponent({
       this.form.note = ''
     },
 
-    async onSelect (event: any) {
-      this.csvFile = true
+    async onSelect (event: Event) {
       console.log(event)
-      const fileToRead = event.target.files[0]
-      this.modelFileValu = fileToRead.name
+      const target = event.target as HTMLInputElement
+      if (!target?.files) return
+      const fileToRead = target.files[0]
+      this.modelFileValue = fileToRead.name
       this.csvUploadArray2 = await this.readFile(fileToRead)
       console.log(this.csvUploadArray2)
     },
-    readFile (file: any) {
-      return new Promise<any[]>((resolve) => {
-        const fileReader = new FileReader()
-        fileReader.readAsText(file, 'UTF-8')
-        fileReader.onload = (e: any) => {
-          const textFromFileLoaded = e.target.result
-          const options = {
-            complete: (results: any) => {
-              this.csvUploadArray = results.data
-            }
-          }
-          Papa.parse(textFromFileLoaded, options)
-          const array: any[] = []
-          const csvdata = this.csvUploadArray
-          for (let i = 0; i < csvdata.length; ++i) {
-            if (i !== 0) {
-              if (csvdata[i][0] !== '' && csvdata[i][0] !== undefined && Number.isNaN(csvdata[i][0])) {
-                const arrayData = {
-                  'first_name': csvdata[i][0],
-                  'last_name': csvdata[i][1],
-                  'number': csvdata[i][2],
-                  'note': csvdata[i][3]
-                }
-                array.push(arrayData)
-              }
-            }
-          }
-          resolve(array)
+
+    async readFile (file: File): Promise<TContact[]> {
+      const fileText = await file.text()
+
+      const { data: csvdata, errors } = Papa.parse<string[]>(fileText, { header: false }) // convert csv to json
+      if (errors.length) {
+        for (const err of errors) {
+          void notifyError(JSON.stringify(err))
         }
-      })
+        return []
+      }
+
+      const result: TContact[] = []
+      for (let i = 0; i < csvdata.length; ++i) {
+        if (i !== 0) {
+          const row = csvdata[i]
+          const first = row[0]
+          if (typeof first === 'string' && first !== '') {
+            const arrayData = {
+              'first_name': first,
+              'last_name': row[1],
+              'number': row[2],
+              'note': row[3]
+            }
+            result.push(arrayData)
+          }
+        }
+      }
+      return result
     },
     choseFile2,
     download () {
@@ -283,8 +293,8 @@ export default defineComponent({
     handleSubmit () {
       this.submitted = true
       // stop here if form is invalid
-      this.$v.$touch()
-      if (this.$v.$invalid) {
+      this.v$.$touch()
+      if (this.v$.$invalid) {
         return
       }
       const request = this.editId
@@ -309,11 +319,11 @@ export default defineComponent({
           .then(() => {
             ;(this.$refs['modal-contact'] as any).hide()
             this.$emit('onaddContact', true)
-            this.modelFileValu = ''
+            this.modelFileValue = ''
           })
           .catch((e) => console.error(e))
       } else {
-        notifyError('Please upload valid file!')
+        void notifyError('Please upload valid file!')
       }
     },
     async deletechat (id: any) {

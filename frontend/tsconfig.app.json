@@ -1,0 +1,25 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": [
+    "src/**/*",
+    "src/**/*.vue",
+    "src/components.d.ts",
+    "../shared/**/*.ts"
+  ],
+  "compilerOptions": {
+    // ESNext needed for Uint8Array base64 methods
+    "lib": ["ESNext", "DOM"],
+
+    // unplugin-icons generates virtual `~icons/*` modules + auto-imported `<i-bi-*>` components; this declares their types.
+    "types": ["vite/client", "unplugin-icons/types/vue", "js-cookie", "papaparse", "pulltorefreshjs"],
+    // "types": ["*"],
+
+    // Path mapping for cleaner imports (mirrors vite `resolve.alias`).
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/*"]
+    },
+
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
+  }
+}

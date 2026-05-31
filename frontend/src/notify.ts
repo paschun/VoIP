@@ -7,13 +7,13 @@
  *   notifyInfo('Contact not deleted')
  *
  * For interactive dialogs (confirm/deny, inputs, preConfirm, etc.) call
- * `Vue.swal.fire({ ... })` directly — these helpers intentionally only
- * cover the simple notification case.
+ * `this.$swal.fire({ ... })` (or import `sweetalert2` directly) — these helpers
+ * intentionally only cover the simple notification case.
  */
-import Vue from 'vue'
+import Swal from 'sweetalert2'
 import type { SweetAlertIcon } from 'sweetalert2'
 
-const fire = (icon: SweetAlertIcon, text?: string, title?: string) => Vue.swal.fire({ icon, title, text })
+const fire = (icon: SweetAlertIcon, text?: string, title?: string) => Swal.fire({ icon, title, text })
 
 export const notifySuccess = (text?: string, title = 'Success') => fire('success', text, title)
 export const notifyError   = (text?: string, title = 'Error')   => fire('error',   text, title)

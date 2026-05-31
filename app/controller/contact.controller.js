@@ -64,31 +64,33 @@ exports.crate = async (req, res) => {
 
 exports.multipleUpload = async (req, res) => {
     try{
-        for(var i=0; i < req.body.contacts.length; i++){
-            var contact = req.body.contacts[i]
-            var phoneNumber = contact.number.trim().replace("+", "")
-            var stringLen = phoneNumber.length
-            if(stringLen > 10){
+        // for each contact, create it if the phone number isn't already stored
+        for(let i=0; i < req.body.contacts.length; i++){
+            const contact = req.body.contacts[i]
+
+            let phoneNumber = contact.number.trim().replace("+", "")
+            if(phoneNumber.length > 10){
                 phoneNumber = `+${phoneNumber}`
-            }else if(stringLen == 10){
+            }else if(phoneNumber.length === 10){
                 phoneNumber = `+1${phoneNumber}`
             }
-            var where = {
+
+            const where = {
                 user: { $eq: req.user.id }, 
                 number:{ $eq: phoneNumber }
             }
-            var checkProfile = await Contact.findOne(where)
+            const checkProfile = await Contact.findOne(where)
             if(!checkProfile){
-                var countContact = await Contact.countDocuments({user: {$eq: req.user.id}});
+                const countContact = await Contact.countDocuments({user: {$eq: req.user.id}});
                 if(countContact < 500){
-                    var storeData = { 
+                    const storeData = { 
                         user: req.user.id, 
-                        number:phoneNumber,
-                        note: contact.note,  
+                        number: phoneNumber,
                         first_name: contact.first_name, 
-                        last_name: contact.last_name
+                        last_name: contact.last_name,
+                        note: contact.note,  
                     };
-                    var isSave = await Contact.create(storeData);
+                    await Contact.create(storeData);
                 }
             }
         }

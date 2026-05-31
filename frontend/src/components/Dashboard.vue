@@ -11,8 +11,8 @@
         <div class="sp sp-circle"></div>
       </div>
     </div>
-    <theme-button id-hide="false"></theme-button>
-    <b-sidebar
+    <theme-button id-hide="true"></theme-button>
+    <b-offcanvas
       v-if="vw < 576"
       class="d-sm-none"
       id="sidebar-no-header"
@@ -20,14 +20,13 @@
       aria-labelledby="sidebar-no-header-title"
       no-header
       shadow
-      backdrop
-      visible
+      model-value
     >
       <template #default="{ hide }">
         <div class="d-flex flex-row-reverse bd-highlight">
           <div class="bd-highlight dropDown">
             <b-button class="float-right d-flex" size="sm" variant="primary">
-              <b-icon @click="hide" icon="x" scale="1"></b-icon>
+              <i-bi-x @click="hide()" />
             </b-button>
           </div>
         </div>
@@ -38,7 +37,7 @@
           @clicked="onClickChild"
         />
       </template>
-    </b-sidebar>
+    </b-offcanvas>
     <section class="col-auto col-md-4 d-none d-sm-block">
       <number-list
         ref="numberList"
@@ -50,19 +49,17 @@
     </section>
     <section class="col col-md-8 pb-2" id="drop-area1">
       <div class="chat-head">
-        <b-icon
-          font-scale="2"
-          icon="chevron-left"
+        <i-bi-chevron-left
           aria-hidden="true"
           class="mx-3 my-auto d-sm-none h2"
+          style="font-size: 2em"
           v-b-toggle.sidebar-no-header
-        ></b-icon>
-        <b-icon
-          font-scale="2"
-          icon="person-bounding-box"
+        />
+        <i-bi-person-bounding-box
           aria-hidden="true"
           class="mx-2 my-auto"
-        ></b-icon>
+          style="font-size: 2em"
+        />
         <div class="chat-name">
           <h1 class="font-name" v-if="activeChat">
             <div
@@ -83,22 +80,21 @@
                 @click="addContact(activeChat._id)"
                 v-if="!activeChat.contact"
               >
-                <b-icon
-                  font-scale="1.5"
-                  icon="plus-circle"
+                <i-bi-plus-circle
                   aria-hidden="true"
-                ></b-icon>
+                  style="font-size: 1.5em"
+                />
               </span>
             </div>
           </h1>
         </div>
         <div class="d-flex m-auto" v-if="activeChat">
           <span style="cursor: pointer" @click="makeCall()" title="Delete">
-            <b-icon font-scale="2" icon="telephone" aria-hidden="true"></b-icon>
+            <i-bi-telephone aria-hidden="true" style="font-size: 2em" />
           </span>
           &nbsp;&nbsp;&nbsp;
           <span style="cursor: pointer" @click="deletechat()" title="Delete">
-            <b-icon font-scale="2" icon="trash" aria-hidden="true"></b-icon>
+            <i-bi-trash aria-hidden="true" style="font-size: 2em" />
           </span>
         </div>
       </div>
@@ -127,7 +123,7 @@
               id="fileElem"
               multiple
               accept="image/*"
-              @change="onFilesPick($event)"
+              @change="onFilesPick"
             />
             <!-- <label class="button" for="fileElem">Select some files</label> -->
           </form>
@@ -200,19 +196,19 @@
                   </span>
                   <span v-if="message.datatype === 'call'">
                     <span v-if="message.type === 'send'">
-                      <b-icon icon="telephone-outbound-fill"></b-icon
-                      >&nbsp;&nbsp; Outbound</span
+                      <i-bi-telephone-outbound-fill
+                      />&nbsp;&nbsp; Outbound</span
                     >
                     <span v-else
-                      ><b-icon icon="telephone-inbound-fill"></b-icon
-                      >&nbsp;&nbsp; Inbound</span
+                      ><i-bi-telephone-inbound-fill
+                      />&nbsp;&nbsp; Inbound</span
                     >
                     Call( {{ getMMSS(message.duration) }} )
                   </span>
                   <span v-else> {{ message.message }} </span>
                 </div>
                 <div class="time">
-                  {{ message.created_at | moment("LLL") }}
+                  {{ formatMoment(message.created_at, "LLL") }}
                   <!-- January 1, 2000 10:00 AM -->
                 </div>
               </div>
@@ -232,7 +228,7 @@
                 v-on:keyup.enter="sendSms"
               />
               <a class="m-2" @click="file_upload()" href="javascript:void(0)">
-                <b-icon icon="paperclip" scale="2"></b-icon>
+                <i-bi-paperclip style="transform: scale(2)" />
               </a>
             </div>
             <div
@@ -240,10 +236,9 @@
               @click="sendSms()"
               style="height: 36px"
             >
-              <b-icon
-                icon="arrow-right-circle-fill"
+              <i-bi-arrow-right-circle-fill
                 aria-hidden="true"
-              ></b-icon>
+              />
             </div>
           </div>
         </div>
@@ -255,7 +250,7 @@
       id="modal-2"
       size="lg"
       title="Compose Message"
-      hide-footer
+      no-footer
     >
       <span class="small text-secondary"
         >Input (+) and country code followed by the 10 digit phone number. If no
@@ -269,7 +264,7 @@
         <v-select
           class="mt-4"
           v-model="selectedContact"
-          @option:selected="contactChangeEvent($event)"
+          @option-selected="contactChangeEvent"
           :options="searchContacts"
         ></v-select>
         <div class="form-group mt-4">
@@ -290,14 +285,14 @@
             class="form-control chat-input"
             v-model="sms.message"
             placeholder="Type Message here"
-            :class="{ 'is-invalid': submitted2 && $v.sms.message.$error }"
+            :class="{ 'is-invalid': submitted2 && v$.sms.message.$error }"
           >
           </textarea>
           <div
-            v-if="submitted2 && $v.sms.message.$error"
+            v-if="submitted2 && v$.sms.message.$error"
             class="invalid-feedback"
           >
-            <span v-if="!$v.sms.message.required">Message is required</span>
+            <span v-if="v$.sms.message.required.$invalid">Message is required</span>
           </div>
         </div>
         <div class="input-group mb-3">
@@ -306,8 +301,9 @@
               class="input-group-text paperClip chat-input"
               @click="choseFile2()"
               id="basic-addon1"
-              ><b-icon icon="paperclip"></b-icon
-            ></span>
+            >
+              <i-bi-paperclip/>
+            </span>
           </div>
           <input
             type="text"
@@ -351,15 +347,17 @@
 </template>
 <script lang="ts">
 import { defineComponent } from "vue";
-import { required } from "vuelidate/lib/validators";
+import { useVuelidate } from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
+import VueTagsInput from '@sipec/vue3-tags-input'
+import VueSelect, { type Option } from 'vue3-select-component'
+import { io } from "socket.io-client";
 import NumberList from "./inbox/NumberList.vue";
-import VueTagsInput from "@johmun/vue-tags-input";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus";
-import { io } from "socket.io-client";
-import { combineURLs, parseJSON } from '@/helper';
+import { combineURLs, parseJSON, formatMoment } from '@/helper';
 import { notifyError, notifyInfo } from '@/notify';
 
 function preventDefaults(e: Event) {
@@ -408,6 +406,10 @@ export default defineComponent({
     ThemeButton,
     CallView,
     CheckDir,
+    'v-select': VueSelect,
+  },
+  setup() {
+    return { v$: useVuelidate() };
   },
   data() {
     return {
@@ -439,14 +441,20 @@ export default defineComponent({
       modelMms: false,
       modelFileValu: "",
       zoomImage: "",
-      searchContacts: [] as any[],
+      searchContacts: [] as Option<string>[],
       activeCallTab: false,
     };
+  },
+  validations: {
+    sms: {
+      numbers: { required },
+      message: { required },
+    },
   },
   created() {
     window.addEventListener("resize", this.updateVw, { passive: true });
   },
-  destroyed() {
+  unmounted() {
     window.removeEventListener("resize", this.updateVw);
   },
   mounted() {
@@ -474,7 +482,7 @@ export default defineComponent({
     });
 
     if (!this.$cookie.get("access_token")) {
-      this.$router.push("/");
+      this.$router.push({ name: 'home' });
     }
     this.updateVw();
     const baseUrl = window.location.origin;
@@ -516,17 +524,12 @@ export default defineComponent({
     this.dropArea.addEventListener("drop", this.handleDrop, false);
     this.progressBar = document.getElementById("progress-bar");
   },
-  validations: {
-    sms: {
-      numbers: { required },
-      message: { required },
-    },
-  },
   methods: {
+    formatMoment,
     addContact(number: any) {
       EventBus.$emit("addContact", number);
     },
-    onTagsChanged(newTags: any) {
+    onTagsChanged(newTags: any[]) {
       this.tags = newTags;
     },
     toggleLoader() {
@@ -541,8 +544,8 @@ export default defineComponent({
         (this.$refs.callView as any).makeCall(this.activeChat._id);
       }
     },
-    contactChangeEvent(e: any) {
-      this.tags.push({ text: e.code, tiClasses: ["ti-valid"] });
+    contactChangeEvent(option: Option<string>) {
+      this.tags.push({ text: option.value, tiClasses: ["ti-valid"] });
       this.selectedContact = "";
     },
     onaddContact(data: any) {
@@ -550,15 +553,7 @@ export default defineComponent({
       this.formatecontact(data);
     },
     formatecontact(contacts: any) {
-      const arrContact: any[] = [];
-      for (let i = 0; i < contacts.length; i++) {
-        const contact = {
-          label: `${contacts[i].first_name} ${contacts[i].last_name}`,
-          code: contacts[i].number,
-        };
-        arrContact.push(contact);
-      }
-      this.searchContacts = arrContact;
+      this.searchContacts = contacts.map((c: any) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
     },
     hiddenImage() {
       this.zoomImage = "";
@@ -605,7 +600,7 @@ export default defineComponent({
       }
       files = [...files];
       this.initializeProgress(files.length);
-      files.forEach(this.uploadFile);
+      files.forEach(this.uploadFile.bind(this));
     },
     removeFromPrevie(image: any) {
       const images = [];
@@ -655,7 +650,7 @@ export default defineComponent({
     onClickChild(value: any) {
       this.firstChatShow(value);
     },
-    notifyMe(user: any, message: any) {
+    async notifyMe(user: any, message: any) {
       const msgIcon = new URL('@/assets/img/icon.png', import.meta.url).href;
       if (!("Notification" in window)) {
         alert("This browser does not support desktop notification");
@@ -667,19 +662,18 @@ export default defineComponent({
         };
         new Notification("Message from " + user, options);
       } else if (Notification.permission !== "denied") {
-        Notification.requestPermission((permission) => {
-          if (!("permission" in Notification)) {
-            (Notification as any).permission = permission;
-          }
-          if (permission === "granted") {
-            const options = {
-              body: message,
-              dir: "auto",
-              icon: msgIcon,
-            } as const
-            new Notification("Message from " + user, options);
-          }
-        });
+        const permission = await Notification.requestPermission()
+        if (!("permission" in Notification)) {
+          (Notification as any).permission = permission;
+        }
+        if (permission === "granted") {
+          const options = {
+            body: message,
+            dir: "auto",
+            icon: msgIcon,
+          } as const
+          new Notification("Message from " + user, options);
+        }
       }
     },
     async deletechat() {
@@ -742,7 +736,6 @@ export default defineComponent({
             document.getElementById("drop-area")!.style.display = "none";
             this.tags = [];
             (this.$refs.numberList as any).getNumberList();
-            // this.showChat(activechat)
             if (this.activeChatData) {
               this.showChat(this.activeChat);
             }
@@ -780,8 +773,6 @@ export default defineComponent({
         .then((response) => {
           if (response) {
             this.messages = response;
-            // var container = this.$el.querySelector('#chat-container')
-            // container.scrollTop = container.scrollHeight
             setTimeout(() => {
               const scroll = document.getElementById("chat-container")!;
               scroll.scrollTop = scroll.scrollHeight;
@@ -796,18 +787,15 @@ export default defineComponent({
     },
     handleSubmit2() {
       this.submitted2 = true;
-      this.$v.$touch();
+      this.v$.$touch();
       this.isLoading = true;
       if (this.tags.length <= 0) {
         notifyError("please enter number!", "Oops...");
         return;
       }
-      const numbers: any[] = [];
-      for (let i = 0; i < this.tags.length; i++) {
-        numbers.push(this.tags[i].text);
-      }
-      // return
-      if (!this.$v.sms.message.$error || this.uploadedImages.length > 0) {
+      const numbers = this.tags.map(({ text }) => text)
+
+      if (!this.v$.sms.message.$error || this.uploadedImages.length > 0) {
         this.commonSendMessage(numbers, this.sms.message);
       } else {
         notifyError("Message or file required!", "Oops...");
@@ -825,6 +813,7 @@ export default defineComponent({
   },
 });
 </script>
+
 <style scoped>
 .opacitynone {
   opacity: 0;
@@ -888,7 +877,6 @@ p {
 #hidden {
   z-index: 9999;
   display: none;
-  /*background-color:#fff;*/
   position: fixed;
   height: 100%;
   width: 100%;
@@ -896,13 +884,7 @@ p {
   top: 0px;
   text-align: center;
 }
-/* .wrap-container{
-  width: 100%;
-  position: relative;
-}
-.wrap-container2{
-  position: relative;
-} */
+
 .sp {
   width: 32px;
   height: 32px;

@@ -19,26 +19,22 @@
               ></contact>
             </div>
             <div class="bd-highlight">
-              <b-icon
-                font-scale="1"
-                icon="telephone"
+              <i-bi-telephone
                 aria-hidden="true"
                 class="m-2"
                 title="Call"
-                @click="$bvModal.show('modal-tall')"
+                v-b-modal.modal-tall
                 style="cursor:pointer;"
-              ></b-icon>
+              />
             </div>
             <div class="bd-highlight">
-              <b-icon
+              <i-bi-pencil-square
                 v-b-modal.modal-2
-                font-scale="1"
-                icon="pencil-square"
                 aria-hidden="true"
                 class="m-2"
                 title="Compose"
                 style="cursor:pointer;"
-              ></b-icon>
+              />
             </div>
           </div>
         </div>
@@ -62,13 +58,11 @@
                   <span v-if="userdata">{{ userdata.name }}</span>
                 </div>
                 <div>
-                  <b-icon
-                    font-scale="1"
-                    icon="person-badge"
+                  <i-bi-person-badge
                     aria-hidden="true"
                     class="mx-2 my-auto"
                     title="Profiles"
-                  ></b-icon>
+                  />
                 </div>
                 <div class="droupdownAdd"></div>
               </div>
@@ -79,7 +73,7 @@
               @clicked="onClickChild"
             />
             <b-dropdown-item-button @click="logout()">
-              <b-icon icon="power" aria-hidden="true"></b-icon>
+              <i-bi-power aria-hidden="true" />
               Logout
             </b-dropdown-item-button>
           </b-dropdown>
@@ -130,12 +124,11 @@
         v-on:click="firstChatShow(item)"
         v-bind:class="{ activeChat: activeChat == item._id }"
       >
-        <b-icon
-          font-scale="2"
-          icon="person-bounding-box"
+        <i-bi-person-bounding-box
           aria-hidden="true"
           class="mx-2 my-auto"
-        ></b-icon>
+          style="font-size: 2em"
+        />
         <div class="d-flex justify-content-between" style="width:100%">
           <div class="contact-preview">
             <div class="contact-text">
@@ -157,7 +150,7 @@
           </div>
 
           <div class="align-self-center text-end me-3">
-            <span class="time">{{ item.created_at | moment("lll") }}</span>
+            <span class="time">{{ formatMoment(item.created_at, "lll") }}</span>
             <!-- Jan 1, 2000 10:00 AM -->
             <span
               class="badge message_count bg-success"
@@ -187,7 +180,7 @@
             <div class="row m-auto">
               <div class="col-auto m-auto mb-1 mb-sm-auto">
                 <label>
-                  <b-icon icon="person-fill" aria-hidden="true"></b-icon>
+                  <i-bi-person-fill aria-hidden="true" />
                   Profile
                 </label>
               </div>
@@ -197,13 +190,13 @@
                   type="text"
                   placeholder="Alias/Name"
                   v-model="user.profile"
-                  :class="{ 'is-invalid': submitted && $v.user.profile.$error }"
+                  :class="{ 'is-invalid': submitted && v$.user.profile.$error }"
                 />
                 <div
-                  v-if="submitted && $v.user.profile.$error"
+                  v-if="submitted && v$.user.profile.$error"
                   class="invalid-feedback"
                 >
-                  <span v-if="!$v.user.profile.required"
+                  <span v-if="v$.user.profile.required.$invalid"
                     >Profile is required</span
                   >
                 </div>
@@ -214,12 +207,7 @@
                   style="cursor: pointer"
                   title="Delete"
                 >
-                  <b-icon
-                    @click="deleteProfile()"
-                    font-scale="1.5"
-                    icon="trash"
-                    aria-hidden="true"
-                  ></b-icon>
+                  <i-bi-trash @click="deleteProfile()" style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
             </div>
@@ -230,7 +218,7 @@
             <div class="row mb-2">
               <div class="col-auto m-auto">
                 <label>
-                  <b-icon icon="key" aria-hidden="true"></b-icon>
+                  <i-bi-key aria-hidden="true" />
                   <b>Telnyx</b> API Key
                 </label>
               </div>
@@ -242,16 +230,16 @@
                   v-model="user.api_key"
                   :class="{
                     'is-invalid':
-                      submitted && $v.user.api_key.$error && user.profile == ''
+                      submitted && v$.user.api_key.$error && user.profile == ''
                   }"
                 />
                 <div
                   v-if="
-                    submitted && $v.user.api_key.$error && user.profile == ''
+                    submitted && v$.user.api_key.$error && user.profile == ''
                   "
                   class="invalid-feedback"
                 >
-                  <span v-if="!$v.user.api_key.required"
+                  <span v-if="v$.user.api_key.required.$invalid"
                     >API Key is required</span
                   >
                 </div>
@@ -265,7 +253,7 @@
                   id="get-number"
                   @click="getNumbers('telnyx')"
                 >
-                  <b-icon icon="telephone-plus" aria-hidden="true"></b-icon>
+                  <i-bi-telephone-plus aria-hidden="true" />
                   Get Number
                 </button>
               </div>
@@ -279,11 +267,11 @@
                   ></custom-autocomplete-select>
                   <div
                     v-if="
-                      submitted && $v.user.number.$error && user.profile == ''
+                      submitted && v$.user.number.$error && user.profile == ''
                     "
                     class="invalid-feedback"
                   >
-                    <span v-if="!$v.user.number.required"
+                    <span v-if="v$.user.number.required.$invalid"
                       >Number is required</span
                     >
                   </div>
@@ -297,11 +285,7 @@
                   title="Delete"
                   v-if="showDelete"
                 >
-                  <b-icon
-                    font-scale="1.5"
-                    icon="trash"
-                    aria-hidden="true"
-                  ></b-icon>
+                  <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
             </div>
@@ -312,7 +296,7 @@
             <div class="row mb-2">
               <div class="col-auto col-lg-3 m-auto">
                 <label>
-                  <b-icon icon="key" aria-hidden="true"></b-icon>
+                  <i-bi-key aria-hidden="true" />
                   <b>Twilio</b> SID
                 </label>
               </div>
@@ -325,17 +309,17 @@
                   :class="{
                     'is-invalid':
                       submitted &&
-                      $v.user.twilio_sid.$error &&
+                      v$.user.twilio_sid.$error &&
                       user.profile == ''
                   }"
                 />
                 <div
                   v-if="
-                    submitted && $v.user.twilio_sid.$error && user.profile == ''
+                    submitted && v$.user.twilio_sid.$error && user.profile == ''
                   "
                   class="invalid-feedback"
                 >
-                  <span v-if="!$v.user.twilio_sid.required"
+                  <span v-if="v$.user.twilio_sid.required.$invalid"
                     >Twilio sid is required</span
                   >
                 </div>
@@ -345,7 +329,7 @@
             <div class="row mb-2">
               <div class="col-auto col-lg-3 m-auto">
                 <label>
-                  <b-icon icon="key" aria-hidden="true"></b-icon>
+                  <i-bi-key aria-hidden="true" />
                   <b>Twilio</b> Token
                 </label>
               </div>
@@ -358,19 +342,19 @@
                   :class="{
                     'is-invalid':
                       submitted &&
-                      $v.user.twilio_token.$error &&
+                      v$.user.twilio_token.$error &&
                       user.profile == ''
                   }"
                 />
                 <div
                   v-if="
                     submitted &&
-                      $v.user.twilio_token.$error &&
+                      v$.user.twilio_token.$error &&
                       user.profile == ''
                   "
                   class="invalid-feedback"
                 >
-                  <span v-if="!$v.user.twilio_token.required"
+                  <span v-if="v$.user.twilio_token.required.$invalid"
                     >Twilio token is required</span
                   >
                 </div>
@@ -384,7 +368,7 @@
                   id="get-number-twilio"
                   @click="getNumbers('twilio')"
                 >
-                  <b-icon icon="telephone-plus" aria-hidden="true"></b-icon>
+                  <i-bi-telephone-plus aria-hidden="true" />
                   Get Number
                 </button>
               </div>
@@ -399,12 +383,12 @@
                   <div
                     v-if="
                       submitted &&
-                        $v.user.twilio_number.$error &&
+                        v$.user.twilio_number.$error &&
                         user.profile == ''
                     "
                     class="invalid-feedback"
                   >
-                    <span v-if="!$v.user.twilio_number.required"
+                    <span v-if="v$.user.twilio_number.required.$invalid"
                       >Number is required</span
                     >
                   </div>
@@ -418,11 +402,7 @@
                   title="Delete"
                   v-if="showDelete"
                 >
-                  <b-icon
-                    font-scale="1.5"
-                    icon="trash"
-                    aria-hidden="true"
-                  ></b-icon>
+                  <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
             </div>
@@ -443,13 +423,15 @@ import { defineComponent } from "vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
-import { required } from "vuelidate/lib/validators";
+import { useVuelidate } from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
 import { notifySuccess, notifyInfo } from "@/notify";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
-import { parseJSON } from "@/helper";
+import { parseJSON, formatMoment } from "@/helper";
+import { appDirectory } from "@/router/helpers";
 
 function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;
@@ -462,6 +444,9 @@ export default defineComponent({
     Contact,
     Setting,
     CustomAutocompleteSelect
+  },
+  setup() {
+    return { v$: useVuelidate() };
   },
   data() {
     return {
@@ -528,6 +513,7 @@ export default defineComponent({
     });
   },
   methods: {
+    formatMoment,
     pullRefreshFunction() {
       this.getNumberList();
       this.getOneProfile();
@@ -544,6 +530,7 @@ export default defineComponent({
       );
     },
     onaddContact() {
+      // todo: type this api response
       this.$get("contact/get-all")
         .then(data => {
           if (data) {
@@ -593,7 +580,7 @@ export default defineComponent({
     logout() {
       this.$cookie.delete("access_token");
       this.$cookie.delete("userdata");
-      window.location.href = `/${this.$route.params.appdirectory}/`;
+      window.location.href = `/${appDirectory(this.$route)}/`;
     },
     getNumberList() {
       this.numbers = [];
@@ -733,18 +720,18 @@ export default defineComponent({
     },
     async handleSubmit() {
       this.submitted = true;
-      this.$v.$touch();
+      this.v$.$touch();
       if (
         this.user.profile !== "" ||
         (this.selected === "telnyx" &&
-          !this.$v.user.api_key.$error &&
-          !this.$v.user.number.$error &&
-          !this.$v.user.profile.$error) ||
+          !this.v$.user.api_key.$error &&
+          !this.v$.user.number.$error &&
+          !this.v$.user.profile.$error) ||
         (this.selected === "twilio" &&
-          !this.$v.user.twilio_sid.$error &&
-          !this.$v.user.twilio_token.$error &&
-          !this.$v.user.twilio_number.$error &&
-          !this.$v.user.profile.$error)
+          !this.v$.user.twilio_sid.$error &&
+          !this.v$.user.twilio_token.$error &&
+          !this.v$.user.twilio_number.$error &&
+          !this.v$.user.profile.$error)
       ) {
         let sid = "";
         if (this.selected === "telnyx") {
@@ -850,7 +837,7 @@ export default defineComponent({
           this.hideShowDeleteIcon(response.data);
           (this.$refs.childComponent as any).getallProfile();
           EventBus.$emit("changeProfile2", true);
-          this.$v.$reset();
+          this.v$.$reset();
         }
       } catch (e) {
         console.error(e);

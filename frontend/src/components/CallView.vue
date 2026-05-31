@@ -1,8 +1,8 @@
 <template>
     <div>
         <b-button id="incomingCallModel" v-b-modal.modal-tall style="display:none">Launch demo modal</b-button>
-        <b-modal ref="modalTall" class="test-modal" id="modal-tall" hide-footer>
-          <template #modal-header="{ close }">
+        <b-modal ref="modalTall" class="test-modal" id="modal-tall" no-footer>
+          <template #header="{ close }">
             <!-- Emulate built in modal header close button action -->
             <b-button v-bind:class="{ 'd-none': connection }" size="sm" variant="outline-danger" @click="close()">
               Close
@@ -12,7 +12,7 @@
             <div class="d-flex justify-content-center">
                 <div v-if="!incoming" style="max-width:300px">
                     <div v-if="!connection">
-                      <v-select class="mb-2" v-model="selectedContact" @option:selected="contactChangeEvent($event)" :options="searchContacts"></v-select>
+                      <v-select class="mb-2" v-model="selectedContact" @option-selected="contactChangeEvent($event)" :options="searchContacts"></v-select>
                       <b-form-group id="input-group-1" style="margin-bottom: 0;">
                         <b-form-input class="chat-input" id="dailer_number" v-model="number" type="number" required style="" ></b-form-input>
                       </b-form-group>
@@ -121,10 +121,10 @@
                         <ul class="dialer-pad">
                             <center class="mt-4">
                                 <button type="button" v-b-tooltip.hover title="Call" class="btn btn-success m-1 px-5" @click="toggleCall()">
-                                    <b-icon icon="telephone-outbound" aria-hidden="true"></b-icon>
+                                    <i-bi-telephone-outbound aria-hidden="true" />
                                 </button>
                                 <button type="button" v-b-tooltip.hover title="Delete" class="btn btn-danger m-1 px-5" @click="removeNumber()">
-                                    <b-icon icon="backspace" aria-hidden="true"></b-icon>
+                                    <i-bi-backspace aria-hidden="true" />
                                 </button>
                             </center>
                         </ul>
@@ -134,7 +134,7 @@
                 <center class="mt-3 pt-3">
                     <div class="pt-4 pb-2">
                         <button type="button" class="btn btn-success m-1">
-                            <b-icon icon="person-fill" aria-hidden="true"></b-icon>
+                            <i-bi-person-fill aria-hidden="true" />
                         </button>
                         <p class="font-weight-bold mt-2" style="font-size: 30px;color: #787878;margin-bottom:0;">
                             {{name}}
@@ -145,10 +145,10 @@
                     </div>
                     <h4 class="mb-4">Incoming call</h4>
                     <button type="button" class="btn btn-success m-1" @click="acceptCall()">
-                        <b-icon icon="telephone-fill" aria-hidden="true"></b-icon>
+                        <i-bi-telephone-fill aria-hidden="true" />
                     </button>
                     <button type="button" class="btn btn-danger m-1" @click="rejectedCall()">
-                        <b-icon icon="x-circle" aria-hidden="true"></b-icon>
+                        <i-bi-x-circle aria-hidden="true" />
                     </button>
                 </center>
                 </div>
@@ -164,11 +164,13 @@
 import { defineComponent } from 'vue'
 import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
 import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
+import VueSelect, { type Option } from 'vue3-select-component'
 import { parseJSON } from '@/helper'
 import type { ApiEnvelope, CallToken } from '@shared/api-contracts'
 
 export default defineComponent({
   props: ['contacts'],
+  components: { 'v-select': VueSelect },
   data (): {
     number: any
     connection: any
@@ -178,7 +180,7 @@ export default defineComponent({
     incoming: boolean
     callType: string
     newCall: TelnyxCall | null
-    searchContacts: any[]
+    searchContacts: Option<string>[]
     device: Device | null
     client: TelnyxRTC | null
     userDuration: any
@@ -440,8 +442,8 @@ export default defineComponent({
     removeNumber () {
       this.number = this.number.slice(0, -1)
     },
-    contactChangeEvent (e: any) {
-      this.number = e.code.replace('+', '')
+    contactChangeEvent (option: Option<string>) {
+      this.number = option.value.replace('+', '')
       this.selectedContact = ''
     },
     distroyDevice () {
@@ -462,20 +464,16 @@ export default defineComponent({
       }
     },
     formatecontact (contacts: any) {
-      const arrContact: any[] = []
-      for (let i = 0; i < contacts.length; i++) {
-        const contact = {label: `${contacts[i].first_name} ${contacts[i].last_name}`, code: contacts[i].number}
-        arrContact.push(contact)
-      }
-      this.searchContacts = arrContact
+      this.searchContacts = contacts.map((c: any) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
     }
   },
   watch: {
+    // todo: change this to `computed` 
     contacts (newVal: any) {
       this.formatecontact(newVal)
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
     if (profileLocal) {
       if (profileLocal.type === 'telnyx') {
@@ -488,6 +486,7 @@ export default defineComponent({
   }
 })
 </script>
+
 <style scoped>
   .number{
     margin-bottom: 0px;
@@ -537,12 +536,6 @@ export default defineComponent({
     }
 
     .dialer-pad li.action-btn {
-        /*background: #fff;
-        border: 1px solid #62a754;
-        border-radius: 50%;
-        margin: 0 25px;
-        width: 20%;
-        padding: 12px 0;*/
         background: #fff;
         border: 1px solid #62a754;
         border-radius: 50%;

@@ -3,13 +3,11 @@
     <div class="d-flex justify-content-between">
       <div class="p-2 bd-highlight"><component :is="titleTag">{{ title }}</component></div>
       <div class="p-2 bd-highlight">
-        <b-icon
-          icon="arrow-left"
-          style="cursor: pointer"
-          :font-scale="iconScale"
+        <i-bi-arrow-left
+          :style="{ cursor: 'pointer', fontSize: iconScale + 'em' }"
           aria-hidden="true"
           @click="$emit('back')"
-        ></b-icon>
+        />
       </div>
     </div>
     <slot />
@@ -24,6 +22,7 @@ import { defineComponent } from 'vue'
  */
 export default defineComponent({
   name: 'SettingsSection',
+  emits: ['back'],
   props: {
     title: { type: String, required: true },
     titleTag: { type: String, default: 'h4' },
