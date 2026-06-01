@@ -6,12 +6,9 @@
       ref="callView"
       v-if="activeCallTab"
     ></call-view>
-    <div id="loader" v-if="isLoading">
-      <div class="d-flex loader justify-content-center align-items-center">
-        <div class="sp sp-circle"></div>
-      </div>
-    </div>
+    <loading-spinner :show="isLoading" />
     <theme-button id-hide="true"></theme-button>
+    <!-- b-offcanvas has responsive prop ="md" -->
     <b-offcanvas
       v-if="vw < 576"
       class="d-sm-none"
@@ -341,6 +338,7 @@ import VueSelect, { type Option } from 'vue3-select-component'
 import { io } from "socket.io-client";
 import Cookies from 'js-cookie';
 import NumberList from "./inbox/NumberList.vue";
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
@@ -387,6 +385,7 @@ export default defineComponent({
   name: "DashboardView",
   components: {
     NumberList,
+    LoadingSpinner,
     VueTagsInput,
     ThemeButton,
     CallView,
@@ -447,9 +446,6 @@ export default defineComponent({
     window.removeEventListener("resize", this.updateVw);
   },
   mounted() {
-    EventBus.$on("toggleLoader", () => {
-      this.toggleLoader();
-    });
     EventBus.$on("contactAdded", (number: any) => {
       if (this.activeChat._id === number) {
         this.showChat(this.activeChat);
@@ -520,13 +516,6 @@ export default defineComponent({
     },
     onTagsChanged(newTags: any[]) {
       this.tags = newTags;
-    },
-    toggleLoader() {
-      if (this.isLoading) {
-        this.isLoading = false;
-      } else {
-        this.isLoading = true;
-      }
     },
     makeCall() {
       if (this.activeChat) {
@@ -867,51 +856,4 @@ p {
   text-align: center;
 }
 
-.sp {
-  width: 32px;
-  height: 32px;
-  clear: both;
-  margin: 20px auto;
-}
-
-/* Spinner Circle Rotation */
-.sp-circle {
-  border: 4px rgba(0, 0, 0, 0.25) solid;
-  border-top: 4px black solid;
-  border-radius: 50%;
-  -webkit-animation: spCircRot 0.6s infinite linear;
-  animation: spCircRot 0.6s infinite linear;
-}
-
-@-webkit-keyframes spCircRot {
-  from {
-    -webkit-transform: rotate(0deg);
-  }
-  to {
-    -webkit-transform: rotate(359deg);
-  }
-}
-@keyframes spCircRot {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(359deg);
-  }
-}
-#loader {
-  position: absolute;
-  background: white;
-  height: 100%;
-  width: 100%;
-  z-index: 2050;
-  top: 0;
-  left: 0;
-  opacity: 0.3;
-}
-.loader {
-  height: 100%;
-  width: 100%;
-  z-index: 2100;
-}
 </style>

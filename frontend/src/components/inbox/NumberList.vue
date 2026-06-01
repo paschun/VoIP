@@ -1,10 +1,6 @@
 <template>
   <div>
-    <div id="loader1" v-if="isLoading">
-      <div class="d-flex loader justify-content-center align-items-center">
-        <div class="sp sp-circle"></div>
-      </div>
-    </div>
+    <loading-spinner :show="isLoading" />
     <div class="profile">
       <div
         class="d-flex flex-row bd-highlight align-items-center align-self-center"
@@ -421,6 +417,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import ThemeButton from "@/components/ThemeButton.vue";
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
 import { useVuelidate } from "@vuelidate/core";
@@ -442,6 +439,7 @@ function getValidString(str: string): string {
 export default defineComponent({
   components: {
     ProfileView,
+    LoadingSpinner,
     ThemeButton,
     Contact,
     Setting,
@@ -873,53 +871,6 @@ export default defineComponent({
   border-right: 0.3em solid transparent;
   border-bottom: 0;
   border-left: 0.3em solid transparent;
-}
-.sp {
-  width: 32px;
-  height: 32px;
-  clear: both;
-  margin: 20px auto;
-}
-
-/* Spinner Circle Rotation */
-.sp-circle {
-  border: 4px rgba(0, 0, 0, 0.25) solid;
-  border-top: 4px black solid;
-  border-radius: 50%;
-  -webkit-animation: spCircRot 0.6s infinite linear;
-  animation: spCircRot 0.6s infinite linear;
-}
-
-@-webkit-keyframes spCircRot {
-  from {
-    -webkit-transform: rotate(0deg);
-  }
-  to {
-    -webkit-transform: rotate(359deg);
-  }
-}
-@keyframes spCircRot {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(359deg);
-  }
-}
-#loader1 {
-  position: absolute;
-  background: white;
-  height: 100%;
-  width: 100%;
-  z-index: 2050;
-  top: 0;
-  left: 0;
-  opacity: 0.3;
-}
-.loader {
-  height: 100%;
-  width: 100%;
-  z-index: 2100;
 }
 .overflow-visible-card{
   overflow: visible;

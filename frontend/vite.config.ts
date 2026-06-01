@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import type { UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-// import vueDevTools from 'vite-plugin-vue-devtools'
+import vueDevTools from 'vite-plugin-vue-devtools'
 import Components from 'unplugin-vue-components/vite'
 import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
@@ -19,7 +19,7 @@ const jsTargets = browserslistToEsbuild(pkg.browserslist)
 export default defineConfig({
   plugins: [
     vue(),
-    // vueDevTools(),
+    vueDevTools(),
 
     // Auto-imports the icon components used in templates (`<i-bi-x />`) via the
     // IconsResolver; no manual per-icon import needed. Replaces bootstrap-vue's

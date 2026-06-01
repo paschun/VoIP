@@ -1,10 +1,6 @@
 <template>
   <div>
-    <div id="loader1" v-if="isLoading">
-      <div class="d-flex loader justify-content-center align-items-center">
-        <div class="sp sp-circle"></div>
-      </div>
-  </div>
+    <loading-spinner :show="isLoading" />
     <div v-for="profile in profiles" :key="profile._id" >
       <b-dropdown-item-button @click="changeProfile(profile)">
         <div class="d-flex flex-row">
@@ -53,8 +49,10 @@ import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { notifySuccess } from '@/notify.ts'
 import { EventBus } from '@/event-bus.ts'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default defineComponent({
+  components: { LoadingSpinner },
   emits: ['clicked'],
   setup () {
     return { v$: useVuelidate() }
@@ -128,11 +126,11 @@ export default defineComponent({
     },
     handleSubmit () {
       this.submitted3 = true
-      EventBus.$emit('toggleLoader', true)
       this.v$.$touch()
       if (this.v$.$invalid) {
         return
       }
+      this.isLoading = true
       this.$post('profile/create', this.form)
         .then((response) => {
           if (response) {
@@ -140,33 +138,13 @@ export default defineComponent({
             this.changeProfile(response.data)
             ;(this.$refs['add-profile'] as any).hide()
             this.getallProfile()
-            this.isLoading = false
-            EventBus.$emit('toggleLoader', true)
           }
         })
         .catch((e) => {
           console.error(e)
-          this.isLoading = false
-          EventBus.$emit('toggleLoader', true)
         })
+        .then(() => { this.isLoading = false })
     }
   }
 })
 </script>
-
-<style scoped>
-#loader1{
-  position: absolute;
-  background: white;
-  height: 100%;
-  width: 100%;
-  z-index: 2050;
-  top: 0;
-  left: 0;
-  opacity: .3;
-}
-.loader{
-  height: 100%;
-  width:100%;
-}
-</style>

@@ -26,6 +26,7 @@
     "cbor-x": "^1.6.4",
     "js-cookie": "^3.0.8",
     "papaparse": "^5.5.3",
+    "pinia": "^3.0.4",
     "pulltorefreshjs": "^0.1.22",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.24",
@@ -58,6 +59,7 @@
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^32.1.0",
     "vite": "^8.0.8",
+    "vite-plugin-vue-devtools": "^8.1.2",
     "vue-tsc": "^3.3.3"
   },
   "engines": {
