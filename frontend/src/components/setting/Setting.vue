@@ -6,6 +6,7 @@
             <ul class="list-group">
               <li class="list-group-item" @click="enableMenu('email')" style="cursor: pointer">
                 <i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
+              <!-- #modal-1 is currently in NumberList.vue -->
               <li class="list-group-item" v-b-modal.modal-1 style="cursor: pointer">
                 <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
               </li>
@@ -20,14 +21,6 @@
           </div>
           <settings-section v-if="activeMenu == 'email'" title="Email Settings" @back="enableMenu('setting')">
             <email-setting></email-setting>
-          </settings-section>
-
-          <settings-section v-if="activeMenu == 'call'" title="Call Settings" @back="enableMenu('setting')">
-            <call-setting></call-setting>
-          </settings-section>
-
-          <settings-section v-if="activeMenu == 'profile'" title="Profile Settings" @back="enableMenu('setting')">
-            Profile settings
           </settings-section>
 
           <settings-section v-if="activeMenu == 'account'" title="Account Settings" @back="enableMenu('setting')">
@@ -55,7 +48,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import EmailSetting from './EmailSetting.vue'
-import CallSetting from './CallSetting.vue'
 import AccountSetting from './account/AccountSetting.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
@@ -64,7 +56,7 @@ import type { VersionResponse } from '@shared/api-contracts.ts'
 
 export default defineComponent({
 name: 'SettingPanel',
-components: { EmailSetting, CallSetting, AccountSetting, Mfa, SettingsSection },
+components: { EmailSetting, AccountSetting, Mfa, SettingsSection },
 data () {
   return {
     activeMenu: 'setting',
