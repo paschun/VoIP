@@ -30,13 +30,13 @@ export const publicKeyCredentialToJSON = (pubKeyCred: any): any => {
 
 /**
  * `JSON.parse` a value that may be absent — e.g. `localStorage.getItem(...)` or
- * `$cookie.get(...)`, which return `string | null`. Returns `null` for a
+ * `cookie.get(...)`, which return `string | null`. Returns `null` for a
  * null/undefined input (mirroring the old `JSON.parse(null)` → null behavior)
  * instead of the awkward `?? 'null'` dance. Throws on malformed JSON, like
  * `JSON.parse` itself.
  */
-export const parseJSON = (value: string | null): any =>
-  value === null ? null : JSON.parse(value)
+export const parseJSON = (value: string | null | undefined): any =>
+  value === null || value === undefined ? null : JSON.parse(value)
 
 /**
  * Format a `created_at` timestamp for display.

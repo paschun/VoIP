@@ -425,6 +425,7 @@ import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
 import { useVuelidate } from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
+import Cookies from "js-cookie";
 import { notifySuccess, notifyInfo } from "@/notify.ts";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
@@ -491,7 +492,7 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.userdata = parseJSON(this.$cookie.get("userdata"));
+    this.userdata = parseJSON(Cookies.get("userdata"));
     this.onaddContact();
     PullToRefresh.init({
       mainElement: ".contact-list",
@@ -579,8 +580,8 @@ export default defineComponent({
       this.$emit("clicked", id);
     },
     logout() {
-      this.$cookie.delete("access_token");
-      this.$cookie.delete("userdata");
+      Cookies.remove("access_token");
+      Cookies.remove("userdata");
       window.location.href = `/${appDirectory(this.$route)}/`;
     },
     getNumberList() {

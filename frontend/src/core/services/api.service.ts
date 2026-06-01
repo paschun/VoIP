@@ -1,4 +1,4 @@
-import { cookie } from '@/core/cookie.plugin.ts'
+import Cookies from 'js-cookie'
 import { combineURLs } from '../../helper.ts'
 
 /**
@@ -35,7 +35,7 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
 
   const headers: Record<string, string> = {
     'Cache-Control': 'no-cache',
-    token: cookie.get('access_token') ?? ''
+    token: Cookies.get('access_token') ?? ''
   }
   const init: RequestInit = { method, headers }
   if (body !== undefined) {

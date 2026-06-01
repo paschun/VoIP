@@ -121,6 +121,7 @@ import { defineComponent } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength } from '@vuelidate/validators'
+import Cookies from 'js-cookie'
 import { publicKeyCredentialToJSON } from '@/helper.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { notifyError } from '@/notify.ts'
@@ -188,7 +189,7 @@ methods: {
     this.$post('auth/check-directoryname', { dirname: appDirectory(this.$route) })
       .then((response) => {
         const { status, dir } = response.data
-        const loggedIn = !!this.$cookie.get('access_token')
+        const loggedIn = !!Cookies.get('access_token')
 
         if (loggedIn) {
           if (status === 'nodir' || status === 'no-name' || status === 'true') {
@@ -242,8 +243,8 @@ methods: {
             this.activeUser.user = response.data
             this.otpScreen = true
           } else {
-            this.$cookie.set('access_token', response.token, 30)
-            this.$cookie.set('userdata', JSON.stringify(response.data), 30)
+            Cookies.set('access_token', response.token, { expires: 30 })
+            Cookies.set('userdata', JSON.stringify(response.data), { expires: 30 })
             this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
           }
         }
@@ -264,8 +265,8 @@ methods: {
         const serverResponse = await this.$post('hardwarekey/login', newCredentialInfo)
         if (serverResponse) {
           if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
-          this.$cookie.set('access_token', this.activeUser.token, 30)
-          this.$cookie.set('userdata', JSON.stringify(this.activeUser.user), 30)
+          Cookies.set('access_token', this.activeUser.token, { expires: 30 })
+          Cookies.set('userdata', JSON.stringify(this.activeUser.user), { expires: 30 })
           this.activeUser.token = ''
           this.activeUser.user = null
           this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
@@ -287,8 +288,8 @@ methods: {
         .then((response) => {
           if (response) {
             if (response.status === 'true') {
-              this.$cookie.set('access_token', this.activeUser.token, 30)
-              this.$cookie.set('userdata', JSON.stringify(this.activeUser.user), 30)
+              Cookies.set('access_token', this.activeUser.token, { expires: 30 })
+              Cookies.set('userdata', JSON.stringify(this.activeUser.user), { expires: 30 })
               this.activeUser.token = ''
               this.activeUser.user = null
               this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })

@@ -352,6 +352,7 @@ import { required } from "@vuelidate/validators";
 import VueTagsInput from '@sipec/vue3-tags-input'
 import VueSelect, { type Option } from 'vue3-select-component'
 import { io } from "socket.io-client";
+import Cookies from 'js-cookie';
 import NumberList from "./inbox/NumberList.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
@@ -482,7 +483,7 @@ export default defineComponent({
       }, 1500);
     });
 
-    if (!this.$cookie.get("access_token")) {
+    if (!Cookies.get("access_token")) {
       this.$router.push({ name: 'home' });
     }
     this.updateVw();
@@ -498,8 +499,8 @@ export default defineComponent({
         this.showChat(this.activeChat);
       }
     });
-    this.userdata = parseJSON(this.$cookie.get("userdata"));
-    this.access_token = this.$cookie.get("access_token");
+    this.userdata = parseJSON(Cookies.get("userdata"));
+    this.access_token = Cookies.get("access_token");
     this.socket.emit("join_profile_channel", this.userdata._id.toString());
 
     this.socket.on("user_message", (data: any) => {

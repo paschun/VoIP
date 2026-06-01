@@ -4,7 +4,6 @@ import { createApp } from 'vue'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import VueSweetalert2 from 'vue-sweetalert2'
 import ApiPlugin from '@/core/api.plugin.ts'
-import CookiePlugin from '@/core/cookie.plugin.ts'
 
 // Global styles (order matters)
 import 'bootstrap/dist/css/bootstrap.css'
@@ -21,7 +20,6 @@ const app = createApp(App)
 app.use(router)
 app.use(createBootstrap())
 app.use(VueSweetalert2)
-app.use(CookiePlugin)
 app.use(ApiPlugin)
 
 app.mount('#app')

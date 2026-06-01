@@ -17,6 +17,7 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
+import Cookies from 'js-cookie'
 import { notifySuccess } from '@/notify.ts'
 import { parseJSON } from '@/helper.ts'
 
@@ -37,9 +38,8 @@ export default defineComponent({
       email: {required}
     }
   },
-  mounted: function () {
-    // this.getContacts()
-    const userdata = parseJSON(this.$cookie.get('userdata'))
+  mounted () {
+    const userdata = parseJSON(Cookies.get('userdata'))
     if (userdata.email !== undefined) {
       this.form.email = userdata.email
     }
@@ -54,7 +54,7 @@ export default defineComponent({
       this.$post('auth/username/update', this.form)
         .then((response) => {
           if (response) {
-            this.$cookie.set('userdata', JSON.stringify(response.data), 30)
+            Cookies.set('userdata', JSON.stringify(response.data), { expires: 30 })
             notifySuccess('Username updated successfully')
           }
         })

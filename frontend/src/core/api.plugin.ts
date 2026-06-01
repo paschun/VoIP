@@ -1,7 +1,7 @@
 import type { App } from 'vue'
 import Swal from 'sweetalert2'
 import router from '@/router/index.ts'
-import { cookie } from '@/core/cookie.plugin.ts'
+import Cookies from 'js-cookie'
 import { api } from '@/core/services/api.service.ts'
 import type { ApiError, ApiClientGet, ApiClientPost } from '@/core/services/api.service.ts'
 
@@ -20,8 +20,8 @@ const swalError = (text?: string) => Swal.fire({
 const handleError = (err: ApiError): false => {
   if (err.status === 401) {
     void swalError(err.data?.error ?? 'Unauthorized Access!')
-    cookie.delete('access_token')
-    cookie.delete('userdata')
+    Cookies.remove('access_token')
+    Cookies.remove('userdata')
     const path = window.location.pathname.split('/')[1]
     void router.push(`/${path}/`)
   } else if (err.status === 400) {

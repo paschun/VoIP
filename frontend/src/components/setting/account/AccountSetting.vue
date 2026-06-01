@@ -30,6 +30,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import Cookies from 'js-cookie'
 import { appDirectory } from '@/router/helpers.ts'
 import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
@@ -74,8 +75,8 @@ export default defineComponent({
         showCancelButton: false,
         confirmButtonText: 'Ok'
       })
-      this.$cookie.delete('access_token')
-      this.$cookie.delete('userdata')
+      Cookies.remove('access_token')
+      Cookies.remove('userdata')
       window.location.href = `/${appDirectory(this.$route)}/`
     }
   }
