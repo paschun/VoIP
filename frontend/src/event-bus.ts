@@ -5,11 +5,11 @@
 type Handler = (...args: any[]) => void
 
 class Emitter {
-  private listeners = new Map<string, Set<Handler>>()
+  #listeners = new Map<string, Set<Handler>>()
 
   $on (event: string, fn: Handler): this {
-    if (!this.listeners.has(event)) this.listeners.set(event, new Set())
-    this.listeners.get(event)!.add(fn)
+    if (!this.#listeners.has(event)) this.#listeners.set(event, new Set())
+    this.#listeners.get(event)!.add(fn)
     return this
   }
 
@@ -23,17 +23,17 @@ class Emitter {
 
   $off (event?: string, fn?: Handler): this {
     if (event === undefined) {
-      this.listeners.clear()
+      this.#listeners.clear()
     } else if (fn === undefined) {
-      this.listeners.delete(event)
+      this.#listeners.delete(event)
     } else {
-      this.listeners.get(event)?.delete(fn)
+      this.#listeners.get(event)?.delete(fn)
     }
     return this
   }
 
   $emit (event: string, ...args: any[]): this {
-    this.listeners.get(event)?.forEach((fn) => { fn(...args) })
+    this.#listeners.get(event)?.forEach((fn) => { fn(...args) })
     return this
   }
 }
