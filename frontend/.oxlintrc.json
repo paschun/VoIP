@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "vue", "promise", "import"],
+  "env": {
+    "browser": false,
+    "builtin": false,
+    "shared-node-browser": false
+  },
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {}
+}
