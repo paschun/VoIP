@@ -2,7 +2,8 @@
  * Functions shared across more than one file. Single-use helpers live in the
  * file that uses them.
  */
-import type { Conversation, Message } from '@shared/api-contracts.ts'
+import type { Option } from 'vue3-select-component'
+import type { Contact, Conversation, Message } from '@shared/api-contracts.ts'
 
 /**
  * Recursively convert a PublicKeyCredential (or chunks of it) into a
@@ -64,6 +65,10 @@ export const formatTimestamp = (value: Conversation['created_at'] | Message['cre
     hour12: true
   }).format(d)
 }
+
+/** Map contacts to `v-select` options (label = full name, value = number). */
+export const contactsToOptions = (contacts: Contact[]): Option<string>[] =>
+  contacts.map((c) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
 
 /** Join URL fragments with exactly one `/` between them. */
 export const combineURLs = (...urls: string[]): string => urls.reduce(

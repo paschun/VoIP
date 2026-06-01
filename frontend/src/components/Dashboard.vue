@@ -265,7 +265,7 @@
           class="mt-4"
           v-model="selectedContact"
           @option-selected="contactChangeEvent"
-          :options="searchContacts"
+          :options="contactSelectOptions"
         ></v-select>
         <div class="form-group mt-4">
           <vue-tags-input
@@ -345,7 +345,7 @@ import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus.ts";
-import { combineURLs, parseJSON, formatTimestamp } from '@/helper.ts';
+import { combineURLs, contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
 import type { Message } from '@shared/api-contracts.ts';
 import { notifyError, notifyInfo } from '@/notify.ts';
 
@@ -426,9 +426,13 @@ export default defineComponent({
       modelMms: false,
       modelFileValue: "",
       zoomImage: "",
-      searchContacts: [] as Option<string>[],
       activeCallTab: false,
     };
+  },
+  computed: {
+    contactSelectOptions(): Option<string>[] {
+      return contactsToOptions(this.contacts);
+    },
   },
   validations: {
     sms: {
@@ -535,10 +539,6 @@ export default defineComponent({
     },
     onaddContact(data: any) {
       this.contacts = data;
-      this.formatecontact(data);
-    },
-    formatecontact(contacts: any) {
-      this.searchContacts = contacts.map((c: any) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
     },
     hiddenImage() {
       this.zoomImage = "";

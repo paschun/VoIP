@@ -12,7 +12,7 @@
             <div class="d-flex justify-content-center">
                 <div v-if="!incoming" style="max-width:300px">
                     <div v-if="!connection">
-                      <v-select class="mb-2" v-model="selectedContact" @option-selected="contactChangeEvent($event)" :options="searchContacts"></v-select>
+                      <v-select class="mb-2" v-model="selectedContact" @option-selected="contactChangeEvent" :options="contactSelectOptions"></v-select>
                       <b-form-group id="input-group-1" style="margin-bottom: 0;">
                         <b-form-input class="chat-input" id="dailer_number" v-model="number" type="number" required style="" ></b-form-input>
                       </b-form-group>
@@ -165,7 +165,7 @@ import { defineComponent } from 'vue'
 import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
 import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
 import VueSelect, { type Option } from 'vue3-select-component'
-import { parseJSON } from '@/helper.ts'
+import { contactsToOptions, parseJSON } from '@/helper.ts'
 import type { ApiEnvelope, CallToken } from '@shared/api-contracts.ts'
 
 export default defineComponent({
@@ -180,7 +180,6 @@ export default defineComponent({
     incoming: boolean
     callType: string
     newCall: TelnyxCall | null
-    searchContacts: Option<string>[]
     device: Device | null
     client: TelnyxRTC | null
     userDuration: any
@@ -195,7 +194,6 @@ export default defineComponent({
       incoming: false,
       callType: '',
       newCall: null,
-      searchContacts: [],
       device: null,
       client: null,
       userDuration: null,
@@ -203,7 +201,6 @@ export default defineComponent({
     }
   },
   async mounted () {
-    this.formatecontact(this.contacts)
     const tokenData = await this.getToken()
     this.deviceSetup(tokenData)
   },
@@ -463,14 +460,10 @@ export default defineComponent({
         console.error(e)
       }
     },
-    formatecontact (contacts: any) {
-      this.searchContacts = contacts.map((c: any) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
-    }
   },
-  watch: {
-    // todo: change this to `computed` 
-    contacts (newVal: any) {
-      this.formatecontact(newVal)
+  computed: {
+    contactSelectOptions (): Option<string>[] {
+      return contactsToOptions(this.contacts ?? [])
     }
   },
   beforeUnmount() {

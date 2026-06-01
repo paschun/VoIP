@@ -247,7 +247,7 @@ export default defineComponent({
       const fileToRead = target.files[0]
       this.modelFileValue = fileToRead.name
       this.csvUploadArray2 = await this.readFile(fileToRead)
-      console.log(this.csvUploadArray2)
+      console.log('converted CSV to JSON to be uploaded:', this.csvUploadArray2)
     },
 
     async readFile (file: File): Promise<TContact[]> {
