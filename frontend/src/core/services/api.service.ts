@@ -58,7 +58,13 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
   return data as T
 }
 
-export const api = {
+// Call signatures shared by the raw client (`api.*`) and the `$get`/`$post`
+// globals it's wrapped in (core/api.plugin). `F` is the extra failure return the
+// wrapper folds in (`false`); `D` is the response type untyped call sites get.
+export type ApiClientGet<F = never, D = unknown> = <T = D>(url: string) => Promise<T | F>
+export type ApiClientPost<F = never, D = unknown> = <T = D>(url: string, body?: unknown) => Promise<T | F>
+
+export const api: { get: ApiClientGet, post: ApiClientPost } = {
   /** Send a GET request. Returns the parsed JSON response body. */
   get: <T = unknown>(url: string): Promise<T> => request<T>('GET', url),
 

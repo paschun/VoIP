@@ -5,20 +5,18 @@ export {}
 
 import type Swal from 'sweetalert2'
 import type { CookieApi } from '@/core/cookie.plugin.ts'
+import type { ApiPost, ApiGet } from '@/core/api.plugin.ts'
 
 declare module 'vue' {
   interface ComponentCustomProperties {
-    // core/api.plugin — resolve to the parsed body on success, or `false` on
-    // failure (401/400 are swallowed there). Guard on a falsy return.
-    // Pass a contract type to get a typed response: `this.$post<ApiEnvelope<Foo>>(url)`.
-    // Default `T = any` keeps untyped call sites returning `any`.
-    $post<T = any>(url: string, data?: unknown): Promise<T | false>
-    $get<T = any>(url: string): Promise<T | false>
+    // core/api.plugin — see ApiPost/ApiGet for the contract.
+    $post: ApiPost
+    $get: ApiGet
 
     // core/cookie.plugin (js-cookie adapter).
     $cookie: CookieApi
 
-    // vue-sweetalert2 (also self-declares this; kept for clarity).
+    // vue-sweetalert2's index.d.ts types are written for vue 2, do the vue 3 setup here:
     $swal: typeof Swal
   }
 }

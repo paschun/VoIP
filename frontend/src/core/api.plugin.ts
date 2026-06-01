@@ -3,7 +3,7 @@ import Swal from 'sweetalert2'
 import router from '@/router/index.ts'
 import { cookie } from '@/core/cookie.plugin.ts'
 import { api } from '@/core/services/api.service.ts'
-import type { ApiError } from '@/core/services/api.service.ts'
+import type { ApiError, ApiClientGet, ApiClientPost } from '@/core/services/api.service.ts'
 
 // Shared API error handler (formerly in core/module/common.module.js).
 // 401 → notify + clear auth + bounce to the app login; 400 → notify.
@@ -30,6 +30,14 @@ const handleError = (err: ApiError): false => {
   return false
 }
 
+// Signatures of the globals installed below: the raw client signatures with
+// `false` folded into the return (401/400 are swallowed by `handleError`) and a
+// `T = any` default so untyped call sites stay `any`. Pass a contract type for a
+// typed response: `this.$post<ApiEnvelope<Foo>>(url)`.
+// Re-used by the `ComponentCustomProperties` augmentation in shims-global.d.ts.
+export type ApiPost = ApiClientPost<false, any>
+export type ApiGet = ApiClientGet<false, any>
+
 /**
  * Installs `this.$post(url, data)` and `this.$get(url)` on every component.
  * Thin wrappers around `api.*` that swallow errors via `handleError`,
@@ -37,9 +45,9 @@ const handleError = (err: ApiError): false => {
  */
 export default {
   install (app: App) {
-    app.config.globalProperties.$post = <T = any>(url: string, data?: unknown): Promise<T | false> =>
-      api.post<T>(url, data).catch(handleError)
-    app.config.globalProperties.$get = <T = any>(url: string): Promise<T | false> =>
-      api.get<T>(url).catch(handleError)
+    const $post: ApiPost = <T = any>(url: string, data?: unknown) => api.post<T>(url, data).catch(handleError)
+    const $get: ApiGet = <T = any>(url: string) => api.get<T>(url).catch(handleError)
+    app.config.globalProperties.$post = $post
+    app.config.globalProperties.$get = $get
   }
 }

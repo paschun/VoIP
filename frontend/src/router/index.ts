@@ -20,6 +20,7 @@ declare module 'vue-router' {
   }
 }
 
+// dynamic imports for bundle splitting: https://router.vuejs.org/guide/advanced/lazy-loading.html
 export default createRouter({
   history: createWebHistory(),
   routes: [
