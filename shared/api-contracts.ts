@@ -24,6 +24,18 @@ export interface ApiEnvelope<T = unknown> {
  */
 export type StringBoolean = 'true' | 'false'
 
+/**
+ * A Mongoose `Date` field as it arrives on the **frontend**.
+ *
+ * The models store these as BSON `Date` (e.g. `created_at: { type: Date, default:
+ * Date.now }`), but the type changes across the wire: Express `res.json`/`res.send`
+ * both run `JSON.stringify`, which serializes a `Date` to an ISO 8601 UTC string
+ * (`"2026-05-31T13:40:00.000Z"`). So the backend holds a `Date` and the frontend
+ * receives a `string` — parse with `new Date(value)` before doing date math
+ * (string subtraction won't work; on the server the raw `Date` coerces fine).
+ */
+export type IsoDateString = string
+
 export interface User {
   _id: string
   email: string
@@ -64,7 +76,29 @@ export interface Conversation {
   _id: string
   message?: string
   contact?: Contact | null
-  created_at?: string
+  created_at?: IsoDateString
+  /** 'call' rows render an inbound/outbound call label instead of the message. */
+  message_type?: string
+  /** Direction of the latest message/call. */
+  type?: 'send' | 'receive'
+  /** Count of unviewed messages in this conversation. */
+  isview?: number
+}
+
+/** A single entry in a conversation thread (`setting/message-list`). */
+export interface Message {
+  _id: string
+  /** Direction of the message/call. */
+  type: 'send' | 'receive'
+  /** Plain text body (absent for call entries). */
+  message?: string
+  /** JSON-stringified array of media URLs (MMS). */
+  media?: string
+  /** 'call' entries render a call label + duration instead of a body. */
+  datatype?: string
+  /** Call duration in seconds (call entries only). */
+  duration?: number
+  created_at?: IsoDateString
 }
 
 export interface HardwareKey {

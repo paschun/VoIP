@@ -203,12 +203,12 @@
                       ><i-bi-telephone-inbound-fill
                       />&nbsp;&nbsp; Inbound</span
                     >
-                    Call( {{ getMMSS(message.duration) }} )
+                    Call( {{ getMMSS(message.duration ?? 0) }} )
                   </span>
                   <span v-else> {{ message.message }} </span>
                 </div>
                 <div class="time">
-                  {{ formatMoment(message.created_at, "LLL") }}
+                  {{ formatTimestamp(message.created_at) }}
                   <!-- January 1, 2000 10:00 AM -->
                 </div>
               </div>
@@ -357,7 +357,8 @@ import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { EventBus } from "@/event-bus.ts";
-import { combineURLs, parseJSON, formatMoment } from '@/helper.ts';
+import { combineURLs, parseJSON, formatTimestamp } from '@/helper.ts';
+import type { Message } from '@shared/api-contracts.ts';
 import { notifyError, notifyInfo } from '@/notify.ts';
 
 function preventDefaults(e: Event) {
@@ -432,7 +433,7 @@ export default defineComponent({
       submitted2: false,
       userdata: null as any,
       access_token: null as any,
-      messages: [] as any[],
+      messages: [] as Message[],
       messageBody: "",
       socket: null as any,
       baseurl: "",
@@ -525,7 +526,7 @@ export default defineComponent({
     this.progressBar = document.getElementById("progress-bar");
   },
   methods: {
-    formatMoment,
+    formatTimestamp,
     addContact(number: any) {
       EventBus.$emit("addContact", number);
     },

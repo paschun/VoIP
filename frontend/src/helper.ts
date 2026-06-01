@@ -2,6 +2,7 @@
  * Functions shared across more than one file. Single-use helpers live in the
  * file that uses them.
  */
+import type { Conversation, Message } from '@shared/api-contracts.ts'
 
 /**
  * Recursively convert a PublicKeyCredential (or chunks of it) into a
@@ -38,25 +39,30 @@ export const parseJSON = (value: string | null): any =>
   value === null ? null : JSON.parse(value)
 
 /**
- * Format a date/time the way the old `vue-moment` `| moment("LLL"|"lll")` filter
- * did (vue-moment was dropped in the Vue 3 upgrade — Vue 3 removed filters).
- * `LLL` -> "May 30, 2026 1:40 AM" (full month); `lll` -> abbreviated month.
- * Used in Dashboard.vue + inbox/NumberList.vue.
+ * Format a `created_at` timestamp for display.
+ *
+ * Both call sites (a Conversation inbox row + a Message thread entry) drive this.
+ * Their `created_at` shapes are identical today, but the union documents that and
+ * keeps tracking either contract if one diverges — hence the duplicate-constituent
+ * disable below.
+ *
+ * @param value     The `created_at` timestamp
+ * @param longMonth `true` → "December", `false` → "Dec".
+ * @returns The formatted "Month D, YYYY h:mm AM" string, or `''` if unparseable.
  */
-export const formatMoment = (value: string | number | Date | null | undefined, style: 'LLL' | 'lll' = 'LLL'): string => {
-  if (value === null || value === undefined || value === '') return ''
+// eslint-disable-next-line @typescript-eslint/no-duplicate-type-constituents
+export const formatTimestamp = (value: Conversation['created_at'] | Message['created_at'], longMonth = true): string => {
+  if (!value) return ''
   const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
+  if (Number.isNaN(d.getTime())) return ''
   return new Intl.DateTimeFormat('en-US', {
-    month: style === 'LLL' ? 'long' : 'short',
+    month: longMonth ? 'long' : 'short',
     day: 'numeric',
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
-  // Intl emits "May 30, 2026, 1:40 AM"; moment's LLL has no comma before the
-  // time — drop just that one.
-  }).format(d).replace(/, (\d{1,2}:\d{2}\s[AP]M)$/, ' $1')
+  }).format(d)
 }
 
 /** Join URL fragments with exactly one `/` between them. */

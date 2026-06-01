@@ -150,12 +150,12 @@
           </div>
 
           <div class="align-self-center text-end me-3">
-            <span class="time">{{ formatMoment(item.created_at, "lll") }}</span>
+            <span class="time">{{ formatTimestamp(item.created_at, false) }}</span>
             <!-- Jan 1, 2000 10:00 AM -->
             <span
               class="badge message_count bg-success"
               :id="item._id"
-              v-if="item.isview > 0"
+              v-if="(item.isview ?? 0) > 0"
               >{{ item.isview }}</span
             >
           </div>
@@ -430,7 +430,8 @@ import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus.ts";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
-import { parseJSON, formatMoment } from "@/helper.ts";
+import { parseJSON, formatTimestamp } from "@/helper.ts";
+import type { Conversation } from "@shared/api-contracts.ts";
 import { appDirectory } from "@/router/helpers.ts";
 
 function getValidString(str: string): string {
@@ -464,8 +465,8 @@ export default defineComponent({
       activeChat: "",
       submitted: false,
       messageListLoader: true,
-      numbers: [] as any[],
-      search_numbers: [] as any[],
+      numbers: [] as Conversation[],
+      search_numbers: [] as Conversation[],
       userdata: null as any,
       activeProfile: null as any,
       tNumbers: [] as any[],
@@ -513,7 +514,7 @@ export default defineComponent({
     });
   },
   methods: {
-    formatMoment,
+    formatTimestamp,
     pullRefreshFunction() {
       this.getNumberList();
       this.getOneProfile();
@@ -526,7 +527,7 @@ export default defineComponent({
         search.test(item._id) ||
         search.test(item.contact?.first_name ?? "") ||
         search.test(item.contact?.last_name ?? "") ||
-        search.test(item.message)
+        search.test(item.message ?? "")
       );
     },
     onaddContact() {

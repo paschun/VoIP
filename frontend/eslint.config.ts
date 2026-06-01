@@ -47,10 +47,16 @@ export default defineConfigWithVueTs(
       // '@typescript-eslint/no-unsafe-member-access': 'off',
       // '@typescript-eslint/no-unsafe-return': 'off',
 
-      // Custom project rules.
       eqeqeq: ['error', 'always'],
+      // Steer the global `isNaN`/`isFinite` to `Number.isNaN`/`Number.isFinite`, which don't coerce their argument.
+      'no-restricted-globals': ['error',
+        { name: 'isNaN', message: 'Use Number.isNaN instead.' },
+        { name: 'isFinite', message: 'Use Number.isFinite instead.' },
+      ],
       '@typescript-eslint/no-shadow': 'error',
       "@typescript-eslint/prefer-optional-chain": "error" // also in stylisticTypeChecked
+
+      // Biome has useImportExtensions: https://biomejs.dev/linter/rules/use-import-extensions/
     },
   },
 
