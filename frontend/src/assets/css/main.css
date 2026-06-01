@@ -132,7 +132,6 @@
     background-color: var(--background-color-secondary);
     color: var(--text-primary-color);
     border-radius: 10px;
-    /* padding: 10px; */
     font-size: 14px;
     transition: 0.5s;
     display: inline-flex;

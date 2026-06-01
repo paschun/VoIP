@@ -98,16 +98,14 @@
               </b-tab>
               <b-tab title="Add Multiple">
                 <div class="d-flex justify-content-end">
-                  <button class="btn btn-success mb-2 float-right" @click="download()">Sample File</button>
+                  <button class="btn btn-success mb-2 float-right" @click="downloadSampleCSV()">Sample File</button>
                 </div>
-                <div class="input-group mb-3">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text paperClip chat-input" @click="choseFile2()" id="basic-addon1"><i-bi-paperclip /></span>
-                  </div>
-                  <input type="text" class="form-control csv_field_input chat-input" @click="choseFile2()" placeholder="Choose file" v-model="modelFileValue" aria-label="Username" readonly aria-describedby="basic-addon1">
-                </div>
+                <label class="input-group mb-3" for="model_file_input2" style="cursor: pointer">
+                  <span class="input-group-text paperClip chat-input"><i-bi-paperclip /></span>
+                  <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !modelFileValue }">{{ modelFileValue || 'Choose file' }}</span>
+                </label>
                 <div class="form-group mb-2 mt-4 d-none">
-                  <input type="file" id="model_file_input2" class="form-control chat-input" name="csvFile" accept=".csv" @change="onSelect($event)">
+                  <input type="file" id="model_file_input2" class="form-control chat-input" name="csvFile" accept=".csv" @change="onSelect">
                 </div>
                 <div class="d-flex justify-content-start bd-highlight">
                   <div class="bd-highlight"><button type="button" @click="handleSubmit2()" class="btn btn-primary float-right">Save</button></div>
@@ -139,28 +137,26 @@ type TContact = {
 // eslint-disable-next-line no-useless-escape
 const phonenumber = helpers.regex(/^\+?[0-9\(\-\)\ ]{5,17}$/)
 
+// todo: this can take a contact type
 function ConvertToCSV (objArray: any, headerList: string[]): string {
   const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
-  let str = ''
-  let row = ''
+  let result = ''
 
-  for (const head of headerList) {
-    row += head + ','
+  let header = ''
+  for (const h of headerList) {
+    header += h + ','
   }
-  row = row.slice(0, -1)
-  str += row + '\r\n'
-  for (let i = 0; i < array.length; i++) {
-    let line = ''
-    for (const head of headerList) {
-      line += array[i][head] + ','
+  header = header.slice(0, -1)
+  result += header + '\r\n'
+
+  for (const item of array) {
+    let row = ''
+    for (const prop of headerList) {
+      row += item[prop] + ','
     }
-    str += line + '\r\n'
+    result += row.slice(0, -1) + '\r\n'
   }
-  return str
-}
-
-function choseFile2 () {
-  document.getElementById('model_file_input2')!.click()
+  return result
 }
 
 function downloadFile (data: any, filename = 'data') {
@@ -178,6 +174,15 @@ function downloadFile (data: any, filename = 'data') {
   dwldLink.click()
   document.body.removeChild(dwldLink)
 }
+
+const sampleContacts = [
+  {
+    'first_name': 'John',
+    'last_name': 'Doe',
+    'number': '12300XXXXX',
+    'note': 'notes go here'
+  }
+] satisfies TContact[]
 
 export default defineComponent({
   name: 'ContactList',
@@ -205,14 +210,6 @@ export default defineComponent({
         note: ''
       },
       query: '',
-      jsonData: [
-        {
-          'first_name': 'John',
-          'last_name': 'Doe',
-          'number': '12300XXXXX',
-          'note': 'notes go here'
-        }
-      ] satisfies TContact[],
       csvUploadArray2: [] as TContact[],
     }
   },
@@ -282,9 +279,8 @@ export default defineComponent({
       }
       return result
     },
-    choseFile2,
-    download () {
-      downloadFile(this.jsonData, 'sample_file')
+    downloadSampleCSV () {
+      downloadFile(sampleContacts, 'sample_file')
     },
     openContactModel () {
       this.editId = false
@@ -412,6 +408,6 @@ export default defineComponent({
 }
 .csv_field_input{
   background: white !important;
-  color: black !important;
+  color: black;
 }
 </style>

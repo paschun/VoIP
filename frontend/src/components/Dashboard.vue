@@ -295,27 +295,13 @@
             <span v-if="v$.sms.message.required.$invalid">Message is required</span>
           </div>
         </div>
-        <div class="input-group mb-3">
-          <div class="input-group-prepend">
-            <span
-              class="input-group-text paperClip chat-input"
-              @click="choseFile2()"
-              id="basic-addon1"
-            >
-              <i-bi-paperclip/>
-            </span>
-          </div>
-          <input
-            type="text"
-            class="form-control chat-input"
-            @click="choseFile2()"
-            placeholder="Choose file"
-            aria-label="Username"
-            readonly
-            v-model="modelFileValu"
-            aria-describedby="basic-addon1"
-          />
-        </div>
+        <!-- send images over MMS -->
+        <label class="input-group mb-3" for="model_file_input" style="cursor: pointer">
+          <span class="input-group-text paperClip chat-input">
+            <i-bi-paperclip/>
+          </span>
+          <span class="form-control chat-input" :class="{ 'text-secondary': !modelFileValue }">{{ modelFileValue || 'Choose file' }}</span>
+        </label>
         <div class="form-group mb-2 mt-4 d-none">
           <input
             type="file"
@@ -345,6 +331,7 @@
     <!-- / modal -->
   </div>
 </template>
+
 <script lang="ts">
 import { defineComponent } from "vue";
 import { useVuelidate } from "@vuelidate/core";
@@ -379,10 +366,6 @@ function getVh(): number {
     (document.documentElement as any).innerHeight ?? 0,
     window.innerHeight ?? 0
   ));
-}
-
-function choseFile2() {
-  document.getElementById("model_file_input")!.click();
 }
 
 function file_upload() {
@@ -441,7 +424,7 @@ export default defineComponent({
       vw: 0,
       vh: 0,
       modelMms: false,
-      modelFileValu: "",
+      modelFileValue: "",
       zoomImage: "",
       searchContacts: [] as Option<string>[],
       activeCallTab: false,
@@ -565,7 +548,6 @@ export default defineComponent({
       this.zoomImage = image;
       document.getElementById("hidden")!.style.display = "block";
     },
-    choseFile2,
     file_upload,
     initializeProgress(numfiles: number) {
       this.progressBar.value = 0;
@@ -594,7 +576,7 @@ export default defineComponent({
         for (let i = 0; i < files.length; i++) {
           filesData.push(files[i].name);
         }
-        this.modelFileValu = filesData.join();
+        this.modelFileValue = filesData.join();
       } else {
         this.modelMms = false;
       }
@@ -732,7 +714,7 @@ export default defineComponent({
             this.sms.numbers = "";
             this.sms.message = "";
             this.uploadedImages = [];
-            this.modelFileValu = "";
+            this.modelFileValue = "";
             document.getElementById("drop-area")!.style.display = "none";
             this.tags = [];
             (this.$refs.numberList as any).getNumberList();
