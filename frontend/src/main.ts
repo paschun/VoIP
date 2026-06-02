@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 
 // Global plugins
+import { createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import VueSweetalert2 from 'vue-sweetalert2'
 import ApiPlugin from '@/core/api.plugin.ts'
@@ -17,6 +18,8 @@ import App from './App.vue'
 
 const app = createApp(App)
 
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 app.use(createBootstrap())
 app.use(VueSweetalert2)

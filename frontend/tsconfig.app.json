@@ -10,6 +10,15 @@
     // ESNext needed for Uint8Array base64 methods
     "lib": ["ESNext", "DOM"],
 
+    // "types" controls which types get loaded globally / ambiently into every file without an import
+    // Separate @types/foo package only needs the "types" array if it contributes global types that you use without importing.
+    // When you `import { foo } from "some-pkg"` and some-pkg itself ships no types, TypeScript's module resolver runs a fallback:
+    // it looks for node_modules/@types/some-pkg and resolves the declarations from there. This is part of module resolution.
+    // Pre-v6, the array defaulted to "auto-include every @types/* in node_modules," so even the ambient/global types came in free.
+    // Q: "do I write import to use it?"
+    // - yes → resolves automatically, leave the "types" array alone.
+    // - no → it's ambient, and in v6 it needs an explicit "types" entry.
+
     // unplugin-icons generates virtual `~icons/*` modules + auto-imported `<i-bi-*>` components; this declares their types.
     "types": ["vite/client", "unplugin-icons/types/vue", "js-cookie", "papaparse", "pulltorefreshjs"],
 

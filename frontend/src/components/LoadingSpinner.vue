@@ -43,14 +43,14 @@ export default defineComponent({
   z-index: 2100;
 }
 .sp {
-  width: 32px;
-  height: 32px;
+  width: 128px;
+  height: 128px;
   clear: both;
-  margin: 20px auto;
+  margin: 80px auto;
 }
 .sp-circle {
-  border: 4px rgba(0, 0, 0, 0.25) solid;
-  border-top: 4px black solid;
+  border: 16px rgba(0, 0, 0, 0.25) solid;
+  border-top: 16px black solid;
   border-radius: 50%;
   animation: spCircRot 0.6s infinite linear;
 }
@@ -59,7 +59,7 @@ export default defineComponent({
   to { transform: rotate(359deg); }
 }
 
-/* Fade the overlay in/out (see Vue's Teleport modal example). */
+/* Fade the overlay in/out, inspired by Vue's Teleport modal example. */
 .loading-fade-enter-active,
 .loading-fade-leave-active {
   transition: opacity 0.1s ease;

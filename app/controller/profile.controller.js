@@ -36,15 +36,13 @@ exports.crateProfile = async (req, res) => {
 
 exports.getOneProfile = async (req, res) => {
     try{
-        var getData = await Setting.findOne({user: {$eq: req.user.id }, _id:{ $eq: req.body.setting}}).populate({
+        const getData = await Setting.findOne({user: {$eq: req.user.id }, _id:{ $eq: req.body.setting}}).populate({
             path: 'messageCount',
-            match: { isview: 'false' }
+            match: { isview: 'false' } // unread only
         }).populate({
             path: 'totalCount',
             match: { isview: 'false' }
         })
-    // var messageCount = await Message.countDocuments({user:req.user.id,isview:'false'})
-        // getData.totalMessage = messageCount;
         res.send({status:true, message:'Profile data!', data:getData});
     }catch(error){
         res.status(400).json({status:'false',message:'something is wrong'});
@@ -52,7 +50,7 @@ exports.getOneProfile = async (req, res) => {
 };
 exports.getProfile = async (req, res) => {
     try{
-        var getData = await Setting.find({user:{ $eq: req.user.id}}).populate({
+        const getData = await Setting.find({user:{ $eq: req.user.id}}).populate({
             path: 'messageCount',
             match: { isview: 'false' }
         }).populate({
@@ -67,7 +65,6 @@ exports.getProfile = async (req, res) => {
 exports.deleteProfile = async (req, res) => {
     try{
         var settingCheck = await Setting.findOne({_id:{$eq: req.body.profile_id} })
-        // var getData = await Setting.deleteOne({_id:req.body.profile_id })
         if(settingCheck){
             Message.deleteMany({setting:settingCheck._id })
             if(settingCheck.type === 'telnyx' && settingCheck.api_key && settingCheck.setting){
