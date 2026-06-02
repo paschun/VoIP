@@ -1,10 +1,11 @@
 const Validator = require('validatorjs');
-var Setting = require('../model/setting.model');
-var Message = require('../model/message.model');
+const Setting = require('../model/setting.model');
+const Message = require('../model/message.model');
 const twilio = require('twilio');
-const telnyx = require('telnyx');
+const Telnyx = require('telnyx');
 const telnyxHelper = require('../helper/telnyx.helper')
 const twilioHelper = require('../helper/twilio.helper')
+
 exports.crateProfile = async (req, res) => {
     try{
         let rules = {
@@ -68,9 +69,9 @@ exports.deleteProfile = async (req, res) => {
         if(settingCheck){
             Message.deleteMany({setting:settingCheck._id })
             if(settingCheck.type === 'telnyx' && settingCheck.api_key && settingCheck.setting){
-                var Telynx = telnyx(settingCheck.api_key)  
+                const telnyxClient = new Telnyx({ apiKey: settingCheck.api_key })
                 try{
-                    await Telynx.phoneNumbers.update(
+                    await telnyxClient.phoneNumbers.update(
                         settingCheck.sid,
                         { connection_id: '' }
                     ); 
@@ -98,7 +99,7 @@ exports.deleteProfile = async (req, res) => {
                     }
                 }
                 try{
-                    await Telynx.phoneNumbers.updateMessagingSettings(
+                    await telnyxClient.phoneNumbers.messaging.update(
                         settingCheck.sid,
                         { messaging_profile_id: "" }
                     ); 
@@ -106,8 +107,7 @@ exports.deleteProfile = async (req, res) => {
 
                 }
                 try{
-                    const { data: messagingProfiles } = await Telynx.messagingProfiles.retrieve(settingCheck.setting);
-                    await messagingProfiles.del();
+                    await telnyxClient.messagingProfiles.delete(settingCheck.setting);
                 }catch(error){
 
                 }
@@ -129,8 +129,8 @@ exports.deleteProfile = async (req, res) => {
                     }
                 }
 
-                const client = twilio(settingCheck.twilio_sid, settingCheck.twilio_token)
-                client.incomingPhoneNumbers(settingCheck.sid)
+                const twilioClient = twilio(settingCheck.twilio_sid, settingCheck.twilio_token)
+                twilioClient.incomingPhoneNumbers(settingCheck.sid)
                 .update({
                     smsUrl: '',
                     voiceUrl: '', 

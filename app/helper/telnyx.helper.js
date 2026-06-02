@@ -80,11 +80,11 @@ const createSIPApp = (apiKey, userid, outboundProfileid) => {
     // console.log(outboundProfileid)
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
+            const client = new Telnyx({ apiKey });
             // In Node 10
             var password = crypto.randomBytes(16).toString('hex');
             const credentialConnection =
-              await telnyx.credentialConnections.create({
+              await client.credentialConnections.create({
                 connection_name: `sip${moment().format("YYYYMMDDHHmm")}`,
                 user_name: `user${moment().format("YYYYMMDDHHmm")}`,
                 password: password,
@@ -106,9 +106,8 @@ const createSIPApp = (apiKey, userid, outboundProfileid) => {
 const updateSIPApp = (apiKey, uuid, outboundProfileid) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
-            const { data: credentialConnection } = await telnyx.credentialConnections.retrieve(uuid);
-            credentialConnection.update({
+            const client = new Telnyx({ apiKey });
+            await client.credentialConnections.update(uuid, {
               webhook_event_url: combineURLs(
                 process.env.BASE_URL.trim(),
                 "api/call/status/telnyx"
@@ -127,9 +126,8 @@ const updateSIPApp = (apiKey, uuid, outboundProfileid) => {
 const deleteSIPApp = (apiKey, uuid) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
-            const { data: credentialConnection } = await telnyx.credentialConnections.retrieve(uuid);
-            await credentialConnection.del();
+            const client = new Telnyx({ apiKey });
+            await client.credentialConnections.delete(uuid);
             resolve(true);
         }catch(error){
             // console.log(error)
@@ -141,9 +139,9 @@ const deleteSIPApp = (apiKey, uuid) => {
 const createOutboundVoice = (apiKey) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
+            const client = new Telnyx({ apiKey });
             // In Node 10
-            const outboundVoiceProfiles = await telnyx.outboundVoiceProfiles.create(
+            const outboundVoiceProfiles = await client.outboundVoiceProfiles.create(
                 {"name": `outbound${moment().format('YYYYMMDDHHmm')}`}
               );
               // console.log(outboundVoiceProfiles.data)
@@ -158,9 +156,8 @@ const createOutboundVoice = (apiKey) => {
 const deleteOutboundVoice = (apiKey, profileid) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
-            const { data: outboundVoiceProfiles } = await telnyx.outboundVoiceProfiles.retrieve(profileid);
-            await outboundVoiceProfiles.del();
+            const client = new Telnyx({ apiKey });
+            await client.outboundVoiceProfiles.delete(profileid);
             resolve(true);
         }catch(error){
             // console.log(error)
@@ -172,8 +169,8 @@ const deleteOutboundVoice = (apiKey, profileid) => {
 const updatePhoneNumber = (apiKey, numbersid) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
-            await telnyx.phoneNumbers.update(
+            const client = new Telnyx({ apiKey });
+            await client.phoneNumbers.update(
                 numbersid,
                 { connection_id: '' }
               ); 
@@ -187,8 +184,8 @@ const updatePhoneNumber = (apiKey, numbersid) => {
 const emptyMessageProfile = (apiKey, numbersid) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
-            await telnyx.phoneNumbers.updateMessagingSettings(
+            const client = new Telnyx({ apiKey });
+            await client.phoneNumbers.messaging.update(
                 numbersid,
                 { messaging_profile_id: "" }
             ); 
@@ -202,9 +199,8 @@ const emptyMessageProfile = (apiKey, numbersid) => {
 const deleteMessageProfile = (apiKey, numbersid) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(apiKey);
-            const { data: messagingProfiles } = await telnyx.messagingProfiles.retrieve(numbersid); 
-            await messagingProfiles.del();
+            const client = new Telnyx({ apiKey });
+            await client.messagingProfiles.delete(numbersid);
             resolve(true);
         }catch(error){
             resolve(false);
@@ -215,8 +211,8 @@ const deleteMessageProfile = (apiKey, numbersid) => {
 const messageProfileFallback = async (data) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(data.apiKey);
-            await telnyx.messagingProfiles.update(data.setting, 
+            const client = new Telnyx({ apiKey: data.apiKey });
+            await client.messagingProfiles.update(data.setting, 
                 {
                     "webhook_failover_url": data.url
                 }
@@ -248,9 +244,8 @@ const texmlAppFalback = async (data2) => {
 const sIPAppFallback = async (data) => {
     return new Promise(async (resolve,reject) =>  {
         try{
-            const telnyx = Telnyx(data.apiKey);
-            const { data: credentialConnection } = await telnyx.credentialConnections.retrieve(data.uuid);
-            credentialConnection.update({ 
+            const client = new Telnyx({ apiKey: data.apiKey });
+            await client.credentialConnections.update(data.uuid, { 
                 webhook_event_failover_url: `${data.url}`,
             });
             resolve(true);
