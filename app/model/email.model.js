@@ -1,4 +1,4 @@
-var mongoose = require('../../config/db.config');
+import mongoose from '../../config/db.config.js'
 
 const Email = mongoose.model('Email', { 
     email: String,
@@ -18,4 +18,4 @@ const Email = mongoose.model('Email', {
 });
 
 
-module.exports = Email;
+export default Email

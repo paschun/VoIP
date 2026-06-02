@@ -1,7 +1,9 @@
-module.exports = app => {
-    var user = require('../controller/user.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as user from '../controller/user.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
     //router.post("/register",auth, user.login);
     router.post("/login", user.login);
     //router.get("/me", user.getUser); 

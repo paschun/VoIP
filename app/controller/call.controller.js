@@ -1,10 +1,10 @@
-const Validator = require('validatorjs');
-var Setting = require('../model/setting.model');
-var Call = require('../model/message.model');
-var Contact = require('../model/contact.model');
-var twilio = require('twilio');
+import Validator from 'validatorjs'
+import Setting from '../model/setting.model.js'
+import Call from '../model/message.model.js'
+import Contact from '../model/contact.model.js'
+import twilio from 'twilio'
 
-exports.getToken = async (req, res) => {
+export const getToken = async (req, res) => {
     try{
         // var setting = await Setting.findById(req.body.setting_id)
         var setting = await Setting.findOne({_id : {$eq: req.body.setting_id}})
@@ -45,7 +45,7 @@ exports.getToken = async (req, res) => {
     }
 };
 
-exports.makeCall = async (req, res) => {
+export const makeCall = async (req, res) => {
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const response = new VoiceResponse();
     try {
@@ -90,7 +90,7 @@ exports.makeCall = async (req, res) => {
     
 };
 
-exports.status = async (req, res) => {
+export const status = async (req, res) => {
     
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const response = new VoiceResponse();
@@ -102,7 +102,7 @@ exports.status = async (req, res) => {
             await call.save()
             var settingCheck = await Setting.findOne({number:{$eq: call.twilio_number}})
             if(settingCheck){
-                global.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
+                globalThis.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
             }
         }
     }catch(error){
@@ -111,7 +111,7 @@ exports.status = async (req, res) => {
     res.set('Content-Type', 'text/xml');
     res.send(response.toString());
 };
-exports.statusTelnyx = async (req, res) => {
+export const statusTelnyx = async (req, res) => {
     try{
         if(req.body.CallSid === undefined){
             var event = req.body.data
@@ -147,7 +147,7 @@ exports.statusTelnyx = async (req, res) => {
                             await call.save()
                             var settingCheck = await Setting.findOne({number:{ $eq: call.twilio_number}})
                             if(settingCheck){
-                                global.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
+                                globalThis.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
                             }
                         }
                     break;
@@ -160,7 +160,7 @@ exports.statusTelnyx = async (req, res) => {
                 await call.save()
                 var settingCheck = await Setting.findOne({number: { $eq: call.twilio_number}})
                 if(settingCheck){
-                    global.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
+                    globalThis.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
                 }
             }
         }
@@ -174,7 +174,7 @@ exports.statusTelnyx = async (req, res) => {
     res.send(callXml);
 };
 
-exports.incoming = async (req, res) => {
+export const incoming = async (req, res) => {
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const response = new VoiceResponse();
     try{
@@ -206,7 +206,7 @@ exports.incoming = async (req, res) => {
     res.send(response.toString());
 };
 
-exports.telnyx = async (req, res) => {
+export const telnyx = async (req, res) => {
     try{
         var settingCheck = await Setting.findOne({number: { $eq: req.body.To}})
         if(settingCheck && settingCheck.sip_username){

@@ -1,8 +1,10 @@
-module.exports = app => {
-    var setting = require('../controller/setting.controller');
-    var fallback = require('../controller/fallback.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as setting from '../controller/setting.controller.js'
+import * as fallback from '../controller/fallback.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
     router.post("/create",auth, setting.create);
     router.post("/get-number", setting.getNumber);
     router.post("/get-setting",auth, setting.getSetting);

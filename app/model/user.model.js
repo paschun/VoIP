@@ -1,4 +1,4 @@
-var mongoose = require('../../config/db.config');
+import mongoose from '../../config/db.config.js'
 
 const User = mongoose.model('User', { 
     name: String,
@@ -23,4 +23,4 @@ const User = mongoose.model('User', {
 });
 
 
-module.exports = User;
+export default User

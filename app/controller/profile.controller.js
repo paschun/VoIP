@@ -1,12 +1,12 @@
-const Validator = require('validatorjs');
-const Setting = require('../model/setting.model');
-const Message = require('../model/message.model');
-const twilio = require('twilio');
-const Telnyx = require('telnyx');
-const telnyxHelper = require('../helper/telnyx.helper')
-const twilioHelper = require('../helper/twilio.helper')
+import Validator from 'validatorjs'
+import Setting from '../model/setting.model.js'
+import Message from '../model/message.model.js'
+import twilio from 'twilio'
+import Telnyx from 'telnyx'
+import * as telnyxHelper from '../helper/telnyx.helper.js'
+import * as twilioHelper from '../helper/twilio.helper.js'
 
-exports.crateProfile = async (req, res) => {
+export const crateProfile = async (req, res) => {
     try{
         let rules = {
             profile: 'required'
@@ -35,7 +35,7 @@ exports.crateProfile = async (req, res) => {
     }
 };
 
-exports.getOneProfile = async (req, res) => {
+export const getOneProfile = async (req, res) => {
     try{
         const getData = await Setting.findOne({user: {$eq: req.user.id }, _id:{ $eq: req.body.setting}}).populate({
             path: 'messageCount',
@@ -49,7 +49,7 @@ exports.getOneProfile = async (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
     try{
         const getData = await Setting.find({user:{ $eq: req.user.id}}).populate({
             path: 'messageCount',
@@ -63,7 +63,7 @@ exports.getProfile = async (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
-exports.deleteProfile = async (req, res) => {
+export const deleteProfile = async (req, res) => {
     try{
         var settingCheck = await Setting.findOne({_id:{$eq: req.body.profile_id} })
         if(settingCheck){

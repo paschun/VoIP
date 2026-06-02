@@ -1,4 +1,4 @@
 const db_uri = process.env.DB;
-const mongoose = require('mongoose');
+import mongoose from 'mongoose'
 mongoose.connect(db_uri);
-module.exports = mongoose;
+export default mongoose

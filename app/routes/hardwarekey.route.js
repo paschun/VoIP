@@ -1,7 +1,9 @@
-module.exports = app => {
-    var hardwarekey = require('../controller/hardwarekey.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as hardwarekey from '../controller/hardwarekey.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
     router.post("/register-key", auth, hardwarekey.registerSession);
     router.post("/register",auth, hardwarekey.register);
     router.post("/verify",auth, hardwarekey.verify);

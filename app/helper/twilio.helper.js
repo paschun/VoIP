@@ -1,5 +1,5 @@
-const twilio = require('twilio')
-const { combineURLs } = require("./common.helper")
+import twilio from 'twilio'
+import { combineURLs } from './common.helper.js'
 
 const creatTwiml = (sid, token) => {
     return new Promise(async (resolve) => {
@@ -171,6 +171,6 @@ const numberGet = (data) => {
     });
 }
 
-module.exports = {
+export {
     creatTwiml, updateTwiml, deleteTwiml, creatAPIKey, removeAPIKey, unlinkNumber, twimlFallbackUpdate, numberFallbackUpdate, twimlGet, numberGet 
 }

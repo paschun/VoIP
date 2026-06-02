@@ -1,7 +1,9 @@
-module.exports = app => {
-    var profileController = require('../controller/profile.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as profileController from '../controller/profile.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
     //router.post("/register",auth, user.login);
     router.post("/create",auth, profileController.crateProfile);
     router.post("/getdata",auth, profileController.getProfile);

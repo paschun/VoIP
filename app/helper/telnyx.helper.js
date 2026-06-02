@@ -1,7 +1,7 @@
-const Telnyx = require('telnyx');
-const moment = require('moment');
-const crypto = require('crypto')
-const { combineURLs } = require("./common.helper")
+import Telnyx from 'telnyx'
+import moment from 'moment'
+import crypto from 'crypto'
+import { combineURLs } from './common.helper.js'
 
 //Inside lib file declare functions
 const requestCurl = async (method, url, headers, data = null) => {
@@ -292,6 +292,6 @@ const getNumberData = async (data) => {
     });
 }
 
-module.exports = {
+export {
     requestCurl, createTexmlApp, updateTexmlApp, deleteTexmlApp, createSIPApp, updateSIPApp, deleteSIPApp, createOutboundVoice, deleteOutboundVoice, updatePhoneNumber, emptyMessageProfile, deleteMessageProfile, messageProfileFallback, texmlAppFalback, sIPAppFallback, messageProfileGet, getNumberData
 }

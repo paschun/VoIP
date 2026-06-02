@@ -1,11 +1,11 @@
-const Validator = require('validatorjs');
-const openpgp = require('openpgp');
-var Email = require('../model/email.model');
-var Setting = require('../model/setting.model');
+import Validator from 'validatorjs'
+import * as openpgp from 'openpgp'
+import Email from '../model/email.model.js'
+import Setting from '../model/setting.model.js'
 
 const _validPgpKey = (keyString) => openpgp.readKey({ armoredKey: keyString });
 
-exports.create = async (req, res) => {
+export const create = async (req, res) => {
     try{
         //return res.send(req.body);
         let rules = {
@@ -71,7 +71,7 @@ exports.create = async (req, res) => {
     }
 };
 
-exports.getEmail  = async (req, res) => {
+export const getEmail = async (req, res) => {
     try{
         var storeData = {user: req.user.id };
         var checkemail = await Email.findOne(storeData)
@@ -83,7 +83,7 @@ exports.getEmail  = async (req, res) => {
     }
 };
 
-exports.saveSetting = async (req, res) => {
+export const saveSetting = async (req, res) => {
     try{
         // var checkemail = await Setting.findById(req.body.setting_id)
         var checkemail = await Setting.findOne({_id: { $eq: req.body.setting_id}})

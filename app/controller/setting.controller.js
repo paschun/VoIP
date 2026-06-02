@@ -1,19 +1,19 @@
-const fs = require("node:fs");
-const crypto = require("node:crypto");
-const Validator = require("validatorjs");
-const Telnyx = require("telnyx");
-const moment = require("moment");
-const mongoose = require("mongoose");
-const twilio = require("twilio");
+import fs from 'node:fs'
+import crypto from 'node:crypto'
+import Validator from 'validatorjs'
+import Telnyx from 'telnyx'
+import moment from 'moment'
+import mongoose from 'mongoose'
+import twilio from 'twilio'
 
-const Setting = require("../model/setting.model");
-const User = require("../model/user.model");
-const Message = require("../model/message.model");
-const Contact = require("../model/contact.model");
-const Email = require("../model/email.model");
-const { sendEmail, combineURLs, uploadFolderFormat } = require("../helper/common.helper");
-const telnyxHelper = require("../helper/telnyx.helper");
-const twilioHelper = require("../helper/twilio.helper");
+import Setting from '../model/setting.model.js'
+import User from '../model/user.model.js'
+import Message from '../model/message.model.js'
+import Contact from '../model/contact.model.js'
+import Email from '../model/email.model.js'
+import { sendEmail, combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
+import * as telnyxHelper from '../helper/telnyx.helper.js'
+import * as twilioHelper from '../helper/twilio.helper.js'
 
 async function downloadToFile(url, destPath) {
   const response = await fetch(url);
@@ -23,7 +23,7 @@ async function downloadToFile(url, destPath) {
   await fs.promises.writeFile(destPath, response.body);
 }
 
-exports.deleteKey = async (req, res) => {
+export const deleteKey = async (req, res) => {
   try {
     var settingCheck = await Setting.findOne({
       user: { $eq: req.body.user },
@@ -130,7 +130,7 @@ exports.deleteKey = async (req, res) => {
     res.status(400).json({ status: "false", message: "Setting not deleted!" });
   }
 };
-exports.create = async (req, res) => {
+export const create = async (req, res) => {
   try {
     if (req.body.type == "telnyx") {
       let rules = {
@@ -490,7 +490,7 @@ exports.create = async (req, res) => {
     res.status(400).send({ status: false, message: error.message, data: [] });
   }
 };
-exports.getSetting = async (req, res) => {
+export const getSetting = async (req, res) => {
   try {
     let rules = {
       setting: "required",
@@ -522,7 +522,7 @@ exports.getSetting = async (req, res) => {
   }
 };
 
-exports.getNumber = async (req, res) => {
+export const getNumber = async (req, res) => {
   try {
     if (req.body.type === "telnyx") {
       let rules = {
@@ -569,7 +569,7 @@ exports.getNumber = async (req, res) => {
   }
 };
 
-exports.sendSms = async (req, res) => {
+export const sendSms = async (req, res) => {
   try {
     let rules = {
       user: "required",
@@ -584,7 +584,7 @@ exports.sendSms = async (req, res) => {
       });
       if (settingCheck) {
         if (settingCheck.type == "twilio") {
-          const twilioClient = require("twilio")(
+          const twilioClient = twilio(
             settingCheck.twilio_sid,
             settingCheck.twilio_token
           );
@@ -738,7 +738,7 @@ exports.sendSms = async (req, res) => {
   }
 };
 
-exports.receiveSms = async (req, res) => {
+export const receiveSms = async (req, res) => {
   try {
     var media = [];
     if (req.params.type !== undefined && req.params.type == "twilio") {
@@ -863,7 +863,7 @@ exports.receiveSms = async (req, res) => {
         }
       }
 
-      global.io.to(settingCheck.user.toString()).emit("user_message", {
+      globalThis.io.to(settingCheck.user.toString()).emit("user_message", {
         message: messageText,
         number: fromnumber,
         telnyx_number: toNumber,
@@ -931,7 +931,7 @@ function sleep(settingCheck, sid) {
   });
 }
 
-exports.smsStatus = async (req, res) => {
+export const smsStatus = async (req, res) => {
   try {
     if (req.params.type !== undefined && req.params.type === "twilio") {
       var status = req.body.MessageStatus;
@@ -981,7 +981,7 @@ exports.smsStatus = async (req, res) => {
   }
 };
 
-exports.getNumberList = async (req, res) => {
+export const getNumberList = async (req, res) => {
   try {
     const user_id = new mongoose.Types.ObjectId(req.body.user);
     const setting = new mongoose.Types.ObjectId(req.body.setting);
@@ -1015,7 +1015,7 @@ exports.getNumberList = async (req, res) => {
     res.status(400).json({ status: "false", message: "something went wrong" });
   }
 };
-exports.messageDelete = async (req, res) => {
+export const messageDelete = async (req, res) => {
   try {
     const deletecon = {
       user: { $eq: req.body.user },
@@ -1034,7 +1034,7 @@ exports.messageDelete = async (req, res) => {
   }
 };
 
-exports.messageList = async (req, res) => {
+export const messageList = async (req, res) => {
   try {
     const filterObject = {
       user: { $eq: req.body.user },

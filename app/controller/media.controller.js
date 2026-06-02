@@ -1,11 +1,11 @@
-const path = require("node:path")
-const crypto = require('node:crypto')
-const fs = require("node:fs")
-const multer = require("multer")
-const moment = require('moment')
-const cron = require('node-cron');
-const Media = require('../model/media.model');
-const { combineURLs, uploadFolderFormat } = require("../helper/common.helper")
+import path from 'node:path'
+import crypto from 'node:crypto'
+import fs from 'node:fs'
+import multer from 'multer'
+import moment from 'moment'
+import cron from 'node-cron'
+import Media from '../model/media.model.js'
+import { combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
 
 const storage = multer.diskStorage({
     destination: async (_req, _file, cb) => {
@@ -15,9 +15,9 @@ const storage = multer.diskStorage({
         } catch (e) {
             await fs.promises.mkdir('./uploads/' + date)
         }
+        // resolves relative to process.cwd()
         // Uploads is the Upload_folder_name
         cb(null, `./uploads/${date}/`)
-        // cb(null, combineURLs(__dirname, '../../../uploads/'));
     },
     filename: (_req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
@@ -51,7 +51,7 @@ const upload = multer({
 }).single("file");
 
 
-exports.fileUpload = async (req, res) => {
+export const fileUpload = async (req, res) => {
     try {
         upload(req, res, async (err) => {
             if (err) {
@@ -92,7 +92,7 @@ cron.schedule('0 1 * * *', () => {
     pruneOldUploads();
 });
 
-exports.deleteMedia = async (_req, res) => {
+export const deleteMedia = async (_req, res) => {
     try {
         pruneOldUploads();
         res.send({ status: true, message: 'Old MMS folder deleted' });

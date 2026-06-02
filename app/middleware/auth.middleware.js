@@ -1,8 +1,8 @@
-var User = require('../model/user.model');
-const { jwtVerify } = require('jose');
+import User from '../model/user.model.js'
+import { jwtVerify } from 'jose'
 const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY);
 // const salt = process.env.COOKIE_KEY
-module.exports = async (req, res, next) => {
+export default async (req, res, next) => {
     try {
         if(req.headers.token){
             const token = req.headers.token;

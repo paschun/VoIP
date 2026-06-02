@@ -1,4 +1,4 @@
-var mongoose = require('../../config/db.config');
+import mongoose from '../../config/db.config.js'
 
 const Media = mongoose.model('Media', { 
     media: String,
@@ -9,4 +9,4 @@ const Media = mongoose.model('Media', {
 });
 
 
-module.exports = Media;
+export default Media

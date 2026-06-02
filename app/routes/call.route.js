@@ -1,7 +1,9 @@
-module.exports = app => {
-    var call = require('../controller/call.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as call from '../controller/call.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
 
     router.post("/token", auth, call.getToken);
 

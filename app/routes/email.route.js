@@ -1,7 +1,9 @@
-module.exports = app => {
-    var email = require('../controller/email.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as email from '../controller/email.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
 
     router.post("/create", auth, email.create);
     router.get("/setting-get", auth, email.getEmail);

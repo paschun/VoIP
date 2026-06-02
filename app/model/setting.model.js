@@ -1,4 +1,4 @@
-var mongoose = require('../../config/db.config');
+import mongoose from '../../config/db.config.js'
 const userSchema = mongoose.Schema({ 
     api_key: String,
     number: String,
@@ -78,4 +78,4 @@ userSchema.virtual('messageCount', {
 const Setting = mongoose.model('Setting', userSchema);
 
 
-module.exports = Setting;
+export default Setting

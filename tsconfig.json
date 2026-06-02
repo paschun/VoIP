@@ -6,6 +6,7 @@
     "lib": ["ESNext"],
     "types": ["node"],
     "module": "nodenext",
+    "resolveJsonModule": true,
 
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
@@ -16,8 +17,11 @@
     // Incremental migration: .js and .ts coexist in one project.
     // Flip `checkJs` on globally later, or opt in per file with `// @ts-check`.
     "allowJs": true,
-    "checkJs": false,
+    "checkJs": true,
     "skipLibCheck": true,
+
+    // looser checking options
+    "noImplicitAny": false,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,

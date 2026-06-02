@@ -1,4 +1,4 @@
-var mongoose = require('../../config/db.config');
+import mongoose from '../../config/db.config.js'
 
 const Hardwarekey = mongoose.model('Hardwarekey', { 
     title: String,
@@ -31,4 +31,4 @@ const Hardwarekey = mongoose.model('Hardwarekey', {
 });
 
 
-module.exports = Hardwarekey;
+export default Hardwarekey

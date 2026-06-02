@@ -1,11 +1,9 @@
-// const baseUrl = process.env.BASE_URL.trim()
-// const APP_ID = baseUrl.substr(0, baseUrl.length - 1);
-const Hardwarekey = require('../model/hardwarekey.model');
-const User = require('../model/user.model');
-const Handel = require('../model/handel.model');
+import Hardwarekey from '../model/hardwarekey.model.js'
+import User from '../model/user.model.js'
+import Handel from '../model/handel.model.js'
 
 let sessData = {};
-exports.registerSession = async (req, res) => {
+export const registerSession = async (req, res) => {
     try{
         const payload = req.body;
         const userexists = await userExists(payload.title, req.user.id);
@@ -29,7 +27,7 @@ exports.registerSession = async (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 }
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
     try{
         if(!sessData.title){
             res.status(400).send({'status': 'failed', 'message': 'Access denied!'});
@@ -82,7 +80,7 @@ exports.register = async (req, res) => {
     }
 }
 
-exports.verify = async (req, res) => {
+export const verify = async (req, res) => {
     try{
         const payload = req.body;
 
@@ -109,7 +107,7 @@ exports.verify = async (req, res) => {
     }
 };
 
-exports.loginSession = async (req, res) => {
+export const loginSession = async (req, res) => {
     try{
         const payload = req.body
         const userexit = await userExists(payload.title, payload.user)
@@ -144,17 +142,7 @@ exports.loginSession = async (req, res) => {
     }
 }
 
-function preformatGetAssertReq (getAssert) {
-    getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
-    if (getAssert.allowCredentials) {
-      for (let allowCred of getAssert.allowCredentials) {
-        allowCred.id = Uint8Array.fromBase64(allowCred.id, { alphabet: 'base64url' })
-      }
-    }
-    return getAssert
-  }
-
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
     try{
         const payload = req.body
         const userwhere = sessData.user
@@ -170,7 +158,7 @@ exports.login = async (req, res) => {
     }
 }
 
-exports.getKey = async (req, res) => {
+export const getKey = async (req, res) => {
     try{
         const harewarekeys = await Hardwarekey.find({user:req.user.id, registrationComplete: true});
         res.send({status:'true', message:'hardware key list!', data:harewarekeys});
@@ -178,7 +166,7 @@ exports.getKey = async (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 }
-exports.delete = async (req, res) => {
+const deleteRecord = async (req, res) => {
     try{
         const harewarekey = await Hardwarekey.findOne({_id: req.body.id});
         if(harewarekey){
@@ -264,3 +252,5 @@ async function updateUser(title, user, struct){
         return false;
     }
 };
+
+export { deleteRecord as delete }

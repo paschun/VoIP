@@ -1,9 +1,9 @@
-const crypto = require("node:crypto");
-const nodemailer = require("nodemailer")
-const openpgpEncrypt = require('nodemailer-openpgp').openpgpEncrypt;
-const twilio = require('twilio')
+import crypto from 'node:crypto'
+import nodemailer from 'nodemailer'
+import { openpgpEncrypt } from 'nodemailer-openpgp'
+import twilio from 'twilio'
 
-const uploadFolderFormat = 'YYYYMMDD' // exported
+export const uploadFolderFormat = 'YYYYMMDD'
 
 const algorithm = "aes-256-cbc";
 const encryptedString = (message) => {
@@ -94,6 +94,6 @@ const combineURLs = (...urls)  => {
     return output;
 }
 
-module.exports = {
-    encryptedString, decryptedString, sendEmail, creatTwiml, combineURLs, uploadFolderFormat,
+export {
+    encryptedString, decryptedString, sendEmail, creatTwiml, combineURLs,
 }

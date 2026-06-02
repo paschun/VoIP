@@ -1,11 +1,10 @@
-const Validator = require('validatorjs');
-var Setting = require('../model/setting.model');
+import Validator from 'validatorjs'
+import Setting from '../model/setting.model.js'
+import * as telnyxHelper from '../helper/telnyx.helper.js'
+import * as twilioHelper from '../helper/twilio.helper.js'
+import { combineURLs } from '../helper/common.helper.js'
 
-const telnyxHelper = require('../helper/telnyx.helper')
-const twilioHelper = require('../helper/twilio.helper');
-const { combineURLs } = require('../helper/common.helper')
-
-exports.twilioTwimlFallback = async (req, res) => {
+export const twilioTwimlFallback = async (req, res) => {
     try{
         let rules = {
             url: 'required',
@@ -45,7 +44,7 @@ exports.twilioTwimlFallback = async (req, res) => {
     }
 };
 
-exports.twilioTwimlGet = async (req, res) => {
+export const twilioTwimlGet = async (req, res) => {
     try{
         let rules = {
             setting_id: 'required'
@@ -73,7 +72,7 @@ exports.twilioTwimlGet = async (req, res) => {
     }
 };
 
-exports.telnyxMessageFallback = async (req, res) => {
+export const telnyxMessageFallback = async (req, res) => {
     try{
         let rules = {
             url: 'required',
@@ -117,7 +116,7 @@ exports.telnyxMessageFallback = async (req, res) => {
     }
 };
 
-exports.telnyxMessageGet = async (req, res) => {
+export const telnyxMessageGet = async (req, res) => {
     try{
         let rules = {
             setting_id: 'required'
@@ -144,7 +143,7 @@ exports.telnyxMessageGet = async (req, res) => {
     }
 };
 
-exports.checkCallSetting = async(req, res) => {
+export const checkCallSetting = async(req, res) => {
     try{
         if(req.body.type == 'telnyx') {
             var rules = {

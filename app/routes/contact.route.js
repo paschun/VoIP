@@ -1,7 +1,9 @@
-module.exports = app => {
-    var contact = require('../controller/contact.controller');
-    var router = require("express").Router();
-    const auth = require('../middleware/auth.middleware');
+import express from 'express'
+import * as contact from '../controller/contact.controller.js'
+import auth from '../middleware/auth.middleware.js'
+
+export default app => {
+    const router = express.Router();
 
     router.post("/get-one", auth, contact.getOne);
     router.post("/create", auth, contact.crate);

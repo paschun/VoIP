@@ -1,23 +1,26 @@
-const bcrypt = require('bcrypt');
+import bcrypt from 'bcrypt'
 const saltRounds = 10;
-const Validator = require('validatorjs');
+import Validator from 'validatorjs'
 
-const { execSync } = require('node:child_process')
+import { execSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+import pkg from '../../package.json' with { type: 'json' }
 
-var User = require('../model/user.model');
-var Hardwarekey = require('../model/hardwarekey.model');
-var Contact = require('../model/contact.model');
-var Email = require('../model/email.model');
-var Message = require('../model/message.model'); 
-var Setting = require('../model/setting.model'); 
-const telnyxHelper = require('../helper/telnyx.helper');
-const twilioHelper = require('../helper/twilio.helper');
+import User from '../model/user.model.js'
+import Hardwarekey from '../model/hardwarekey.model.js'
+import Contact from '../model/contact.model.js'
+import Email from '../model/email.model.js'
+import Message from '../model/message.model.js'
+import Setting from '../model/setting.model.js'
+import * as telnyxHelper from '../helper/telnyx.helper.js'
+import * as twilioHelper from '../helper/twilio.helper.js'
 
-const { SignJWT } = require('jose');
+import { SignJWT } from 'jose'
 const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY)
 
-const Speakeasy = require("speakeasy");
-const QRCode = require("qrcode");
+import Speakeasy from 'speakeasy'
+import QRCode from 'qrcode'
 
 const userDataResponseGen = (userDataObj) => {
   const { _id, name, email, token } = userDataObj;
@@ -28,15 +31,14 @@ const remoteVersionURL = 'https://raw.githubusercontent.com/paschun/VoIP/main/ve
 // latest git commit short hash, fallback to package.json version.
 const currentVersion = (() => {
     try {
-        return execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim()
+        return execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname }).toString().trim()
     } catch (err) {
         console.error(err)
-        // import pkg from './package.json' with { type: 'json' }
-        return require('../../package.json').version
+        return pkg.version
     }
 })()
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
     try{
         let rules = {
             email: 'required',
@@ -95,7 +97,7 @@ exports.login = async (req, res) => {
     }
 };
 //otp-verify
-exports.otpVerify = async (req, res) => {
+export const otpVerify = async (req, res) => {
     try{
         var userData = {_id:{$eq: req.body.user}};
         var user = await User.findOne(userData);
@@ -116,7 +118,7 @@ exports.otpVerify = async (req, res) => {
     }
 };
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
     try{
         let rules = {
             email: 'required',
@@ -145,7 +147,7 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.getSignUpOption = async (req, res) => {
+export const getSignUpOption = async (req, res) => {
     try{
         var signup = process.env.SIGNUPS;
         if(signup){
@@ -158,11 +160,11 @@ exports.getSignUpOption = async (req, res) => {
     }
 };
 
-exports.getVersionOption = (req, res) => {
+export const getVersionOption = (req, res) => {
     res.send({ status: true, message: "version defined.", data: currentVersion });
 };
 
-exports.checkDirectoryName = (req, res) => {
+export const checkDirectoryName = (req, res) => {
     try{
         var dir = process.env.APPDIRECTORY
         if(dir){
@@ -191,7 +193,7 @@ exports.checkDirectoryName = (req, res) => {
     }
 };
 
-exports.getUpdateVersion = async (_req, res) => {
+export const getUpdateVersion = async (_req, res) => {
     try{
         const response = await fetch(remoteVersionURL);
         if (response.ok) {
@@ -219,7 +221,7 @@ exports.getUpdateVersion = async (_req, res) => {
     }
 };
 
-exports.updateUserName = async (req, res) => {
+export const updateUserName = async (req, res) => {
     try{
         let rules = {
             email: 'required',
@@ -250,7 +252,7 @@ exports.updateUserName = async (req, res) => {
     }
 }
 
-exports.getUser = async (req, res) => {
+export const getUser = async (req, res) => {
     try{
         const user = await User.findOne({ _id: { $eq: req.user.id } });
         if(user){
@@ -264,7 +266,7 @@ exports.getUser = async (req, res) => {
     }
 }
 
-exports.saveMfa = async (req, res) => {
+export const saveMfa = async (req, res) => {
     try{
         let rules = {
             status: 'required',
@@ -331,7 +333,7 @@ exports.saveMfa = async (req, res) => {
     }
 }
 
-exports.updatePassword = async (req, res) => {
+export const updatePassword = async (req, res) => {
     try{
         let rules = {
             old_password: 'required',
@@ -364,7 +366,7 @@ exports.updatePassword = async (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 }
-exports.passwordVerify = async(req, res) => {
+export const passwordVerify = async(req, res) => {
     try{
         let rules = {
             password: 'required'
@@ -390,7 +392,7 @@ exports.passwordVerify = async(req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 }
-exports.checkPassword = async (req, res) => {
+export const checkPassword = async (req, res) => {
     try{
         let rules = {
             password: 'required'

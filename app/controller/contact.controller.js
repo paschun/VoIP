@@ -1,8 +1,8 @@
-const Validator = require('validatorjs');
-var Contact = require('../model/contact.model');
-var Message = require('../model/message.model');
+import Validator from 'validatorjs'
+import Contact from '../model/contact.model.js'
+import Message from '../model/message.model.js'
 
-exports.getOne = async (req, res) => {
+export const getOne = async (req, res) => {
     try{
         var phoneNumber = req.body.number.replace("+", "")
         var stringLen = phoneNumber.length
@@ -19,7 +19,7 @@ exports.getOne = async (req, res) => {
     }
 };
 
-exports.crate = async (req, res) => {
+export const crate = async (req, res) => {
     try{
         let rules = {
             first_name: 'required',
@@ -62,7 +62,7 @@ exports.crate = async (req, res) => {
     }
 };
 
-exports.multipleUpload = async (req, res) => {
+export const multipleUpload = async (req, res) => {
     try{
         // for each contact, create it if the phone number isn't already stored
         for(let i=0; i < req.body.contacts.length; i++){
@@ -100,7 +100,7 @@ exports.multipleUpload = async (req, res) => {
     }
 };
 
-exports.getAllContact = async (req, res) => {
+export const getAllContact = async (req, res) => {
     try{
         const contacts = await Contact.find({user: {$eq: req.user.id}}).collation({locale: "en" }).sort({first_name: 1});
         res.send({status:true, message:'Contact data!', data:contacts});
@@ -109,7 +109,7 @@ exports.getAllContact = async (req, res) => {
     }
 };
 
-exports.delete = async (req, res) => {
+const deleteRecord = async (req, res) => {
     try{
         const deleteContact = await Contact.deleteOne({_id: { $eq: req.body.contact_id} })
         if(deleteContact){
@@ -122,7 +122,7 @@ exports.delete = async (req, res) => {
     }
 };
 
-exports.update = async (req, res) => {
+export const update = async (req, res) => {
     try{
         let rules = {
             first_name: 'required',
@@ -161,7 +161,7 @@ exports.update = async (req, res) => {
 };
 
 
-exports.deleteall = async (req, res) => {
+export const deleteall = async (req, res) => {
     try{
         const deleteContact = await Contact.deleteMany({user:req.user.id })
         if(deleteContact){
@@ -174,3 +174,5 @@ exports.deleteall = async (req, res) => {
     }
 };
 
+
+export { deleteRecord as delete }

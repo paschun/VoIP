@@ -1,13 +1,22 @@
-const path = require('node:path')
-const http = require('node:http')
-const { Server } = require('socket.io')
-const express = require('express')
-const { rateLimit } = require('express-rate-limit')
-const helmet = require('helmet')
-const cors = require('cors')
-const session = require('cookie-session')
-const compression = require('compression')
-const mongoose = require('./config/db.config');
+import path from 'node:path'
+import http from 'node:http'
+import { fileURLToPath } from 'node:url'
+import { Server } from 'socket.io'
+import express from 'express'
+import { rateLimit } from 'express-rate-limit'
+import helmet from 'helmet'
+import cors from 'cors'
+import session from 'cookie-session'
+import compression from 'compression'
+import mongoose from './config/db.config.js'
+import authRoute from './app/routes/auth.route.js'
+import settingRoute from './app/routes/setting.route.js'
+import profileRoute from './app/routes/profile.route.js'
+import mediaRoute from './app/routes/media.route.js'
+import contactRoute from './app/routes/contact.route.js'
+import emailRoute from './app/routes/email.route.js'
+import callRoute from './app/routes/call.route.js'
+import hardwarekeyRoute from './app/routes/hardwarekey.route.js'
 
 const app = express()
 app.use(compression())
@@ -25,8 +34,7 @@ app.use(session({
 
 const setCache = (req, res, next) => {
   if (req.method !== 'GET') {
-    // Mutating requests should never be cached.
-    res.set('Cache-Control', 'no-store')
+    res.set('Cache-Control', 'no-store') // Mutating requests should never be cached.
   } else if (req.path.startsWith('/static/')) {
     // Hashed build assets (e.g. /static/index-DIsi5uhx.js) are content-addressed, so they can be cached aggressively.
     res.set('Cache-Control', 'public, max-age=31536000, immutable')
@@ -82,7 +90,7 @@ const limiter = rateLimit({
 // apply rate limiter to all requests
 app.use(limiter);
 
-global.io = new Server(server, { cors: { origin: '*' } });
+globalThis.io = new Server(server, { cors: { origin: '*' } });
 io.on('connection', socket => {
   console.log('a user connected');
   socket.on('join_channel', (channel) => {
@@ -96,7 +104,7 @@ io.on('connection', socket => {
 });
 
 app.get('/version.md', (_req, res) => {
-  res.sendFile(path.join(__dirname, './version.md'));
+  res.sendFile(path.join(import.meta.dirname, './version.md'));
 });
 // app.enable('trust proxy')
 if (process.env.HTTPS?.trim() === 'true') {
@@ -106,24 +114,13 @@ if (process.env.HTTPS?.trim() === 'true') {
         next()
         // res.status(200).json({url: process.env.BASE_URL.trim()});
       }else{
-        res.sendFile(path.join(__dirname, './error/index.html'));
+        res.sendFile(path.join(import.meta.dirname, './error/index.html'));
       }
     } else {
       next()
     }
   })
-
-  /* app.use((req, res, next) => {
-    console.log(req.url)
-    console.log(req.secure)
-    if (req.secure || req.url === '/error') {
-      next()
-    } else if(req.url == '/get-base-url'){
-      res.status(200).json({url: process.env.BASE_URL.trim()});
-    }else{
-      // res.sendFile(path.join(__dirname, './error/index.html'));
-    }
-  }) */
+  // req.secure
 }
 
 // parse requests of content-type - application/json
@@ -133,18 +130,18 @@ app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 100
 
 // Serve built frontend assets BEFORE the catch-all routes below,
 // otherwise requests like /static/index-XXX.js fall through to the wildcard handler and get index.html (causing MIME type errors).
-app.use(express.static(path.join(__dirname, './frontend/dist')));
+app.use(express.static(path.join(import.meta.dirname, './frontend/dist')));
 app.use('/uploads', express.static('uploads'));
 
 // API + explicit routes must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
-require("./app/routes/auth.route")(app);
-require("./app/routes/setting.route")(app);
-require("./app/routes/profile.route")(app);
-require("./app/routes/media.route")(app);
-require("./app/routes/contact.route")(app);
-require("./app/routes/email.route")(app);
-require("./app/routes/call.route")(app);
-require("./app/routes/hardwarekey.route")(app);
+authRoute(app);
+settingRoute(app);
+profileRoute(app);
+mediaRoute(app);
+contactRoute(app);
+emailRoute(app);
+callRoute(app);
+hardwarekeyRoute(app);
 
 app.get('/api/users/', (_req, res) => {
   res.status(200).json({message: 'success'});
@@ -155,7 +152,7 @@ app.get('/get-base-url', (_req, res) => {
 });
 
 app.get('/error', (_req, res) => {
-  res.sendFile(path.join(__dirname, './error/index.html'));
+  res.sendFile(path.join(import.meta.dirname, './error/index.html'));
 });
 
 // SPA history-mode fallback — MUST be last.
@@ -163,7 +160,7 @@ app.get('/error', (_req, res) => {
 // here and gets index.html so the client-side router (Vue) can take over.
 // This is what makes deep links like /profile/john or /settings/foo/bar work on page refresh.
 app.get('/{*splat}', (_req, res) => {
-  res.sendFile(path.join(__dirname, './frontend/dist/index.html'));
+  res.sendFile(path.join(import.meta.dirname, './frontend/dist/index.html'));
 });
 
 console.log('express listening on PORT', process.env.PORT)

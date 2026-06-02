@@ -1,4 +1,4 @@
-var mongoose = require('../../config/db.config');
+import mongoose from '../../config/db.config.js'
 
 const Message = mongoose.model('Message', { 
     sid: String,
@@ -45,4 +45,4 @@ const Message = mongoose.model('Message', {
 });
 
 
-module.exports = Message;
+export default Message
