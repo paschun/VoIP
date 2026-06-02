@@ -279,37 +279,6 @@ const messageProfileGet = async (data) => {
     });
 }
 
-const texmlAppGet = async (data) => {
-    return new Promise(async (resolve,reject) =>  {
-        var url = `https://api.telnyx.com/v2/texml_applications/${data.twimlid}`;
-        var headers =  { 
-            'Content-Type': 'application/json', 
-            'Accept': 'application/json', 
-            'Authorization': `Bearer ${data.apiKey}`
-          };
-        var response = await requestCurl('GET',url,headers);
-        resolve(response);
-    });
-}
-
-const sIPAppGet = async (data) => {
-    return new Promise(async (resolve,reject) =>  {
-        try{
-            var url = `https://api.telnyx.com/v2/credential_connections/${data.uuid}`;
-            var headers =  { 
-                'Content-Type': 'application/json', 
-                'Accept': 'application/json', 
-                'Authorization': `Bearer ${data.apiKey}`
-              };
-            var response = await requestCurl('GET',url,headers);
-            resolve(response);
-        }catch(error){
-            // console.log(error)
-            resolve(false);
-        }
-    });
-}
-
 const getNumberData = async (data) => {
     return new Promise(async (resolve,reject) =>  {
         try{
@@ -329,5 +298,5 @@ const getNumberData = async (data) => {
 }
 
 module.exports = {
-    requestCurl, createTexmlApp, updateTexmlApp, deleteTexmlApp, createSIPApp, updateSIPApp, deleteSIPApp, createOutboundVoice, deleteOutboundVoice, updatePhoneNumber, emptyMessageProfile, deleteMessageProfile, messageProfileFallback, texmlAppFalback, sIPAppFallback, messageProfileGet, texmlAppGet, sIPAppGet, getNumberData
+    requestCurl, createTexmlApp, updateTexmlApp, deleteTexmlApp, createSIPApp, updateSIPApp, deleteSIPApp, createOutboundVoice, deleteOutboundVoice, updatePhoneNumber, emptyMessageProfile, deleteMessageProfile, messageProfileFallback, texmlAppFalback, sIPAppFallback, messageProfileGet, getNumberData
 }

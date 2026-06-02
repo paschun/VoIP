@@ -6,7 +6,6 @@ module.exports = app => {
     router.post("/create",auth, profileController.crateProfile);
     router.post("/getdata",auth, profileController.getProfile);
     router.post("/delete-profile",auth, profileController.deleteProfile);
-    router.post("/update-profile",auth, profileController.updateProfile);
     
     router.post("/getdata-one",auth, profileController.getOneProfile);
     

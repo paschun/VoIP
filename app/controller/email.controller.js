@@ -71,24 +71,6 @@ exports.create = async (req, res) => {
     }
 };
 
-exports.delete = async (req, res) => {
-    try{
-        var storeData = {user: {$eq: req.user.id}};
-        var checkemail = await Email.findOne(storeData)
-        if(checkemail){
-            var deleteEmail = await checkemail.deleteOne()
-            if(deleteEmail){
-                res.send({status:true, message:'Email settings deleted!', data:deleteEmail});
-            }else{
-                res.status(400).json({status:'false',message:'Email settings not deleted!'});
-            }
-        }else{
-            res.status(400).json({status:'false',message:'Email settings not found!'});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
 exports.getEmail  = async (req, res) => {
     try{
         var storeData = {user: req.user.id };

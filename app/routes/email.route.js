@@ -4,7 +4,6 @@ module.exports = app => {
     const auth = require('../middleware/auth.middleware');
 
     router.post("/create", auth, email.create);
-    router.get("/delete", auth, email.delete);
     router.get("/setting-get", auth, email.getEmail);
     router.post("/save/setting", auth, email.saveSetting);
     

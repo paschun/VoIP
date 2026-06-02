@@ -147,28 +147,3 @@ exports.deleteProfile = async (req, res) => {
     }
 };
 
-exports.updateProfile = async (req, res) => {
-    try{
-        let rules = {
-            profile: 'required',
-            profile_id: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var setting = await Setting.findById(req.body.profile_id)
-            var setting = await Setting.findOne({_id: { $eq: req.body.profile_id}})
-            setting.profile = req.body.profile;
-            var save = setting.save();
-            if(save){
-                res.send({status:true, message:'Profile update successfully!', data:setting});
-            }else{
-                res.status(400).json({status:'false',message:'Profile not updated!'});
-            }    
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});       
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-

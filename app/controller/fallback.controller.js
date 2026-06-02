@@ -28,43 +28,11 @@ exports.twilioTwimlFallback = async (req, res) => {
                     sid: checkSetting.twilio_sid,
                     token: checkSetting.twilio_token,
                     numbersid: checkSetting.sid,
-                    voice_url: combineURLs(req.body.url, '/api/call/incomming'),
-                    sms_url: combineURLs(req.body.url, '/api/setting/receive-sms/twilio)')
+                    voice_url: combineURLs(req.body.url, '/api/call/incoming'),
+                    sms_url: combineURLs(req.body.url, '/api/setting/receive-sms/twilio')
                 }
                 await twilioHelper.numberFallbackUpdate(updateData2);
 
-                res.send({status:true, message:'Fallback url updated!', data:checkSetting});
-            }else{
-                res.status(400).send({status: false, message:'Setting not found', data: []});  
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-exports.twilioNumberFallback = async (req, res) => {
-    try{
-        let rules = {
-            setting_id: 'required',
-            voice_url: 'required',
-            sms_url: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id: { $eq: req.body.setting_id}})
-            if(checkSetting){
-                var updateData = {
-                    sid: checkSetting.twilio_sid,
-                    token: checkSetting.twilio_token,
-                    numbersid: checkSetting.sid,
-                    voice_url: req.body.voice_url,
-                    sms_url: req.body.sms_url
-                }
-                await twilioHelper.numberFallbackUpdate(updateData);
                 res.send({status:true, message:'Fallback url updated!', data:checkSetting});
             }else{
                 res.status(400).send({status: false, message:'Setting not found', data: []});  
@@ -94,34 +62,6 @@ exports.twilioTwimlGet = async (req, res) => {
                 }
                 var app = await twilioHelper.twimlGet(updateData);
                 res.send({status:true, message:'Fallback url updated!', data:app});
-            }else{
-                res.status(400).send({status: false, message:'Setting not found', data: []});  
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-exports.twilioNumberGet = async (req, res) => {
-    try{
-        let rules = {
-            setting_id: 'required',
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id: {$eq: req.body.setting_id}})
-            if(checkSetting){
-                var updateData = {
-                    sid: checkSetting.twilio_sid,
-                    token: checkSetting.twilio_token,
-                    numbersid: checkSetting.sid
-                }
-                var number = await twilioHelper.numberGet(updateData);
-                res.send({status:true, message:'Number setting!', data:number});
             }else{
                 res.status(400).send({status: false, message:'Setting not found', data: []});  
             }
@@ -177,64 +117,6 @@ exports.telnyxMessageFallback = async (req, res) => {
     }
 };
 
-exports.telnyxTwimlFallback = async (req, res) => {
-    try{
-        let rules = {
-            url: 'required',
-            setting_id: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id: {$eq: req.body.setting_id}})
-            if(checkSetting){
-                var updateData = {
-                    apiKey: checkSetting.api_key,
-                    twimlid: checkSetting.telnyx_twiml,
-                    url: req.body.url
-                }
-                await telnyxHelper.texmlAppFalback(updateData);
-                res.send({status:true, message:'Fallback url updated!', data:checkSetting});
-            }else{
-                res.status(400).send({status: false, message:'Setting not found', data: []});  
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-exports.telnyxSipFallback = async (req, res) => {
-    try{
-        let rules = {
-            url: 'required',
-            setting_id: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id: {$eq: req.body.setting_id}})
-            if(checkSetting){
-                var updateData = {
-                    apiKey: checkSetting.api_key,
-                    uuid: checkSetting.sip_id,
-                    url: req.body.url
-                }
-                await telnyxHelper.sIPAppFallback(updateData);
-                res.send({status:true, message:'Fallback url updated!', data:checkSetting});
-            }else{
-                res.status(400).send({status: false, message:'Setting not found', data: []});  
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
 exports.telnyxMessageGet = async (req, res) => {
     try{
         let rules = {
@@ -251,60 +133,6 @@ exports.telnyxMessageGet = async (req, res) => {
                 }
                 var messageProfile = await telnyxHelper.messageProfileGet(updateData);
                 res.send({status:true, message:'Message profile data!', data:messageProfile});
-            }else{
-                res.status(400).send({status: false, message:'Setting not found', data: []});  
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-exports.telnyxTwimlGet = async (req, res) => {
-    try{
-        let rules = {
-            setting_id: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id: {$eq: req.body.setting_id}})
-            if(checkSetting){
-                var updateData = {
-                    apiKey: checkSetting.api_key,
-                    twimlid: checkSetting.telnyx_twiml
-                }
-                var twiml = await telnyxHelper.texmlAppGet(updateData);
-                res.send({status:true, message:'texml data!', data:twiml});
-            }else{
-                res.status(400).send({status: false, message:'Setting not found', data: []});  
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-exports.telnyxSipGet = async (req, res) => {
-    try{
-        let rules = {
-            setting_id: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id: {$eq: req.body.setting_id}})
-            if(checkSetting){
-                var updateData = {
-                    apiKey: checkSetting.api_key,
-                    uuid: checkSetting.sip_id
-                }
-                var sip = await telnyxHelper.sIPAppGet(updateData);
-                res.send({status:true, message:'SIP Data!', data:sip});
             }else{
                 res.status(400).send({status: false, message:'Setting not found', data: []});  
             }

@@ -4,68 +4,6 @@ var Call = require('../model/message.model');
 var Contact = require('../model/contact.model');
 var twilio = require('twilio');
 
-exports.create = async (req, res) => {
-    try{
-        let rules = {
-            type: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkSetting = await Setting.findById(req.body.setting_id)
-            var checkSetting = await Setting.findOne({_id : {$eq: req.body.setting_id}})
-            if(checkSetting){
-                if(checkSetting.type === 'twilio'){
-                    checkSetting.app_key = req.body.app_key
-                    checkSetting.app_secret = req.body.app_secret
-                    checkSetting.twiml_app = req.body.twiml_app
-                }else{
-                    checkSetting.sip_username = req.body.sip_username
-                    checkSetting.sip_password = req.body.sip_password
-                }
-                var saveData = await checkSetting.save()
-                if(saveData){
-                    res.send({status:true, message:'call setting updated!', data:checkSetting});
-                }else{
-                    res.status(400).json({status:'false',message:'call setting not updated!'});
-                }
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something went wrong'});
-    }
-};
-
-exports.delete = async (req, res) => {
-    try{
-        // var checkSetting = await Setting.findById(req.body.setting_id)
-        var checkSetting = await Setting.findOne({_id : {$eq: req.body.setting_id}})
-        if(checkemail){
-            checkSetting.app_key = null
-            checkSetting.app_secret = null
-            checkSetting.twiml_app = null
-            var saveData = await checkSetting.save()
-            if(saveData){
-                res.send({status:true, message:'Call setting deleted!', data:deleteEmail});
-            }else{
-                res.status(400).json({status:'false',message:'Call setting not deleted!'});
-            }
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something went wrong'});
-    }
-};
-exports.get  = async (req, res) => {
-    try{
-        // var checkSetting = await Setting.findById(req.body.setting_id)
-        var checkSetting = await Setting.findOne({_id : {$eq: req.body.setting_id}})
-        res.send({status:true, message:'get Call setting!', data:checkSetting});
-    }catch(error){
-        res.status(400).json({status:'false',message:'something went wrong'});
-    }
-};
-
 exports.getToken = async (req, res) => {
     try{
         // var setting = await Setting.findById(req.body.setting_id)
@@ -236,7 +174,7 @@ exports.statusTelnyx = async (req, res) => {
     res.send(callXml);
 };
 
-exports.incomming = async (req, res) => {
+exports.incoming = async (req, res) => {
     const VoiceResponse = twilio.twiml.VoiceResponse;
     const response = new VoiceResponse();
     try{
