@@ -1,8 +1,9 @@
 {
   "name": "voipsuite",
   "version": "0.95.0",
-  "description": "",
   "main": "app.js",
+  "type": "commonjs",
+  "private": true,
   "workspaces": [
     "frontend"
   ],
@@ -11,8 +12,6 @@
     "build": "npm run build -w frontend",
     "start": "NODE_ENV=production node --env-file=.env app.js"
   },
-  "author": "Operation Privacy",
-  "license": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
@@ -37,6 +36,8 @@
     "validatorjs": "^3.22.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@types/node": "^25.9.1",
+    "nodemon": "^3.1.14",
+    "typescript": "^6.0.3"
   }
 }

@@ -1,0 +1,29 @@
+{
+  "include": ["app.js", "app/**/*", "config/**/*", "error/**/*", "shared/**/*.ts"],
+  "exclude": ["node_modules", "frontend", "uploads", "dist"],
+
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "module": "nodenext",
+
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true,
+    // Let imports keep their real `.ts` extension (`import './x.ts'`) — that's the path Node actually resolves at runtime.
+    "allowImportingTsExtensions": true,
+
+    // Incremental migration: .js and .ts coexist in one project.
+    // Flip `checkJs` on globally later, or opt in per file with `// @ts-check`.
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.backend.tsbuildinfo"
+  }
+}
