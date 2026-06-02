@@ -24,6 +24,5 @@
     "exactOptionalPropertyTypes": true,
 
     "noEmit": true,
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.backend.tsbuildinfo"
   }
 }
