@@ -1,8 +1,8 @@
 import Validator from 'validatorjs'
 import Setting from '../model/setting.model.ts'
-import * as telnyxHelper from '../helper/telnyx.helper.js'
-import * as twilioHelper from '../helper/twilio.helper.js'
-import { combineURLs } from '../helper/common.helper.js'
+import * as telnyxHelper from '../helper/telnyx.helper.ts'
+import * as twilioHelper from '../helper/twilio.helper.ts'
+import { combineURLs } from '../helper/common.helper.ts'
 
 export const twilioTwimlFallback = async (req, res) => {
     try{

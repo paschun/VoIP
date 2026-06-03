@@ -3,8 +3,8 @@ import Setting from '../model/setting.model.ts'
 import Message from '../model/message.model.ts'
 import twilio from 'twilio'
 import Telnyx from 'telnyx'
-import * as telnyxHelper from '../helper/telnyx.helper.js'
-import * as twilioHelper from '../helper/twilio.helper.js'
+import * as telnyxHelper from '../helper/telnyx.helper.ts'
+import * as twilioHelper from '../helper/twilio.helper.ts'
 
 export const crateProfile = async (req, res) => {
     try{

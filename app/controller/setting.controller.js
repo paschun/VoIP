@@ -11,11 +11,11 @@ import User from '../model/user.model.ts'
 import Message from '../model/message.model.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
-import { sendEmail, combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
-import * as telnyxHelper from '../helper/telnyx.helper.js'
+import { sendEmail, combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
+import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import { getIO } from '../socket.ts'
 import { env } from '../../config/env.ts'
-import * as twilioHelper from '../helper/twilio.helper.js'
+import * as twilioHelper from '../helper/twilio.helper.ts'
 
 async function downloadToFile(url, destPath) {
   const response = await fetch(url);
@@ -881,12 +881,12 @@ export const receiveSms = async (req, res) => {
         settingCheck.emailnotification !== undefined &&
         settingCheck.emailnotification == "true"
       ) {
-        var emailSetting = await Email.findOne({
+        const emailSetting = await Email.findOne({
           user: { $eq: settingCheck.user },
         });
         if (emailSetting) {
           try {
-            var emailData = {
+            const emailData = {
               subject: `Message from ${fromnumber}`,
               text: "Message received",
               html: `Received Message on ${toNumber}:<br><hr><br><p>${messageText}</p><br><hr><br>`,
