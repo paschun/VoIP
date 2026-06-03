@@ -2,6 +2,7 @@ import Telnyx from 'telnyx'
 import moment from 'moment'
 import crypto from 'crypto'
 import { combineURLs } from './common.helper.js'
+import { env } from '../../config/env.ts'
 
 //Inside lib file declare functions
 const requestCurl = async (method, url, headers, data = null) => {
@@ -28,10 +29,10 @@ const createTexmlApp = (apiKey) => {
           };
         var data = {
           friendly_name: moment().format("YYYYMMDDHHmm"),
-          voice_url: combineURLs(process.env.BASE_URL.trim(), "api/call/telnyx"),
+          voice_url: combineURLs(env.BASE_URL, "api/call/telnyx"),
           voice_method: "post",
           status_callback: combineURLs(
-            process.env.BASE_URL.trim(),
+            env.BASE_URL,
             "api/call/status/telnyx"
           ),
           status_callback_method: "post",
@@ -50,10 +51,10 @@ const updateTexmlApp = (apiKey, twimlid) => {
             'Authorization': `Bearer ${apiKey}`
           };
         var data = {
-          voice_url: combineURLs(process.env.BASE_URL.trim(), "api/call/telnyx"),
+          voice_url: combineURLs(env.BASE_URL, "api/call/telnyx"),
           voice_method: "post",
           status_callback: combineURLs(
-            process.env.BASE_URL.trim(),
+            env.BASE_URL,
             "api/call/status/telnyx"
           ),
           status_callback_method: "post",
@@ -89,7 +90,7 @@ const createSIPApp = (apiKey, userid, outboundProfileid) => {
                 user_name: `user${moment().format("YYYYMMDDHHmm")}`,
                 password: password,
                 webhook_event_url: combineURLs(
-                  process.env.BASE_URL.trim(),
+                  env.BASE_URL,
                   "api/call/status/telnyx"
                 ),
                 outbound: { outbound_voice_profile_id: outboundProfileid },
@@ -109,7 +110,7 @@ const updateSIPApp = (apiKey, uuid, outboundProfileid) => {
             const client = new Telnyx({ apiKey });
             await client.credentialConnections.update(uuid, {
               webhook_event_url: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/call/status/telnyx"
               ),
               outbound: { outbound_voice_profile_id: outboundProfileid },

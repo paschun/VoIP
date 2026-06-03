@@ -1,5 +1,6 @@
 import twilio from 'twilio'
 import { combineURLs } from './common.helper.js'
+import { env } from '../../config/env.ts'
 
 const creatTwiml = (sid, token) => {
     return new Promise(async (resolve) => {
@@ -8,11 +9,11 @@ const creatTwiml = (sid, token) => {
             var twiml = await client.applications.create({
               voiceMethod: "POST",
               voiceUrl: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/call/make-call"
               ),
               statusCallback: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/call/status"
               ),
               statusCallbackMethod: "POST",
@@ -33,11 +34,11 @@ const updateTwiml = (sid, token, twimlsid) => {
             var twiml = await client.applications(twimlsid).update({
               voiceMethod: "POST",
               voiceUrl: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/call/make-call"
               ),
               statusCallback: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/call/status"
               ),
               statusCallbackMethod: "POST",

@@ -6,6 +6,7 @@ import moment from 'moment'
 import cron from 'node-cron'
 import Media from '../model/media.model.js'
 import { combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
+import { env } from '../../config/env.ts'
 
 const storage = multer.diskStorage({
     destination: async (_req, _file, cb) => {
@@ -64,7 +65,7 @@ export const fileUpload = async (req, res) => {
                 const media = await Media.create(mediaData);
                 if (media) {
                     media.media = combineURLs(
-                      process.env.BASE_URL.trim(),
+                      env.BASE_URL,
                       media.media
                     );
                     res.send({ status: true, message: 'Media upload!', data: media });

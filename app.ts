@@ -6,6 +6,7 @@ import helmet from 'helmet'
 import cors from 'cors'
 import cookieSession from 'cookie-session'
 import compression from 'compression'
+import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
 import authRoute from './app/routes/auth.route.js'
@@ -21,9 +22,6 @@ import hardwarekeyRoute from './app/routes/hardwarekey.route.js'
 // --------------
 const app = express()
 app.disable('x-powered-by')
-
-// Prod runs behind Render's TLS-terminating proxy with HTTPS=true; dev is plain HTTP with no proxy.
-const isProd = process.env.HTTPS?.trim() === 'true'
 
 // Rate limiting
 // -------------
@@ -46,7 +44,7 @@ app.use(limiter);
 //   2. HTTPS enforcement → the proxy makes req.secure false, so the original client protocol is read from
 //      x-forwarded-proto directly; anything that arrived over plain HTTP gets a static error page.
 // In dev (HTTP, no proxy) none of this is registered.
-if (isProd) {
+if (env.HTTPS) {
   app.set('trust proxy', 1)
   app.use((req, res, next) => {
     if (req.header('x-forwarded-proto') !== 'https') {
@@ -62,14 +60,13 @@ if (isProd) {
 // Compression, session, cache headers.
 app.use(compression())
 
-const cookieKey = process.env.COOKIE_KEY
-if (!cookieKey) throw new Error('COOKIE_KEY env var is required')
-// cookie-session reads cookie options (secure/httpOnly/maxAge/expires) as FLAT top-level keys, not a nested `cookie`
-// object — the previous nested block was silently ignored, so defaults applied. Re-add them flat if desired, but gate
-// `secure` on isProd (a secure cookie isn't returned over dev's plain HTTP, which would break the session there).
 app.use(cookieSession({
-  keys: [cookieKey], // could hypothetically have process.env.COOKIE_KEY2 , but need to change other refs
-  expires: new Date(Date.now() + 60 * 60 * (1000 * 12 * 30)),
+  name: 'session',
+  keys: [env.COOKIE_KEY], // could hypothetically have a COOKIE_KEY2 , but need to change other refs
+  httpOnly: true,
+  secure: env.HTTPS,
+  sameSite: 'strict',
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 }))
 
 const setCache = (req, res, next) => {
@@ -105,14 +102,16 @@ app.use(helmet({
 
 // Dev only: the Vite dev server (localhost:8080) calls the API cross-origin, so it needs an allowlist entry. In prod
 // (HTTPS=true) the API and UI are same-origin, so CORS never applies and this is skipped.
-if (!isProd) {
+if (!env.HTTPS) { // assume dev when HTTPS is false
   app.use(cors({ origin: ['http://localhost:8080'] }))
 }
 
 // Body parsing
 // ------------
 // Must run before the route modules, which read req.body.
-app.use(express.json({ limit: '500mb' })); // parse requests of content-type - application/json
+
+// parse requests of content-type - application/json
+app.use(express.json({ limit: '500mb' }));
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 10000000 }));
 
@@ -154,5 +153,5 @@ const server = http.createServer(app);
 await connectDB()
 initIO(server);
 
-console.log('express listening on PORT', process.env.PORT)
-server.listen(process.env.PORT)
+console.log('express listening on PORT', env.PORT)
+server.listen(env.PORT)

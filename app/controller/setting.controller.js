@@ -14,6 +14,7 @@ import Email from '../model/email.model.js'
 import { sendEmail, combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
 import * as telnyxHelper from '../helper/telnyx.helper.js'
 import { getIO } from '../socket.ts'
+import { env } from '../../config/env.ts'
 import * as twilioHelper from '../helper/twilio.helper.js'
 
 async function downloadToFile(url, destPath) {
@@ -240,7 +241,7 @@ export const create = async (req, res) => {
                   name: "VoIP sms Web Application",
                   enabled: true,
                   webhook_url: combineURLs(
-                    process.env.BASE_URL.trim(),
+                    env.BASE_URL,
                     "api/setting/receive-sms/",
                     req.body.type
                   ),
@@ -252,7 +253,7 @@ export const create = async (req, res) => {
                   settingCheck.setting,
                   {
                     webhook_url: combineURLs(
-                      process.env.BASE_URL.trim(),
+                      env.BASE_URL,
                       "api/setting/receive-sms/",
                       req.body.type
                     ),
@@ -409,16 +410,16 @@ export const create = async (req, res) => {
             if (req.body.override === "true") {
               var twilioUpdatedata = {
                 smsUrl: combineURLs(
-                  process.env.BASE_URL.trim(),
+                  env.BASE_URL,
                   "api/setting/receive-sms/",
                   req.body.type
                 ),
                 voiceUrl: combineURLs(
-                  process.env.BASE_URL.trim(),
+                  env.BASE_URL,
                   "api/call/incoming"
                 ),
                 statusCallback: combineURLs(
-                  process.env.BASE_URL.trim(),
+                  env.BASE_URL,
                   "api/call/status"
                 ),
                 voiceApplicationSid: "",
@@ -426,7 +427,7 @@ export const create = async (req, res) => {
             } else {
               var twilioUpdatedata = {
                 smsUrl:
-                  process.env.BASE_URL.trim() +
+                  env.BASE_URL +
                   "api/setting/receive-sms/" +
                   req.body.type,
               };
@@ -606,7 +607,7 @@ export const sendSms = async (req, res) => {
               from: settingCheck.number,
               to: toNumber,
               statusCallback: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/setting/sms-status/twilio"
               ),
             };
@@ -669,7 +670,7 @@ export const sendSms = async (req, res) => {
               to: toNumber,
               text: req.body.message,
               webhook_url: combineURLs(
-                process.env.BASE_URL.trim(),
+                env.BASE_URL,
                 "api/setting/sms-status/telnyx"
               ),
             };
@@ -773,7 +774,7 @@ export const receiveSms = async (req, res) => {
             .then(() => console.log("Image downloaded."))
             .catch((err) => console.error("Image download failed:", err));
           savedName = combineURLs(
-            process.env.BASE_URL.trim(),
+            env.BASE_URL,
             "uploads",
             date,
             name
@@ -782,7 +783,7 @@ export const receiveSms = async (req, res) => {
           /*request(url).pipe(fs.createWriteStream(name))
                     .on('close', () => console.log('Image downloaded.'));
                     savedName = combineURLs(
-                      process.env.BASE_URL.trim(),
+                      env.BASE_URL,
                       "uploads",
                       date,
                       name
@@ -821,7 +822,7 @@ export const receiveSms = async (req, res) => {
             .then(() => console.log("Image downloaded."))
             .catch((err) => console.error("Image download failed:", err));
           savedName = combineURLs(
-            process.env.BASE_URL.trim(),
+            env.BASE_URL,
             "uploads",
             date,
             name
