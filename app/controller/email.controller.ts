@@ -1,30 +1,29 @@
+import type { Request, Response } from 'express'
 import Validator from 'validatorjs'
 import * as openpgp from 'openpgp'
 import Email from '../model/email.model.ts'
 import Setting from '../model/setting.model.ts'
 
-const _validPgpKey = (keyString) => openpgp.readKey({ armoredKey: keyString });
+const _validPgpKey = (keyString: string) => openpgp.readKey({ armoredKey: keyString });
 
-export const create = async (req, res) => {
+export const create = async (req: Request, res: Response) => {
     try{
-        //return res.send(req.body);
-        let rules = {
+        const rules = {
             email: 'required',
             password: 'required',
             to_email: 'required',
             host: 'required',
             port: 'required',
-            to_email: 'required',
             sender_email: 'required'
         };
-        let validation = new Validator(req.body, rules);
+        const validation = new Validator(req.body, rules);
         if(validation.passes()){
-            var storeData = {user: req.user.id};
-            var checkemail = await Email.findOne(storeData)
+            const storeData = {user: req.user.id};
+            const checkemail = await Email.findOne(storeData)
             if (req.body.pgpEncryptEnabled === true) {
                 try {
                     await _validPgpKey(req.body.pgpPublicKey);
-                } catch (error) {
+                } catch {
                     res.status(400).json({status:false, message:'Email settings not saved! Invalid PGP Key.'});
                     return;
                 }
@@ -39,24 +38,24 @@ export const create = async (req, res) => {
                 checkemail.sender_email = req.body.sender_email
                 checkemail.pgpPublicKey = req.body.pgpPublicKey
                 checkemail.pgpEncryptEnabled = req.body.pgpEncryptEnabled
-                var saveData = await checkemail.save()
+                const saveData = await checkemail.save()
                 if(saveData){
                     res.send({status:true, message:'Email settings updated!', data:checkemail});
                 }else{
                     res.status(400).json({status:'false',message:'Email settings not updated!'});
                 }
             }else{
-                var createData = {
-                    user: req.user.id, 
+                const createData = {
+                    user: req.user.id,
                     email:req.body.email,
-                    password: req.body.password, 
+                    password: req.body.password,
                     to_email:req.body.to_email,
                     host:req.body.host,
-                    port: req.body.port, 
+                    port: req.body.port,
                     secure:req.body.secure,
                     sender_email: req.body.sender_email
                 };
-                var isSave = await Email.create(createData);
+                const isSave = await Email.create(createData);
                 if(isSave){
                     res.send({status:true, message:'Email settings saved!', data:isSave});
                 }else{
@@ -66,35 +65,33 @@ export const create = async (req, res) => {
         }else{
             res.status(419).send({status: false, errors:validation.errors, data: []});
         }
-    }catch(error){
+    }catch{
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
 
-export const getEmail = async (req, res) => {
+export const getEmail = async (req: Request, res: Response) => {
     try{
-        var storeData = {user: req.user.id };
-        var checkemail = await Email.findOne(storeData)
-        //console.log('checkemail');
-        // console.log(checkemail);
+        const storeData = {user: req.user.id };
+        const checkemail = await Email.findOne(storeData)
         res.send({status:true, message:'Get Email Settings!', data:checkemail});
-    }catch(error){
+    }catch{
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
 
-export const saveSetting = async (req, res) => {
+export const saveSetting = async (req: Request, res: Response) => {
     try{
         // var checkemail = await Setting.findById(req.body.setting_id)
-        var checkemail = await Setting.findOne({_id: { $eq: req.body.setting_id}})
+        const checkemail = await Setting.findOne({_id: { $eq: req.body.setting_id}})
         if(checkemail){
             checkemail.emailnotification = req.body.status
-            var updateData = await checkemail.save()
+            await checkemail.save()
             res.send({status:true, message:'settings updated!', data:checkemail});
         }else{
             res.status(400).json({status:'false',message:'settings not updated!'});
         }
-    }catch(error){
+    }catch{
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 };
