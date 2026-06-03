@@ -8,7 +8,7 @@ import { env } from '../../config/env.ts'
 const timestampFormat = 'YYYYMMDDHHmm'
 
 //Inside lib file declare functions
-const requestCurl = async (method: string, url: string, headers: Record<string, string>, data: unknown = null) => {
+const requestCurl = async (method: string, url: string, headers: Record<string, string>, data?: unknown) => {
     try {
         const init: RequestInit = { method, headers };
         if (data) init.body = JSON.stringify(data);
@@ -233,7 +233,7 @@ const getNumberData = async (params: { number_sid: string; apiKey: string }) => 
 }
 
 export {
-    requestCurl, createTexmlApp, updateTexmlApp, deleteTexmlApp, createSIPApp, updateSIPApp, deleteSIPApp,
+    createTexmlApp, updateTexmlApp, deleteTexmlApp, createSIPApp, updateSIPApp, deleteSIPApp,
     createOutboundVoice, deleteOutboundVoice, updatePhoneNumber, emptyMessageProfile, deleteMessageProfile,
     messageProfileFallback, texmlAppFalback, sIPAppFallback, messageProfileGet, getNumberData,
 }

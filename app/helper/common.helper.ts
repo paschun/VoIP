@@ -1,6 +1,5 @@
 import nodemailer, { type SendMailOptions } from 'nodemailer'
 import { openpgpEncrypt } from 'nodemailer-openpgp'
-import twilio from 'twilio'
 
 export const uploadFolderFormat = 'YYYYMMDD'
 
@@ -62,29 +61,17 @@ const sendEmail = (setting: SendEmailSetting, email: SendEmailContent): Promise<
     });
 }
 
-const creatTwiml = async (sid: string, token: string): Promise<string | false> => {
-    try {
-        const client = twilio(sid, token);
-        const twiml = await client.applications.create({
-            voiceMethod: 'POST',
-            voiceUrl: '',
-            friendlyName: 'Operation Privacy VoIPSuite'
-        })
-        return twiml.sid
-    }catch (e){
-        console.error(e);
-        return false;
-    }
-}
-
-const combineURLs = (...urls: string[]): string  => {
-    let output = urls[0] ?? '';
-    for (let i = 1; i < urls.length; i++) {
-        output = output.replace(/\/+$/, '') + '/' + (urls[i] ?? '').replace(/^\/+/, '');
-    }
-    return output;
+// Join path segments into one URL, trimming the slashes at each seam so there are no doubles.
+// The first segment keeps any leading slash and the last keeps any trailing slash.
+const combineURLs = (...urls: string[]): string => {
+    if (urls.length === 0) return '';
+    return urls.reduce((base, segment) => {
+        const left = base.replace(/\/+$/, '');     // strip any trailing slash(es) from the accumulated left side
+        const right = segment.replace(/^\/+/, ''); // strip any leading slash(es) from the next segment
+        return `${left}/${right}`;                 // rejoin with exactly one slash at the seam
+    });
 }
 
 export {
-    sendEmail, creatTwiml, combineURLs,
+    sendEmail, combineURLs,
 }
