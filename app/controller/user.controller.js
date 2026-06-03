@@ -15,9 +15,10 @@ import Message from '../model/message.model.js'
 import Setting from '../model/setting.model.js'
 import * as telnyxHelper from '../helper/telnyx.helper.js'
 import * as twilioHelper from '../helper/twilio.helper.js'
+import { env } from '../../config/env.ts'
 
 import { SignJWT } from 'jose'
-const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY)
+const joseSecret = new TextEncoder().encode(env.COOKIE_KEY)
 
 import Speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
@@ -149,8 +150,8 @@ export const register = async (req, res) => {
 
 export const getSignUpOption = async (req, res) => {
     try{
-        var signup = process.env.SIGNUPS;
-        if(signup){
+        var signup = env.SIGNUPS;
+        if(signup === 'on'){
             res.send({status:true, message:'signup option!', data:signup});
         }else{
             res.status(400).send({status: false, errors:'signup not avilables', data: []}); 
@@ -166,7 +167,7 @@ export const getVersionOption = (req, res) => {
 
 export const checkDirectoryName = (req, res) => {
     try{
-        var dir = process.env.APPDIRECTORY
+        var dir = env.APPDIRECTORY
         if(dir){
             if(req.body.dirname){
                 if(dir === req.body.dirname){

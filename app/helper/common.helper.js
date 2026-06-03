@@ -1,39 +1,8 @@
-import crypto from 'node:crypto'
 import nodemailer from 'nodemailer'
 import { openpgpEncrypt } from 'nodemailer-openpgp'
 import twilio from 'twilio'
 
 export const uploadFolderFormat = 'YYYYMMDD'
-
-const algorithm = "aes-256-cbc";
-const encryptedString = (message) => {
-    return new Promise((resolve) => {
-        try {
-            const initVector = crypto.randomBytes(16);
-            const Securitykey = process.env.COOKIE_KEY;
-            const cipher = crypto.createCipheriv(algorithm, Securitykey, initVector);
-            const encryptedData = cipher.update(message, "utf-8", "hex");
-            resolve(encryptedData);
-        }catch (e){
-            console.log(e);
-            resolve(false);
-        }
-    });
-}
-
-const decryptedString = (message) => {
-    return new Promise((resolve) => {
-        try {
-            const Securitykey = process.env.COOKIE_KEY;
-            const cipher = crypto.createCipheriv(algorithm, Securitykey, initVector);
-            const encryptedData = cipher.update(message, "utf-8", "hex");
-            resolve(encryptedData);
-        }catch (e){
-            console.log(e);
-            resolve(false);
-        }
-    });
-}
 
 const sendEmail = (setting, email) => {
     return new Promise((resolve) => {
@@ -95,5 +64,5 @@ const combineURLs = (...urls)  => {
 }
 
 export {
-    encryptedString, decryptedString, sendEmail, creatTwiml, combineURLs,
+    sendEmail, creatTwiml, combineURLs,
 }

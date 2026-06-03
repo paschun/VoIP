@@ -1,6 +1,7 @@
 import User from '../model/user.model.js'
 import { jwtVerify } from 'jose'
-const joseSecret = new TextEncoder().encode(process.env.COOKIE_KEY);
+import { env } from '../../config/env.ts'
+const joseSecret = new TextEncoder().encode(env.COOKIE_KEY);
 // const salt = process.env.COOKIE_KEY
 export default async (req, res, next) => {
     try {

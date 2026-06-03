@@ -4,9 +4,7 @@ import auth from '../middleware/auth.middleware.js'
 
 export default app => {
     const router = express.Router();
-    //router.post("/register",auth, user.login);
     router.post("/login", user.login);
-    //router.get("/me", user.getUser); 
     router.post("/register", user.register);
     router.post("/otp-verify", user.otpVerify);
     router.post("/get-signup", user.getSignUpOption);

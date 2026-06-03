@@ -8,7 +8,7 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "NODE_ENV=development nodemon -x 'node --env-file=.env' app.ts",
+    "dev": "nodemon -x 'node --env-file=.env' app.ts",
     "build": "npm run build -w frontend",
     "start": "NODE_ENV=production node --env-file=.env app.ts",
     "oxlint": "oxlint --ignore-pattern 'frontend/**'"
@@ -34,7 +34,8 @@
     "speakeasy": "^2.0.0",
     "telnyx": "^6.73.0",
     "twilio": "^6.0.2",
-    "validatorjs": "^3.22.1"
+    "validatorjs": "^3.22.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
