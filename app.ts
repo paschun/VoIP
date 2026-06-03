@@ -4,7 +4,7 @@ import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import cors from 'cors'
-import session from 'cookie-session'
+import cookieSession from 'cookie-session'
 import compression from 'compression'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
@@ -62,15 +62,14 @@ if (isProd) {
 // Compression, session, cache headers.
 app.use(compression())
 
-const expiryDate = new Date(Date.now() + 60 * 60 * (1000 * 12 * 30)) // 30 day
-app.use(session({
-  name: 'session',
-  keys: [process.env.COOKIE_KEY], // could hypothetically have process.env.COOKIE_KEY2 , but need to change other refs
-  cookie: {
-    secure: true,
-    httpOnly: true,
-    expires: expiryDate
-  }
+const cookieKey = process.env.COOKIE_KEY
+if (!cookieKey) throw new Error('COOKIE_KEY env var is required')
+// cookie-session reads cookie options (secure/httpOnly/maxAge/expires) as FLAT top-level keys, not a nested `cookie`
+// object — the previous nested block was silently ignored, so defaults applied. Re-add them flat if desired, but gate
+// `secure` on isProd (a secure cookie isn't returned over dev's plain HTTP, which would break the session there).
+app.use(cookieSession({
+  keys: [cookieKey], // could hypothetically have process.env.COOKIE_KEY2 , but need to change other refs
+  expires: new Date(Date.now() + 60 * 60 * (1000 * 12 * 30)),
 }))
 
 const setCache = (req, res, next) => {
