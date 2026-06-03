@@ -1,7 +1,7 @@
 import Validator from 'validatorjs'
 import Setting from '../model/setting.model.js'
 import Call from '../model/message.model.js'
-import Contact from '../model/contact.model.js'
+import Contact from '../model/contact.model.ts'
 import twilio from 'twilio'
 import { getIO } from '../socket.ts'
 

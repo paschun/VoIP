@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const contactSchema = new mongoose.Schema({ 
+const contactSchemaDefinition = {
     first_name: String,
     last_name: String,
     number: String,
@@ -10,7 +10,8 @@ const contactSchema = new mongoose.Schema({
         ref: 'User' 
     },
     created_at : { type : Date, default: Date.now }
-})
+} as const
+const contactSchema = new mongoose.Schema(contactSchemaDefinition)
 const Contact = mongoose.model('Contact', contactSchema)
 
 export default Contact

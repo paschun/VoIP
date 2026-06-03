@@ -10,7 +10,7 @@ import pkg from '../../package.json' with { type: 'json' }
 
 import User from '../model/user.model.js'
 import Hardwarekey from '../model/hardwarekey.model.js'
-import Contact from '../model/contact.model.js'
+import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.js'
 import Message from '../model/message.model.js'
 import Setting from '../model/setting.model.js'
@@ -24,10 +24,7 @@ const joseSecret = new TextEncoder().encode(env.COOKIE_KEY)
 import Speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
 
-const userDataResponseGen = (userDataObj) => {
-  const { _id, name, email, token } = userDataObj;
-  return { _id, name, email, token };
-};
+const userDataResponseGen = ({ _id, name, email, token }) => ({ _id, name, email, token })
 
 const remoteVersionURL ='https://api.github.com/repos/paschun/VoIP/commits?per_page=1';
 
