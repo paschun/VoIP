@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [ "eslint", "typescript", "unicorn", "oxc", "promise", "import" ],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "eqeqeq": [ "error", "always" ],
+    "no-restricted-globals": [ "error",
+      { "name": "isNaN", "message": "Use Number.isNaN instead." },
+      { "name": "isFinite", "message": "Use Number.isFinite instead." }
+    ],
+    "no-shadow": "error",
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
+  }
+}

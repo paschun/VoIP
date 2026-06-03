@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon -x 'node --env-file=.env' app.js",
     "build": "npm run build -w frontend",
-    "start": "NODE_ENV=production node --env-file=.env app.js"
+    "start": "NODE_ENV=production node --env-file=.env app.js",
+    "oxlint": "oxlint --ignore-pattern 'frontend/**'"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -42,6 +43,9 @@
     "@types/nodemailer": "^8.0.0",
     "@types/validatorjs": "^3.15.5",
     "nodemon": "^3.1.14",
+    "oxfmt": "^0.53.0",
+    "oxlint": "^1.68.0",
+    "oxlint-tsgolint": "^0.23.0",
     "typescript": "^6.0.3"
   }
 }

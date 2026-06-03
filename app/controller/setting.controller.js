@@ -593,7 +593,7 @@ export const sendSms = async (req, res) => {
             var toNumber = req.body.numbers[i];
             toNumber = toNumber
               .replace(/\s/g, "")
-              .replace(/\-/g, "")
+              .replace(/-/g, "")
               .replace(/\)/g, "")
               .replace(/\(/g, "");
             var sendNumber = toNumber.length;
@@ -656,7 +656,7 @@ export const sendSms = async (req, res) => {
             var toNumber = req.body.numbers[i];
             toNumber = toNumber
               .replace(/\s/g, "")
-              .replace(/\-/g, "")
+              .replace(/-/g, "")
               .replace(/\)/g, "")
               .replace(/\(/g, "");
             var sendNumber = toNumber.length;

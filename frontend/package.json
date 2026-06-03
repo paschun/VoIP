@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint --cache",
-    "oxlint": "oxlint --type-aware",
+    "oxlint": "oxlint",
     "typecheck": "vue-tsc --build"
   },
   "dependencies": {
