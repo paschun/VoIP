@@ -1,4 +1,4 @@
-import mongoose from '../../config/db.config.js'
+import mongoose from 'mongoose'
 
 const Email = mongoose.model('Email', { 
     email: String,

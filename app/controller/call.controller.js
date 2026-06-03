@@ -3,6 +3,7 @@ import Setting from '../model/setting.model.js'
 import Call from '../model/message.model.js'
 import Contact from '../model/contact.model.js'
 import twilio from 'twilio'
+import { getIO } from '../socket.ts'
 
 export const getToken = async (req, res) => {
     try{
@@ -102,7 +103,7 @@ export const status = async (req, res) => {
             await call.save()
             var settingCheck = await Setting.findOne({number:{$eq: call.twilio_number}})
             if(settingCheck){
-                globalThis.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
+                getIO().to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
             }
         }
     }catch(error){
@@ -147,7 +148,7 @@ export const statusTelnyx = async (req, res) => {
                             await call.save()
                             var settingCheck = await Setting.findOne({number:{ $eq: call.twilio_number}})
                             if(settingCheck){
-                                globalThis.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
+                                getIO().to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
                             }
                         }
                     break;
@@ -160,7 +161,7 @@ export const statusTelnyx = async (req, res) => {
                 await call.save()
                 var settingCheck = await Setting.findOne({number: { $eq: call.twilio_number}})
                 if(settingCheck){
-                    globalThis.io.to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
+                    getIO().to(settingCheck.user.toString()).emit('user_message',{message: 'call', number:call.number});
                 }
             }
         }

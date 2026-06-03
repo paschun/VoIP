@@ -1,14 +1,13 @@
 import path from 'node:path'
 import http from 'node:http'
-import { fileURLToPath } from 'node:url'
-import { Server } from 'socket.io'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import cors from 'cors'
 import session from 'cookie-session'
 import compression from 'compression'
-import mongoose from './config/db.config.js'
+import { connectDB } from './config/db.config.ts'
+import { initIO } from './app/socket.ts'
 import authRoute from './app/routes/auth.route.js'
 import settingRoute from './app/routes/setting.route.js'
 import profileRoute from './app/routes/profile.route.js'
@@ -71,12 +70,6 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1)
 const server = http.createServer(app);
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => {
-  console.log('database connected successfully!');
-});
-
 //app.use(cors());
 app.use(cors({ origin: ['http://localhost:8080'], }))
 
@@ -89,19 +82,6 @@ const limiter = rateLimit({
 });
 // apply rate limiter to all requests
 app.use(limiter);
-
-globalThis.io = new Server(server, { cors: { origin: '*' } });
-io.on('connection', socket => {
-  console.log('a user connected');
-  socket.on('join_channel', (channel) => {
-    console.log(`${channel} user joined channel`);
-    socket.join(channel);
-  });
-  socket.on('join_profile_channel', (channel) => {
-    console.log(`${channel} user joined channel`);
-    socket.join(channel);
-  });
-});
 
 app.get('/version.md', (_req, res) => {
   res.sendFile(path.join(import.meta.dirname, './version.md'));
@@ -162,6 +142,9 @@ app.get('/error', (_req, res) => {
 app.get('/{*splat}', (_req, res) => {
   res.sendFile(path.join(import.meta.dirname, './frontend/dist/index.html'));
 });
+
+await connectDB()
+initIO(server);
 
 console.log('express listening on PORT', process.env.PORT)
 server.listen(process.env.PORT)

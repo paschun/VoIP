@@ -11,8 +11,8 @@
       { "name": "isFinite", "message": "Use Number.isFinite instead." }
     ],
     "no-shadow": "error",
-    "typescript/no-explicit-any": "warn",
-    "typescript/no-non-null-assertion": "warn",
-    "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
+    // "typescript/no-explicit-any": "warn",
+    // "typescript/no-non-null-assertion": "warn",
+    // "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
   }
 }

@@ -1,4 +1,4 @@
-import mongoose from '../../config/db.config.js'
+import mongoose from 'mongoose'
 
 const Message = mongoose.model('Message', { 
     sid: String,

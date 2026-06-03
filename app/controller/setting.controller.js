@@ -13,6 +13,7 @@ import Contact from '../model/contact.model.js'
 import Email from '../model/email.model.js'
 import { sendEmail, combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
 import * as telnyxHelper from '../helper/telnyx.helper.js'
+import { getIO } from '../socket.ts'
 import * as twilioHelper from '../helper/twilio.helper.js'
 
 async function downloadToFile(url, destPath) {
@@ -863,7 +864,7 @@ export const receiveSms = async (req, res) => {
         }
       }
 
-      globalThis.io.to(settingCheck.user.toString()).emit("user_message", {
+      getIO().to(settingCheck.user.toString()).emit("user_message", {
         message: messageText,
         number: fromnumber,
         telnyx_number: toNumber,

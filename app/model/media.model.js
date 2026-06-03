@@ -1,4 +1,4 @@
-import mongoose from '../../config/db.config.js'
+import mongoose from 'mongoose'
 
 const Media = mongoose.model('Media', { 
     media: String,
