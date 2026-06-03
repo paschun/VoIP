@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const Message = mongoose.model('Message', { 
+const messageSchema = new mongoose.Schema({ 
     sid: String,
     number: String,
     telnyx_number: String,
@@ -42,7 +42,8 @@ const Message = mongoose.model('Message', {
         ref: 'Setting' 
     },
     created_at : { type : Date, default: Date.now }
-});
+})
+const Message = mongoose.model('Message', messageSchema);
 
 
 export default Message

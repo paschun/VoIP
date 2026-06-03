@@ -1009,6 +1009,7 @@ export const getNumberList = async (req, res) => {
       },
     ]);
     await Contact.populate(message, { path: "contact" });
+    // mongoose also has a .sort() method
     message.sort((a, b) => {
       return b.created_at - a.created_at;
     });

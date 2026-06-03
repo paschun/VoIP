@@ -1,5 +1,5 @@
 {
-  "include": ["app.ts", "app/**/*", "config/**/*", "error/**/*", "shared/**/*"],
+  "include": ["*.ts", "app/**/*", "config/**/*", "error/**/*", "shared/**/*", "test/**/*"],
   "exclude": ["node_modules", "frontend", "uploads", "dist"],
 
   "compilerOptions": {

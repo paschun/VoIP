@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const User = mongoose.model('User', { 
+const userSchema = new mongoose.Schema({ 
     name: String,
     email: String,
     password: String,
@@ -20,7 +20,7 @@ const User = mongoose.model('User', {
         enum : ['false','true'],
         default: 'false'
     }
-});
-
+})
+const User = mongoose.model('User', userSchema);
 
 export default User

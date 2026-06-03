@@ -1,9 +1,10 @@
 import mongoose from 'mongoose'
-const userSchema = mongoose.Schema({ 
+
+const settingSchema = new mongoose.Schema({
     api_key: String,
     number: String,
     setting: String,
-    sid:String,
+    sid: String,
     twilio_sid: String,
     twilio_token: String,
     profile: String,
@@ -54,28 +55,30 @@ const userSchema = mongoose.Schema({
         default: null
     },
     created_at : { type : Date, default: Date.now },
-     
+}, {
+  // Virtuals are document properties that you can get and set and populate but that do not get persisted to MongoDB.
+  virtuals: {
+    messageCount: {
+      options: {
+        ref: 'Message',
+        localField: '_id', // Find where settingSchema._id is equal to
+        foreignField: 'setting', // Message.setting
+        count: true,
+      },
+    },
+    totalCount: {
+      options: {
+        ref: 'Message',
+        localField: 'user', // Find where settingSchema.user
+        foreignField: 'user', // is equal to Message.user
+        count: true,
+      },
+    },
+  },
+  toJSON: { virtuals: true }, // So `res.json()` and other `JSON.stringify()` functions include virtuals
+  toObject: { virtuals: true }, // So `console.log()` and other functions that use `toObject()` on the document include virtuals
 });
 
-userSchema.virtual('messageCount', {
-    ref: 'Message', //The Model to use
-    localField: '_id', //Find in Model, where localField 
-    foreignField: 'setting', // is equal to foreignField,
-    count: true
- });
-
- userSchema.virtual('totalCount', {
-    ref: 'Message', //The Model to use
-    localField: 'user', //Find in Model, where localField 
-    foreignField: 'user', // is equal to foreignField,
-    count: true
- });
- 
- // Set Object and Json property to true. Default is set to false
- userSchema.set('toObject', { virtuals: true });
- userSchema.set('toJSON', { virtuals: true });
-
-const Setting = mongoose.model('Setting', userSchema);
-
+const Setting = mongoose.model('Setting', settingSchema);
 
 export default Setting

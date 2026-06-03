@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import multer from 'multer'
 import moment from 'moment'
 import cron from 'node-cron'
-import Media from '../model/media.model.js'
+import Media from '../model/media.model.ts'
 import { combineURLs, uploadFolderFormat } from '../helper/common.helper.js'
 import { env } from '../../config/env.ts'
 

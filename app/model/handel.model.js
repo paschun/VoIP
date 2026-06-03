@@ -1,15 +1,10 @@
 import mongoose from 'mongoose'
 
-const Handel = mongoose.model('Handel', { 
-    username: {
-        type: String
-    },
-    id: {
-        type: String
-    },
+const handelSchema = new mongoose.Schema({ 
+    username: String,
+    id: String,
     registrationComplete: {
         type: Boolean,
-        enum: [false, true],
         default: false
     },
     user: { 
@@ -18,7 +13,7 @@ const Handel = mongoose.model('Handel', {
         default: null
     },
     created_at : { type : Date, default: Date.now }
-});
-
+})
+const Handel = mongoose.model('Handel', handelSchema);
 
 export default Handel

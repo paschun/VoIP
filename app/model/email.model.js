@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const Email = mongoose.model('Email', { 
+const emailSchema = new mongoose.Schema({ 
     email: String,
     password: String,
     to_email: String,
@@ -15,7 +15,7 @@ const Email = mongoose.model('Email', {
         ref: 'User' 
     },
     created_at : { type : Date, default: Date.now }
-});
-
+})
+const Email = mongoose.model('Email', emailSchema);
 
 export default Email

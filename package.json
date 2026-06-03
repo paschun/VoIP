@@ -11,9 +11,13 @@
     "dev": "nodemon -x 'node --env-file=.env' app.ts",
     "build": "npm run build -w frontend",
     "start": "NODE_ENV=production node --env-file=.env app.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json",
     "oxlint": "oxlint --ignore-pattern 'frontend/**'"
   },
   "dependencies": {
+    "@nullix/zod-mongoose": "^2.0.0",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-session": "^2.1.1",
@@ -47,6 +51,7 @@
     "oxfmt": "^0.53.0",
     "oxlint": "^1.68.0",
     "oxlint-tsgolint": "^0.23.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   }
 }

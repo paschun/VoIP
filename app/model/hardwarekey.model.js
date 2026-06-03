@@ -1,10 +1,9 @@
 import mongoose from 'mongoose'
 
-const Hardwarekey = mongoose.model('Hardwarekey', { 
+const hardwarekeySchema = new mongoose.Schema({ 
     title: String,
     registrationComplete: {
         type: Boolean,
-        enum: [false, true],
         default: false
     },
     credentials:{
@@ -28,7 +27,8 @@ const Hardwarekey = mongoose.model('Hardwarekey', {
         ref: 'User' 
     },
     created_at : { type : Date, default: Date.now }
-});
+})
+const Hardwarekey = mongoose.model('Hardwarekey', hardwarekeySchema);
 
 
 export default Hardwarekey

@@ -8,7 +8,6 @@ export const registerSession = async (req, res) => {
         const payload = req.body;
         const userexists = await userExists(payload.title, req.user.id);
         const getuser = await Hardwarekey.findOne({title: payload.title, user: req.user.id, id: sessData.id});
-        // console.log(getuser)
         if(userexists && getuser && getuser.registrationComplete){
             res.status(400).send({'status': 'false', 'message': 'Title already exists!'});
         }else{

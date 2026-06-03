@@ -29,7 +29,7 @@ const userDataResponseGen = (userDataObj) => {
   return { _id, name, email, token };
 };
 
-const remoteVersionURL ='https://api.github.com/repos/paschun/VoIP/commits';
+const remoteVersionURL ='https://api.github.com/repos/paschun/VoIP/commits?per_page=1';
 
 // latest git commit short hash, fallback to package.json version.
 const currentVersion = (() => {
@@ -71,9 +71,7 @@ export const login = async (req: Request, res: Response) => {
                             mfa = true;
                         }
                         status = 'hardwarekey';
-                        // harwarekey = false
                         harwarekey = await Hardwarekey.find({ user:user._id, registrationComplete: true });
-                        // res.send({status:'hardwarekey', message:'Successfully logged in.', data:user, token:token, harwarekey:harwarekey, mfa:mfa});
                     } else
                     if(user.mfa && user.mfa === 'true'){
                         status = 'mfa';
