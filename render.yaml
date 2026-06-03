@@ -1,6 +1,8 @@
 # Docs: https://render.com/docs/blueprint-spec
 # yaml-language-server: $schema=https://render.com/schema/render.yaml.json
 
+# This file is unused by render
+
 # Exported from Render on 2026-05-23T08:51:58Z
 version: "1"
 services:

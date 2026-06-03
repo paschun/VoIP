@@ -125,10 +125,6 @@ app.use('/uploads', express.static('uploads'));
 // API routes
 // ----------
 // Must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
-app.get('/version.md', (_req, res) => {
-  res.sendFile(path.join(import.meta.dirname, './version.md'));
-});
-
 authRoute(app);
 settingRoute(app);
 profileRoute(app);

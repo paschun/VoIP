@@ -1,7 +1,7 @@
 import express from 'express'
 import * as setting from '../controller/setting.controller.js'
 import * as fallback from '../controller/fallback.controller.js'
-import auth from '../middleware/auth.middleware.js'
+import auth from '../middleware/auth.middleware.ts'
 
 export default app => {
     const router = express.Router();

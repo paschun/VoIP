@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express'
 import bcrypt from 'bcrypt'
 const saltRounds = 10;
 import Validator from 'validatorjs'
@@ -28,7 +29,8 @@ const userDataResponseGen = (userDataObj) => {
   return { _id, name, email, token };
 };
 
-const remoteVersionURL = 'https://raw.githubusercontent.com/paschun/VoIP/main/version.md';
+const remoteVersionURL ='https://api.github.com/repos/paschun/VoIP/commits';
+
 // latest git commit short hash, fallback to package.json version.
 const currentVersion = (() => {
     try {
@@ -39,7 +41,7 @@ const currentVersion = (() => {
     }
 })()
 
-export const login = async (req, res) => {
+export const login = async (req: Request, res: Response) => {
     try{
         let rules = {
             email: 'required',
@@ -64,7 +66,7 @@ export const login = async (req, res) => {
                     var status = 'true';
                     var harwarekey, mfa;
                     if(user.hardwarekey && user.hardwarekey === 'true'){
-                        var mfa = false
+                        mfa = false
                         if(user.mfa && user.mfa === 'true') {
                             mfa = true;
                         }
@@ -98,7 +100,7 @@ export const login = async (req, res) => {
     }
 };
 //otp-verify
-export const otpVerify = async (req, res) => {
+export const otpVerify = async (req: Request, res: Response) => {
     try{
         var userData = {_id:{$eq: req.body.user}};
         var user = await User.findOne(userData);
@@ -119,7 +121,7 @@ export const otpVerify = async (req, res) => {
     }
 };
 
-export const register = async (req, res) => {
+export const register = async (req: Request, res: Response) => {
     try{
         let rules = {
             email: 'required',
@@ -148,7 +150,7 @@ export const register = async (req, res) => {
     }
 };
 
-export const getSignUpOption = async (req, res) => {
+export const getSignUpOption = async (_req: Request, res: Response) => {
     try{
         var signup = env.SIGNUPS;
         if(signup === 'on'){
@@ -161,11 +163,11 @@ export const getSignUpOption = async (req, res) => {
     }
 };
 
-export const getVersionOption = (req, res) => {
+export const getVersionOption = (_req: Request, res: Response) => {
     res.send({ status: true, message: "version defined.", data: currentVersion });
 };
 
-export const checkDirectoryName = (req, res) => {
+export const checkDirectoryName = (req: Request, res: Response) => {
     try{
         var dir = env.APPDIRECTORY
         if(dir){
@@ -194,17 +196,15 @@ export const checkDirectoryName = (req, res) => {
     }
 };
 
-export const getUpdateVersion = async (_req, res) => {
+export const getUpdateVersion = async (_req: Request, res: Response) => {
     try{
         const response = await fetch(remoteVersionURL);
         if (response.ok) {
-            const remoteVersion = await response.text();
-            if(isNaN(remoteVersion)){
-                res.send({update: 'false'});
-            }else{
+            // todo : zod validate gh "commits" API schema
                 try {
-                    // todo: does basic string comparison work here?
-                    if(currentVersion < remoteVersion){
+            const commits = await response.json();
+            const remoteVersion = commits[0].sha.slice(0, 7)
+                    if(currentVersion !== remoteVersion){
                         res.send({update: 'true'});
                     }else{
                         res.send({update: 'false'});
@@ -213,7 +213,6 @@ export const getUpdateVersion = async (_req, res) => {
                     console.error(err)
                     res.send({update: 'false'});
                 }
-            }
         }else{
             res.send({update: 'false'});
         }
@@ -222,7 +221,7 @@ export const getUpdateVersion = async (_req, res) => {
     }
 };
 
-export const updateUserName = async (req, res) => {
+export const updateUserName = async (req: Request, res: Response) => {
     try{
         let rules = {
             email: 'required',
@@ -253,7 +252,7 @@ export const updateUserName = async (req, res) => {
     }
 }
 
-export const getUser = async (req, res) => {
+export const getUser = async (req: Request, res: Response) => {
     try{
         const user = await User.findOne({ _id: { $eq: req.user.id } });
         if(user){
@@ -267,7 +266,7 @@ export const getUser = async (req, res) => {
     }
 }
 
-export const saveMfa = async (req, res) => {
+export const saveMfa = async (req: Request, res: Response) => {
     try{
         let rules = {
             status: 'required',
@@ -334,7 +333,7 @@ export const saveMfa = async (req, res) => {
     }
 }
 
-export const updatePassword = async (req, res) => {
+export const updatePassword = async (req: Request, res: Response) => {
     try{
         let rules = {
             old_password: 'required',
@@ -367,7 +366,7 @@ export const updatePassword = async (req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 }
-export const passwordVerify = async(req, res) => {
+export const passwordVerify = async(req: Request, res: Response) => {
     try{
         let rules = {
             password: 'required'
@@ -393,7 +392,7 @@ export const passwordVerify = async(req, res) => {
         res.status(400).json({status:'false',message:'something is wrong'});
     }
 }
-export const checkPassword = async (req, res) => {
+export const checkPassword = async (req: Request, res: Response) => {
     try{
         let rules = {
             password: 'required'
@@ -421,7 +420,7 @@ export const checkPassword = async (req, res) => {
     }
 }
 
-const deleteAllAccountData = (userid) => {
+const deleteAllAccountData = (userid: string) => {
     // console.log(outboundProfileid)
     return new Promise(async (resolve,reject) =>  {
         try{

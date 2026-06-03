@@ -1,6 +1,6 @@
 import express from 'express'
 import * as contact from '../controller/contact.controller.js'
-import auth from '../middleware/auth.middleware.js'
+import auth from '../middleware/auth.middleware.ts'
 
 export default app => {
     const router = express.Router();
