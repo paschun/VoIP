@@ -17,7 +17,49 @@ import emailRoute from './app/routes/email.route.js'
 import callRoute from './app/routes/call.route.js'
 import hardwarekeyRoute from './app/routes/hardwarekey.route.js'
 
+// App & settings
+// --------------
 const app = express()
+app.disable('x-powered-by')
+
+// Prod runs behind Render's TLS-terminating proxy with HTTPS=true; dev is plain HTTP with no proxy.
+const isProd = process.env.HTTPS?.trim() === 'true'
+
+// Rate limiting
+// -------------
+// First middleware, so it applies to all requests.
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  limit: 100,
+  message: "Slow down your requests!",
+  legacyHeaders: false,
+  standardHeaders: 'draft-8',
+});
+app.use(limiter);
+
+// Proxy & HTTPS (prod only)
+// -------------------------
+// Behind Render's TLS-terminating proxy, two concerns:
+//   1. trust proxy → trust X-Forwarded-* so req.ip (and the rate limiter above) see real client IPs, not the
+//      proxy's, and secure cookies work. Only enabled here because trusting X-Forwarded-For when NOT behind a
+//      trusted proxy lets clients spoof their IP. Set to 1 (trust first hop), not the permissive `true`.
+//   2. HTTPS enforcement → the proxy makes req.secure false, so the original client protocol is read from
+//      x-forwarded-proto directly; anything that arrived over plain HTTP gets a static error page.
+// In dev (HTTP, no proxy) none of this is registered.
+if (isProd) {
+  app.set('trust proxy', 1)
+  app.use((req, res, next) => {
+    if (req.header('x-forwarded-proto') !== 'https') {
+      res.sendFile(path.join(import.meta.dirname, './error/index.html'));
+    } else {
+      next()
+    }
+  })
+}
+
+// Core middleware
+// ---------------
+// Compression, session, cache headers.
 app.use(compression())
 
 const expiryDate = new Date(Date.now() + 60 * 60 * (1000 * 12 * 30)) // 30 day
@@ -45,73 +87,50 @@ const setCache = (req, res, next) => {
 }
 app.use(setCache)
 
-app.use(
-  helmet.contentSecurityPolicy({
+// Security
+// --------
+// helmet headers + CORS. helmet() applies all its default protections in one call. The three defaults disabled below
+// (COOP/CORP/Origin-Agent-Cluster) are off to preserve the exact header set this app shipped before — re-enable them
+// deliberately if desired.
+app.use(helmet({
+  contentSecurityPolicy: {
     useDefaults: true,
     reportOnly: false,
     directives: {
-      "default-src": ["'self'", "sdk.twilio.com","wss:","ws:","eventgw.twilio.com"],
+      "default-src": ["'self'", "sdk.twilio.com", "wss:", "ws:", "eventgw.twilio.com"],
       "object-src": ["'self'"],
-      "script-src": ["'self'","'unsafe-eval'", "'unsafe-inline'"]
+      "script-src": ["'self'", "'unsafe-eval'", "'unsafe-inline'"]
     },
-  })
-);
-//sdk.twilio.com
-app.use(helmet.dnsPrefetchControl());
-app.use(helmet.frameguard());
-app.use(helmet.hidePoweredBy());
-app.use(helmet.hsts());
-app.use(helmet.ieNoOpen());
-app.use(helmet.noSniff());
-app.use(helmet.permittedCrossDomainPolicies());
-app.use(helmet.referrerPolicy());
-app.use(helmet.xssFilter());
-app.disable('x-powered-by');
-app.set('trust proxy', 1)
-const server = http.createServer(app);
+  },
+}));
 
-//app.use(cors());
-app.use(cors({ origin: ['http://localhost:8080'], }))
+// Dev only: the Vite dev server (localhost:8080) calls the API cross-origin, so it needs an allowlist entry. In prod
+// (HTTPS=true) the API and UI are same-origin, so CORS never applies and this is skipped.
+if (!isProd) {
+  app.use(cors({ origin: ['http://localhost:8080'] }))
+}
 
-const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  limit: 100,
-  message: "Slow down your requests!",
-  legacyHeaders: false,
-  standardHeaders: 'draft-8',
-});
-// apply rate limiter to all requests
-app.use(limiter);
+// Body parsing
+// ------------
+// Must run before the route modules, which read req.body.
+app.use(express.json({ limit: '500mb' })); // parse requests of content-type - application/json
+// parse requests of content-type - application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 10000000 }));
 
+// Static assets
+// -------------
+// Registered BEFORE the catch-all routes below, otherwise requests like /static/index-XXX.js fall through to the
+// wildcard handler and get index.html (causing MIME type errors).
+app.use(express.static(path.join(import.meta.dirname, './frontend/dist')));
+app.use('/uploads', express.static('uploads'));
+
+// API routes
+// ----------
+// Must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
 app.get('/version.md', (_req, res) => {
   res.sendFile(path.join(import.meta.dirname, './version.md'));
 });
 
-// HTTPS enforcement (when HTTPS=true): behind a TLS-terminating proxy, req.secure is
-// false, so the original client protocol is read from the x-forwarded-proto header
-// (requires the trust-proxy setting above). Any request that reached us over plain HTTP
-// is blocked with a static error page instead of being served the app.
-if (process.env.HTTPS?.trim() === 'true') {
-  app.use((req, res, next) => {
-    if (req.header('x-forwarded-proto') !== 'https') {
-      res.sendFile(path.join(import.meta.dirname, './error/index.html'));
-    } else {
-      next()
-    }
-  })
-}
-
-// parse requests of content-type - application/json
-app.use(express.json({ limit: '500mb' }));
-// parse requests of content-type - application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 10000000 }));
-
-// Serve built frontend assets BEFORE the catch-all routes below,
-// otherwise requests like /static/index-XXX.js fall through to the wildcard handler and get index.html (causing MIME type errors).
-app.use(express.static(path.join(import.meta.dirname, './frontend/dist')));
-app.use('/uploads', express.static('uploads'));
-
-// API + explicit routes must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
 authRoute(app);
 settingRoute(app);
 profileRoute(app);
@@ -121,13 +140,17 @@ emailRoute(app);
 callRoute(app);
 hardwarekeyRoute(app);
 
-// SPA history-mode fallback — MUST be last.
-// Any URL that wasn't matched by a static file or API route above lands
-// here and gets index.html so the client-side router (Vue) can take over.
-// This is what makes deep links like /profile/john or /settings/foo/bar work on page refresh.
+// SPA fallback
+// ------------
+// MUST be last. Any URL that wasn't matched by a static file or API route above lands here and gets index.html so the
+// client-side router (Vue) can take over. This makes deep links like /profile/john work on refresh.
 app.get('/{*splat}', (_req, res) => {
   res.sendFile(path.join(import.meta.dirname, './frontend/dist/index.html'));
 });
+
+// Startup
+// -------
+const server = http.createServer(app);
 
 await connectDB()
 initIO(server);
