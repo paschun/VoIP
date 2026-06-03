@@ -1,9 +1,9 @@
-import express from 'express'
+import express, { type Express } from 'express'
 import * as setting from '../controller/setting.controller.js'
 import * as fallback from '../controller/fallback.controller.js'
 import auth from '../middleware/auth.middleware.ts'
 
-export default app => {
+export default (app: Express) => {
     const router = express.Router();
     router.post("/create",auth, setting.create);
     router.post("/get-number", setting.getNumber);

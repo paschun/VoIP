@@ -1,8 +1,8 @@
-import express from 'express'
+import express, { type Express } from 'express'
 import * as call from '../controller/call.controller.js'
 import auth from '../middleware/auth.middleware.ts'
 
-export default app => {
+export default (app: Express) => {
     const router = express.Router();
 
     router.post("/token", auth, call.getToken);

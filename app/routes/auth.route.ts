@@ -1,8 +1,8 @@
-import express from 'express'
+import express, { type Express } from 'express'
 import * as user from '../controller/user.controller.ts'
 import auth from '../middleware/auth.middleware.ts'
 
-export default app => {
+export default (app: Express) => {
     const router = express.Router();
     router.post("/login", user.login);
     router.post("/register", user.register);
