@@ -57,6 +57,7 @@ const settingSchema = new mongoose.Schema({
     created_at : { type : Date, default: Date.now },
 }, {
   // Virtuals are document properties that you can get and set and populate but that do not get persisted to MongoDB.
+  // Type inference works better when these are defined in constructor
   virtuals: {
     messageCount: {
       options: {

@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest'
 import mongoose, { Schema, model } from 'mongoose'
 
-import Media, { mediaSchema } from '../app/model/media.model.ts'
+import Media, { mediaSchema } from '../app/model/media.model.zod.ts'
 
 // The EXACT schema definition the model used before the Zod migration. This is the regression baseline: the
 // Zod-derived schema must be functionally identical so we never silently change what gets persisted.

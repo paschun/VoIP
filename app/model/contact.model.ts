@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import { Schema, model, type InferRawDocType } from 'mongoose'
 
 const contactSchemaDefinition = {
     first_name: String,
@@ -6,12 +6,14 @@ const contactSchemaDefinition = {
     number: String,
     note: String,
     user: { 
-        type: mongoose.Schema.Types.ObjectId, 
+        type: Schema.Types.ObjectId, 
         ref: 'User' 
     },
     created_at : { type : Date, default: Date.now }
 } as const
-const contactSchema = new mongoose.Schema(contactSchemaDefinition)
-const Contact = mongoose.model('Contact', contactSchema)
+const contactSchema = new Schema(contactSchemaDefinition)
+const Contact = model('Contact', contactSchema)
+
+type RawContactDocument = InferRawDocType<typeof contactSchemaDefinition>;
 
 export default Contact
