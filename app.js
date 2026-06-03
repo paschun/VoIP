@@ -86,21 +86,19 @@ app.use(limiter);
 app.get('/version.md', (_req, res) => {
   res.sendFile(path.join(import.meta.dirname, './version.md'));
 });
-// app.enable('trust proxy')
+
+// HTTPS enforcement (when HTTPS=true): behind a TLS-terminating proxy, req.secure is
+// false, so the original client protocol is read from the x-forwarded-proto header
+// (requires the trust-proxy setting above). Any request that reached us over plain HTTP
+// is blocked with a static error page instead of being served the app.
 if (process.env.HTTPS?.trim() === 'true') {
   app.use((req, res, next) => {
-    if (req.header('x-forwarded-proto') !== 'https'){
-      if(req.url === '/get-base-url'){
-        next()
-        // res.status(200).json({url: process.env.BASE_URL.trim()});
-      }else{
-        res.sendFile(path.join(import.meta.dirname, './error/index.html'));
-      }
+    if (req.header('x-forwarded-proto') !== 'https') {
+      res.sendFile(path.join(import.meta.dirname, './error/index.html'));
     } else {
       next()
     }
   })
-  // req.secure
 }
 
 // parse requests of content-type - application/json
@@ -122,18 +120,6 @@ contactRoute(app);
 emailRoute(app);
 callRoute(app);
 hardwarekeyRoute(app);
-
-app.get('/api/users/', (_req, res) => {
-  res.status(200).json({message: 'success'});
-});
-
-app.get('/get-base-url', (_req, res) => {
-  res.status(200).json({url: process.env.BASE_URL.trim()});
-});
-
-app.get('/error', (_req, res) => {
-  res.sendFile(path.join(import.meta.dirname, './error/index.html'));
-});
 
 // SPA history-mode fallback — MUST be last.
 // Any URL that wasn't matched by a static file or API route above lands
