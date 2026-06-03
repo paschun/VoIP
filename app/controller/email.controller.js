@@ -1,7 +1,7 @@
 import Validator from 'validatorjs'
 import * as openpgp from 'openpgp'
-import Email from '../model/email.model.js'
-import Setting from '../model/setting.model.js'
+import Email from '../model/email.model.ts'
+import Setting from '../model/setting.model.ts'
 
 const _validPgpKey = (keyString) => openpgp.readKey({ armoredKey: keyString });
 

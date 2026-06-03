@@ -1,6 +1,6 @@
 import Validator from 'validatorjs'
 import Contact from '../model/contact.model.ts'
-import Message from '../model/message.model.js'
+import Message from '../model/message.model.ts'
 
 export const getOne = async (req, res) => {
     try{

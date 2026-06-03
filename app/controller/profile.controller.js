@@ -1,6 +1,6 @@
 import Validator from 'validatorjs'
-import Setting from '../model/setting.model.js'
-import Message from '../model/message.model.js'
+import Setting from '../model/setting.model.ts'
+import Message from '../model/message.model.ts'
 import twilio from 'twilio'
 import Telnyx from 'telnyx'
 import * as telnyxHelper from '../helper/telnyx.helper.js'

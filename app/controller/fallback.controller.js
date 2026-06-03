@@ -1,5 +1,5 @@
 import Validator from 'validatorjs'
-import Setting from '../model/setting.model.js'
+import Setting from '../model/setting.model.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.js'
 import * as twilioHelper from '../helper/twilio.helper.js'
 import { combineURLs } from '../helper/common.helper.js'

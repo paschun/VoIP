@@ -28,10 +28,10 @@ const storage = multer.diskStorage({
     }
 })
 
-const maxSize = 1000 * 1000 * 1000;
+const maxSize = 10_000_000 // 10 MB
 
 const upload = multer({
-    storage: storage,
+    storage,
     limits: { fileSize: maxSize },
     fileFilter: (_req, file, cb) => {
 
@@ -47,8 +47,6 @@ const upload = multer({
 
         cb(new Error("Error: File upload only supports the following filetypes - " + filetypes));
     }
-
-    // mypic is the name of file attribute
 }).single("file");
 
 

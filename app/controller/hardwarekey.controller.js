@@ -1,6 +1,6 @@
-import Hardwarekey from '../model/hardwarekey.model.js'
-import User from '../model/user.model.js'
-import Handel from '../model/handel.model.js'
+import Hardwarekey from '../model/hardwarekey.model.ts'
+import User from '../model/user.model.ts'
+import Handel from '../model/handel.model.ts'
 
 let sessData = {};
 export const registerSession = async (req, res) => {
