@@ -17,6 +17,9 @@
     "oxlint": "oxlint --ignore-pattern 'frontend/**'"
   },
   "dependencies": {
+    "@hono/node-server": "^2.0.4",
+    "@hono/standard-validator": "^0.2.2",
+    "@hono/zod-validator": "^0.8.0",
     "@nullix/zod-mongoose": "^2.0.0",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
@@ -26,6 +29,7 @@
     "express-rate-limit": "^8.5.2",
     "h3": "2.0.1-rc.22",
     "helmet": "^8.1.0",
+    "hono": "^4.12.25",
     "jose": "^6.2.3",
     "moment": "^2.30.1",
     "mongoose": "^9.6.2",

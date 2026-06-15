@@ -1,4 +1,4 @@
-import { Schema } from 'mongoose'
+import { Schema, type InferSchemaType, type InferRawDocTypeFromSchema, type InferRawDocType} from 'mongoose'
 import type { WireDoc } from '../wire.ts'
 
 /**
@@ -21,6 +21,9 @@ export const emailSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User' },
   created_at: { type: Date, default: Date.now },
 })
+emailSchema.toJSONSchema()
 
+type EmailSchemaType = InferSchemaType<typeof emailSchema>
+type rawdocschema = InferRawDocTypeFromSchema<typeof emailSchema>
 /** Full JSON shape of an Email document as the frontend receives it (ObjectId/Date already stringified, `__v` present). */
 export type EmailDoc = WireDoc<typeof emailSchema>

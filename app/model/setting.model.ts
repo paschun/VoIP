@@ -56,5 +56,7 @@ const settingSchema = new Schema({
     toObject: { virtuals: true }, // So `console.log()` and other functions that use `toObject()` include virtuals
 })
 const Setting = model('Setting', settingSchema)
+// console.dir(settingSchema.toJSONSchema(), { depth: 5 })
+
 
 export default Setting

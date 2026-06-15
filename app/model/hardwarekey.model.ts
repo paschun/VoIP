@@ -6,11 +6,8 @@ const hardwarekeySchema = new Schema({
         type: Boolean,
         default: false,
     },
-    credentials: {
-        // WebAuthn credential IDs (base64url strings) the client sends as `payload.id`; flat array of scalars
-        type: [String],
-        default: [],
-    },
+    // WebAuthn credential IDs (base64url strings) the client sends as `payload.id`; flat array of scalars
+    credentials: [String], // implicitly has a default `[]`
     id: {
         type: String,
         default: null,
@@ -30,5 +27,6 @@ const hardwarekeySchema = new Schema({
     created_at: { type: Date, default: Date.now },
 })
 const Hardwarekey = model('Hardwarekey', hardwarekeySchema)
+// console.dir(hardwarekeySchema.toJSONSchema(), { depth: 5 })
 
 export default Hardwarekey

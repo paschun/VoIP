@@ -24,7 +24,7 @@ const messageSchema = new Schema({
         default: null,
     },
     message: String,
-    media: String,
+    media: String, // '["https://example.com/uploads/20260601/cf5580c02b1c46d7d68442b4bd622c91618671c4a05bd85d.png"]',
     user: {
         type: Schema.Types.ObjectId,
         ref: 'User',
