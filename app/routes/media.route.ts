@@ -1,5 +1,5 @@
 import express, { type Express } from 'express'
-import * as media from '../controller/media.controller.js'
+import * as media from '../controller/media.controller.ts'
 import auth from '../middleware/auth.middleware.ts'
 
 export default (app: Express) => {

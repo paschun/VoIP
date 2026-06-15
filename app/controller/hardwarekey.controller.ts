@@ -2,7 +2,7 @@ import Hardwarekey from '../model/hardwarekey.model.ts'
 import User from '../model/user.model.ts'
 import Handel from '../model/handel.model.ts'
 
-let sessData = {};
+let sessData: Record<string, any> = {};
 export const registerSession = async (req, res) => {
     try{
         const payload = req.body;
@@ -35,7 +35,7 @@ export const register = async (req, res) => {
         const user = await getUser(sessData.title, sessData.user);
         const userData = await User.findOne({_id: sessData.user});
         sessData.challenge = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
-        const publicKey = {
+        const publicKey: Record<string, any> = {
             challenge: sessData.challenge,
             'rp': {
                 'name': 'Operation Privacy'
@@ -118,7 +118,7 @@ export const loginSession = async (req, res) => {
             sessData.user = payload.user;
         }
         sessData.challenge = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
-        const publicKey = {
+        const publicKey: Record<string, any> = {
             'challenge': sessData.challenge,
             'status': 'ok'
         }

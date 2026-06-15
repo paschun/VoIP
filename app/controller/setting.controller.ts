@@ -590,7 +590,7 @@ export const sendSms = async (req, res) => {
             settingCheck.twilio_sid,
             settingCheck.twilio_token
           );
-          var arrMessageData = [];
+          var arrMessageData: any[] = [];
           for (var i = 0; i < req.body.numbers.length; i++) {
             var toNumber = req.body.numbers[i];
             toNumber = toNumber
@@ -610,14 +610,12 @@ export const sendSms = async (req, res) => {
                 env.BASE_URL,
                 "api/setting/sms-status/twilio"
               ),
+              ...(req.body.media.length > 0 ? { mediaUrl: req.body.media } : {}),
             };
-            if (req.body.media.length > 0) {
-              twilioParams.mediaUrl = req.body.media;
-            }
             //media
             var sendSms = await twilioClient.messages.create(twilioParams);
             if (sendSms.sid !== undefined) {
-              var messageData = {
+              var messageData: Record<string, any> = {
                 sid: sendSms.sid,
                 user: req.body.user,
                 number: toNumber,
@@ -652,7 +650,7 @@ export const sendSms = async (req, res) => {
           }
         } else {
           const telnyxClient = new Telnyx({ apiKey: settingCheck.api_key });
-          var arrMessageData = [];
+          var arrMessageData: any[] = [];
           for (var i = 0; i < req.body.numbers.length; i++) {
             //var sendNumber = req.body.numbers[i].length
             var toNumber = req.body.numbers[i];
@@ -673,13 +671,11 @@ export const sendSms = async (req, res) => {
                 env.BASE_URL,
                 "api/setting/sms-status/telnyx"
               ),
+              ...(req.body.media.length > 0 ? { media_urls: req.body.media } : {}),
             };
-            if (req.body.media.length > 0) {
-              telnyxParams.media_urls = req.body.media;
-            }
             var sendSms = await telnyxClient.messages.send(telnyxParams);
             if (sendSms.data.id !== undefined) {
-              var messageData = {
+              var messageData: Record<string, any> = {
                 sid: sendSms.data.id,
                 user: req.body.user,
                 number: toNumber,
@@ -742,14 +738,14 @@ export const sendSms = async (req, res) => {
 
 export const receiveSms = async (req, res) => {
   try {
-    var media = [];
+    var media: any[] = [];
     if (req.params.type !== undefined && req.params.type == "twilio") {
       var messageText = req.body.Body;
       var toNumber = req.body.To;
       var fromnumber = req.body.From;
       var sid = req.body.SmsSid;
       if (req.body.NumMedia > 0) {
-        var fackMedia = [];
+        var fackMedia: any[] = [];
         for (var i = 0; i < req.body.NumMedia; i++) {
           var tMedia = `MediaUrl${i}`;
           var tMediaType = `MediaContentType${i}`;
@@ -799,7 +795,7 @@ export const receiveSms = async (req, res) => {
       var sid = messageData.id;
       var messageText = messageData.text;
       if (messageData.media.length > 0) {
-        var fackMedia = [];
+        var fackMedia: any[] = [];
         for (let i = 0; i < messageData.media.length; i++) {
           const url = messageData.media[i].url; // link to file you want to download
           // var name = `uploads/${Date.now()}${sid}.png`;
@@ -835,7 +831,7 @@ export const receiveSms = async (req, res) => {
     }
     var settingCheck = await Setting.findOne({ number: { $eq: toNumber } });
     if (settingCheck) {
-      var messageData2 = {
+      var messageData2: Record<string, any> = {
         sid: sid,
         user: settingCheck.user,
         number: fromnumber,

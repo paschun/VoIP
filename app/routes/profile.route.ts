@@ -1,5 +1,5 @@
 import express, { type Express } from 'express'
-import * as profileController from '../controller/profile.controller.js'
+import * as profileController from '../controller/profile.controller.ts'
 import auth from '../middleware/auth.middleware.ts'
 
 export default (app: Express) => {

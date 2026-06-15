@@ -61,10 +61,10 @@ export const makeCall = async (req, res) => {
             var stringLen = phoneNumber.length
             if(stringLen > 10){
                 phoneNumber = `+${phoneNumber}`
-            }else if(stringLen == 10){
+            }else if(stringLen === 10){
                 phoneNumber = `+1${phoneNumber}`
             }
-            var updateCall = {
+            const updateCall: Record<string, any> = {
                 sid: req.body.CallSid,
                 user: checkSetting.user,
                 datatype: 'call',
@@ -121,7 +121,7 @@ export const statusTelnyx = async (req, res) => {
                     if(event.payload.direction === 'outgoing'){
                         var settingCheck = await Setting.findOne({number:{ $eq: event.payload.from}})
                         if(settingCheck){
-                            var updateCall = {
+                            var updateCall: Record<string, any> = {
                                 sid: event.payload.call_session_id,
                                 user: settingCheck.user,
                                 datatype: 'call',
@@ -184,7 +184,7 @@ export const incoming = async (req, res) => {
             const dial = response.dial();
             const client = dial.client();
             client.identity(`${settingCheck.user}`);
-            var updateCall = {
+            var updateCall: Record<string, any> = {
                 sid: req.body.CallSid,
                 user: settingCheck.user,
                 datatype: 'call',
@@ -217,7 +217,7 @@ export const telnyx = async (req, res) => {
                             <Sip>sip:${settingCheck.sip_username}@sip.telnyx.com</Sip>
                         </Dial>
                         </Response>`;
-            var updateCall = {
+            var updateCall: Record<string, any> = {
                 sid: req.body.CallSid,
                 user: settingCheck.user,
                 datatype: 'call',

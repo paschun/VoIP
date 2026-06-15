@@ -1,5 +1,5 @@
 import express, { type Express } from 'express'
-import * as contact from '../controller/contact.controller.js'
+import * as contact from '../controller/contact.controller.ts'
 import auth from '../middleware/auth.middleware.ts'
 
 export default (app: Express) => {

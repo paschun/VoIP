@@ -1,5 +1,5 @@
 import express, { type Express } from 'express'
-import * as hardwarekey from '../controller/hardwarekey.controller.js'
+import * as hardwarekey from '../controller/hardwarekey.controller.ts'
 import auth from '../middleware/auth.middleware.ts'
 
 export default (app: Express) => {
