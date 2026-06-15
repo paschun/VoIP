@@ -15,5 +15,6 @@ const contactSchema = new Schema(contactSchemaDefinition)
 const Contact = model('Contact', contactSchema)
 
 type RawContactDocument = InferRawDocType<typeof contactSchemaDefinition>;
+// console.dir(contactSchema.toJSONSchema({ useBsonType: false }), { depth: 5 })
 
 export default Contact

@@ -76,25 +76,39 @@
         </div>
     </div>
 </template>
+
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email } from '@vuelidate/validators'
 import { notifySuccess } from '@/notify.ts'
-import type { Profile, ProfilesResponse, SaveEmailSettingResponse, StringBoolean } from '@shared/api-contracts.ts'
+import type { Profile, ProfilesResponse, StringBoolean } from '@shared/api-contracts.ts'
+import type { EmailDoc } from '@shared/schema/email.ts'
+import type { EmailSettingsResponse, SaveEmailSettingsResponse, SaveEmailSettingResponse } from '@shared/contracts/email.ts'
 
-/** SMTP credentials form (mirrors the `email/setting-get` / `email/create` payload). */
-interface EmailForm {
-  email: string
-  sender_email: string
-  password: string
-  to_email: string
-  host: string
-  port: string
-  secure: boolean
-  pgpEncryptEnabled: boolean
-  pgpPublicKey: string
-}
+/** The editable subset of the Email document the form lets the user change (a frontend concern, not a wire contract). */
+type EmailFields = Pick<EmailDoc,
+  'email' | 'sender_email' | 'password' | 'to_email' | 'host' | 'port' | 'secure' | 'pgpEncryptEnabled' | 'pgpPublicKey'>
+
+/**
+ * Form/binding shape, derived from `EmailFields` so it tracks the schema. The mapped type rebuilds it field by field:
+ * `[K in keyof EmailFields]` iterates its keys, `-?` removes the optional `?` (every field must exist for v-model), and
+ * `NonNullable<…>` strips `| null | undefined` — so `email?: string | null` becomes `email: string`.
+ */
+type EmailForm = { [K in keyof EmailFields]-?: NonNullable<EmailFields[K]> }
+
+/** Build a full, non-null form from a (partial or absent) saved document — reused for init, load, and reset. */
+const toEmailForm = (data?: EmailDoc | null): EmailForm => ({
+  email: data?.email ?? '',
+  sender_email: data?.sender_email ?? '',
+  password: data?.password ?? '',
+  to_email: data?.to_email ?? '',
+  host: data?.host ?? '',
+  port: data?.port ?? '',
+  secure: data?.secure ?? false,
+  pgpEncryptEnabled: data?.pgpEncryptEnabled ?? false,
+  pgpPublicKey: data?.pgpPublicKey ?? '',
+})
 
 export default defineComponent({
   setup () {
@@ -106,17 +120,7 @@ export default defineComponent({
   },
   data (): { form: EmailForm; submitted3: boolean; showProfile: boolean; profiles: Profile[] } {
     return {
-      form: {
-        email: '',
-        sender_email: '',
-        password: '',
-        to_email: '',
-        host: '',
-        port: '',
-        secure: false,
-        pgpEncryptEnabled: false,
-        pgpPublicKey: ''
-      },
+      form: toEmailForm(),
       submitted3: false,
       showProfile: false,
       profiles: []
@@ -142,7 +146,7 @@ export default defineComponent({
       if (this.v$.$invalid) {
         return
       }
-      this.$post('email/create', this.form)
+      this.$post<SaveEmailSettingsResponse>('email/create', this.form)
         .then((response) => {
           if (response) {
             notifySuccess('Setting saved successfully', 'Email Setting')
@@ -152,22 +156,14 @@ export default defineComponent({
         .catch((e) => console.error(e))
     },
     getEmailSetting () {
-      this.$get('email/setting-get')
+      this.$get<EmailSettingsResponse>('email/setting-get')
         .then((response) => {
-          if (response?.data) {
-            this.form = response.data
+          if (response && response.data) {
+            this.form = toEmailForm(response.data)
             this.showProfile = true
             this.getProfiles()
           } else {
-            this.form.email = ''
-            this.form.password = ''
-            this.form.to_email = ''
-            this.form.host = ''
-            this.form.port = ''
-            this.form.secure = false
-            this.form.sender_email = ''
-            this.form.pgpEncryptEnabled = false
-            this.form.pgpPublicKey = ''
+            this.form = toEmailForm()
           }
         })
         .catch((e) => {
@@ -185,9 +181,12 @@ export default defineComponent({
           console.error(e)
         })
     },
-    profileUpdate (status: any, id: string) {
-      this.$post<SaveEmailSettingResponse>('email/save/setting', { setting_id: id, status })
+    profileUpdate (status: unknown, id: string) {
+      // `$event` from the BVN checkbox is a wide union (CheckboxValue); narrow to the StringBoolean the API expects.
+      const value: StringBoolean = status === 'true' ? 'true' : 'false'
+      this.$post<SaveEmailSettingResponse>('email/save/setting', { setting_id: id, status: value })
         .then((response) => {
+          // API plugin potentially sets response to `false`
           if (response) {
             this.getProfiles()
           }

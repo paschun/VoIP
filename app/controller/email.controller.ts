@@ -72,9 +72,9 @@ export const create = async (req: Request, res: Response) => {
 
 export const getEmail = async (req: Request, res: Response) => {
     try{
-        const storeData = {user: req.user.id };
-        const checkemail = await Email.findOne(storeData)
-        res.send({status:true, message:'Get Email Settings!', data:checkemail});
+        // no validation on input here
+        const emailSettings = await Email.findOne({ user: req.user.id })
+        res.send({status:true, message:'Get Email Settings!', data: emailSettings});
     }catch{
         res.status(400).json({status:'false',message:'something is wrong'});
     }
@@ -82,12 +82,14 @@ export const getEmail = async (req: Request, res: Response) => {
 
 export const saveSetting = async (req: Request, res: Response) => {
     try{
-        // var checkemail = await Setting.findById(req.body.setting_id)
-        const checkemail = await Setting.findOne({_id: { $eq: req.body.setting_id}})
-        if(checkemail){
-            checkemail.emailnotification = req.body.status
-            await checkemail.save()
-            res.send({status:true, message:'settings updated!', data:checkemail});
+        // $eq is "NoSQL-injection-hardened", defends against attacker-provided `{ "$gt": "" }`
+        // if input is validated, use `findById`
+        const setting = await Setting.findOne({_id: { $eq: req.body.setting_id}})
+        if(setting){
+            setting.emailnotification = req.body.status
+            await setting.save()
+            // this data isnt used by client, can omit
+            res.send({status:true, message:'settings updated!', data:null});
         }else{
             res.status(400).json({status:'false',message:'settings not updated!'});
         }

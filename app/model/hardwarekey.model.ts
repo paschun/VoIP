@@ -7,7 +7,8 @@ const hardwarekeySchema = new Schema({
         default: false,
     },
     credentials: {
-        type: Array,
+        // WebAuthn credential IDs (base64url strings) the client sends as `payload.id`; flat array of scalars
+        type: [String],
         default: [],
     },
     id: {

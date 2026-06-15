@@ -17,9 +17,8 @@ const origMediaSchema = new Schema({
     ref: 'User'
   },
 })
-console.log(origMediaSchema.path('_id'))
 const OrigMedia = model('OrigMedia', origMediaSchema)
-console.log(new OrigMedia().user)
+console.dir(origMediaSchema.toJSONSchema({ useBsonType: true }), { depth: 10 })
 
 // Reduce a Schema to the structural facts we care about for DB parity. `required: false` (what zod-mongoose emits for
 // `.optional()`) and an absent `required` validator (the original) behave identically, so we normalise `isRequired`

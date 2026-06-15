@@ -110,9 +110,6 @@ export interface HardwareKey {
 /** Response of `profile/getdata` — every Setting/profile the signed-in user owns. */
 export type ProfilesResponse = ApiEnvelope<Profile[]>
 
-/** Response of `email/save/setting` — the profile after toggling its email-notification flag. */
-export type SaveEmailSettingResponse = ApiEnvelope<Profile>
-
 /** Response of `auth/get-version` — the latest git short hash (or fallback). */
 export type VersionResponse = ApiEnvelope<string>
 

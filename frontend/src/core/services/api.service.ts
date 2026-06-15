@@ -17,7 +17,7 @@ const baseURL = combineURLs(
 )
 
 /** Error thrown by `api.*` calls on non-2xx responses. */
-export interface ApiError extends Error {
+export class ApiError extends Error {
   status?: number
   data?: any
 }
@@ -50,7 +50,7 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
     : (await response.text()) || null
 
   if (!response.ok) {
-    const err = new Error(`HTTP ${response.status}`) as ApiError
+    const err = new ApiError(`HTTP ${response.status}`)
     err.status = response.status
     err.data = data
     throw err

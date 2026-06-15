@@ -3,7 +3,7 @@ import Swal from 'sweetalert2'
 import router from '@/router/index.ts'
 import Cookies from 'js-cookie'
 import { api } from '@/core/services/api.service.ts'
-import type { ApiError, ApiClientGet, ApiClientPost } from '@/core/services/api.service.ts'
+import { ApiError, type ApiClientGet, type ApiClientPost } from '@/core/services/api.service.ts'
 
 // Shared API error handler (formerly in core/module/common.module.js).
 // 401 → notify + clear auth + bounce to the app login; 400 → notify.
