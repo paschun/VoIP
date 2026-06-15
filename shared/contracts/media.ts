@@ -1,9 +1,8 @@
-import type { ApiEnvelope, ApiErrorEnvelope } from '../api-contracts.ts'
+import type { Ok } from '../api-contracts.ts'
 import type { MediaDoc } from '../schema/media.ts'
 
 /**
- * Response of `media/upload-files` — the saved Media document (its `media` rewritten to an absolute URL) on success, or
- * an error envelope. The frontend's XHR only reads `response.data.media` on HTTP 200, so the success branch must carry
- * the full doc; every failure path omits `data` (matches `ApiErrorEnvelope`).
+ * Response of `media/upload-files` — the saved Media document (its `media` rewritten to an absolute URL). The
+ * frontend's XHR reads `response.data.media` on HTTP 200; failures throw `HTTPException` and aren't part of this type.
  */
-export type MediaUploadResponse = ApiEnvelope<MediaDoc> | ApiErrorEnvelope
+export type MediaUploadResponse = Ok<MediaDoc>

@@ -1,20 +1,18 @@
 import * as z from 'zod'
-import type { ApiEnvelope, ApiErrorEnvelope, StringBoolean } from '../api-contracts.ts'
+import type { Ok, StringBoolean } from '../api-contracts.ts'
 import { emailSchema, type EmailDoc } from '../schema/email.ts'
 
-/** Response of `email/setting-get` — the full saved document, `null` when the user has none yet, or an error envelope. */
-export type EmailSettingsResponse = ApiEnvelope<EmailDoc | null> | ApiErrorEnvelope
+// Success bodies only (`Ok<T>`): errors aren't part of the contract — they're thrown as `HTTPException` and arrive at
+// the client as a swallowed response, never a resolved value (see `error-handling-plan.md`).
 
-/**
- * Response of `email/create` — the saved document on success; failures omit `data` (a 419 validation failure also
- * carries a field-keyed `errors` dict).
- */
-export type SaveEmailSettingsResponse =
-  | ApiEnvelope<EmailDoc>
-  | (ApiErrorEnvelope & { errors?: Record<string, string[]> })
+/** Response of `email/setting-get` — the full saved document, or `null` when the user has none yet. */
+export type EmailSettingsResponse = Ok<EmailDoc | null>
 
-/** Response of `email/save/setting` — toggling a profile's email-notification flag (no payload), or an error envelope. */
-export type SaveEmailSettingResponse = ApiEnvelope<null> | ApiErrorEnvelope
+/** Response of `email/create` — the saved document. */
+export type SaveEmailSettingsResponse = Ok<EmailDoc>
+
+/** Response of `email/save/setting` — toggling a profile's email-notification flag (no payload). */
+export type SaveEmailSettingResponse = Ok<null>
 
 /**
  * Request body of `email/create`: the editable subset of an Email document (the persisted doc minus the server-managed
@@ -31,15 +29,22 @@ export type SaveEmailSettingResponse = ApiEnvelope<null> | ApiErrorEnvelope
  * validatorjs `required`, an empty string is no longer rejected server-side (the form still validates client-side).
  * This module gains a runtime (zod + the schema) but the frontend only ever `import type`s from it, so it's erased there.
  */
-export type EmailCreateRequest = Pick<
-  EmailDoc,
-  'email' | 'password' | 'to_email' | 'host' | 'port' | 'sender_email' | 'secure' | 'pgpPublicKey' | 'pgpEncryptEnabled'
->
+export type EmailCreateRequest =
+  & Pick<EmailDoc, 'email' | 'password' | 'to_email' | 'host' | 'port' | 'sender_email' | 'secure' | 'pgpEncryptEnabled'>
+  // The model can only express `pgpPublicKey` as an optional nullable String (Mongoose marks any non-`required` String
+  // nullable), but on the wire the request always carries a plain `string` — '' means "no key". Override it here.
+  & { pgpPublicKey: string }
 
 export const emailCreateBody = (z.fromJSONSchema(emailSchema.toJSONSchema()) as z.ZodObject<z.ZodRawShape>)
   .pick({ email: true, password: true, to_email: true, host: true, port: true, sender_email: true,
           secure: true, pgpPublicKey: true, pgpEncryptEnabled: true })
-  .extend({ to_email: z.email(), sender_email: z.email() }) as unknown as z.ZodType<EmailCreateRequest>
+  .extend({
+    to_email: z.email(),
+    sender_email: z.email(),
+    // The derived schema makes `pgpPublicKey` optional + nullable; on the wire it's a required plain `string` ('' = no
+    // key), so override it. (`secure`/`pgpEncryptEnabled` are `required` in the schema, so the derivation requires them.)
+    pgpPublicKey: z.string(),
+  }) as unknown as z.ZodType<EmailCreateRequest>
 
 /**
  * Request body of `email/save/setting` — flips one profile's email-notification flag. Hand-written (it spans `Setting`,

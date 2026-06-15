@@ -1,14 +1,14 @@
 import type { Context } from 'hono'
 import type { Document } from 'mongoose'
-import type { ApiEnvelope } from '../../shared/api-contracts.ts'
+import type { Ok } from '../../shared/api-contracts.ts'
 
 /**
- * Hono port of `respond.ts`'s `sendDoc`: send a hydrated Mongoose document (or `null`) as a typed success envelope.
+ * Hono port of `respond.ts`'s `sendDoc`: send a hydrated Mongoose document (or `null`) as a typed success body.
  *
- * Same reasoning as the Express version — `c.json` runs `JSON.stringify` (→ `toJSON`), turning the doc's
- * `ObjectId`/`Date` into the strings the wire contract `T` already describes, a runtime conversion TS can't see, so the
- * doc→wire cast is sound and isolated here. `satisfies ApiEnvelope<T>` keeps the envelope honest; pass the contract
- * explicitly, e.g. `sendDoc<EmailDoc | null>(c, doc, '…')`.
+ * `c.json` runs `JSON.stringify` (→ `toJSON`), turning the doc's `ObjectId`/`Date` into the strings the wire contract
+ * `T` already describes — a runtime conversion TS can't see, so the doc→wire cast is sound and isolated here.
+ * `satisfies Ok<T>` keeps the body honest; pass the contract explicitly, e.g. `sendDoc<EmailDoc | null>(c, doc)`.
+ * There is no `message` — success bodies carry only `data` (the frontend reads nothing else; see `error-handling-plan.md`).
  */
-export const sendDoc = <T extends { _id: string } | null>(c: Context, data: Document | null, message: string) =>
-  c.json({ status: true, message, data: data as unknown as T } satisfies ApiEnvelope<T>)
+export const sendDoc = <T extends { _id: string } | null>(c: Context, data: Document | null) =>
+  c.json({ data: data as unknown as T } satisfies Ok<T>)

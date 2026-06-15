@@ -2,40 +2,40 @@
     <div class="p-1">
         <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
            <div class="form-group mt-2">
-                <input class="form-control" name="email" v-model="form.email" placeholder="Enter Username" :class="{ 'is-invalid': submitted3 && v$.form.email.$error }" />
-                <div v-if="submitted3 && v$.form.email.$error" class="invalid-feedback">
+                <input class="form-control" name="email" v-model="form.email" placeholder="Enter Username" :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.email.$error }" />
+                <div v-if="saveEmailSettingsAttempted && v$.form.email.$error" class="invalid-feedback">
                     <span v-if="v$.form.email.required.$invalid">Email Is Required</span>
                 </div>
             </div>
             <div class="form-group mt-2">
-                <input class="form-control" name="password" v-model="form.password" placeholder="Enter Password" :class="{ 'is-invalid': submitted3 && v$.form.password.$error }" />
-                <div v-if="submitted3 && v$.form.password.$error" class="invalid-feedback">
+                <input class="form-control" name="password" v-model="form.password" placeholder="Enter Password" :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.password.$error }" />
+                <div v-if="saveEmailSettingsAttempted && v$.form.password.$error" class="invalid-feedback">
                     <span v-if="v$.form.password.required.$invalid">Password Is Required</span>
                 </div>
             </div>
              <div class="form-group mt-2">
-                <input class="form-control" name="sender_email" v-model="form.sender_email" placeholder="Email FROM" :class="{ 'is-invalid': submitted3 && v$.form.sender_email.$error }" />
-                <div v-if="submitted3 && v$.form.sender_email.$error" class="invalid-feedback">
+                <input class="form-control" name="sender_email" v-model="form.sender_email" placeholder="Email FROM" :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.sender_email.$error }" />
+                <div v-if="saveEmailSettingsAttempted && v$.form.sender_email.$error" class="invalid-feedback">
                     <span v-if="v$.form.sender_email.required.$invalid">FROM Email is required</span>
                     <span v-if="v$.form.sender_email.email.$invalid">Enter Valid FROM Email</span>
                 </div>
             </div>
              <div class="form-group mt-2">
-                <input class="form-control" name="to_email" v-model="form.to_email" placeholder="Email TO" :class="{ 'is-invalid': submitted3 && v$.form.to_email.$error }" />
-                <div v-if="submitted3 && v$.form.to_email.$error" class="invalid-feedback">
+                <input class="form-control" name="to_email" v-model="form.to_email" placeholder="Email TO" :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.to_email.$error }" />
+                <div v-if="saveEmailSettingsAttempted && v$.form.to_email.$error" class="invalid-feedback">
                     <span v-if="v$.form.to_email.required.$invalid">TO Email is required</span>
                     <span v-if="v$.form.to_email.email.$invalid">Enter Valid TO Email</span>
                 </div>
             </div>
             <div class="form-group mt-2">
-                <input class="form-control" name="host" v-model="form.host" placeholder="Enter Host (smtp.domain.com)" :class="{ 'is-invalid': submitted3 && v$.form.host.$error }" />
-                <div v-if="submitted3 && v$.form.host.$error" class="invalid-feedback">
+                <input class="form-control" name="host" v-model="form.host" placeholder="Enter Host (smtp.domain.com)" :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.host.$error }" />
+                <div v-if="saveEmailSettingsAttempted && v$.form.host.$error" class="invalid-feedback">
                     <span v-if="v$.form.host.required.$invalid">Host Is Required</span>
                 </div>
             </div>
             <div class="form-group mt-2">
-                <input class="form-control" name="port" v-model="form.port" placeholder="Enter Port (465 or 587)" :class="{ 'is-invalid': submitted3 && v$.form.port.$error }" />
-                <div v-if="submitted3 && v$.form.port.$error" class="invalid-feedback">
+                <input class="form-control" name="port" v-model="form.port" placeholder="Enter Port (465 or 587)" :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.port.$error }" />
+                <div v-if="saveEmailSettingsAttempted && v$.form.port.$error" class="invalid-feedback">
                     <span v-if="v$.form.port.required.$invalid">Port Is Required</span>
                 </div>
             </div>
@@ -45,10 +45,10 @@
               </b-form-checkbox>
             </div>
             <div class="form-group mt-2">
-              <textarea class="form-control" name="pgpPublicKey" v-model="form.pgpPublicKey" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----..." :class="{ 'is-invalid': submitted3 && form.pgpEncryptEnabled && !form.pgpPublicKey }">
+              <textarea class="form-control" name="pgpPublicKey" v-model="form.pgpPublicKey" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----..." :class="{ 'is-invalid': saveEmailSettingsAttempted && v$.form.pgpPublicKey.$error }">
               </textarea>
-              <div v-if="form.pgpEncryptEnabled && !form.pgpPublicKey" class="invalid-feedback">
-                    <span v-if="form.pgpEncryptEnabled && !form.pgpPublicKey">Public PGP Key Required</span>
+              <div v-if="saveEmailSettingsAttempted && v$.form.pgpPublicKey.$error" class="invalid-feedback">
+                    <span v-if="v$.form.pgpPublicKey.required.$invalid">Public PGP Key Required</span>
                 </div>
             </div>
             <div class="form-group mt-2">
@@ -80,7 +80,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
-import { required, email } from '@vuelidate/validators'
+import { required, email, requiredIf } from '@vuelidate/validators'
 import { notifySuccess } from '@/notify.ts'
 import type { Profile, ProfilesResponse, StringBoolean } from '@shared/api-contracts.ts'
 import type { EmailDoc } from '@shared/schema/email.ts'
@@ -118,22 +118,27 @@ export default defineComponent({
     const strFalse: StringBoolean = 'false'
     return { v$: useVuelidate(), strTrue, strFalse }
   },
-  data (): { form: EmailForm; submitted3: boolean; showProfile: boolean; profiles: Profile[] } {
+  data (): { form: EmailForm; saveEmailSettingsAttempted: boolean; showProfile: boolean; profiles: Profile[] } {
     return {
       form: toEmailForm(),
-      submitted3: false,
+      saveEmailSettingsAttempted: false,
       showProfile: false,
       profiles: []
     }
   },
-  validations: {
-    form: {
-      email: {required},
-      sender_email: {required, email},
-      password: {required},
-      to_email: {required, email},
-      host: {required},
-      port: {required}
+  validations () {
+    return {
+      form: {
+        email: {required},
+        sender_email: {required, email},
+        password: {required},
+        to_email: {required, email},
+        host: {required},
+        port: {required},
+        // PGP key is required only when encryption is enabled — mirrors the server (which rejects enabling PGP with no
+        // key), so submit blocks client-side instead of relying on the backend 400.
+        pgpPublicKey: { required: requiredIf(() => this.form.pgpEncryptEnabled) }
+      }
     }
   },
   mounted () {
@@ -141,7 +146,8 @@ export default defineComponent({
   },
   methods: {
     handleSubmit () {
-      this.submitted3 = true
+      // todo: this never goes to false. Is it necessary? Or does the component just unmount and discard state.
+      this.saveEmailSettingsAttempted = true
       this.v$.$touch()
       if (this.v$.$invalid) {
         return

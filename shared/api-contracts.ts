@@ -18,6 +18,24 @@ export interface ApiEnvelope<T = unknown> {
 }
 
 /**
+ * Hono-era success body: just the payload. No `status`/`message` — the frontend reads neither on success (success
+ * toasts are hardcoded client-side). Pair with `sendDoc<T>` / `c.json`. Supersedes `ApiEnvelope` as groups migrate;
+ * once no handler emits the old envelope, `ApiEnvelope`/`ApiErrorEnvelope` are deleted (see `error-handling-plan.md`).
+ */
+export interface Ok<T> {
+  data: T
+}
+
+/**
+ * The single error shape on the wire — `message` is the one field the client consumes (`handleError` →
+ * `swalError(err.data.message)`). Thrown server-side as `HTTPException` and rendered once in `app.onError`; never part
+ * of a success contract (the client gets it as a swallowed/rejected response, not a resolved value).
+ */
+export interface ApiError {
+  message: string
+}
+
+/**
  * Error-path envelope: `status` (a falsy `false`/`'false'`) and an optional `message`, with **no** payload — error
  * responses don't carry data. Union it with `ApiEnvelope<T>` in a contract so a typed `res` lets the error branches
  * omit `data` while the success branch still requires it. `data?: undefined` (rather than dropping the key) keeps
