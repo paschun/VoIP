@@ -10,5 +10,5 @@ import { setMongoose } from '@nullix/zod-mongoose'
 
 setMongoose(mongoose)
 
-export { toMongooseSchema, zObjectId, zPopulated, zBuffer, withMongoose, genTimestampsSchema } from '@nullix/zod-mongoose'
+export { toMongooseSchema, zObjectId, zRef, zBuffer, withMongoose, genTimestampsSchema } from '@nullix/zod-mongoose'
 export type { PopulatedSchema, MongooseMeta } from '@nullix/zod-mongoose'
