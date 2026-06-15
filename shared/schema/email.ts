@@ -1,4 +1,4 @@
-import { Schema, type InferSchemaType, type InferRawDocTypeFromSchema, type InferRawDocType} from 'mongoose'
+import { Schema } from 'mongoose'
 import type { WireDoc } from '../wire.ts'
 
 /**
@@ -9,21 +9,19 @@ import type { WireDoc } from '../wire.ts'
  * actual response stay in sync.
  */
 export const emailSchema = new Schema({
-  email: String,
-  password: String,
-  to_email: String,
-  host: String,
-  port: String,
-  secure: Boolean,
-  sender_email: String,
+  email: { type: String, required: true },
+  password: { type: String, required: true },
+  to_email: { type: String, required: true },
+  host: { type: String, required: true },
+  port: { type: String, required: true },
+  secure: { type: Boolean, default: false },
+  sender_email: { type: String, required: true },
   pgpPublicKey: { type: String, default: null },
   pgpEncryptEnabled: { type: Boolean, default: false },
-  user: { type: Schema.Types.ObjectId, ref: 'User' },
+  // `unique` tells Mongoose to issue a `createIndex` on model creation (when `autoIndex` is on by default)
+  //  which causes MongoDB to build & enforces the unique index, limits one Email doc per user.
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   created_at: { type: Date, default: Date.now },
 })
-emailSchema.toJSONSchema()
-
-type EmailSchemaType = InferSchemaType<typeof emailSchema>
-type rawdocschema = InferRawDocTypeFromSchema<typeof emailSchema>
 /** Full JSON shape of an Email document as the frontend receives it (ObjectId/Date already stringified, `__v` present). */
 export type EmailDoc = WireDoc<typeof emailSchema>
