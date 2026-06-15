@@ -18,6 +18,19 @@ export interface ApiEnvelope<T = unknown> {
 }
 
 /**
+ * Error-path envelope: `status` (a falsy `false`/`'false'`) and an optional `message`, with **no** payload — error
+ * responses don't carry data. Union it with `ApiEnvelope<T>` in a contract so a typed `res` lets the error branches
+ * omit `data` while the success branch still requires it. `data?: undefined` (rather than dropping the key) keeps
+ * `response.data` readable on the union, so the frontend can guard with `if (res && res.data)` without narrowing on
+ * `status` first.
+ */
+export interface ApiErrorEnvelope {
+  status: boolean | string
+  message?: string
+  data?: undefined
+}
+
+/**
  * Several Mongoose models persist booleans as the string enum `'true' | 'false'`
  * (e.g. `Setting.emailnotification`, `User.mfa`, `Message.isview`). Type them as
  * this so the frontend can compare/bind against the literal strings.

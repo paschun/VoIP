@@ -13,6 +13,9 @@ export interface AuthUser {
 
 declare global {
     namespace Express {
+        // Dishonest on purpose: declares `user` as always-present on every Request, but it's only attached on routes
+        // guarded by this middleware. Unauthenticated routes have `req.user === undefined` at runtime, yet TS still
+        // types it as AuthUser — convenient for protected controllers, but it can't catch a stray `req.user` elsewhere.
         interface Request {
             user: AuthUser
         }
