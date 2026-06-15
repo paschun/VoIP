@@ -12,11 +12,10 @@ import { initIO } from './app/socket.ts'
 import authRoute from './app/routes/auth.route.ts'
 import settingRoute from './app/routes/setting.route.ts'
 import profileRoute from './app/routes/profile.route.ts'
-import mediaRoute from './app/routes/media.route.ts'
 import contactRoute from './app/routes/contact.route.ts'
-// NOTE: email is migrated to Hono (`app/routes/email.route.ts` now exports a Hono `emailRoutes` group). It is not
-// wired here anymore; it gets served by the Hono server at the upcoming server-swap step. The other 7 groups still run
-// on Express below.
+// NOTE: email and media are migrated to Hono (their route files now export Hono groups, `emailRoutes` / `mediaRoutes`).
+// They are not wired here anymore; they get served by the Hono server at the upcoming server-swap step. The other 6
+// groups still run on Express below.
 import callRoute from './app/routes/call.route.ts'
 import hardwarekeyRoute from './app/routes/hardwarekey.route.ts'
 
@@ -130,7 +129,6 @@ app.use('/uploads', express.static('uploads'));
 authRoute(app);
 settingRoute(app);
 profileRoute(app);
-mediaRoute(app);
 contactRoute(app);
 callRoute(app);
 hardwarekeyRoute(app);

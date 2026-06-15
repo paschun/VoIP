@@ -1,12 +1,6 @@
-import { Schema, model } from 'mongoose'
+import { model } from 'mongoose'
+import { mediaSchema } from '../../shared/schema/media.ts'
 
-const mediaSchema = new Schema({ 
-    media: String,
-    user: { 
-        type: Schema.Types.ObjectId, 
-        ref: 'User',
-    },
-})
-const Media = model('Media', mediaSchema);
+const Media = model('Media', mediaSchema)
 
 export default Media
