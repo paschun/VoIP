@@ -14,5 +14,6 @@
     // "typescript/no-explicit-any": "warn",
     // "typescript/no-non-null-assertion": "warn",
     // "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
+    "import/no-cycle": "error"
   }
 }

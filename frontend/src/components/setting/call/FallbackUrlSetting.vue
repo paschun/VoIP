@@ -46,6 +46,10 @@ const toOrigin = (str: string): string => {
 /**
  * Shared "webhook URL + fallback URL" settings form, used by the Telnyx
  * SIP/TeXML/Message and Twilio TwiML settings panels.
+ *
+ * TODO: rename this component (and the `resource` framing). The backend group is no longer "fallback" -- it is
+ * `/api/provider` and this form reads/patches the provider webhook config. A name like `ProviderWebhookSetting`
+ * would match; the file lives under `setting/call/` and is referenced by TwimlSetting.vue / MessageSetting.vue.
  */
 export default defineComponent({
   name: 'FallbackUrlSetting',

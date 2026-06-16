@@ -19,6 +19,9 @@ export type JsonCtx<T> = Context<Env, string, { in: { json: T }; out: { json: T 
 // Same idea for a handler guarded by `pathParams(schema)`: `c.req.valid('param')` is `T`.
 export type ParamCtx<T> = Context<Env, string, { in: { param: T }; out: { param: T } }>
 
+/** Context for a handler guarded by `formBody(schema)` (x-www-form-urlencoded / multipart, e.g. Twilio webhooks): `c.req.valid('form')` is `T`. */
+export type FormCtx<T> = Context<Env, string, { in: { form: T }; out: { form: T } }>
+
 // `queryParams(schema)`: `c.req.valid('query')` is `T`.
 export type QueryCtx<T> = Context<Env, string, { in: { query: T }; out: { query: T } }>
 

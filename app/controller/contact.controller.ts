@@ -7,6 +7,7 @@ import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../factory.
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams, queryParams } from '../validate.ts'
 import { sendDoc, sendDocs } from '../util/respond.hono.ts'
+import { normalizeNumber } from '../helper/common.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import type { ContactDoc } from '../../shared/schema/contact.ts'
 import {
@@ -17,15 +18,6 @@ import {
 } from '../../shared/contracts/contact.ts'
 
 const MAX_CONTACTS = 500
-
-// Canonicalize a phone number: drop a leading '+', then prefix the country code by digit count (10 digits -> +1).
-// TODO: could normalizeNumber be in zod?
-function normalizeNumber(raw: string): string {
-  const digits = raw.trim().replace('+', '')
-  if (digits.length > 10) return `+${digits}`
-  if (digits.length === 10) return `+1${digits}`
-  return digits
-}
 
 async function getContacts(c: Context<Env>) {
   // collation locale 'en' makes the first_name sort case-insensitive and locale-aware (so 'bob' and 'Bob' order

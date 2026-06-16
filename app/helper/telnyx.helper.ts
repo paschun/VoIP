@@ -2,6 +2,7 @@ import Telnyx from 'telnyx'
 import moment from 'moment'
 import crypto from 'crypto'
 import { combineURLs } from './common.helper.ts'
+import { WEBHOOK_PATHS } from './webhook-paths.ts'
 import { env } from '../../config/env.ts'
 
 // moment format used to build unique, human-readable resource names (down to the minute).
@@ -31,9 +32,9 @@ const createTexmlApp = async (apiKey: string) => {
     };
     const data = {
         friendly_name: moment().format(timestampFormat),
-        voice_url: combineURLs(env.BASE_URL, "api/call/telnyx"),
+        voice_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxVoice),
         voice_method: "post",
-        status_callback: combineURLs(env.BASE_URL, "api/call/status/telnyx"),
+        status_callback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
         status_callback_method: "post",
     };
     return requestCurl('POST', url, headers, data);
@@ -47,9 +48,9 @@ const updateTexmlApp = async (apiKey: string, twimlid: string) => {
         'Authorization': `Bearer ${apiKey}`
     };
     const data = {
-        voice_url: combineURLs(env.BASE_URL, "api/call/telnyx"),
+        voice_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxVoice),
         voice_method: "post",
-        status_callback: combineURLs(env.BASE_URL, "api/call/status/telnyx"),
+        status_callback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
         status_callback_method: "post",
     };
     return requestCurl('PATCH', url, headers, data);
@@ -73,7 +74,7 @@ const createSIPApp = async (apiKey: string, userid: string, outboundProfileid: s
             connection_name: `sip${moment().format(timestampFormat)}`,
             user_name: `user${moment().format(timestampFormat)}`,
             password: password,
-            webhook_event_url: combineURLs(env.BASE_URL, "api/call/status/telnyx"),
+            webhook_event_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
             outbound: { outbound_voice_profile_id: outboundProfileid },
             sip_uri_calling_preference: "unrestricted",
         });
@@ -88,7 +89,7 @@ const updateSIPApp = async (apiKey: string, uuid: string, outboundProfileid: str
     try {
         const client = new Telnyx({ apiKey });
         await client.credentialConnections.update(uuid, {
-            webhook_event_url: combineURLs(env.BASE_URL, "api/call/status/telnyx"),
+            webhook_event_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
             outbound: { outbound_voice_profile_id: outboundProfileid },
             sip_uri_calling_preference: "unrestricted",
         });
@@ -175,7 +176,7 @@ const messageProfileFallback = async (params: { apiKey: string; setting: string;
     }
 }
 
-const texmlAppFalback = async (params: { twimlid: string; apiKey: string; url: string }) => {
+const texmlAppFallback = async (params: { twimlid: string; apiKey: string; url: string }) => {
     const url = `https://api.telnyx.com/v2/texml_applications/${params.twimlid}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -189,7 +190,7 @@ const texmlAppFalback = async (params: { twimlid: string; apiKey: string; url: s
     return requestCurl('PATCH', url, headers, data);
 }
 
-const sIPAppFallback = async (params: { apiKey: string; uuid: string; url: string }) => {
+const sipAppFallback = async (params: { apiKey: string; uuid: string; url: string }) => {
     try {
         const client = new Telnyx({ apiKey: params.apiKey });
         await client.credentialConnections.update(params.uuid, {
@@ -235,5 +236,5 @@ const getNumberData = async (params: { number_sid: string; apiKey: string }) => 
 export {
     createTexmlApp, updateTexmlApp, deleteTexmlApp, createSIPApp, updateSIPApp, deleteSIPApp,
     createOutboundVoice, deleteOutboundVoice, updatePhoneNumber, emptyMessageProfile, deleteMessageProfile,
-    messageProfileFallback, texmlAppFalback, sIPAppFallback, messageProfileGet, getNumberData,
+    messageProfileFallback, texmlAppFallback, sipAppFallback, messageProfileGet, getNumberData,
 }

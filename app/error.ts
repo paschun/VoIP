@@ -1,5 +1,6 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import { ProviderError } from './provider-error.ts'
 import type { ApiError } from '../shared/api-contracts.ts'
 
 /**
@@ -15,6 +16,12 @@ import type { ApiError } from '../shared/api-contracts.ts'
 export function onError(err: Error, c: Context) {
   if (err instanceof HTTPException) {
     return c.json({ message: err.message } satisfies ApiError, err.status)
+  }
+  // An upstream provider failed -- our server is healthy, so 502 (Bad Gateway), not 500. Log the detail (provider/op/
+  // cause) but return a generic message; provider internals shouldn't reach the client.
+  if (err instanceof ProviderError) {
+    console.error(err)
+    return c.json({ message: 'Upstream provider request failed' } satisfies ApiError, 502)
   }
   console.error(err)
   // todo: can we be more informative than "something went wrong"
