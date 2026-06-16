@@ -53,10 +53,8 @@ export default defineComponent({
     return { v$: useVuelidate() }
   },
   props: {
-    /** Endpoint to load current setting values from (POST). */
-    getUrl: { type: String, required: true },
-    /** Endpoint to persist the updated fallback URL (POST). */
-    saveUrl: { type: String, required: true },
+    /** Resource base path; GET `${resource}/${settingId}` loads current values, PUT `${resource}/${settingId}` saves. */
+    resource: { type: String, required: true },
     /** Dotted path to the read-only "main" URL in the GET response. */
     mainPath: { type: String, required: true },
     /** Dotted path to the editable fallback URL in the GET response. */
@@ -92,7 +90,7 @@ export default defineComponent({
       if (!profileLocal) return
       this.setting = JSON.parse(profileLocal)?._id
 
-      this.$post(this.getUrl, { setting_id: this.setting })
+      this.$get(`${this.resource}/${this.setting}`)
         .then((response) => {
           const main = pickPath(response, this.mainPath)
           const fallback = pickPath(response, this.fallbackPath)
@@ -108,8 +106,7 @@ export default defineComponent({
       if (this.v$.$invalid) return
 
       const submitUrl = this.normalizeSubmit ? toOrigin(this.form.url) : this.form.url
-      const data = { ...this.form, url: submitUrl, setting_id: this.setting }
-      this.$post(this.saveUrl, data)
+      this.$patch(`${this.resource}/${this.setting}`, { fallbackUrl: submitUrl })
         .then((response) => {
           if (!response) return
           notifySuccess(this.successMessage)

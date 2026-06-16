@@ -1,7 +1,6 @@
 <template>
   <fallback-url-setting
-    get-url="setting/twilio/twiml/get"
-    save-url="setting/twilio/twiml/fallback"
+    resource="provider/twilio/webhook"
     main-path="data.voiceUrl"
     fallback-path="data.voiceFallbackUrl"
     main-label="Request URL"

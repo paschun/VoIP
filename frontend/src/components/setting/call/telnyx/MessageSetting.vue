@@ -1,7 +1,6 @@
 <template>
   <fallback-url-setting
-    get-url="setting/telnyx/message/get"
-    save-url="setting/telnyx/message/fallback"
+    resource="provider/telnyx/webhook"
     main-path="data.data.webhook_url"
     fallback-path="data.data.webhook_failover_url"
     main-label="Primary Webhook URL"

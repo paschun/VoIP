@@ -1,6 +1,5 @@
 import express, { type Express } from 'express'
 import * as setting from '../controller/setting.controller.ts'
-import * as fallback from '../controller/fallback.controller.ts'
 import auth from '../middleware/auth.middleware.ts'
 
 export default (app: Express) => {
@@ -16,14 +15,5 @@ export default (app: Express) => {
     router.post("/sms-number-list",auth, setting.getNumberList);
     router.post("/message-list",auth, setting.messageList);
     router.post("/message-list-delete",auth, setting.messageDelete);
-
-    router.post("/twilio/twiml/fallback",auth, fallback.twilioTwimlFallback);
-    router.post("/telnyx/message/fallback",auth, fallback.telnyxMessageFallback);
-
-    router.post("/twilio/twiml/get",auth, fallback.twilioTwimlGet);
-    router.post("/telnyx/message/get",auth, fallback.telnyxMessageGet);
-
-    router.post("/check-setting",auth, fallback.checkCallSetting);
-    
     app.use('/api/setting', router);
 };

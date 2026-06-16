@@ -758,7 +758,7 @@ export default defineComponent({
         };
         this.isLoading = true;
         try {
-          const response = await this.$post("setting/check-setting", sendData);
+          const response = await this.$post("provider/number-lookup", sendData);
           let isCall = false;
           if (response) {
             if (
