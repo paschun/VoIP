@@ -22,7 +22,7 @@ export class ApiError extends Error {
   data?: any
 }
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 /**
  * Issue a fetch request and return the parsed JSON body (or raw text if not
@@ -63,11 +63,20 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
 // wrapper folds in (`false`); `D` is the response type untyped call sites get.
 export type ApiClientGet<F = never, D = unknown> = <T = D>(url: string) => Promise<T | F>
 export type ApiClientPost<F = never, D = unknown> = <T = D>(url: string, body?: unknown) => Promise<T | F>
+// PUT/PATCH share POST's call shape (url + JSON body); aliased so the globals can carry method-specific names.
+export type ApiClientPut<F = never, D = unknown> = ApiClientPost<F, D>
+export type ApiClientPatch<F = never, D = unknown> = ApiClientPost<F, D>
 
-export const api: { get: ApiClientGet, post: ApiClientPost } = {
+export const api: { get: ApiClientGet, post: ApiClientPost, put: ApiClientPut, patch: ApiClientPatch } = {
   /** Send a GET request. Returns the parsed JSON response body. */
   get: <T = unknown>(url: string): Promise<T> => request<T>('GET', url),
 
   /** Send a POST request with a JSON body. Returns the parsed JSON response body. */
-  post: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('POST', url, body)
+  post: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('POST', url, body),
+
+  /** Send a PUT request with a JSON body (idempotent create-or-replace). Returns the parsed JSON response body. */
+  put: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('PUT', url, body),
+
+  /** Send a PATCH request with a JSON body (partial update). Returns the parsed JSON response body. */
+  patch: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('PATCH', url, body)
 }

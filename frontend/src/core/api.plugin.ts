@@ -3,7 +3,7 @@ import Swal from 'sweetalert2'
 import router from '@/router/index.ts'
 import Cookies from 'js-cookie'
 import { api } from '@/core/services/api.service.ts'
-import { ApiError, type ApiClientGet, type ApiClientPost } from '@/core/services/api.service.ts'
+import { ApiError, type ApiClientGet, type ApiClientPost, type ApiClientPut, type ApiClientPatch } from '@/core/services/api.service.ts'
 
 // Shared API error handler (formerly in core/module/common.module.js).
 // 401 → notify + clear auth + bounce to the app login; 400 → notify.
@@ -37,9 +37,11 @@ const handleError = (err: ApiError): false => {
 // Re-used by the `ComponentCustomProperties` augmentation in shims-global.d.ts.
 export type ApiPost = ApiClientPost<false, any>
 export type ApiGet = ApiClientGet<false, any>
+export type ApiPut = ApiClientPut<false, any>
+export type ApiPatch = ApiClientPatch<false, any>
 
 /**
- * Installs `this.$post(url, data)` and `this.$get(url)` on every component.
+ * Installs `this.$post/$get/$put/$patch(url, data)` on every component.
  * Thin wrappers around `api.*` that swallow errors via `handleError`,
  * resolving to the parsed body on success or `false` on failure.
  */
@@ -47,7 +49,11 @@ export default {
   install (app: App) {
     const $post: ApiPost = <T = any>(url: string, data?: unknown) => api.post<T>(url, data).catch(handleError)
     const $get: ApiGet = <T = any>(url: string) => api.get<T>(url).catch(handleError)
+    const $put: ApiPut = <T = any>(url: string, data?: unknown) => api.put<T>(url, data).catch(handleError)
+    const $patch: ApiPatch = <T = any>(url: string, data?: unknown) => api.patch<T>(url, data).catch(handleError)
     app.config.globalProperties.$post = $post
     app.config.globalProperties.$get = $get
+    app.config.globalProperties.$put = $put
+    app.config.globalProperties.$patch = $patch
   }
 }

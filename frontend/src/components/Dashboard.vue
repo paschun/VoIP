@@ -586,7 +586,7 @@ export default defineComponent({
       }
     },
     uploadFile(file: any, i: number) {
-      const fileUploadURL = combineURLs(this.baseurl, '/api/media/upload-files');
+      const fileUploadURL = combineURLs(this.baseurl, '/api/media/uploads');
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
       xhr.open("POST", fileUploadURL, true);

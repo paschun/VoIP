@@ -152,7 +152,7 @@ export default defineComponent({
       if (this.v$.$invalid) {
         return
       }
-      this.$post<SaveEmailSettingsResponse>('email/create', this.form)
+      this.$put<SaveEmailSettingsResponse>('email/setting', this.form)
         .then((response) => {
           if (response) {
             notifySuccess('Setting saved successfully', 'Email Setting')
@@ -162,7 +162,7 @@ export default defineComponent({
         .catch((e) => console.error(e))
     },
     getEmailSetting () {
-      this.$get<EmailSettingsResponse>('email/setting-get')
+      this.$get<EmailSettingsResponse>('email/setting')
         .then((response) => {
           if (response && response.data) {
             this.form = toEmailForm(response.data)
@@ -190,7 +190,7 @@ export default defineComponent({
     profileUpdate (status: unknown, id: string) {
       // `$event` from the BVN checkbox is a wide union (CheckboxValue); narrow to the StringBoolean the API expects.
       const value: StringBoolean = status === 'true' ? 'true' : 'false'
-      this.$post<SaveEmailSettingResponse>('email/save/setting', { setting_id: id, status: value })
+      this.$patch<SaveEmailSettingResponse>('email/notification', { setting_id: id, status: value })
         .then((response) => {
           // API plugin potentially sets response to `false`
           if (response) {
