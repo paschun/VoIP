@@ -127,7 +127,7 @@ export default defineComponent({
       })
       if (!result.isConfirmed) return
       try {
-        const respose = await this.$post('hardwarekey/delete', { id })
+        const respose = await this.$del(`hardwarekey/${id}`)
         if (respose) {
           notifySuccess('Your key has been deleted.', 'Deleted!')
           this.getHardwarekey()
@@ -135,7 +135,7 @@ export default defineComponent({
       } catch { /* ignore */ }
     },
     getHardwarekey () {
-      this.$post('hardwarekey/get', {})
+      this.$get('hardwarekey')
         .then((respose) => {
           if (respose) {
             this.keys = respose.data
@@ -150,7 +150,7 @@ export default defineComponent({
       }
       let serverResponse
       try {
-        serverResponse = await this.$post('hardwarekey/register-key', { title: this.title.trim() })
+        serverResponse = await this.$post('hardwarekey/registration/begin', { title: this.title.trim() })
       } catch { /* ignore */ }
       if (!serverResponse) return
       if (serverResponse.status !== 'startFIDOEnrolment') {
@@ -159,7 +159,7 @@ export default defineComponent({
       }
 
       try {
-        const respnse = await this.$post('hardwarekey/register', {})
+        const respnse = await this.$post('hardwarekey/registration/challenge', {})
         const hardwarekey = respnse.hardwarekey
         let makeCredChallenge = respnse.publicKey
         let newCredentialInfo: any
@@ -187,7 +187,7 @@ export default defineComponent({
         const aaguid = bufToHex(authData.aaguid!)
         newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
         try {
-          const verifyResponse = await this.$post('hardwarekey/verify', { id: newCredentialInfo.id, aaguid })
+          const verifyResponse = await this.$post('hardwarekey/registration/verify', { id: newCredentialInfo.id, aaguid })
           if (verifyResponse.status !== 'ok') {
             throw new Error('Error registering user! Server returned: ' + verifyResponse.errorMessage)
           } else {

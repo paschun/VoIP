@@ -1,255 +1,186 @@
+import type { Context } from 'hono'
+import { HTTPException } from 'hono/http-exception'
+import crypto from 'node:crypto'
 import Hardwarekey from '../model/hardwarekey.model.ts'
 import User from '../model/user.model.ts'
 import Handel from '../model/handel.model.ts'
+import { factory } from '../factory.ts'
+import type { Env, JsonCtx, ParamCtx } from '../factory.ts'
+import { auth } from '../middleware/auth.hono.ts'
+import { jsonBody, pathParams } from '../validate.ts'
+import { sendDocs } from '../util/respond.hono.ts'
+import type { Ok } from '../../shared/api-contracts.ts'
+import {
+  registerKeyBody, type RegisterKeyRequest,
+  verifyBody, type VerifyRequest,
+  loginKeyBody, type LoginKeyRequest,
+  deleteKeyParams, type DeleteKeyParams,
+  type HardwarekeyListItem,
+} from '../../shared/contracts/hardwarekey.ts'
 
-let sessData: Record<string, any> = {};
-export const registerSession = async (req, res) => {
-    try{
-        const payload = req.body;
-        const userexists = await userExists(payload.title, req.user.id);
-        const getuser = await Hardwarekey.findOne({title: payload.title, user: req.user.id, id: sessData.id});
-        if(userexists && getuser && getuser.registrationComplete){
-            res.status(400).send({'status': 'false', 'message': 'Title already exists!'});
-        }else{
-            await deleteUser(payload.title, req.user.id);
-            payload.id = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
-            payload.credentials = [];
-            const user = await addUser(payload.title, payload, req.user.id);
-            console.log(user);
-            sessData = req.session;
-            sessData.title = payload.title;
-            sessData.user = req.user.id;
-            sessData.id = payload.id;
-            res.send({'status': 'startFIDOEnrolment'});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-}
-export const register = async (req, res) => {
-    try{
-        if(!sessData.title){
-            res.status(400).send({'status': 'failed', 'message': 'Access denied!'});
-            return;
-        }
-        const user = await getUser(sessData.title, sessData.user);
-        const userData = await User.findOne({_id: sessData.user});
-        sessData.challenge = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
-        const publicKey: Record<string, any> = {
-            challenge: sessData.challenge,
-            'rp': {
-                'name': 'Operation Privacy'
-            },
-            'user': {
-                'id': user.id,
-                'name': userData.email,
-                'displayName': userData.name
-            },
-            'pubKeyCredParams': [
-                { 'type': 'public-key', 'alg': -7   },
-                { 'type': 'public-key', 'alg': -257 },
-            ],
-            'attestation': 'direct'
-        };
-        if(req.body.options) {
-            const options = req.body.options
-            if(!publicKey.authenticatorSelection)
-                publicKey.authenticatorSelection = {};
+// TODO(security): the WebAuthn ceremony's cross-request state (title/user/challenge/id) lives in this single
+// module-global, shared by ALL users and valid only within one process -- concurrent enrolments/logins race and
+// clobber each other, and it breaks entirely under multiple workers. This is a faithful port of the original behavior;
+// the real fix is a short-lived, per-user challenge store (keyed by user id) replacing this global.
+let sessData: Record<string, any> = {}
 
-            if(options.attestation)
-                publicKey.attestation = options.attestation;
+const randomId = () => crypto.getRandomValues(new Uint8Array(32)).toBase64({ alphabet: 'base64url', omitPadding: true })
 
-            if(options.rpId)
-                publicKey.rp.id = options.rpId;
+// Status codes: 409 for a duplicate title; 403 (`Access denied!`) when a registration step is called out of order or
+// after its ceremony state expired; 401 (`Wrong username or password!` / `Something is wrong!`) for login failures.
 
-            if(options.uv)
-                publicKey.authenticatorSelection.userVerification = 'required';
-        }
+/** Begin enrolment: reject a duplicate completed title, (re)seed the pending key + ceremony state. */
+async function beginRegistration(c: JsonCtx<RegisterKeyRequest>) {
+  const userId = c.get('user').id
+  const title = c.req.valid('json').title
+  const completed = await Hardwarekey.findOne({ title, user: userId, id: sessData.id })
+  if (completed && completed.registrationComplete) throw new HTTPException(409, { message: 'Title already exists!' })
 
-        if(sessData.rk) {
-            if(!publicKey.authenticatorSelection)
-                publicKey.authenticatorSelection = {};
-
-            publicKey.authenticatorSelection.requireResidentKey = true;
-        }
-        const hardwarekey = await Hardwarekey.find({user: req.user.id, registrationComplete:true});
-        res.send({publicKey:publicKey, hardwarekey:hardwarekey});
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
+  await Hardwarekey.deleteOne({ title, user: userId })
+  const id = randomId()
+  await addUser(title, { title, id, credentials: [] }, userId)
+  sessData.title = title
+  sessData.user = userId
+  sessData.id = id
+  return c.json({ status: 'startFIDOEnrolment' })
 }
 
-export const verify = async (req, res) => {
-    try{
-        const payload = req.body;
+/** Build the WebAuthn `create()` challenge (publicKey) plus the user's existing keys (to exclude). */
+async function buildRegistrationChallenge(c: Context<Env>) {
+  if (!sessData.title) throw new HTTPException(403, { message: 'Access denied!' })
+  const keyUser = await getUser(sessData.title, sessData.user)
+  if (!keyUser) throw new HTTPException(403, { message: 'Access denied!' })
+  const userData = await User.findOne({ _id: sessData.user })
 
-        if(!sessData.title){
-            return res.status(400).send({'status': 'false', message:'Access denied!', 'errorMessage': 'Access denied!'});
-        }
-        const user = await getUser(sessData.title, sessData.user);
-        const cr = user.credentials;
-        cr.push(payload.id);
-        const updateData = {
-            registrationComplete: true,
-            credentials: cr, 
-            aaguid: payload.aaguid
-        };
-        const updateuser = await updateUser(sessData.title, sessData.user, updateData);
-        if(updateuser.registrationComplete){
-            await User.updateOne({_id: sessData.user}, {hardwarekey: 'true'});
-        }
-        console.log(updateuser)
-        sessData = {};
-        res.send({'status': 'ok'});
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
+  sessData.challenge = randomId()
+  const publicKey: Record<string, any> = {
+    challenge: sessData.challenge,
+    rp: { name: 'Operation Privacy' },
+    user: { id: keyUser.id, name: userData?.email, displayName: userData?.name },
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+    attestation: 'direct',
+  }
 
-export const loginSession = async (req, res) => {
-    try{
-        const payload = req.body
-        const userexit = await userExists(payload.title, payload.user)
-        if(!userexit){
-            res.status(400).send({status: 'error', message: 'Wrong username or password!'});
-            return;
-        }else{
-            sessData.title = payload.title;
-            sessData.user = payload.user;
-        }
-        sessData.challenge = generateRandomBuffer(32).toBase64({ alphabet: 'base64url', omitPadding: true });
-        const publicKey: Record<string, any> = {
-            'challenge': sessData.challenge,
-            'status': 'ok'
-        }
-        let user = await getUser(sessData.title, sessData.user);
-        console.log(user);
-        publicKey.allowCredentials = user.credentials.map((credId) => {
-            return { 'type': 'public-key', 'id': credId }
-        })
-        
-        if(sessData.rk) {
-            delete publicKey.allowCredentials
-        }
+  const options = (await readJsonBody(c)).options
+  if (options) {
+    publicKey.authenticatorSelection ??= {}
+    if (options.attestation) publicKey.attestation = options.attestation
+    if (options.rpId) publicKey.rp.id = options.rpId
+    if (options.uv) publicKey.authenticatorSelection.userVerification = 'required'
+  }
+  if (sessData.rk) {
+    publicKey.authenticatorSelection ??= {}
+    publicKey.authenticatorSelection.requireResidentKey = true
+  }
 
-        if(sessData.uv) {
-            publicKey.userVerification = 'required';
-        }
-        res.send(publicKey);
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
+  const hardwarekey = await Hardwarekey.find({ user: c.get('user').id, registrationComplete: true })
+  return c.json({ publicKey, hardwarekey })
 }
 
-export const login = async (req, res) => {
-    try{
-        const payload = req.body
-        const userwhere = sessData.user
-        const checkHandel = await getUserByUserHandle(payload.response.userHandle, userwhere);
-        if(!sessData.title && !checkHandel){
-            res.status(400).send({'status': 'false', message: 'Something is wrong!'});
-        }else{
-            sessData = {};
-            res.send({'status': 'true'});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
+/** Finish enrolment: store the new credential, mark the key (and the user) registration-complete. */
+async function verifyRegistration(c: JsonCtx<VerifyRequest>) {
+  const payload = c.req.valid('json')
+  if (!sessData.title) throw new HTTPException(403, { message: 'Access denied!' })
+  const keyUser = await getUser(sessData.title, sessData.user)
+  if (!keyUser) throw new HTTPException(403, { message: 'Access denied!' })
+
+  keyUser.credentials.push(payload.id)
+  keyUser.registrationComplete = true
+  keyUser.aaguid = payload.aaguid
+  await keyUser.save()
+  await User.updateOne({ _id: sessData.user }, { hardwarekey: 'true' })
+  sessData = {}
+  return c.json({ status: 'ok' })
 }
 
-export const getKey = async (req, res) => {
-    try{
-        const harewarekeys = await Hardwarekey.find({user:req.user.id, registrationComplete: true});
-        res.send({status:'true', message:'hardware key list!', data:harewarekeys});
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-}
-const deleteRecord = async (req, res) => {
-    try{
-        const harewarekey = await Hardwarekey.findOne({_id: req.body.id});
-        if(harewarekey){
-            await Handel.deleteOne({username: harewarekey.title, user: harewarekey.user});
-            await harewarekey.deleteOne()
-        }
-        const harewarekeys = await Hardwarekey.findOne({user:req.user.id, registrationComplete: true});
-        if(!harewarekeys){
-            await User.updateOne({_id: req.user.id}, {hardwarekey: 'false'});
-        }
-        res.send({status:'true', message:'hardware key deleted!', data:[]});
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
+/** Begin login: build the WebAuthn `get()` assertion challenge for the named key. */
+async function buildAuthenticationChallenge(c: JsonCtx<LoginKeyRequest>) {
+  const { title, user } = c.req.valid('json')
+  if (!(await userExists(title, user))) throw new HTTPException(401, { message: 'Wrong username or password!' })
+
+  sessData.title = title
+  sessData.user = user
+  sessData.challenge = randomId()
+  const keyUser = await getUser(title, user)
+  if (!keyUser) throw new HTTPException(401, { message: 'Wrong username or password!' })
+
+  const publicKey: Record<string, any> = {
+    challenge: sessData.challenge,
+    status: 'ok',
+    allowCredentials: keyUser.credentials.map((credId) => ({ type: 'public-key', id: credId })),
+  }
+  if (sessData.rk) delete publicKey.allowCredentials
+  if (sessData.uv) publicKey.userVerification = 'required'
+  return c.json(publicKey)
 }
 
-async function getUserByUserHandle(userHandle, userwhere) {
-    try {
-        const user = await Handel.findOne({id:userHandle});
-        if(user){
-            userwhere.title = user.username;
-            let userJSON = Hardwarekey.findOne(userwhere);
-            if(!userJSON)
-                throw new Error(`Username "${user.username}" does not exist!`);
-
-            return userJSON;
-        }else{
-            return false;
-        }
-    } catch(e) {
-        return {}
-    }
-};
-
-function generateRandomBuffer(length = 32) {
-    return crypto.getRandomValues(new Uint8Array(length));
+/** Finish login: accept the assertion if the ceremony state or the resolved user handle checks out. */
+async function verifyAuthentication(c: Context<Env>) {
+  const payload = await readJsonBody(c)
+  const checkHandel = await getUserByUserHandle(payload.response?.userHandle, sessData.user)
+  if (!sessData.title && !checkHandel) throw new HTTPException(401, { message: 'Something is wrong!' })
+  sessData = {}
+  return c.json({ status: 'true' })
 }
 
-async function addUser(username, struct, user){
-    var handel = await Handel.create({id:struct.id, username:username, user:user});
-    sessData.handelId = handel._id
-    struct.user = user
-    await Hardwarekey.create(struct);
-    return true;
+/** List the caller's completed hardware keys. */
+async function getKeys(c: Context<Env>) {
+  const keys = await Hardwarekey.find({ user: c.get('user').id, registrationComplete: true })
+  return sendDocs<HardwarekeyListItem>(c, keys)
 }
 
-async function deleteUser(title, user){
-    await Hardwarekey.deleteOne({title: title, user: user});
-    return true;
+/** Delete one of the caller's keys (owner-scoped, so a non-owned id can't be removed); idempotent. */
+async function deleteRecord(c: ParamCtx<DeleteKeyParams>) {
+  const userId = c.get('user').id
+  const key = await Hardwarekey.findOne({ _id: c.req.valid('param').id, user: userId })
+  if (key) {
+    await Handel.deleteOne({ username: key.title ?? '', user: userId })
+    await key.deleteOne()
+  }
+  const remaining = await Hardwarekey.findOne({ user: userId, registrationComplete: true })
+  if (!remaining) await User.updateOne({ _id: userId }, { hardwarekey: 'false' })
+  return c.json({ data: [] } satisfies Ok<HardwarekeyListItem[]>)
 }
 
-async function userExists(title, user) {
-    const foundUser = await Hardwarekey.findOne({title: title, user: user});
-    if(!foundUser){
-        return false;
-    }
-    return true;
-};
+/** Parse a JSON body, tolerating an empty/absent one (the ceremony's `register`/`login` posts vary). */
+async function readJsonBody(c: Context<Env>): Promise<Record<string, any>> {
+  return c.req.json<Record<string, any>>().catch(() => ({}))
+}
 
-async function getUser(title, user){
-    const foundUser = await Hardwarekey.findOne({title: title, user: user});
-    if(foundUser){
-        return foundUser;
-    }else{
-        return false;
-    }
-};
+/** Resolve the Handel user-handle row to its Hardwarekey, scoped by `userwhere`; `false`/`{}` when not found. */
+async function getUserByUserHandle(userHandle: string | undefined, user: string) {
+  try {
+    const handel = await Handel.findOne({ id: userHandle ?? '' })
+    if (!handel) return false
+    const key = await Hardwarekey.findOne({ user, title: handel.username ?? '' })
+    if (!key) throw new Error(`Username "${handel.username}" does not exist!`)
+    return key
+  } catch {
+    return {}
+  }
+}
 
-async function updateUser(title, user, struct){
-    console.log("=====================================================")
-    console.log("session title => "+title)
-    console.log("session user => "+user)
-    console.log(struct)
-    const foundUser = await Hardwarekey.findOne({title: title, user: user});
-    if(foundUser){
-        foundUser.registrationComplete = struct.registrationComplete;
-        foundUser.credentials = struct.credentials;
-        foundUser.aaguid = struct.aaguid;
-        await foundUser.save();
-        // var user2 = await Hardwarekey.updateOne({ title: title, user: user}, struct);
-        return foundUser;
-    }else{
-        return false;
-    }
-};
+/** Create the Handel handle row + the pending Hardwarekey for a new enrolment. */
+async function addUser(title: string, struct: Record<string, any>, user: string) {
+  const handel = await Handel.create({ id: struct.id, username: title, user })
+  sessData.handelId = handel._id
+  await Hardwarekey.create({ ...struct, user })
+}
 
-export { deleteRecord as delete }
+/** True if a key with this title already exists for the user. */
+async function userExists(title: string, user: string) {
+  return !!(await Hardwarekey.findOne({ title, user }))
+}
+
+/** The user's key by title (hydrated doc, or `null`). */
+async function getUser(title: string, user: string) {
+  return Hardwarekey.findOne({ title, user })
+}
+
+export const registrationBegin = factory.createHandlers(auth, jsonBody(registerKeyBody), beginRegistration)
+export const registrationChallenge = factory.createHandlers(auth, buildRegistrationChallenge)
+export const registrationVerify = factory.createHandlers(auth, jsonBody(verifyBody), verifyRegistration)
+export const authenticationChallenge = factory.createHandlers(jsonBody(loginKeyBody), buildAuthenticationChallenge)
+export const authenticationVerify = factory.createHandlers(verifyAuthentication)
+export const listKeys = factory.createHandlers(auth, getKeys)
+export const deleteKey = factory.createHandlers(auth, pathParams(deleteKeyParams), deleteRecord)

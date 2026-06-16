@@ -4,8 +4,7 @@ const messageSchema = new Schema({
     sid: String,
     number: String, // the other party's number
     // TODO: `telnyx_number` is a misnomer -- it holds *our* provider number for BOTH Twilio and Telnyx calls (there is
-    // no separate twilio field). Rename to something provider-neutral (e.g. `own_number`). Needs a data migration, so
-    // left as-is for now.
+    // no separate twilio field). Rename to provider-neutral `provider_number`. Needs a data migration, so left as-is.
     telnyx_number: String,
     type: {
         type: String,

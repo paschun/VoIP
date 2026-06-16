@@ -254,7 +254,7 @@ methods: {
   async verifyKey (key: any) {
     let getAssertionChallenge
     try {
-      getAssertionChallenge = await this.$post('hardwarekey/login-key', { user: this.activeUser.user._id, title: key.title })
+      getAssertionChallenge = await this.$post('hardwarekey/authentication/challenge', { user: this.activeUser.user._id, title: key.title })
     } catch {}
     if (!getAssertionChallenge) return
     getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
@@ -262,7 +262,7 @@ methods: {
       let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
       newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
       try {
-        const serverResponse = await this.$post('hardwarekey/login', newCredentialInfo)
+        const serverResponse = await this.$post('hardwarekey/authentication/verify', newCredentialInfo)
         if (serverResponse) {
           if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
           Cookies.set('access_token', this.activeUser.token, { expires: 30 })

@@ -1,18 +1,18 @@
-import express, { type Express } from 'express'
+import { Hono } from 'hono'
+import type { Env } from '../factory.ts'
 import * as hardwarekey from '../controller/hardwarekey.controller.ts'
-import auth from '../middleware/auth.middleware.ts'
 
-export default (app: Express) => {
-    const router = express.Router();
-    router.post("/register-key", auth, hardwarekey.registerSession);
-    router.post("/register",auth, hardwarekey.register);
-    router.post("/verify",auth, hardwarekey.verify);
-
-    router.post("/login-key", hardwarekey.loginSession);
-    router.post("/login", hardwarekey.login);
-
-    router.post("/get",auth, hardwarekey.getKey);
-    router.post("/delete",auth, hardwarekey.delete);
-
-    app.use('/api/hardwarekey', router);
-};
+// Routes for `/api/hardwarekey` -- the WebAuthn enrolment + login ceremony plus key management.
+//
+// The collection is REST: `GET /` lists the caller's keys, `DELETE /:id` removes one. The ceremony steps are
+// non-idempotent server actions (they mint/consume one-time challenges), so they stay POST under `registration/*`
+// (authenticated -- a logged-in user adding a key) and `authentication/*` (unauthenticated -- runs during login,
+// before a token exists).
+export const hardwarekeyRoutes = new Hono<Env>()
+  .post('/registration/begin', ...hardwarekey.registrationBegin)
+  .post('/registration/challenge', ...hardwarekey.registrationChallenge)
+  .post('/registration/verify', ...hardwarekey.registrationVerify)
+  .post('/authentication/challenge', ...hardwarekey.authenticationChallenge)
+  .post('/authentication/verify', ...hardwarekey.authenticationVerify)
+  .get('/', ...hardwarekey.listKeys)
+  .delete('/:id', ...hardwarekey.deleteKey)

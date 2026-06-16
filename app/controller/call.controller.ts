@@ -45,10 +45,11 @@ async function recordCall(opts: {
   setting: Types.ObjectId
   direction: 'send' | 'receive'
   number: string // the other party
-  ownNumber: string // our provider number
+  providerNumber: string // our provider number
 }) {
   const user = opts.user
   if (!user) return
+  // findOne/create calls can throw (DB blip, a cast/validation error)
   const contact = await Contact.findOne({ user: { $eq: user }, number: { $eq: opts.number } })
   await Call.create({
     sid: opts.sid,
@@ -56,16 +57,16 @@ async function recordCall(opts: {
     datatype: 'call',
     type: opts.direction,
     number: opts.number,
-    telnyx_number: opts.ownNumber,
+    telnyx_number: opts.providerNumber,
     setting: opts.setting,
     isview: opts.direction === 'send' ? 'true' : 'false',
     ...(contact ? { contact: contact._id } : {}),
   })
 }
 
-/** Notify the owner of `ownNumber` (our provider number) that a call row changed, so their open clients refresh. */
-async function notifyCallOwner(ownNumber: string | null | undefined, otherNumber: string | null | undefined) {
-  const setting = await Setting.findOne({ number: { $eq: ownNumber ?? '' } })
+/** Notify the owner of `providerNumber` (our provider number) that a call row changed, so their open clients refresh. */
+async function notifyCallOwner(providerNumber: string | null | undefined, otherNumber: string | null | undefined) {
+  const setting = await Setting.findOne({ number: { $eq: providerNumber ?? '' } })
   if (setting) getIO().to(setting.user?.toString() ?? '').emit('user_message', { message: 'call', number: otherNumber })
 }
 
@@ -93,7 +94,7 @@ async function applyTelnyxEvent(event: TelnyxCallEvent['data']) {
         if (setting) {
           await recordCall({
             sid: payload.call_session_id ?? '', user: setting.user, setting: setting._id, direction: 'send',
-            number: payload.to ?? '', ownNumber: payload.from ?? '',
+            number: payload.to ?? '', providerNumber: payload.from ?? '',
           })
         }
       }
@@ -143,7 +144,7 @@ async function dialOutbound(c: FormCtx<TwilioVoiceWebhook>) {
       response.dial({ callerId: body.twilio_number ?? '' }).number(phoneNumber)
       await recordCall({
         sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'send',
-        number: phoneNumber, ownNumber: body.twilio_number ?? '',
+        number: phoneNumber, providerNumber: body.twilio_number ?? '',
       })
     }
   } catch (e) {
@@ -172,7 +173,7 @@ async function dialIncoming(c: FormCtx<TwilioInboundWebhook>) {
       response.dial().client().identity(setting.user?.toString() ?? '')
       await recordCall({
         sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'receive',
-        number: body.From ?? '', ownNumber: body.To ?? '',
+        number: body.From ?? '', providerNumber: body.To ?? '',
       })
     }
   } catch (e) {
@@ -196,7 +197,7 @@ async function dialTelnyxSip(c: FormCtx<TwilioInboundWebhook>) {
                 </Response>`
       await recordCall({
         sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'receive',
-        number: body.From ?? '', ownNumber: body.To ?? '',
+        number: body.From ?? '', providerNumber: body.To ?? '',
       })
     }
   } catch (e) {
@@ -217,7 +218,9 @@ async function recordTelnyxStatus(c: Context<Env>) {
       if (parsed.success) await applyTelnyxEvent(parsed.data.data)
       else console.error('Unhandled Telnyx webhook payload', parsed.error)
     } else {
-      await applyStatus(twilioStatusWebhook.parse(await c.req.parseBody()))
+      const parsed = twilioStatusWebhook.safeParse(await c.req.parseBody())
+      if (parsed.success) await applyStatus(parsed.data)
+      else console.error('Unhandled Telnyx TeXML status payload', parsed.error)
     }
   } catch (e) {
     console.error(e)

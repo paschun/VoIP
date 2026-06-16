@@ -1,5 +1,8 @@
 import { Schema, model } from 'mongoose'
 
+// TODO: `Handel` is a misspelling of "handle" -- this maps a WebAuthn *user handle* (`id`, the authenticator-returned
+// random) to its key `username`/owner for credential lookup during login. Rename model -> `Handle` (collection
+// `handels` -> `handles`); needs a data migration, so left as-is for now.
 const handelSchema = new Schema({
     username: String,
     id: String,
