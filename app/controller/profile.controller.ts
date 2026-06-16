@@ -46,7 +46,8 @@ async function getProfile(c: ParamCtx<ProfileIdParam>) {
 
 async function removeProfile(c: ParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
-  const setting = await Setting.findOne({ _id: { $eq: id } })
+  // Scope by user so one user can't delete another's profile by guessing its id (IDOR); a non-owned id 404s.
+  const setting = await Setting.findOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
   if (!setting) throw new HTTPException(404, { message: 'Profile not found!' })
 
   await Message.deleteMany({ setting: setting._id })
