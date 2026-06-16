@@ -284,7 +284,7 @@ export default defineComponent({
       })
     },
     getContact () {
-      this.$post('contact/get-one', { number: this.number })
+      this.$get(`contact/lookup?number=${encodeURIComponent(this.number)}`)
         .then((response) => {
           if (response?.data) {
             this.name = response.data.first_name + ' ' + response.data.last_name

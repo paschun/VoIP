@@ -531,7 +531,7 @@ export default defineComponent({
     },
     onaddContact() {
       // todo: type this api response
-      this.$get("contact/get-all")
+      this.$get("contact")
         .then(data => {
           if (data) {
             this.contacts = data.data;

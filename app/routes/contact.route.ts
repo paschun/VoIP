@@ -1,18 +1,14 @@
-import express, { type Express } from 'express'
+import { Hono } from 'hono'
+import type { Env } from '../factory.ts'
 import * as contact from '../controller/contact.controller.ts'
-import auth from '../middleware/auth.middleware.ts'
 
-export default (app: Express) => {
-    const router = express.Router();
-
-    router.post("/get-one", auth, contact.getOne);
-    router.post("/create", auth, contact.crate);
-    router.post("/update", auth, contact.update);
-    router.post("/delete", auth, contact.delete);
-    router.get("/get-all", auth, contact.getAllContact);
-    router.post("/multiple-add", auth, contact.multipleUpload);
-    router.post("/deleteall", auth, contact.deleteall);
-    
-
-    app.use('/api/contact', router);
-};
+// Hono route group for `/api/contact` (migrated off Express). Mounted via `app.route('/api/contact', contactRoutes)`
+// at the server swap.
+export const contactRoutes = new Hono<Env>()
+  .get('/lookup', ...contact.lookup)
+  .get('/', ...contact.getAll)
+  .post('/', ...contact.create)
+  .post('/bulk', ...contact.bulk)
+  .put('/:id', ...contact.update)
+  .delete('/:id', ...contact.remove)
+  .delete('/', ...contact.removeAll)

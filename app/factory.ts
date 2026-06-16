@@ -18,3 +18,9 @@ export type JsonCtx<T> = Context<Env, string, { in: { json: T }; out: { json: T 
 
 // Same idea for a handler guarded by `pathParams(schema)`: `c.req.valid('param')` is `T`.
 export type ParamCtx<T> = Context<Env, string, { in: { param: T }; out: { param: T } }>
+
+// `queryParams(schema)`: `c.req.valid('query')` is `T`.
+export type QueryCtx<T> = Context<Env, string, { in: { query: T }; out: { query: T } }>
+
+// A handler guarded by both `pathParams` and `jsonBody` (e.g. `PUT /:id`): `valid('param')` and `valid('json')`.
+export type ParamJsonCtx<P, J> = Context<Env, string, { in: { param: P; json: J }; out: { param: P; json: J } }>

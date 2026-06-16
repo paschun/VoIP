@@ -57,7 +57,7 @@
                       </div>
                       <div>
                         <i-bi-pencil-square title="Update" style="cursor: pointer;" @click="updateContact(contact)" />
-                        <i-bi-trash-fill title="Delete" style="cursor: pointer;" @click="deletechat(contact._id)" />
+                        <i-bi-trash-fill title="Delete" style="cursor: pointer;" @click="deleteContact(contact._id)" />
                       </div>
                     </li>
                   </ul>
@@ -289,15 +289,14 @@ export default defineComponent({
     },
     handleSubmit () {
       this.submitted = true
-      // stop here if form is invalid
       this.v$.$touch()
-      if (this.v$.$invalid) {
-        return
-      }
-      const request = this.editId
-        ? { data: { ...this.form, contact_id: this.editId }, url: 'contact/update' }
-        : { data: this.form, url: 'contact/create' }
-      this.$post(request.url, request.data)
+      // stop here if form is invalid
+      if (this.v$.$invalid) return
+
+      const submit = this.editId
+        ? this.$put(`contact/${this.editId}`, this.form)
+        : this.$post('contact', this.form)
+      submit
         .then((response) => {
           if (response) {
             ;(this.$refs['modal-contact'] as any).hide()
@@ -312,7 +311,7 @@ export default defineComponent({
 
     handleSubmit2 () {
       if (this.csvUploadArray2.length > 0) {
-        this.$post('contact/multiple-add', { contacts: this.csvUploadArray2 })
+        this.$post('contact/bulk', { contacts: this.csvUploadArray2 })
           .then(() => {
             ;(this.$refs['modal-contact'] as any).hide()
             this.$emit('onaddContact', true)
@@ -323,7 +322,7 @@ export default defineComponent({
         void notifyError('Please upload valid file!')
       }
     },
-    async deletechat (id: any) {
+    async deleteContact (id: any) {
       const result = await this.$swal.fire({
         icon: 'info',
         title: 'Do you want to delete this contact?',
@@ -336,7 +335,7 @@ export default defineComponent({
       if (!result.isConfirmed) return
 
       try {
-        await this.$post('contact/delete', { contact_id: id })
+        await this.$del(`contact/${id}`)
         notifySuccess('Contact Deleted successfully!')
         this.$emit('onaddContact', true)
         EventBus.$emit('contactAdded', 'delete')
@@ -367,7 +366,7 @@ export default defineComponent({
       if (!result.isConfirmed) return
 
       try {
-        await this.$post('contact/deleteall', {})
+        await this.$del('contact')
         notifySuccess('All contacts deleted successfully')
         this.$emit('onaddContact', true)
       } catch (e) {
