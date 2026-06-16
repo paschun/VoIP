@@ -4,15 +4,16 @@
 export {}
 
 import type Swal from 'sweetalert2'
-import type { ApiPost, ApiGet, ApiPut, ApiPatch } from '@/core/api.plugin.ts'
+import type { ApiPost, ApiGet, ApiPut, ApiPatch, ApiDelete } from '@/core/api.plugin.ts'
 
 declare module 'vue' {
   interface ComponentCustomProperties {
-    // core/api.plugin — see ApiPost/ApiGet/ApiPut/ApiPatch for the contract.
+    // core/api.plugin — see ApiPost/ApiGet/ApiPut/ApiPatch/ApiDelete for the contract.
     $post: ApiPost
     $get: ApiGet
     $put: ApiPut
     $patch: ApiPatch
+    $del: ApiDelete
 
     // vue-sweetalert2's index.d.ts types are written for vue 2, do the vue 3 setup here:
     $swal: typeof Swal

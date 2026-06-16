@@ -11,11 +11,10 @@ import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
 import authRoute from './app/routes/auth.route.ts'
 import settingRoute from './app/routes/setting.route.ts'
-import profileRoute from './app/routes/profile.route.ts'
 import contactRoute from './app/routes/contact.route.ts'
-// NOTE: email and media are migrated to Hono (their route files now export Hono groups, `emailRoutes` / `mediaRoutes`).
-// They are not wired here anymore; they get served by the Hono server at the upcoming server-swap step. The other 6
-// groups still run on Express below.
+// NOTE: email, media and profile are migrated to Hono (their route files now export Hono groups, `emailRoutes` /
+// `mediaRoutes` / `profileRoutes`). They are not wired here anymore; they get served by the Hono server at the upcoming
+// server-swap step. The other 5 groups still run on Express below.
 import callRoute from './app/routes/call.route.ts'
 import hardwarekeyRoute from './app/routes/hardwarekey.route.ts'
 
@@ -128,7 +127,6 @@ app.use('/uploads', express.static('uploads'));
 // Must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
 authRoute(app);
 settingRoute(app);
-profileRoute(app);
 contactRoute(app);
 callRoute(app);
 hardwarekeyRoute(app);

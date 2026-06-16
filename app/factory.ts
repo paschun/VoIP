@@ -15,3 +15,6 @@ export const factory = createFactory<Env>()
 // with this instead of hand-writing the full `Context<Env, …, { in/out }>` triple. Mirror it (`FormCtx`, etc.) if/when
 // a group needs `formBody`.
 export type JsonCtx<T> = Context<Env, string, { in: { json: T }; out: { json: T } }>
+
+// Same idea for a handler guarded by `pathParams(schema)`: `c.req.valid('param')` is `T`.
+export type ParamCtx<T> = Context<Env, string, { in: { param: T }; out: { param: T } }>

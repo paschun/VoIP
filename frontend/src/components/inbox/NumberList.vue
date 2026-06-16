@@ -545,7 +545,7 @@ export default defineComponent({
     getValidString,
     getOneProfile() {
       if (this.activeProfile?._id !== undefined) {
-        this.$post("profile/getdata-one", { setting: this.activeProfile._id })
+        this.$get(`profile/${this.activeProfile._id}`)
           .then(response => {
             if (response) {
               this.activeProfile = response.data;
@@ -636,10 +636,7 @@ export default defineComponent({
       if (!result.isConfirmed) return;
 
       try {
-        const response = await this.$post("profile/delete-profile", {
-          user: this.userdata._id,
-          profile_id: this.activeProfile._id
-        });
+        const response = await this.$del(`profile/${this.activeProfile._id}`);
         if (response.data) {
           notifySuccess("Profile deleted successfully!");
           this.user.api_key = "";

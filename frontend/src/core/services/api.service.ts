@@ -50,6 +50,9 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
     : (await response.text()) || null
 
   if (!response.ok) {
+    // Every non-2xx (404 included) throws here; `handleError` in api.plugin maps any status it doesn't special-case
+    // to a silent `false`, so e.g. a 404 from a by-id GET/DELETE just resolves falsy at the call site. Keep that
+    // behaviour (throw on non-2xx with `status`/`data`) if you rework this.
     const err = new ApiError(`HTTP ${response.status}`)
     err.status = response.status
     err.data = data
@@ -66,8 +69,10 @@ export type ApiClientPost<F = never, D = unknown> = <T = D>(url: string, body?: 
 // PUT/PATCH share POST's call shape (url + JSON body); aliased so the globals can carry method-specific names.
 export type ApiClientPut<F = never, D = unknown> = ApiClientPost<F, D>
 export type ApiClientPatch<F = never, D = unknown> = ApiClientPost<F, D>
+// DELETE shares GET's call shape (url only -- the resource id goes in the path).
+export type ApiClientDelete<F = never, D = unknown> = ApiClientGet<F, D>
 
-export const api: { get: ApiClientGet, post: ApiClientPost, put: ApiClientPut, patch: ApiClientPatch } = {
+export const api: { get: ApiClientGet, post: ApiClientPost, put: ApiClientPut, patch: ApiClientPatch, delete: ApiClientDelete } = {
   /** Send a GET request. Returns the parsed JSON response body. */
   get: <T = unknown>(url: string): Promise<T> => request<T>('GET', url),
 
@@ -78,5 +83,8 @@ export const api: { get: ApiClientGet, post: ApiClientPost, put: ApiClientPut, p
   put: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('PUT', url, body),
 
   /** Send a PATCH request with a JSON body (partial update). Returns the parsed JSON response body. */
-  patch: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('PATCH', url, body)
+  patch: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('PATCH', url, body),
+
+  /** Send a DELETE request. Returns the parsed JSON response body. */
+  delete: <T = unknown>(url: string): Promise<T> => request<T>('DELETE', url)
 }

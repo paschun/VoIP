@@ -93,7 +93,7 @@ export default defineComponent({
       }
     },
     getallProfile () {
-      this.$post('profile/getdata', {})
+      this.$get('profile')
         .then((response) => {
           if (response) {
             this.profiles = response.data
@@ -131,7 +131,7 @@ export default defineComponent({
         return
       }
       this.isLoading = true
-      this.$post('profile/create', this.form)
+      this.$post('profile', this.form)
         .then((response) => {
           if (response) {
             notifySuccess('Profile added successfully!')

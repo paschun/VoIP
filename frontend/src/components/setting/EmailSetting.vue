@@ -177,7 +177,7 @@ export default defineComponent({
         })
     },
     getProfiles () {
-      this.$post<ProfilesResponse>('profile/getdata', {})
+      this.$get<ProfilesResponse>('profile')
         .then((response) => {
           if (response) {
             this.profiles = response.data

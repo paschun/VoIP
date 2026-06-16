@@ -1,15 +1,11 @@
-import express, { type Express } from 'express'
-import * as profileController from '../controller/profile.controller.ts'
-import auth from '../middleware/auth.middleware.ts'
+import { Hono } from 'hono'
+import type { Env } from '../factory.ts'
+import * as profile from '../controller/profile.controller.ts'
 
-export default (app: Express) => {
-    const router = express.Router();
-    //router.post("/register",auth, user.login);
-    router.post("/create",auth, profileController.crateProfile);
-    router.post("/getdata",auth, profileController.getProfile);
-    router.post("/delete-profile",auth, profileController.deleteProfile);
-    
-    router.post("/getdata-one",auth, profileController.getOneProfile);
-    
-    app.use('/api/profile', router);
-};
+// Hono route group for `/api/profile` (migrated off Express). Mounted via `app.route('/api/profile', profileRoutes)`
+// at the server swap.
+export const profileRoutes = new Hono<Env>()
+  .post('/', ...profile.create)
+  .get('/', ...profile.getData)
+  .get('/:id', ...profile.getOne)
+  .delete('/:id', ...profile.deleteProfile)

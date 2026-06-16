@@ -23,3 +23,5 @@ const hook = (
 
 export const jsonBody = <S extends StandardSchemaV1>(schema: S) => sValidator('json', schema, hook)
 export const formBody = <S extends StandardSchemaV1>(schema: S) => sValidator('form', schema, hook)
+// Path-param validation (`/:id`): binds `c.req.valid('param')` to the schema's output type.
+export const pathParams = <S extends StandardSchemaV1>(schema: S) => sValidator('param', schema, hook)
