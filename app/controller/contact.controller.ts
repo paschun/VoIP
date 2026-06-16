@@ -28,6 +28,8 @@ function normalizeNumber(raw: string): string {
 }
 
 async function getContacts(c: Context<Env>) {
+  // collation locale 'en' makes the first_name sort case-insensitive and locale-aware (so 'bob' and 'Bob' order
+  // together); without it Mongo sorts by raw bytes (all uppercase before lowercase).
   // sort `1` == ascending
   const data = await Contact.find({ user: { $eq: c.get('user').id } }).collation({ locale: 'en' }).sort({ first_name: 1 })
   return sendDocs<ContactDoc>(c, data)
@@ -56,13 +58,16 @@ async function createContact(c: JsonCtx<ContactRequest>) {
 
 async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
   const user = c.get('user').id
+  // track `count` to see if we go over max
+  let count = await Contact.countDocuments({ user: { $eq: user } })
   let created = 0
   for (const item of c.req.valid('json').contacts) {
+    if (count >= MAX_CONTACTS) break
     const number = normalizeNumber(item.number)
     const exists = await Contact.findOne({ user: { $eq: user }, number: { $eq: number } })
     if (exists) continue
-    if (await Contact.countDocuments({ user: { $eq: user } }) >= MAX_CONTACTS) continue
     await Contact.create({ user, number, first_name: item.first_name ?? '', last_name: item.last_name ?? '', note: item.note ?? '' })
+    count++
     created++
   }
   // TODO: `data: created` isnt used on the client at all. maybe we can omit it.
@@ -72,7 +77,8 @@ async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
 async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
   const { id } = c.req.valid('param')
   const body = c.req.valid('json')
-  const contact = await Contact.findOne({ _id: { $eq: id } })
+  // Scope by user so a user can't update another's contact by guessing its id (IDOR); a non-owned id 404s.
+  const contact = await Contact.findOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
   if (!contact) throw new HTTPException(404, { message: 'Contact not found!' })
   contact.first_name = body.first_name
   contact.last_name = body.last_name ?? ''
@@ -84,7 +90,8 @@ async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
 
 async function deleteContact(c: ParamCtx<ContactIdParam>) {
   const { id } = c.req.valid('param')
-  const result = await Contact.deleteOne({ _id: { $eq: id } })
+  // Scope by user so a user can only delete their own contacts.
+  const result = await Contact.deleteOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
   if (result.deletedCount === 0) throw new HTTPException(404, { message: 'Contact not found!' })
   return c.json({ data: null } satisfies Ok<null>)
 }

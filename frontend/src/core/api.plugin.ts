@@ -6,9 +6,9 @@ import { api } from '@/core/services/api.service.ts'
 import { ApiError, type ApiClientGet, type ApiClientPost, type ApiClientPut, type ApiClientPatch, type ApiClientDelete } from '@/core/services/api.service.ts'
 
 // Shared API error handler (formerly in core/module/common.module.js).
-// 401 → notify + clear auth + bounce to the app login; 400/409/422 → notify.
+// 401 -> notify + clear auth + bounce to the app login; 400/409/422 -> notify.
 // Always resolves to `false` so callers can guard on a falsy return
-// instead of try/catch — i.e. $post/$get never reject in normal operation.
+// instead of try/catch -- i.e. $post/$get never reject in normal operation.
 const swalError = (text?: string) => Swal.fire({
   title: 'Error',
   text,
@@ -18,15 +18,19 @@ const swalError = (text?: string) => Swal.fire({
 })
 
 const handleError = (err: ApiError): false => {
+  // 401 Unauthorized: not logged in, or the token is missing/expired/invalid -> clear stored auth and go to login.
   if (err.status === 401) {
     void swalError(err.data?.error ?? 'Unauthorized Access!')
     Cookies.remove('access_token')
     Cookies.remove('userdata')
     const path = window.location.pathname.split('/')[1]
     void router.push(`/${path}/`)
+  // 400 Bad Request (malformed/invalid input), 409 Conflict (duplicate, e.g. a name/number that already exists),
+  // 422 Unprocessable (well-formed but breaks a business rule, e.g. the 500-contact cap) -> show the server message.
   } else if (err.status === 400 || err.status === 409 || err.status === 422) {
     void swalError(err.data?.message)
   }
+  // Any other status (404, 5xx, ...) falls through to a silent `false`; callers guard on the falsy return.
   return false
 }
 
