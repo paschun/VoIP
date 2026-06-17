@@ -16,3 +16,9 @@ export const sendDoc = <T extends { _id: string } | null>(c: Context, data: Docu
 /** Array counterpart of `sendDoc` for list endpoints, e.g. `sendDocs<SettingDoc>(c, docs)`. */
 export const sendDocs = <T extends { _id: string }>(c: Context, data: Document[]) =>
   c.json({ data: data as unknown as T[] } satisfies Ok<T[]>)
+
+/**
+ * Acknowledge a provider webhook with a bare 2xx and no body. For callbacks that don't consume a reply (Twilio/Telnyx
+ * status callbacks, Telnyx event webhooks) -- a non-2xx makes the provider retry, but they ignore any body we send.
+ */
+export const ack = (c: Context) => c.body(null, 200)

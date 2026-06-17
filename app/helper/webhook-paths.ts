@@ -10,7 +10,9 @@ export const WEBHOOK_PATHS = {
   twilioStatus: '/api/call/status',
   twilioIncoming: '/api/call/incoming',
   twilioReceiveSms: '/api/setting/receive-sms/twilio',
+  twilioSmsStatus: '/api/setting/sms-status/twilio',
   telnyxVoice: '/api/call/telnyx',
   telnyxStatus: '/api/call/status/telnyx',
   telnyxReceiveSms: '/api/setting/receive-sms/telnyx',
+  telnyxSmsStatus: '/api/setting/sms-status/telnyx',
 } as const

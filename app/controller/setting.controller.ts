@@ -1,1055 +1,620 @@
 import fs from 'node:fs'
 import crypto from 'node:crypto'
-import Validator from 'validatorjs'
 import Telnyx from 'telnyx'
 import moment from 'moment'
 import mongoose from 'mongoose'
 import twilio from 'twilio'
+import nodemailer, { type SendMailOptions } from 'nodemailer'
+import { openpgpEncrypt } from 'nodemailer-openpgp'
+import type { Context } from 'hono'
+import { HTTPException } from 'hono/http-exception'
 
 import Setting from '../model/setting.model.ts'
 import User from '../model/user.model.ts'
 import Message from '../model/message.model.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
-import { sendEmail, combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
+import { combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
+import * as twilioHelper from '../helper/twilio.helper.ts'
+import { WEBHOOK_PATHS } from '../helper/webhook-paths.ts'
 import { getIO } from '../socket.ts'
 import { env } from '../../config/env.ts'
-import * as twilioHelper from '../helper/twilio.helper.ts'
+import { ProviderError } from '../provider-error.ts'
 
-async function downloadToFile(url, destPath) {
-  const response = await fetch(url);
-  if (!response.ok || !response.body) {
-    throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
-  }
-  await fs.promises.writeFile(destPath, response.body);
+import { factory } from '../factory.ts'
+import { auth } from '../middleware/auth.hono.ts'
+import { jsonBody, pathParams, queryParams } from '../validate.ts'
+import { sendDoc, ack } from '../util/respond.hono.ts'
+import type { Env, JsonCtx, ParamCtx, QueryCtx } from '../factory.ts'
+import type { Ok } from '../../shared/api-contracts.ts'
+import type { SettingDoc } from '../../shared/schema/setting.ts'
+import {
+  createSettingBody, type CreateSettingRequest,
+  profileIdParam, type ProfileIdParam,
+  getNumberBody, type GetNumberRequest,
+  sendSmsBody, type SendSmsRequest,
+  conversationsQuery, type ConversationsQuery,
+  messageListBody, type MessageListRequest,
+  conversationParam, type ConversationParam,
+} from '../../shared/contracts/setting.ts'
+
+// todo: check this against email model
+interface SendEmailSetting {
+  host: string
+  port: number | string
+  secure: boolean
+  email: string
+  password: string
+  sender_email: string
+  to_email: string
+  pgpEncryptEnabled?: boolean
+  pgpPublicKey?: string | null
 }
 
-export const deleteKey = async (req, res) => {
-  try {
-    var settingCheck = await Setting.findOne({
-      user: { $eq: req.body.user },
-      _id: { $eq: req.body.profile_id },
-    });
-    try {
-      if (settingCheck.type === "telnyx") {
-        var telnyxClient = new Telnyx({ apiKey: settingCheck.api_key });
-        try {
-          await telnyxClient.phoneNumbers.update(settingCheck.sid, {
-            connection_id: "",
-          });
-        } catch (error) {}
-        if (settingCheck.sip_id) {
-          try {
-            await telnyxHelper.deleteSIPApp(
-              settingCheck.api_key,
-              settingCheck.sip_id
-            );
-          } catch (error) {}
+// nodemailer-openpgp adds these two options on top of the standard mail options; the package ships no types.
+type EncryptableMailOptions = SendMailOptions & { encryptionKeys?: unknown[]; shouldEncrypt?: boolean }
 
-          try {
-            await telnyxHelper.deleteOutboundVoice(
-              settingCheck.api_key,
-              settingCheck.telnyx_outbound
-            );
-          } catch (error) {}
-        }
-        if (settingCheck.telnyx_twiml) {
-          try {
-            await telnyxHelper.deleteTexmlApp(
-              settingCheck.api_key,
-              settingCheck.telnyx_twiml
-            );
-          } catch (error) {}
-        }
-        try {
-          await telnyxClient.phoneNumbers.messaging.update(settingCheck.sid, {
-            messaging_profile_id: "",
-          });
-        } catch (error) {}
-        try {
-          await telnyxClient.messagingProfiles.delete(settingCheck.setting);
-        } catch (error) {}
-      } else {
-        if (settingCheck.app_key) {
-          try {
-            await twilioHelper.removeAPIKey(
-              settingCheck.twilio_sid,
-              settingCheck.twilio_token,
-              settingCheck.app_key
-            );
-          } catch (error) {}
-        }
-        if (settingCheck.twiml_app) {
-          try {
-            await twilioHelper.deleteTwiml(
-              settingCheck.twilio_sid,
-              settingCheck.twilio_token,
-              settingCheck.twiml_app
-            );
-          } catch (error) {}
-        }
-        const twilioClient = twilio(
-          settingCheck.twilio_sid,
-          settingCheck.twilio_token
-        );
-        twilioClient.incomingPhoneNumbers(settingCheck.sid).update({
-          smsUrl: "",
-          voiceUrl: "",
-          statusCallback: "",
-        });
-      }
-    } catch (error) {}
-    settingCheck.api_key = null;
-    settingCheck.number = null;
-    settingCheck.setting = null;
-    settingCheck.sid = null;
-    settingCheck.twilio_sid = null;
-    settingCheck.twilio_token = null;
-
-    settingCheck.app_key = null;
-    settingCheck.app_secret = null;
-    settingCheck.twiml_app = null;
-    settingCheck.sip_id = null;
-    settingCheck.sip_username = null;
-    settingCheck.sip_password = null;
-    settingCheck.telnyx_twiml = null;
-    settingCheck.telnyx_outbound = null;
-
-    settingCheck.save();
-    if (settingCheck) {
-      res.send({
-        status: true,
-        message: "Setting Deleted!",
-        data: settingCheck,
-      });
-    } else {
-      res
-        .status(400)
-        .json({ status: "false", message: "Setting not deleted!" });
-    }
-  } catch (error) {
-    res.status(400).json({ status: "false", message: "Setting not deleted!" });
-  }
-};
-export const create = async (req, res) => {
-  try {
-    if (req.body.type == "telnyx") {
-      let rules = {
-        api_key: "required",
-        number: "required",
-        user: "required",
-        profile: "required",
-      };
-      let validation = new Validator(req.body, rules);
-      if (validation.passes()) {
-        var user = await User.findOne({ _id: { $eq: req.body.user } });
-        if (user) {
-          var firstSettingCheck = await Setting.findOne({
-            _id: { $not: { $eq: req.body.setting } },
-            number: { $eq: req.body.number },
-          });
-          if (firstSettingCheck) {
-            res
-              .status(400)
-              .json({
-                status: "false",
-                message: "Number already assigned to another profile!",
-              });
-          } else {
-            var settingStore = false;
-            var settingCheck = await Setting.findOne({
-              user: { $eq: req.body.user },
-              _id: { $eq: req.body.setting },
-            });
-            if (settingCheck) {
-              settingCheck.api_key = req.body.api_key;
-              settingCheck.number = req.body.number;
-              settingCheck.sid = req.body.sid;
-              settingCheck.profile = req.body.profile;
-              settingCheck.type = "telnyx";
-
-              if (req.body.override === "true") {
-                if (settingCheck.telnyx_twiml) {
-                  await telnyxHelper.updateTexmlApp(
-                    req.body.api_key,
-                    settingCheck.telnyx_twiml
-                  );
-                } else {
-                  var twimlTel = await telnyxHelper.createTexmlApp(
-                    req.body.api_key
-                  );
-                  settingCheck.telnyx_twiml = twimlTel.data.id;
-                }
-                if (settingCheck.telnyx_outbound) {
-                  // telnyxHelper.updateTexmlApp(req.body.api_key, settingCheck.telnyx_twiml)
-                } else {
-                  var outboundTel = await telnyxHelper.createOutboundVoice(
-                    req.body.api_key
-                  );
-                  settingCheck.telnyx_outbound = outboundTel.data.id;
-                }
-
-                if (settingCheck.sip_id) {
-                  await telnyxHelper.updateSIPApp(
-                    req.body.api_key,
-                    settingCheck.sip_id,
-                    settingCheck.telnyx_outbound
-                  );
-                } else {
-                  // console.log('==================================================================')
-                  // console.log(settingCheck.telnyx_outbound)
-                  var sipTel = await telnyxHelper.createSIPApp(
-                    req.body.api_key,
-                    req.user.id,
-                    settingCheck.telnyx_outbound
-                  );
-                  //console.log('==================================================================')
-                  // console.log(sipTel.data.id)
-                  settingCheck.sip_id = sipTel.data.id;
-                  settingCheck.sip_username = sipTel.data.user_name;
-                  settingCheck.sip_password = sipTel.data.password;
-                }
-              }
-
-              settingCheck.save();
-              var save = settingCheck;
-              if (!settingCheck.setting) {
-                settingStore = true;
-              }
-            } else {
-              var telynxData = {
-                api_key: req.body.api_key,
-                sid: req.body.sid,
-                number: req.body.number,
-                user: req.body.user,
-                profile: req.body.profile,
-                type: "telnyx",
-              };
-              var save = await Setting.create(telynxData);
-              settingStore = true;
-              var settingCheck = await Setting.findOne({
-                user: { $eq: req.body.user },
-                _id: { $eq: req.body.setting },
-              });
-            }
-            if (save) {
-              if (settingStore) {
-                var saveTelnyxSetting = await new Telnyx({
-                  apiKey: req.body.api_key,
-                }).messagingProfiles.create({
-                  name: "VoIP sms Web Application",
-                  enabled: true,
-                  webhook_url: combineURLs(
-                    env.BASE_URL,
-                    "api/setting/receive-sms/",
-                    req.body.type
-                  ),
-                  whitelisted_destinations: ["*"]
-                });
-                var telnyxSetting = saveTelnyxSetting.data.id;
-              } else {
-                await new Telnyx({ apiKey: req.body.api_key }).messagingProfiles.update(
-                  settingCheck.setting,
-                  {
-                    webhook_url: combineURLs(
-                      env.BASE_URL,
-                      "api/setting/receive-sms/",
-                      req.body.type
-                    ),
-                  }
-                );
-                var telnyxSetting = settingCheck.setting;
-              }
-              settingCheck.setting = telnyxSetting;
-              settingCheck.save();
-              await new Telnyx({
-                apiKey: req.body.api_key,
-              }).phoneNumbers.messaging.update(req.body.sid, {
-                messaging_profile_id: telnyxSetting,
-              });
-              if (req.body.override === "true") {
-                await new Telnyx({ apiKey: req.body.api_key }).phoneNumbers.update(
-                  req.body.sid,
-                  { connection_id: settingCheck.telnyx_twiml }
-                );
-              }
-              res.send({
-                status: true,
-                message: "setting saved!",
-                data: settingCheck,
-              });
-            } else {
-              res
-                .status(400)
-                .json({ status: "false", message: "Setting not saved!" });
-            }
-          }
-        } else {
-          res
-            .status(400)
-            .json({ status: "false", message: "Something is wrong!" });
-        }
-      } else {
-        let rules2 = {
-          profile: "required",
-        };
-        let validation2 = new Validator(req.body, rules2);
-        if (validation2.passes()) {
-          var user = await User.findOne({ _id: { $eq: req.body.user } });
-          if (user) {
-            var firstSettingCheck = await Setting.findOne({
-              _id: { $eq: req.body.setting },
-            });
-            if (firstSettingCheck) {
-              firstSettingCheck.profile = req.body.profile;
-              firstSettingCheck.save();
-              res.send({
-                status: true,
-                message: "setting saved!",
-                data: settingCheck,
-              });
-            } else {
-              res
-                .status(400)
-                .json({ status: "false", message: "setting not found!" });
-            }
-          } else {
-            res
-              .status(400)
-              .json({ status: "false", message: "Something is wrong!" });
-          }
-        } else {
-          res
-            .status(419)
-            .send({ status: false, errors: validation2.errors, data: [] });
-        }
-      }
-    } else {
-      //twilio setting
-      let rules = {
-        twilio_sid: "required",
-        twilio_token: "required",
-        twilio_number: "required",
-        sid: "required",
-        user: "required",
-        profile: "required",
-      };
-      let validation = new Validator(req.body, rules);
-      if (validation.passes()) {
-        var user = await User.findOne({ _id: { $eq: req.body.user } });
-        if (user) {
-          var firstSettingCheck = await Setting.findOne({
-            _id: { $not: { $eq: req.body.setting } },
-            number: { $eq: req.body.twilio_number },
-          });
-          if (firstSettingCheck) {
-            res
-              .status(400)
-              .json({
-                status: "false",
-                message: "Number already assigned to another profile!",
-              });
-          } else {
-            var settingStore = false;
-            var settingCheck = await Setting.findOne({
-              user: { $eq: req.body.user },
-              _id: { $eq: req.body.setting },
-            });
-            if (settingCheck) {
-              settingCheck.api_key = null;
-              settingCheck.number = req.body.twilio_number;
-              settingCheck.sid = req.body.sid;
-              settingCheck.twilio_sid = req.body.twilio_sid;
-              settingCheck.twilio_token = req.body.twilio_token;
-              settingCheck.profile = req.body.profile;
-              settingCheck.type = "twilio";
-              if (req.body.override === "true") {
-                if (settingCheck.twiml_app) {
-                  await twilioHelper.updateTwiml(
-                    req.body.twilio_sid,
-                    req.body.twilio_token,
-                    settingCheck.twiml_app
-                  );
-                } else {
-                  var twiml_app = await twilioHelper.creatTwiml(
-                    req.body.twilio_sid,
-                    req.body.twilio_token
-                  );
-                  settingCheck.twiml_app = twiml_app;
-                }
-                if (settingCheck.app_key) {
-                } else {
-                  var appData = await twilioHelper.creatAPIKey(
-                    req.body.twilio_sid,
-                    req.body.twilio_token
-                  );
-                  settingCheck.app_key = appData.sid;
-                  settingCheck.app_secret = appData.secret;
-                }
-              }
-              var save = settingCheck.save();
-            } else {
-              var twilioData = {
-                number: req.body.twilio_number,
-                sid: req.body.sid,
-                twilio_sid: req.body.twilio_sid,
-                twilio_token: req.body.twilio_token,
-                user: req.body.user,
-                type: "twilio",
-                profile: req.body.profile,
-              };
-              var save = await Setting.create(twilioData);
-            }
-          }
-          if (save) {
-            const client = new twilio(
-              req.body.twilio_sid,
-              req.body.twilio_token
-            );
-            if (req.body.override === "true") {
-              var twilioUpdatedata = {
-                smsUrl: combineURLs(
-                  env.BASE_URL,
-                  "api/setting/receive-sms/",
-                  req.body.type
-                ),
-                voiceUrl: combineURLs(
-                  env.BASE_URL,
-                  "api/call/incoming"
-                ),
-                statusCallback: combineURLs(
-                  env.BASE_URL,
-                  "api/call/status"
-                ),
-                voiceApplicationSid: "",
-              };
-            } else {
-              var twilioUpdatedata = {
-                smsUrl:
-                  env.BASE_URL +
-                  "api/setting/receive-sms/" +
-                  req.body.type,
-              };
-            }
-            await client
-              .incomingPhoneNumbers(req.body.sid)
-              .update(twilioUpdatedata);
-            res.send({
-              status: true,
-              message: "setting saved!",
-              data: settingCheck,
-            });
-          } else {
-            res
-              .status(400)
-              .json({ status: "false", message: "Setting not saved!" });
-          }
-        } else {
-          res
-            .status(400)
-            .json({ status: "false", message: "Something is wrong!" });
-        }
-      } else {
-        let rules2 = {
-          profile: "required",
-        };
-        let validation2 = new Validator(req.body, rules2);
-        if (validation2.passes()) {
-          var user = await User.findOne({ _id: { $eq: req.body.user } });
-          if (user) {
-            var firstSettingCheck = await Setting.findOne({
-              _id: { $eq: req.body.setting },
-            });
-            if (firstSettingCheck) {
-              firstSettingCheck.profile = req.body.profile;
-              firstSettingCheck.save();
-              res.send({
-                status: true,
-                message: "setting saved!",
-                data: settingCheck,
-              });
-            } else {
-              res
-                .status(400)
-                .json({ status: "false", message: "setting not found!" });
-            }
-          } else {
-            res
-              .status(400)
-              .json({ status: "false", message: "Something is wrong!" });
-          }
-        } else {
-          res
-            .status(419)
-            .send({ status: false, errors: validation2.errors, data: [] });
-        }
-        // res.status(419).send({status: false, errors:validation.errors, data: []});
-      }
-    }
-  } catch (error) {
-    // console.log(error)
-    res.status(400).send({ status: false, message: error.message, data: [] });
-  }
-};
-export const getSetting = async (req, res) => {
-  try {
-    let rules = {
-      setting: "required",
-    };
-    let validation = new Validator(req.body, rules);
-    if (validation.passes()) {
-      var settingCheck = await Setting.findOne({
-        user: { $eq: req.user.id },
-        _id: { $eq: req.body.setting },
-      });
-      if (settingCheck) {
-        res.send({
-          status: true,
-          message: "setting data!",
-          data: settingCheck,
-        });
-      } else {
-        res
-          .status(400)
-          .json({ status: "false", message: "Setting not found!" });
-      }
-    } else {
-      res
-        .status(419)
-        .send({ status: false, errors: validation.errors, data: [] });
-    }
-  } catch (error) {
-    res.status(400).send({ status: false, errors: error.message, data: [] });
-  }
-};
-
-export const getNumber = async (req, res) => {
-  try {
-    if (req.body.type === "telnyx") {
-      let rules = {
-        api_key: "required",
-      };
-      let validation = new Validator(req.body, rules);
-      if (validation.passes()) {
-        const phoneNumber = await new Telnyx({
-          apiKey: req.body.api_key,
-        }).phoneNumbers.list();
-        res.send({
-          status: true,
-          message: "Phone number list retrieved.",
-          // todo: could probably flatten this if we changed the frontend
-          data: { data: phoneNumber.data },
-        });
-      } else {
-        res
-          .status(419)
-          .send({ status: false, errors: validation.errors, data: [] });
-      }
-    } else if (req.body.type === "twilio") {
-      let rules = {
-        twilio_sid: "required",
-        twilio_token: "required",
-      };
-      let validation = new Validator(req.body, rules);
-      if (validation.passes()) {
-        const client = new twilio(req.body.twilio_sid, req.body.twilio_token);
-        const numbers = await client.incomingPhoneNumbers.list();
-        res.send({
-          status: true,
-          message: "Phone number list retrieved.",
-          data: numbers,
-        });
-      } else {
-        res
-          .status(419)
-          .send({ status: false, errors: validation.errors, data: [] });
-      }
-    }
-  } catch (error) {
-    res.status(400).send({ status: false, errors: error.message, data: [] });
-  }
-};
-
-export const sendSms = async (req, res) => {
-  try {
-    let rules = {
-      user: "required",
-      numbers: "required",
-      profile: "required",
-    };
-    let validation = new Validator(req.body, rules);
-    if (validation.passes()) {
-      var settingCheck = await Setting.findOne({
-        user: { $eq: req.body.user },
-        _id: { $eq: req.body.profile._id },
-      });
-      if (settingCheck) {
-        if (settingCheck.type == "twilio") {
-          const twilioClient = twilio(
-            settingCheck.twilio_sid,
-            settingCheck.twilio_token
-          );
-          var arrMessageData: any[] = [];
-          for (var i = 0; i < req.body.numbers.length; i++) {
-            var toNumber = req.body.numbers[i];
-            toNumber = toNumber
-              .replace(/\s/g, "")
-              .replace(/-/g, "")
-              .replace(/\)/g, "")
-              .replace(/\(/g, "");
-            var sendNumber = toNumber.length;
-            if (sendNumber == 10) {
-              toNumber = `+1${toNumber}`;
-            }
-            var twilioParams = {
-              body: req.body.message,
-              from: settingCheck.number,
-              to: toNumber,
-              statusCallback: combineURLs(
-                env.BASE_URL,
-                "api/setting/sms-status/twilio"
-              ),
-              ...(req.body.media.length > 0 ? { mediaUrl: req.body.media } : {}),
-            };
-            //media
-            var sendSms = await twilioClient.messages.create(twilioParams);
-            if (sendSms.sid !== undefined) {
-              var messageData: Record<string, any> = {
-                sid: sendSms.sid,
-                user: req.body.user,
-                number: toNumber,
-                telnyx_number: settingCheck.number,
-                type: "send",
-                status: "sent",
-                isview: "true",
-                message: req.body.message,
-                setting: settingCheck._id,
-              };
-              var contact = await Contact.findOne({
-                user: { $eq: req.body.user },
-                number: { $eq: toNumber },
-              });
-              if (contact) {
-                messageData.contact = contact._id;
-              } else {
-                toNumber = toNumber.slice(-10);
-                var contact2 = await Contact.findOne({
-                  user: { $eq: req.body.user },
-                  number: { $eq: toNumber },
-                });
-                if (contact2) {
-                  messageData.contact = contact2._id;
-                }
-              }
-              if (req.body.media.length > 0) {
-                messageData.media = JSON.stringify(req.body.media);
-              }
-              arrMessageData.push(messageData);
-            }
-          }
-        } else {
-          const telnyxClient = new Telnyx({ apiKey: settingCheck.api_key });
-          var arrMessageData: any[] = [];
-          for (var i = 0; i < req.body.numbers.length; i++) {
-            //var sendNumber = req.body.numbers[i].length
-            var toNumber = req.body.numbers[i];
-            toNumber = toNumber
-              .replace(/\s/g, "")
-              .replace(/-/g, "")
-              .replace(/\)/g, "")
-              .replace(/\(/g, "");
-            var sendNumber = toNumber.length;
-            if (sendNumber == 10) {
-              toNumber = `+1${toNumber}`;
-            }
-            var telnyxParams = {
-              from: settingCheck.number, // Your Telnyx number
-              to: toNumber,
-              text: req.body.message,
-              webhook_url: combineURLs(
-                env.BASE_URL,
-                "api/setting/sms-status/telnyx"
-              ),
-              ...(req.body.media.length > 0 ? { media_urls: req.body.media } : {}),
-            };
-            var sendSms = await telnyxClient.messages.send(telnyxParams);
-            if (sendSms.data.id !== undefined) {
-              var messageData: Record<string, any> = {
-                sid: sendSms.data.id,
-                user: req.body.user,
-                number: toNumber,
-                telnyx_number: settingCheck.number,
-                type: "send",
-                status: "sent",
-                isview: "true",
-                message: req.body.message,
-                setting: settingCheck._id,
-              };
-              var contact = await Contact.findOne({
-                user: { $eq: req.body.user },
-                number: { $eq: toNumber },
-              });
-              if (contact) {
-                messageData.contact = contact._id;
-              } else {
-                toNumber = toNumber.slice(-10);
-                var contact2 = await Contact.findOne({
-                  user: { $eq: req.body.user },
-                  number: { $eq: toNumber },
-                });
-                if (contact2) {
-                  messageData.contact = contact2._id;
-                }
-              }
-              if (req.body.media.length > 0) {
-                messageData.media = JSON.stringify(req.body.media);
-              }
-              //media
-              arrMessageData.push(messageData);
-            }
-          }
-        }
-        var messages = await Message.create(arrMessageData);
-        if (messages) {
-          res.send({
-            status: true,
-            message: "Message sent successfully!",
-            data: messages,
-          });
-        } else {
-          res
-            .status(400)
-            .json({ status: "false", message: "Message not sent!" });
-        }
-      } else {
-        res.status(400).json({ status: "false", message: "Message not sent!" });
-      }
-    } else {
-      res
-        .status(419)
-        .send({ status: false, errors: validation.errors, data: [] });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(400).send({ status: false, message: error.message, data: [] });
-  }
-};
-
-export const receiveSms = async (req, res) => {
-  try {
-    var media: any[] = [];
-    if (req.params.type !== undefined && req.params.type == "twilio") {
-      var messageText = req.body.Body;
-      var toNumber = req.body.To;
-      var fromnumber = req.body.From;
-      var sid = req.body.SmsSid;
-      if (req.body.NumMedia > 0) {
-        var fackMedia: any[] = [];
-        for (var i = 0; i < req.body.NumMedia; i++) {
-          var tMedia = `MediaUrl${i}`;
-          var tMediaType = `MediaContentType${i}`;
-          const url = req.body[tMedia]; // link to file you want to download
-          //var name = `uploads/${Date.now()}${req.body.SmsSid}.png`;
-          // var name = crypto.randomBytes(24).toString('hex');
-          if (tMediaType == "image/gif") {
-            var name = `${crypto.randomBytes(24).toString("hex")}.gif`;
-          } else if (tMediaType == "image/jpeg") {
-            var name = `${crypto.randomBytes(24).toString("hex")}.jpg`;
-          } else {
-            var name = `${crypto.randomBytes(24).toString("hex")}.png`;
-          }
-          const date = moment().format(uploadFolderFormat);
-          try {
-            await fs.promises.access("./uploads/" + date);
-          } catch (e) {
-            await fs.promises.mkdir("./uploads/" + date);
-          }
-
-          downloadToFile(url, `./uploads/${date}/${name}`)
-            .then(() => console.log("Image downloaded."))
-            .catch((err) => console.error("Image download failed:", err));
-          savedName = combineURLs(
-            env.BASE_URL,
-            "uploads",
-            date,
-            name
-          );
-          fackMedia.push(savedName);
-          /*request(url).pipe(fs.createWriteStream(name))
-                    .on('close', () => console.log('Image downloaded.'));
-                    savedName = combineURLs(
-                      env.BASE_URL,
-                      "uploads",
-                      date,
-                      name
-                    );
-                    fackMedia.push(savedName)*/
-        }
-        media = fackMedia;
-      }
-    } else {
-      var messageData = req.body.data.payload;
-      var toNumber = messageData.to[0].phone_number;
-      var fromnumber = messageData.from.phone_number;
-      var sid = messageData.id;
-      var messageText = messageData.text;
-      if (messageData.media.length > 0) {
-        var fackMedia: any[] = [];
-        for (let i = 0; i < messageData.media.length; i++) {
-          const url = messageData.media[i].url; // link to file you want to download
-          // var name = `uploads/${Date.now()}${sid}.png`;
-          if (messageData.media[i].content_type == "image/gif") {
-            var name = `${crypto.randomBytes(24).toString("hex")}.gif`;
-          } else if (messageData.media[i].content_type == "image/jpeg") {
-            var name = `${crypto.randomBytes(24).toString("hex")}.jpg`;
-          } else {
-            var name = `${crypto.randomBytes(24).toString("hex")}.png`;
-          }
-
-          const date = moment().format(uploadFolderFormat);
-          try {
-            await fs.promises.access("./uploads/" + date);
-          } catch (e) {
-            await fs.promises.mkdir("./uploads/" + date);
-          }
-
-          downloadToFile(url, `./uploads/${date}/${name}`)
-            .then(() => console.log("Image downloaded."))
-            .catch((err) => console.error("Image download failed:", err));
-          savedName = combineURLs(
-            env.BASE_URL,
-            "uploads",
-            date,
-            name
-          );
-          fackMedia.push(savedName);
-          // fackMedia.push(messageData.media[i].url)
-        }
-        media = fackMedia;
-      }
-    }
-    var settingCheck = await Setting.findOne({ number: { $eq: toNumber } });
-    if (settingCheck) {
-      var messageData2: Record<string, any> = {
-        sid: sid,
-        user: settingCheck.user,
-        number: fromnumber,
-        telnyx_number: toNumber,
-        type: "receive",
-        status: "received",
-        isview: "false",
-        message: messageText,
-        setting: settingCheck._id,
-        media: JSON.stringify(media),
-      };
-
-      var contact = await Contact.findOne({
-        user: { $eq: settingCheck.user },
-        number: { $eq: fromnumber },
-      });
-
-      if (contact) {
-        messageData2.contact = contact._id;
-      } else {
-        contact = await Contact.findOne({
-          user: { $eq: settingCheck.user },
-          number: { $eq: fromnumber },
-        });
-        if (contact) {
-          messageData2.contact = contact._id;
-        }
-      }
-
-      getIO().to(settingCheck.user.toString()).emit("user_message", {
-        message: messageText,
-        number: fromnumber,
-        telnyx_number: toNumber,
-        toUser: settingCheck.user,
-        contact,
-        type: "receive",
-        status: "received",
-        isview: false,
-        settings: settingCheck,
-      });
-      console.log("settingCheck ===>", settingCheck);
-      if (
-        settingCheck.emailnotification !== undefined &&
-        settingCheck.emailnotification == "true"
-      ) {
-        const emailSetting = await Email.findOne({
-          user: { $eq: settingCheck.user },
-        });
-        if (emailSetting) {
-          try {
-            const emailData = {
-              subject: `Message from ${fromnumber}`,
-              text: "Message received",
-              html: `Received Message on ${toNumber}:<br><hr><br><p>${messageText}</p><br><hr><br>`,
-            };
-            sendEmail(emailSetting, emailData);
-          } catch (error) {
-            // console.log(error)
-          }
-        }
-      }
-      // global.io.to(settingCheck.number).emit('new_message',{message: messageText, number:fromnumber});
-      let messageSavedResponse = await Message.create(messageData2);
-      console.log("messageSavedResponse ===:", messageSavedResponse);
-    }
-    const VoiceResponse = twilio.twiml.VoiceResponse;
-    const response = new VoiceResponse();
-    console.log(response.toString());
-    res.set("Content-Type", "text/xml");
-    if (settingCheck && settingCheck.type == "twilio") {
-      sleep(settingCheck, req.body.SmsSid);
-    }
-    res.send();
-  } catch (error) {
-    res.status(400).json({ status: "false", message: "something went wrong" });
-  }
-};
-
-function sleep(settingCheck, sid) {
+/** Send an SMTP (optionally PGP-encrypted) email notification. Best-effort: resolves false instead of rejecting. */
+function sendEmail(setting: SendEmailSetting, email: { subject: string; text: string; html: string }): Promise<boolean> {
   return new Promise((resolve) => {
-    setTimeout(async () => {
-      const client = twilio(settingCheck.twilio_sid, settingCheck.twilio_token);
+    try {
+      // todo: dont cast to number, ideally handled in validation
+      const transporter = nodemailer.createTransport({
+        host: setting.host,
+        port: Number(setting.port),
+        secure: setting.secure, // true for 465, false for other ports
+        auth: { user: setting.email, pass: setting.password },
+      })
+      const mailOptions: EncryptableMailOptions = {
+        from: setting.sender_email,
+        to: setting.to_email,
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
+      }
+      if (setting.pgpEncryptEnabled) {
+        transporter.use('stream', openpgpEncrypt())
+        mailOptions.encryptionKeys = [setting.pgpPublicKey]
+        mailOptions.shouldEncrypt = true
+      }
+      void transporter.sendMail(mailOptions)
+      resolve(true)
+    } catch (e) {
+      console.error(e)
+      resolve(false)
+    }
+  })
+}
 
+/** Stream a remote file (provider-hosted MMS media) to disk. */
+async function downloadToFile(url: string, destPath: string) {
+  const response = await fetch(url)
+  if (!response.ok || !response.body) {
+    throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`)
+  }
+  await fs.promises.writeFile(destPath, response.body)
+}
+
+/** Disconnect a profile from its provider (best-effort teardown) and null out its stored credentials. */
+async function resetProviderConfig(c: ParamCtx<ProfileIdParam>) {
+  const userId = c.get('user').id
+  const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: c.req.valid('param').id } })
+  if (!setting) throw new HTTPException(404, { message: 'Setting not found!' })
+
+  try {
+    if (setting.type === 'telnyx') {
+      const client = new Telnyx({ apiKey: setting.api_key ?? '' })
+      try { await client.phoneNumbers.update(setting.sid ?? '', { connection_id: '' }) } catch { /* ignore */ }
+      if (setting.sip_id) {
+        try { await telnyxHelper.deleteSIPApp(setting.api_key ?? '', setting.sip_id) } catch { /* ignore */ }
+        if (setting.telnyx_outbound) {
+          try { await telnyxHelper.deleteOutboundVoice(setting.api_key ?? '', setting.telnyx_outbound) } catch { /* ignore */ }
+        }
+      }
+      if (setting.telnyx_twiml) {
+        try { await telnyxHelper.deleteTexmlApp(setting.api_key ?? '', setting.telnyx_twiml) } catch { /* ignore */ }
+      }
+      try { await client.phoneNumbers.messaging.update(setting.sid ?? '', { messaging_profile_id: '' }) } catch { /* ignore */ }
+      if (setting.setting) { try { await client.messagingProfiles.delete(setting.setting) } catch { /* ignore */ } }
+    } else {
+      if (setting.app_key) {
+        try {
+          await twilioHelper.removeAPIKey(setting.twilio_sid ?? '', setting.twilio_token ?? '', setting.app_key)
+        } catch { /* ignore */ }
+      }
+      if (setting.twiml_app) {
+        try {
+          await twilioHelper.deleteTwiml(setting.twilio_sid ?? '', setting.twilio_token ?? '', setting.twiml_app)
+        } catch { /* ignore */ }
+      }
+      const twilioClient = twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '')
+      await twilioClient.incomingPhoneNumbers(setting.sid ?? '').update({ smsUrl: '', voiceUrl: '', statusCallback: '' })
+    }
+  } catch { /* best-effort: a failed provider teardown must not block clearing local credentials */ }
+
+  setting.api_key = null
+  setting.number = null
+  setting.setting = null
+  setting.sid = null
+  setting.twilio_sid = null
+  setting.twilio_token = null
+  setting.app_key = null
+  setting.app_secret = null
+  setting.twiml_app = null
+  setting.sip_id = null
+  setting.sip_username = null
+  setting.sip_password = null
+  setting.telnyx_twiml = null
+  setting.telnyx_outbound = null
+  await setting.save()
+  return sendDoc<SettingDoc>(c, setting)
+}
+
+/** Create or update a profile's provider config; dispatches on the provider type. */
+async function saveProviderConfig(c: JsonCtx<CreateSettingRequest>) {
+  const userId = c.get('user').id
+  const body = c.req.valid('json')
+  if (!(await User.findOne({ _id: { $eq: userId } }))) {
+    throw new HTTPException(404, { message: 'Something is wrong!' })
+  }
+  return body.type === 'telnyx' ? saveTelnyxConfig(c, userId, body) : saveTwilioConfig(c, userId, body)
+}
+
+/** Rename an existing profile when only `profile` (no provider credentials) is supplied. */
+async function renameProfile(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
+  const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: body.setting } })
+  if (!setting) throw new HTTPException(404, { message: 'setting not found!' })
+  setting.profile = body.profile
+  await setting.save()
+  return sendDoc<SettingDoc>(c, setting)
+}
+
+async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
+  const { api_key, number, sid } = body
+  if (!api_key || !number) return renameProfile(c, userId, body)
+
+  const dup = await Setting.findOne({ _id: { $not: { $eq: body.setting } }, number: { $eq: number } })
+  if (dup) throw new HTTPException(409, { message: 'Number already assigned to another profile!' })
+
+  let setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: body.setting } })
+  let provisionMessagingProfile = false
+  if (setting) {
+    setting.api_key = api_key
+    setting.number = number
+    setting.sid = sid ?? null
+    setting.profile = body.profile
+    setting.type = 'telnyx'
+    if (body.override === 'true') {
+      if (setting.telnyx_twiml) {
+        await telnyxHelper.updateTexmlApp(api_key, setting.telnyx_twiml)
+      } else {
+        const texml = await telnyxHelper.createTexmlApp(api_key)
+        setting.telnyx_twiml = texml.data?.id ?? null
+      }
+      if (!setting.telnyx_outbound) {
+        const outbound = await telnyxHelper.createOutboundVoice(api_key)
+        setting.telnyx_outbound = outbound.data?.id ?? null
+      }
+      if (setting.sip_id) {
+        await telnyxHelper.updateSIPApp(api_key, setting.sip_id, setting.telnyx_outbound ?? '')
+      } else {
+        const sip = await telnyxHelper.createSIPApp(api_key, userId, setting.telnyx_outbound ?? '')
+        setting.sip_id = sip.data?.id ?? null
+        setting.sip_username = sip.data?.user_name ?? null
+        setting.sip_password = sip.data?.password ?? null
+      }
+    }
+    await setting.save()
+    if (!setting.setting) provisionMessagingProfile = true
+  } else {
+    setting = await Setting.create({ api_key, sid: sid ?? null, number, user: userId, profile: body.profile, type: 'telnyx' })
+    provisionMessagingProfile = true
+  }
+
+  const client = new Telnyx({ apiKey: api_key })
+  let messagingProfileId: string
+  if (provisionMessagingProfile) {
+    const created = await client.messagingProfiles.create({
+      name: 'VoIP sms Web Application',
+      enabled: true,
+      webhook_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxReceiveSms),
+      whitelisted_destinations: ['*'],
+    })
+    messagingProfileId = created.data?.id ?? ''
+  } else {
+    await client.messagingProfiles.update(setting.setting ?? '', {
+      webhook_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxReceiveSms),
+    })
+    messagingProfileId = setting.setting ?? ''
+  }
+  setting.setting = messagingProfileId
+  await setting.save()
+  await client.phoneNumbers.messaging.update(sid ?? '', { messaging_profile_id: messagingProfileId })
+  if (body.override === 'true') {
+    await client.phoneNumbers.update(sid ?? '', { connection_id: setting.telnyx_twiml ?? '' })
+  }
+  return sendDoc<SettingDoc>(c, setting)
+}
+
+async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
+  const { twilio_sid, twilio_token, twilio_number, sid } = body
+  if (!twilio_sid || !twilio_token || !twilio_number || !sid) return renameProfile(c, userId, body)
+
+  const dup = await Setting.findOne({ _id: { $not: { $eq: body.setting } }, number: { $eq: twilio_number } })
+  if (dup) throw new HTTPException(409, { message: 'Number already assigned to another profile!' })
+
+  let setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: body.setting } })
+  if (setting) {
+    setting.api_key = null
+    setting.number = twilio_number
+    setting.sid = sid
+    setting.twilio_sid = twilio_sid
+    setting.twilio_token = twilio_token
+    setting.profile = body.profile
+    setting.type = 'twilio'
+    if (body.override === 'true') {
+      if (setting.twiml_app) {
+        await twilioHelper.updateTwiml(twilio_sid, twilio_token, setting.twiml_app)
+      } else {
+        const twimlApp = await twilioHelper.createTwiml(twilio_sid, twilio_token)
+        setting.twiml_app = twimlApp
+      }
+      if (!setting.app_key) {
+        const appData = await twilioHelper.createAPIKey(twilio_sid, twilio_token)
+        setting.app_key = appData.sid
+        setting.app_secret = appData.secret
+      }
+    }
+    await setting.save()
+  } else {
+    setting = await Setting.create({
+      number: twilio_number, sid, twilio_sid, twilio_token, user: userId, type: 'twilio', profile: body.profile,
+    })
+  }
+
+  const client = twilio(twilio_sid, twilio_token)
+  const update = body.override === 'true'
+    ? {
+        smsUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioReceiveSms),
+        voiceUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioIncoming),
+        statusCallback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioStatus),
+        voiceApplicationSid: '',
+      }
+    : { smsUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioReceiveSms) }
+  await client.incomingPhoneNumbers(sid).update(update)
+  return sendDoc<SettingDoc>(c, setting)
+}
+
+/** Fetch one of the caller's profiles (scoped to the auth token). */
+async function fetchSetting(c: ParamCtx<ProfileIdParam>) {
+  const setting = await Setting.findOne({ user: { $eq: c.get('user').id }, _id: { $eq: c.req.valid('param').id } })
+  if (!setting) throw new HTTPException(404, { message: 'Setting not found!' })
+  return sendDoc<SettingDoc>(c, setting)
+}
+
+/** Public: list the phone numbers on the supplied provider account (used while configuring a profile). */
+async function listProviderNumbers(c: JsonCtx<GetNumberRequest>) {
+  const body = c.req.valid('json')
+  if (body.type === 'telnyx') {
+    const phoneNumber = await new Telnyx({ apiKey: body.api_key }).phoneNumbers.list()
+    return c.json({ data: { data: phoneNumber.data } } satisfies Ok<{ data: unknown[] }>)
+  }
+  const numbers = await twilio(body.twilio_sid, body.twilio_token).incomingPhoneNumbers.list()
+  return c.json({ data: numbers } satisfies Ok<unknown[]>)
+}
+
+/** Normalize a dialed number: strip formatting, then prefix +1 for a bare 10-digit US number. */
+function normalizeSmsNumber(raw: string): string {
+  const digits = raw.replace(/\s/g, '').replace(/-/g, '').replace(/\)/g, '').replace(/\(/g, '')
+  return digits.length === 10 ? `+1${digits}` : digits
+}
+
+/** Resolve the contact owning `number` for `userId`, trying the full number then its last 10 digits. */
+async function findContactId(userId: string, number: string) {
+  const exact = await Contact.findOne({ user: { $eq: userId }, number: { $eq: number } })
+  if (exact) return exact._id
+  const short = await Contact.findOne({ user: { $eq: userId }, number: { $eq: number.slice(-10) } })
+  return short?._id
+}
+
+/** Send an SMS/MMS to one or more numbers via the profile's provider and persist each as a `send` message. */
+async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
+  const userId = c.get('user').id
+  const { numbers, profile, message, media } = c.req.valid('json')
+  const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: profile._id } })
+  if (!setting) throw new HTTPException(404, { message: 'Message not sent!' })
+
+  const messageRecords: Record<string, unknown>[] = []
+  const twilioClient = setting.type === 'twilio' ? twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '') : null
+  const telnyxClient = setting.type === 'telnyx' ? new Telnyx({ apiKey: setting.api_key ?? '' }) : null
+
+  for (const raw of numbers) {
+    const toNumber = normalizeSmsNumber(raw)
+    let sid: string | undefined
+    if (twilioClient) {
+      try {
+        const sent = await twilioClient.messages.create({
+          body: message,
+          from: setting.number ?? '',
+          to: toNumber,
+          statusCallback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioSmsStatus),
+          ...(media.length > 0 ? { mediaUrl: media } : {}),
+        })
+        sid = sent.sid
+      } catch (e) {
+        throw new ProviderError('twilio', 'messages.create', { cause: e })
+      }
+    } else if (telnyxClient) {
+      try {
+        const sent = await telnyxClient.messages.send({
+          from: setting.number ?? '',
+          to: toNumber,
+          text: message,
+          webhook_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxSmsStatus),
+          ...(media.length > 0 ? { media_urls: media } : {}),
+        })
+        sid = sent.data?.id
+      } catch (e) {
+        throw new ProviderError('telnyx', 'messages.send', { cause: e })
+      }
+    }
+    if (!sid) continue
+
+    const record: Record<string, unknown> = {
+      sid,
+      user: userId,
+      number: toNumber,
+      telnyx_number: setting.number,
+      type: 'send',
+      status: 'sent',
+      isview: 'true',
+      message,
+      setting: setting._id,
+    }
+    const contactId = await findContactId(userId, toNumber)
+    if (contactId) record.contact = contactId
+    if (media.length > 0) record.media = JSON.stringify(media)
+    messageRecords.push(record)
+  }
+
+  const messages = await Message.create(messageRecords)
+  return c.json({ data: messages } satisfies Ok<unknown[]>)
+}
+
+/** Inbound SMS/MMS webhook (Twilio form or Telnyx JSON). Persists the message, notifies the user, replies empty TwiML. */
+async function handleReceiveSms(c: Context<Env>) {
+  try {
+    const type = c.req.param('type')
+    let media: string[] = []
+    let toNumber: string
+    let fromNumber: string
+    let sid: string
+    let messageText: string
+
+    if (type === 'twilio') {
+      // todo: parse with zod
+      const form = await c.req.parseBody() as Record<string, string>
+      messageText = form.Body ?? ''
+      toNumber = form.To ?? ''
+      fromNumber = form.From ?? ''
+      sid = form.SmsSid ?? ''
+      const numMedia = Number(form.NumMedia ?? 0)
+      media = await saveMedia(
+        Array.from({ length: numMedia }, (_, i) => ({ url: form[`MediaUrl${i}`] ?? '', contentType: form[`MediaContentType${i}`] ?? '' })),
+      )
+    } else {
+      // todo: parse with zod
+      const payload = (await c.req.json() as any).data.payload
+      toNumber = payload.to[0].phone_number
+      fromNumber = payload.from.phone_number
+      sid = payload.id
+      messageText = payload.text
+      media = await saveMedia(
+        (payload.media ?? []).map((m: any) => ({ url: m.url, contentType: m.content_type })),
+      )
+    }
+
+    const setting = await Setting.findOne({ number: { $eq: toNumber } })
+    if (setting) {
+      // todo: use better types
+      const record: Record<string, unknown> = {
+        sid,
+        user: setting.user,
+        number: fromNumber,
+        telnyx_number: toNumber,
+        type: 'receive',
+        status: 'received',
+        isview: 'false',
+        message: messageText,
+        setting: setting._id,
+        media: JSON.stringify(media),
+      }
+      const contact = await Contact.findOne({ user: { $eq: setting.user?.toString() ?? '' }, number: { $eq: fromNumber } })
+      if (contact) record.contact = contact._id
+
+      // todo: type socketIO messages
+      getIO().to(setting.user?.toString() ?? '').emit('user_message', {
+        message: messageText,
+        number: fromNumber,
+        telnyx_number: toNumber,
+        toUser: setting.user,
+        contact,
+        type: 'receive',
+        status: 'received',
+        isview: false, // todo: message model has this as stringbool
+        settings: setting,
+      })
+
+      if (setting.emailnotification === 'true') {
+        const emailSetting = await Email.findOne({ user: { $eq: setting.user?.toString() ?? '' } })
+        if (emailSetting) {
+          // todo: dont cast
+          void sendEmail(emailSetting as unknown as SendEmailSetting, {
+            subject: `Message from ${fromNumber}`,
+            text: 'Message received',
+            html: `Received Message on ${toNumber}:<br><hr><br><p>${messageText}</p><br><hr><br>`,
+          })
+        }
+      }
+      await Message.create(record)
+      if (setting.type === 'twilio') void deleteTwilioMessageLater(setting, sid)
+    }
+  } catch (error) {
+    console.error(error)
+  }
+  return emptyTwiml(c)
+}
+
+/** Download each MMS attachment to dated `uploads/` storage and return its public URL. */
+async function saveMedia(items: { url: string; contentType: string }[]): Promise<string[]> {
+  const saved: string[] = []
+  for (const { url, contentType } of items) {
+    if (!url) continue
+    // todo: make content type detection safer, for png especially
+    const ext = contentType === 'image/gif' ? 'gif' : contentType === 'image/jpeg' ? 'jpg' : 'png'
+    const name = `${crypto.randomBytes(24).toString('hex')}.${ext}`
+    const date = moment().format(uploadFolderFormat)
+    try {
+      await fs.promises.access(`./uploads/${date}`)
+    } catch {
+      await fs.promises.mkdir(`./uploads/${date}`)
+    }
+    // todo: is this a race condition? does this need to be awaited?
+    downloadToFile(url, `./uploads/${date}/${name}`)
+      .then(() => console.log('Image downloaded.'))
+      .catch((err) => console.error('Image download failed:', err))
+    saved.push(combineURLs(env.BASE_URL, 'uploads', date, name))
+  }
+  return saved
+}
+
+/** Twilio keeps sent messages on its servers; delete this one shortly after delivery (best-effort, up to 5 tries). */
+function deleteTwilioMessageLater(setting: { twilio_sid?: string | null; twilio_token?: string | null }, sid: string) {
+  return new Promise<boolean>((resolve) => {
+    setTimeout(async () => {
+      const client = twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '')
       for (let i = 0; i < 5; i++) {
         try {
-          const deleteMessage = await client.messages(sid).remove();
-          if (deleteMessage) {
-            resolve(true)
-            return
-          }
-        } catch (error) {}
+          if (await client.messages(sid).remove()) return resolve(true)
+        } catch { /* retry */ }
       }
-      resolve(false);
-    }, 5000);
-  });
+      resolve(false)
+    }, 5000)
+  })
 }
 
-export const smsStatus = async (req, res) => {
+/** SMS status webhook (Twilio form or Telnyx JSON). Updates the stored message status, then acknowledges with a 2xx. */
+async function handleSmsStatus(c: Context<Env>) {
   try {
-    if (req.params.type !== undefined && req.params.type === "twilio") {
-      var status = req.body.MessageStatus;
-      var sid = req.body.MessageSid;
-      if (
-        req.body.MessageStatus === "delivered" ||
-        req.body.MessageStatus === "undelivered" ||
-        req.body.MessageStatus === "failed"
-      ) {
-        var settingCheck = await Setting.findOne({
-          number: { $eq: req.body.From },
-        });
-        if (settingCheck) {
-          if (settingCheck.type === "twilio") {
-            const client = twilio(
-              settingCheck.twilio_sid,
-              settingCheck.twilio_token
-            );
-            for (var i = 0; i < 5; i++) {
-              try {
-                var isDelete = await client.messages(sid).remove();
-                if (isDelete) {
-                  break;
-                }
-              } catch (error) {}
-            } //remove Twilio sms from server right after sent with any status reply state
+    const type = c.req.param('type')
+    let status: string
+    let sid: string
+    if (type === 'twilio') {
+      const form = await c.req.parseBody() as Record<string, string>
+      status = form.MessageStatus ?? ''
+      sid = form.MessageSid ?? ''
+      if (['delivered', 'undelivered', 'failed'].includes(status)) {
+        // Twilio retains sent messages; remove this one once it reaches a terminal state.
+        const setting = await Setting.findOne({ number: { $eq: form.From ?? '' } })
+        if (setting?.type === 'twilio') {
+          const client = twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '')
+          for (let i = 0; i < 5; i++) {
+            try {
+              if (await client.messages(sid).remove()) break
+            } catch { /* retry */ }
           }
         }
       }
     } else {
-      var data = req.body.data.payload;
-      var status = data.to[0].status;
-      var sid = data.id;
+      // todo: dont cast
+      const payload = (await c.req.json() as any).data.payload
+      status = payload.to[0].status
+      sid = payload.id
     }
-    const message = await Message.findOne({ sid: { $eq: sid } });
+    const message = await Message.findOne({ sid: { $eq: sid } })
     if (message) {
-      message.status = status;
-      message.save();
+      message.status = status
+      await message.save()
     }
-    const VoiceResponse = twilio.twiml.VoiceResponse;
-    const response = new VoiceResponse();
-    console.log(response.toString());
-    res.set("Content-Type", "text/xml");
-    res.send();
   } catch (error) {
-    res.status(400).json({ status: "false", message: "something went wrong" });
+    console.error(error)
   }
-};
+  // Status callbacks (Twilio statusCallback, Telnyx message webhook) don't consume a reply -- just acknowledge 2xx.
+  return ack(c)
+}
 
-export const getNumberList = async (req, res) => {
-  try {
-    const user_id = new mongoose.Types.ObjectId(req.body.user);
-    const setting = new mongoose.Types.ObjectId(req.body.setting);
-    const message = await Message.aggregate([
-      { $match: { user: user_id, setting } },
-      { $sort: { _id: -1 } },
-      {
-        $group: {
-          _id: "$number",
-          message: { $first: "$message" },
-          id: { $first: "$_id" },
-          created_at: { $first: "$created_at" },
-          contact: { $first: "$contact" },
-          message_type: { $first: "$datatype" },
-          type: { $first: "$type" },
-          telnyx_number: { $first: "$telnyx_number" },
-          isview: {
-            $sum: {
-              $cond: { if: { $eq: ["$isview", "false"] }, then: 1, else: 0 },
-            },
-          },
-        },
+/** Empty `<Response/>` TwiML -- the inbound-SMS reply (Twilio parses it as "no auto-reply"; Telnyx just sees a 2xx). */
+function emptyTwiml(c: Context<Env>) {
+  const response = new twilio.twiml.VoiceResponse()
+  c.header('Content-Type', 'text/xml')
+  return c.body(response.toString())
+}
+
+/** Conversation list for a profile: latest message per other-party number, with unread counts. Returns a bare array. */
+async function aggregateConversations(c: QueryCtx<ConversationsQuery>) {
+  const user = new mongoose.Types.ObjectId(c.get('user').id)
+  const setting = new mongoose.Types.ObjectId(c.req.valid('query').profile)
+  // Collapse this profile's messages into one row per conversation (per other-party number):
+  //   $match  -- only the caller's messages on this profile.
+  //   $sort _id:-1 -- newest first, so the following $first picks each conversation's latest message.
+  //   $group by $number -- one row per other-party number. `_id` becomes that number string (this is why the chat is
+  //     keyed on `number._id` elsewhere); $first grabs the latest message's fields; `isview` $sums unread (isview
+  //     'false') messages into a badge count.
+  // Then populate the contact ref and sort newest-conversation-first in JS (the group output isn't ordered).
+  const conversations = await Message.aggregate([
+    { $match: { user, setting } },
+    { $sort: { _id: -1 } },
+    {
+      $group: {
+        _id: '$number',
+        message: { $first: '$message' },
+        id: { $first: '$_id' },
+        created_at: { $first: '$created_at' },
+        contact: { $first: '$contact' },
+        message_type: { $first: '$datatype' },
+        type: { $first: '$type' },
+        telnyx_number: { $first: '$telnyx_number' },
+        isview: { $sum: { $cond: [{ $eq: ['$isview', 'false'] }, 1, 0] } },
       },
-    ]);
-    await Contact.populate(message, { path: "contact" });
-    // mongoose also has a .sort() method
-    message.sort((a, b) => {
-      return b.created_at - a.created_at;
-    });
-    res.status(200).json(message);
-  } catch (error) {
-    res.status(400).json({ status: "false", message: "something went wrong" });
-  }
-};
-export const messageDelete = async (req, res) => {
-  try {
-    const deletecon = {
-      user: { $eq: req.body.user },
-      number: { $eq: req.body.number },
-    };
-    const messages = await Message.deleteMany(deletecon);
-    if (messages) {
-      res.status(200).send({ status: true, errors: "", data: messages });
-    } else {
-      res
-        .status(400)
-        .send({ status: false, errors: "Chat not deleted", data: [] });
-    }
-  } catch (error) {
-    res.status(400).send({ status: false, errors: error.message, data: [] });
-  }
-};
+    },
+  ])
+  await Contact.populate(conversations, { path: 'contact' })
+  // todo: maybe sort in mongoose?
+  conversations.sort((a, b) => b.created_at - a.created_at)
+  return c.json(conversations)
+}
 
-export const messageList = async (req, res) => {
-  try {
-    const filterObject = {
-      user: { $eq: req.body.user },
-      telnyx_number: { $eq: req.body.number.telnyx_number },
-      number: { $eq: req.body.number._id },
-      setting: { $eq: req.body.profile },
-    };
+/** Delete a whole conversation (every message to/from the other party's number) for the caller. */
+async function removeConversation(c: ParamCtx<ConversationParam>) {
+  const messages = await Message.deleteMany({
+    user: { $eq: c.get('user').id },
+    number: { $eq: c.req.valid('param').number },
+  })
+  return c.json({ data: messages } satisfies Ok<unknown>)
+}
 
-    await Message.updateMany(
-      { ...filterObject, isview: { $eq: "false" } },
-      { isview: "true" }
-    );
-    const messages = await Message.find(filterObject);
-
-    res.send(messages);
-  } catch (error) {
-    res.status(400).json({ status: "false", message: "something went wrong" });
+/** Messages in a conversation; marks the unread ones read first. Returns a bare array. */
+async function listMessages(c: JsonCtx<MessageListRequest>) {
+  const { number, profile } = c.req.valid('json')
+  const filter = {
+    user: { $eq: c.get('user').id },
+    telnyx_number: { $eq: number.telnyx_number ?? '' },
+    number: { $eq: number._id },
+    setting: { $eq: profile },
   }
-};
+  await Message.updateMany({ ...filter, isview: { $eq: 'false' } }, { isview: 'true' })
+  const messages = await Message.find(filter)
+  return c.json(messages)
+}
+
+export const createProfile = factory.createHandlers(auth, jsonBody(createSettingBody), saveProviderConfig)
+export const listNumbers = factory.createHandlers(jsonBody(getNumberBody), listProviderNumbers)
+export const getProfile = factory.createHandlers(auth, pathParams(profileIdParam), fetchSetting)
+export const disconnectProvider = factory.createHandlers(auth, pathParams(profileIdParam), resetProviderConfig)
+export const receiveSms = factory.createHandlers(handleReceiveSms)
+export const smsStatus = factory.createHandlers(handleSmsStatus)
+export const sendMessage = factory.createHandlers(auth, jsonBody(sendSmsBody), handleSendSms)
+export const listConversations = factory.createHandlers(auth, queryParams(conversationsQuery), aggregateConversations)
+export const getConversationMessages = factory.createHandlers(auth, jsonBody(messageListBody), listMessages)
+export const deleteConversation = factory.createHandlers(auth, pathParams(conversationParam), removeConversation)

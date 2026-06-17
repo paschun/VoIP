@@ -2,8 +2,23 @@ import twilio from 'twilio'
 import { combineURLs } from './common.helper.ts'
 import { WEBHOOK_PATHS } from './webhook-paths.ts'
 import { env } from '../../config/env.ts'
+import { ProviderError } from '../provider-error.ts'
 
-const creatTwiml = async (sid: string, token: string) => {
+/**
+ * Twilio provisioning/teardown helpers. Same error policy as telnyx.helper, split by intent, with the functions below
+ * grouped into the two matching sections:
+ *
+ * - SETUP / GET / FALLBACK helpers (`createTwiml`/`updateTwiml`/`createAPIKey`, `twimlGet`/`numberGet`,
+ *   `*FallbackUpdate`) THROW `ProviderError` so a failure while serving a live request surfaces as a 502 (via onError)
+ *   rather than being silently dropped.
+ * - TEARDOWN helpers (`deleteTwiml`/`removeAPIKey`/`unlinkNumber`) SWALLOW the error, log it, and return `false`: they
+ *   run during best-effort account/profile cleanup, where throwing would abort the rest of the teardown and block a
+ *   legitimate delete.
+ */
+
+// === Setup / GET / fallback helpers: THROW ProviderError on failure (onError renders 502). See file header. ===
+
+const createTwiml = async (sid: string, token: string) => {
     try {
         const client = twilio(sid, token);
         const twiml = await client.applications.create({
@@ -15,8 +30,7 @@ const creatTwiml = async (sid: string, token: string) => {
         });
         return twiml.sid
     }catch (e){
-        console.error(e);
-        return false;
+        throw new ProviderError('twilio', 'createTwiml', { cause: e });
     }
 }
 
@@ -31,56 +45,17 @@ const updateTwiml = async (sid: string, token: string, twimlsid: string) => {
         });
         return twiml.sid
     }catch (e){
-        console.error(e);
-        return false;
+        throw new ProviderError('twilio', 'updateTwiml', { cause: e });
     }
 }
 
-const deleteTwiml = async (sid: string, token: string, twimlsid: string) => {
-    try {
-        const client = twilio(sid, token);
-        await client.applications(twimlsid).remove()
-        return true
-    }catch (e){
-        console.error(e);
-        return false;
-    }
-}
-
-const creatAPIKey = async (sid: string, token: string) => {
+const createAPIKey = async (sid: string, token: string) => {
     try {
         const client = twilio(sid, token);
         const apiKey = await client.newKeys.create({ friendlyName: 'Operationprivacy call API Key' })
         return apiKey
     }catch (e){
-        console.error(e);
-        return false;
-    }
-}
-
-const removeAPIKey = async (sid: string, token: string, api_key: string) => {
-    try {
-        const client = twilio(sid, token);
-        await client.keys(api_key).remove();
-        return true
-    }catch (e){
-        console.error(e);
-        return false;
-    }
-}
-
-const unlinkNumber = async (sid: string, token: string, numbersid: string) => {
-    try {
-        const client = twilio(sid, token);
-        await client.incomingPhoneNumbers(numbersid).update({
-            smsUrl: '',
-            voiceUrl: '',
-            statusCallback: ''
-        })
-        return true
-    }catch (e){
-        console.error(e);
-        return false;
+        throw new ProviderError('twilio', 'createAPIKey', { cause: e });
     }
 }
 
@@ -93,8 +68,7 @@ const twimlFallbackUpdate = async (params: { sid: string; token: string; twimlsi
         })
         return true
     }catch (e){
-        console.error(e);
-        return false;
+        throw new ProviderError('twilio', 'twimlFallbackUpdate', { cause: e });
     }
 }
 
@@ -109,8 +83,7 @@ const numberFallbackUpdate = async (params: { sid: string; token: string; number
         })
         return true
     }catch (e){
-        console.error(e);
-        return false;
+        throw new ProviderError('twilio', 'numberFallbackUpdate', { cause: e });
     }
 }
 
@@ -120,8 +93,7 @@ const twimlGet = async (params: { sid: string; token: string; twimlsid: string }
         const app = await client.applications(params.twimlsid).fetch()
         return app
     }catch (e){
-        console.error(e);
-        return false;
+        throw new ProviderError('twilio', 'twimlGet', { cause: e });
     }
 }
 
@@ -131,12 +103,50 @@ const numberGet = async (params: { sid: string; token: string; numbersid: string
         const number = await client.incomingPhoneNumbers(params.numbersid).fetch()
         return number
     }catch (e){
-        console.error(e);
+        throw new ProviderError('twilio', 'numberGet', { cause: e });
+    }
+}
+
+// === Teardown helpers: SWALLOW + log, return false. Best-effort cleanup during deletion. See file header. ===
+
+const deleteTwiml = async (sid: string, token: string, twimlsid: string) => {
+    try {
+        const client = twilio(sid, token);
+        await client.applications(twimlsid).remove()
+        return true
+    }catch (e){
+        console.error('deleteTwiml teardown failed', e);
+        return false;
+    }
+}
+
+const removeAPIKey = async (sid: string, token: string, api_key: string) => {
+    try {
+        const client = twilio(sid, token);
+        await client.keys(api_key).remove();
+        return true
+    }catch (e){
+        console.error('removeAPIKey teardown failed', e);
+        return false;
+    }
+}
+
+const unlinkNumber = async (sid: string, token: string, numbersid: string) => {
+    try {
+        const client = twilio(sid, token);
+        await client.incomingPhoneNumbers(numbersid).update({
+            smsUrl: '',
+            voiceUrl: '',
+            statusCallback: ''
+        })
+        return true
+    }catch (e){
+        console.error('unlinkNumber teardown failed', e);
         return false;
     }
 }
 
 export {
-    creatTwiml, updateTwiml, deleteTwiml, creatAPIKey, removeAPIKey, unlinkNumber, twimlFallbackUpdate,
-    numberFallbackUpdate, twimlGet, numberGet,
+    createTwiml, updateTwiml, createAPIKey, twimlFallbackUpdate, numberFallbackUpdate, twimlGet, numberGet,
+    deleteTwiml, removeAPIKey, unlinkNumber,
 }

@@ -1,19 +1,19 @@
-import express, { type Express } from 'express'
+import { Hono } from 'hono'
+import type { Env } from '../factory.ts'
 import * as setting from '../controller/setting.controller.ts'
-import auth from '../middleware/auth.middleware.ts'
 
-export default (app: Express) => {
-    const router = express.Router();
-    router.post("/create",auth, setting.create);
-    router.post("/get-number", setting.getNumber);
-    router.post("/get-setting",auth, setting.getSetting);
-    router.post("/receive-sms/:type", setting.receiveSms); 
-    router.post("/sms-status/:type", setting.smsStatus); 
-    router.post("/delete-key",auth, setting.deleteKey); 
-    //sms route
-    router.post("/send-sms",auth, setting.sendSms);
-    router.post("/sms-number-list",auth, setting.getNumberList);
-    router.post("/message-list",auth, setting.messageList);
-    router.post("/message-list-delete",auth, setting.messageDelete);
-    app.use('/api/setting', router);
-};
+// Routes for `/api/setting`: profile/provider config, SMS sending + conversation history, and the public inbound-SMS/
+// status webhooks. Auth is applied per-handler in the controller (the webhooks + provider-number lookup are public).
+// The webhook paths (`receive-sms/:type`, `sms-status/:type`) are fixed -- they're baked into provider config and
+// `WEBHOOK_PATHS`, so they are NOT REST-renamed.
+export const settingRoutes = new Hono<Env>()
+  .post('/profiles', ...setting.createProfile)
+  .get('/profiles/:id', ...setting.getProfile)
+  .delete('/profiles/:id/provider', ...setting.disconnectProvider)
+  .post('/provider-numbers', ...setting.listNumbers)
+  .post('/messages', ...setting.sendMessage)
+  .get('/conversations', ...setting.listConversations)
+  .post('/conversations/messages', ...setting.getConversationMessages)
+  .delete('/conversations/:number', ...setting.deleteConversation)
+  .post('/receive-sms/:type', ...setting.receiveSms)
+  .post('/sms-status/:type', ...setting.smsStatus)

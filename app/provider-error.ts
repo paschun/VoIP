@@ -1,11 +1,12 @@
 /**
- * Raised when an upstream telephony provider (Twilio/Telnyx) request fails. The provider helpers currently swallow
- * failures and return `false`, which loses the cause and lets callers silently ignore a failure; the migration target
- * is for them to `throw` this instead so `onError` can surface it as a 502 (Bad Gateway -- our server is fine, the
- * upstream isn't). Carries enough context to log meaningfully without leaking provider internals to the client.
+ * Raised when an upstream telephony provider (Twilio/Telnyx) request fails, so `onError` can surface it as a 502 (Bad
+ * Gateway -- our server is fine, the upstream isn't). Carries enough context to log meaningfully without leaking
+ * provider internals to the client.
  *
- * NOTE: nothing throws this yet. The helper conversion is deferred to the `setting` group port (the Express `setting`
- * controller still depends on the `false`-returning helpers, so flipping them is done in one place at that step).
+ * Thrown by the SETUP/GET/FALLBACK helpers in twilio.helper / telnyx.helper (provisioning, webhook-config reads, and
+ * fallback-URL updates) and by the provider send in `setting`'s send-message handler. The TEARDOWN helpers (the
+ * delete/unlink/remove/empty ones) deliberately do NOT throw -- they stay best-effort `false`-returning so a failed
+ * cleanup can't block an account/profile/setting deletion.
  */
 export class ProviderError extends Error {
   readonly provider: 'twilio' | 'telnyx'

@@ -10,6 +10,9 @@
  * Most backend handlers wrap their payload in `ApiEnvelope`.
  */
 
+/** HTTP verbs used across the app -- the frontend `request()` wrapper and the backend's Telnyx REST caller. */
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
 /** Standard `{ status, message, data }` envelope returned by most endpoints. */
 export interface ApiEnvelope<T = unknown> {
   status: boolean | string

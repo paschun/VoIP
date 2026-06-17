@@ -584,7 +584,7 @@ export default defineComponent({
     },
     getNumberList() {
       this.numbers = [];
-      this.$post("setting/sms-number-list", { user: this.userdata._id, setting: this.activeProfile._id })
+      this.$get("setting/conversations?profile=" + this.activeProfile._id)
         .then(response => {
           if (response) {
             this.numbers = response;
@@ -606,7 +606,7 @@ export default defineComponent({
       }
     },
     getSetting() {
-      this.$post("setting/get-setting", { user: this.userdata._id, setting: this.activeProfile._id })
+      this.$get("setting/profiles/" + this.activeProfile._id)
         .then(response => {
           if (response?.data) {
             this.user = response.data;
@@ -674,10 +674,7 @@ export default defineComponent({
       if (!result.isConfirmed) return;
 
       try {
-        const response = await this.$post("setting/delete-key", {
-          user: this.userdata._id,
-          profile_id: this.activeProfile._id
-        });
+        const response = await this.$del("setting/profiles/" + this.activeProfile._id + "/provider");
         notifySuccess("Key deleted successfully!");
         this.user.api_key = "";
         this.user.number = "";
@@ -701,7 +698,7 @@ export default defineComponent({
       } else {
         this.twilioNumbers = [];
       }
-      this.$post("setting/get-number", settings)
+      this.$post("setting/provider-numbers", settings)
         .then(response => {
           if (response) {
             if (type === "telnyx") {
@@ -827,7 +824,7 @@ export default defineComponent({
     async submitCreateSetting(sendData: any) {
       this.isLoading = true;
       try {
-        const response = await this.$post("setting/create", sendData);
+        const response = await this.$post("setting/profiles", sendData);
         if (response) {
           (this.$refs["my-modal"] as any).hide();
           this.activeProfile = response.data;

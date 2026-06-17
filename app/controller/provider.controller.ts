@@ -40,8 +40,8 @@ async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)
 
-  // `?? ''` covers Setting fields the type allows to be null; a configured setting always has them set, and the
-  // helpers swallow provider errors, so an empty value can't blow up the request.
+  // `?? ''` covers Setting fields the type allows to be null; a configured setting always has them set. The fallback
+  // helpers throw ProviderError on a provider failure, which onError renders as a 502.
   await twilioHelper.twimlFallbackUpdate({
     sid: setting.twilio_sid ?? '', token: setting.twilio_token ?? '', twimlsid: setting.twiml_app ?? '',
     url: combineURLs(fallbackUrl, WEBHOOK_PATHS.twilioVoice),

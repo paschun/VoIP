@@ -9,10 +9,9 @@ import compression from 'compression'
 import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
-import settingRoute from './app/routes/setting.route.ts'
-// NOTE: every group except `setting` is migrated to Hono (their route files export Hono groups, e.g. `emailRoutes` /
-// `authRoutes`). They are not wired here anymore; the Hono server serves them at the upcoming server-swap step. Only
-// the `setting` group still runs on Express below.
+// NOTE: every controller group is now migrated to Hono (their route files export Hono groups, e.g. `emailRoutes` /
+// `settingRoutes`). None are wired here anymore; the Hono server serves them at the upcoming server-swap step. This
+// Express app now only serves static assets + the SPA fallback until the server is flipped.
 
 // App & settings
 // --------------
@@ -117,11 +116,6 @@ app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 100
 // wildcard handler and get index.html (causing MIME type errors).
 app.use(express.static(path.join(import.meta.dirname, './frontend/dist')));
 app.use('/uploads', express.static('uploads'));
-
-// API routes
-// ----------
-// Must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
-settingRoute(app);
 
 // SPA fallback
 // ------------

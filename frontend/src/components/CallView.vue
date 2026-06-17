@@ -297,7 +297,7 @@ export default defineComponent({
     getSetting () {
       const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
       if (profileLocal) {
-        this.$post('setting/get-setting', { setting: profileLocal._id })
+        this.$get('setting/profiles/' + profileLocal._id)
           .then(async (response) => {
             if (response.data) {
               localStorage.setItem('activeProfile', JSON.stringify(response.data))

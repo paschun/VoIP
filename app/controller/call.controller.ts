@@ -11,6 +11,7 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx, FormCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, formBody } from '../validate.ts'
+import { ack } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import type { SettingDoc } from '../../shared/schema/setting.ts'
 import {
@@ -29,10 +30,6 @@ import {
 const xmlResponse = (c: Context<Env>, xml: string) => c.body(xml, 200, { 'Content-Type': 'text/xml' })
 
 const emptyTwiml = '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n</Response>'
-
-// Status/event webhooks don't consume a reply body -- both providers only need a 2xx to mark delivery. Acknowledge with
-// an empty 200 instead of a misleading TwiML document.
-const ack = (c: Context<Env>) => c.body(null, 200)
 
 /**
  * Persist a call-log entry, linking a known contact if one matches the other party. Each caller builds its provider

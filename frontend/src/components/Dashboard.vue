@@ -406,6 +406,8 @@ export default defineComponent({
       uploadedImages: [] as any[],
       activeChatData: false,
       activeProfile: null as any,
+      // activeChat is a synthesized conversation object from the listConversations aggregate (GET setting/conversations),
+      // which runs over the SMS Message model (app/model/message.model.ts)
       activeChat: "" as any,
       tags: [] as any[],
       sms: {
@@ -663,10 +665,7 @@ export default defineComponent({
       if (!result.isConfirmed) return;
 
       try {
-        await this.$post("setting/message-list-delete", {
-          user: this.userdata._id,
-          number: this.activeChat,
-        });
+        await this.$del("setting/conversations/" + encodeURIComponent(this.activeChat._id));
         if (this.activeChatData) this.showChat(this.activeChat);
         (this.$refs.numberList as any).getNumberList();
       } catch (e) {
@@ -696,7 +695,7 @@ export default defineComponent({
         profile: this.activeProfile,
         media: this.uploadedImages,
       };
-      this.$post("setting/send-sms", messageData)
+      this.$post("setting/messages", messageData)
         .then((response) => {
           if (response) {
             this.messageBody = "";
@@ -736,8 +735,7 @@ export default defineComponent({
       this.activeChat = activechat;
       this.activeChatData = true;
       const { telnyx_number, _id } = activechat;
-      this.$post("setting/message-list", {
-        user: this.userdata._id,
+      this.$post("setting/conversations/messages", {
         number: { telnyx_number, _id },
         profile: this.activeProfile.id,
       })

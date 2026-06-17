@@ -1,5 +1,6 @@
 import Cookies from 'js-cookie'
 import { combineURLs } from '../../helper.ts'
+import type { HttpMethod } from '@shared/api-contracts.ts'
 
 /**
  * Tiny fetch wrapper.
@@ -21,8 +22,6 @@ export class ApiError extends Error {
   status?: number
   data?: any
 }
-
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 /**
  * Issue a fetch request and return the parsed JSON body (or raw text if not
