@@ -1,17 +1,16 @@
 import { readFile } from 'node:fs/promises'
 import { Hono } from 'hono'
-import type { Context } from 'hono'
 import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { bodyLimit } from 'hono/body-limit'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { getConnInfo } from '@hono/node-server/conninfo'
 import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
 import { onError } from './app/error.ts'
+import { rateLimit } from './app/middleware/rate-limit.ts'
 import { authRoutes } from './app/routes/auth.route.ts'
 import { callRoutes } from './app/routes/call.route.ts'
 import { contactRoutes } from './app/routes/contact.route.ts'
@@ -28,36 +27,8 @@ const app = new Hono()
 // Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see app/error.ts).
 app.onError(onError)
 
-// Rate limiting
-// -------------
-// First middleware, applied to every request. Fixed-window in-memory counter -- 60s window, 100 requests/IP.
-// Entries for inactive IPs linger until the process restarts;
-// for this app's traffic that's fine, and a single instance keeps the counter coherent.
-const RATE_WINDOW_MS = 60 * 1000
-const RATE_LIMIT = 100
-const rateHits = new Map<string, { count: number; resetAt: number }>()
-
-// Real client IP: behind Render's TLS proxy (HTTPS) trust the first X-Forwarded-For hop (like Express `trust proxy: 1`);
-// in dev there's no proxy, so use the socket peer. Trusting XFF only behind a known proxy avoids client IP spoofing.
-const clientIp = (c: Context): string => {
-  if (env.HTTPS) {
-    const forwarded = c.req.header('x-forwarded-for')
-    if (forwarded) return forwarded.split(',')[0]!.trim()
-  }
-  return getConnInfo(c).remote.address ?? 'unknown'
-}
-
-app.use('*', async (c, next) => {
-  const key = clientIp(c)
-  const now = Date.now()
-  const entry = rateHits.get(key)
-  if (!entry || now > entry.resetAt) {
-    rateHits.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS })
-  } else if (++entry.count > RATE_LIMIT) {
-    return c.text('Slow down your requests!', 429)
-  }
-  await next()
-})
+// First middleware, applied to every request
+app.use('*', rateLimit)
 
 // HTTPS enforcement (prod only)
 // -----------------------------
