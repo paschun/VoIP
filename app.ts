@@ -1,136 +1,148 @@
-import path from 'node:path'
-import http from 'node:http'
-import express from 'express'
-import { rateLimit } from 'express-rate-limit'
-import helmet from 'helmet'
-import cors from 'cors'
-import cookieSession from 'cookie-session'
-import compression from 'compression'
+import { readFile } from 'node:fs/promises'
+import { Hono } from 'hono'
+import type { Context } from 'hono'
+import { compress } from 'hono/compress'
+import { cors } from 'hono/cors'
+import { secureHeaders } from 'hono/secure-headers'
+import { bodyLimit } from 'hono/body-limit'
+import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
+import { getConnInfo } from '@hono/node-server/conninfo'
 import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
-// NOTE: every controller group is now migrated to Hono (their route files export Hono groups, e.g. `emailRoutes` /
-// `settingRoutes`). None are wired here anymore; the Hono server serves them at the upcoming server-swap step. This
-// Express app now only serves static assets + the SPA fallback until the server is flipped.
+import { onError } from './app/error.ts'
+import { authRoutes } from './app/routes/auth.route.ts'
+import { callRoutes } from './app/routes/call.route.ts'
+import { contactRoutes } from './app/routes/contact.route.ts'
+import { emailRoutes } from './app/routes/email.route.ts'
+import { hardwarekeyRoutes } from './app/routes/hardwarekey.route.ts'
+import { mediaRoutes } from './app/routes/media.route.ts'
+import { MAX_UPLOAD_BYTES } from './app/controller/media.controller.ts'
+import { profileRoutes } from './app/routes/profile.route.ts'
+import { providerRoutes } from './app/routes/provider.route.ts'
+import { settingRoutes } from './app/routes/setting.route.ts'
 
-// App & settings
-// --------------
-const app = express()
-app.disable('x-powered-by')
+const app = new Hono()
+
+// Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see app/error.ts).
+app.onError(onError)
 
 // Rate limiting
 // -------------
-// First middleware, so it applies to all requests.
-const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  limit: 100,
-  message: "Slow down your requests!",
-  legacyHeaders: false,
-  standardHeaders: 'draft-8',
-});
-app.use(limiter);
+// First middleware, applied to every request. Fixed-window in-memory counter -- 60s window, 100 requests/IP.
+// Entries for inactive IPs linger until the process restarts;
+// for this app's traffic that's fine, and a single instance keeps the counter coherent.
+const RATE_WINDOW_MS = 60 * 1000
+const RATE_LIMIT = 100
+const rateHits = new Map<string, { count: number; resetAt: number }>()
 
-// Proxy & HTTPS (prod only)
-// -------------------------
-// Behind Render's TLS-terminating proxy, two concerns:
-//   1. trust proxy → trust X-Forwarded-* so req.ip (and the rate limiter above) see real client IPs, not the
-//      proxy's, and secure cookies work. Only enabled here because trusting X-Forwarded-For when NOT behind a
-//      trusted proxy lets clients spoof their IP. Set to 1 (trust first hop), not the permissive `true`.
-//   2. HTTPS enforcement → the proxy makes req.secure false, so the original client protocol is read from
-//      x-forwarded-proto directly; anything that arrived over plain HTTP gets a static error page.
-// In dev (HTTP, no proxy) none of this is registered.
+// Real client IP: behind Render's TLS proxy (HTTPS) trust the first X-Forwarded-For hop (like Express `trust proxy: 1`);
+// in dev there's no proxy, so use the socket peer. Trusting XFF only behind a known proxy avoids client IP spoofing.
+const clientIp = (c: Context): string => {
+  if (env.HTTPS) {
+    const forwarded = c.req.header('x-forwarded-for')
+    if (forwarded) return forwarded.split(',')[0]!.trim()
+  }
+  return getConnInfo(c).remote.address ?? 'unknown'
+}
+
+app.use('*', async (c, next) => {
+  const key = clientIp(c)
+  const now = Date.now()
+  const entry = rateHits.get(key)
+  if (!entry || now > entry.resetAt) {
+    rateHits.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS })
+  } else if (++entry.count > RATE_LIMIT) {
+    return c.text('Slow down your requests!', 429)
+  }
+  await next()
+})
+
+// HTTPS enforcement (prod only)
+// -----------------------------
+// Render terminates TLS upstream, so the original client protocol is read from x-forwarded-proto; anything that arrived
+// over plain HTTP gets the static error page. In dev (HTTP, no proxy) this is skipped.
 if (env.HTTPS) {
-  app.set('trust proxy', 1)
-  app.use((req, res, next) => {
-    if (req.header('x-forwarded-proto') !== 'https') {
-      res.sendFile(path.join(import.meta.dirname, './error/index.html'));
-    } else {
-      next()
-    }
+  const errorPage = await readFile('./error/index.html', 'utf8')
+  app.use('*', async (c, next) => {
+    if (c.req.header('x-forwarded-proto') !== 'https') return c.html(errorPage)
+    await next()
   })
 }
 
 // Core middleware
 // ---------------
-// Compression, session, cache headers.
-app.use(compression())
+app.use(compress())
 
-app.use(cookieSession({
-  name: 'session',
-  keys: [env.COOKIE_KEY], // could hypothetically have a COOKIE_KEY2 , but need to change other refs
-  httpOnly: true,
-  secure: env.HTTPS,
-  sameSite: 'strict',
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+// Cache headers (set after the handler so they win): hashed build assets under /static/ are content-addressed and cached
+// forever; everything else (index.html, API JSON) and every mutating request must revalidate so deploys show up at once.
+app.use('*', async (c, next) => {
+  await next()
+  if (c.req.method !== 'GET') c.header('Cache-Control', 'no-store')
+  else if (c.req.path.startsWith('/static/')) c.header('Cache-Control', 'public, max-age=31536000, immutable')
+  else c.header('Cache-Control', 'no-store')
+})
+
+// Security headers (helmet equivalent). CSP mirrors the directives the app shipped: default-src allows the Twilio SDK +
+// ws/wss for the voice socket; script-src keeps unsafe-eval/inline; style-src keeps unsafe-inline for Vue's scoped CSS.
+// COOP/CORP/Origin-Agent-Cluster are left off to preserve the exact header set this app shipped before.
+// todo: audit these
+app.use(secureHeaders({
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false,
+  originAgentCluster: false,
+  contentSecurityPolicy: {
+    defaultSrc: ["'self'", "sdk.twilio.com", "wss:", "ws:", "eventgw.twilio.com"],
+    baseUri: ["'self'"],
+    fontSrc: ["'self'", "https:", "data:"],
+    formAction: ["'self'"],
+    frameAncestors: ["'self'"],
+    imgSrc: ["'self'", "data:"],
+    objectSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
+    scriptSrcAttr: ["'none'"],
+    styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+    upgradeInsecureRequests: [],
+  },
 }))
 
-const setCache = (req, res, next) => {
-  if (req.method !== 'GET') {
-    res.set('Cache-Control', 'no-store') // Mutating requests should never be cached.
-  } else if (req.path.startsWith('/static/')) {
-    // Hashed build assets (e.g. /static/index-DIsi5uhx.js) are content-addressed, so they can be cached aggressively.
-    res.set('Cache-Control', 'public, max-age=31536000, immutable')
-  } else {
-    // Everything else (index.html, API JSON, etc.) must revalidate so users see new deploys immediately.
-    res.set('Cache-Control', 'no-store')
-  }
-  next()
-}
-app.use(setCache)
+// Dev only: the Vite dev server (localhost:8080) calls the API cross-origin. In prod the API and UI are same-origin, so
+// CORS never applies and this is skipped.
+if (!env.HTTPS) app.use(cors({ origin: ['http://localhost:8080'] }))
 
-// Security
-// --------
-// helmet headers + CORS. helmet() applies all its default protections in one call. The three defaults disabled below
-// (COOP/CORP/Origin-Agent-Cluster) are off to preserve the exact header set this app shipped before — re-enable them
-// deliberately if desired.
-app.use(helmet({
-  contentSecurityPolicy: {
-    useDefaults: true,
-    reportOnly: false,
-    directives: {
-      "default-src": ["'self'", "sdk.twilio.com", "wss:", "ws:", "eventgw.twilio.com"],
-      "object-src": ["'self'"],
-      "script-src": ["'self'", "'unsafe-eval'", "'unsafe-inline'"]
-    },
-  },
-}));
+// Coarse request-body backstop. The only large body is the media upload, which enforces its own MAX_UPLOAD_BYTES cap
+// per-request (media.controller); every other endpoint is small JSON -- text, IDs, provider config, media URLs (never
+// base64). This global ceiling is that same cap scaled up for multipart boundary/header/field overhead, so it never
+// preempts the media route's stricter limit while still rejecting absurd payloads.
+const MULTIPART_OVERHEAD_FACTOR = 1.2
+app.use(bodyLimit({ maxSize: Math.ceil(MAX_UPLOAD_BYTES * MULTIPART_OVERHEAD_FACTOR) }))
 
-// Dev only: the Vite dev server (localhost:8080) calls the API cross-origin, so it needs an allowlist entry. In prod
-// (HTTPS=true) the API and UI are same-origin, so CORS never applies and this is skipped.
-if (!env.HTTPS) { // assume dev when HTTPS is false
-  app.use(cors({ origin: ['http://localhost:8080'] }))
-}
+// API routes
+// ----------
+// Registered before the static handlers so `/api/*` never falls through to the SPA. The /api/call and /api/setting
+// mounts must match the prefix baked into the provider webhook URLs (see WEBHOOKS in helper/webhook-paths.ts).
+app.route('/api/auth', authRoutes)
+app.route('/api/call', callRoutes)
+app.route('/api/contact', contactRoutes)
+app.route('/api/email', emailRoutes)
+app.route('/api/hardwarekey', hardwarekeyRoutes)
+app.route('/api/media', mediaRoutes)
+app.route('/api/profile', profileRoutes)
+app.route('/api/provider', providerRoutes)
+app.route('/api/setting', settingRoutes)
 
-// Body parsing
-// ------------
-// Must run before the route modules, which read req.body.
-
-// parse requests of content-type - application/json
-app.use(express.json({ limit: '500mb' }));
-// parse requests of content-type - application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 10000000 }));
-
-// Static assets
-// -------------
-// Registered BEFORE the catch-all routes below, otherwise requests like /static/index-XXX.js fall through to the
-// wildcard handler and get index.html (causing MIME type errors).
-app.use(express.static(path.join(import.meta.dirname, './frontend/dist')));
-app.use('/uploads', express.static('uploads'));
-
-// SPA fallback
-// ------------
-// MUST be last. Any URL that wasn't matched by a static file or API route above lands here and gets index.html so the
-// client-side router (Vue) can take over. This makes deep links like /profile/john work on refresh.
-app.get('/{*splat}', (_req, res) => {
-  res.sendFile(path.join(import.meta.dirname, './frontend/dist/index.html'));
-});
+// Static assets + SPA fallback
+// ----------------------------
+// Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
+app.use('/uploads/*', serveStatic({ root: './' }))
+app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
+app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallback
 
 // Startup
 // -------
-const server = http.createServer(app);
-
 await connectDB()
-initIO(server);
-
-console.log('express listening on PORT', env.PORT)
-server.listen(env.PORT)
+const server = serve({ fetch: app.fetch, port: env.PORT })
+initIO(server)
+console.log('hono listening on PORT', env.PORT)

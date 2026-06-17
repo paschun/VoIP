@@ -2,7 +2,7 @@ import Telnyx from 'telnyx'
 import moment from 'moment'
 import crypto from 'crypto'
 import { combineURLs } from './common.helper.ts'
-import { WEBHOOK_PATHS } from './webhook-paths.ts'
+import { WEBHOOKS } from './webhook-paths.ts'
 import { env } from '../../config/env.ts'
 import { ProviderError } from '../provider-error.ts'
 import type { HttpMethod } from '../../shared/api-contracts.ts'
@@ -60,9 +60,9 @@ const createTexmlApp = async (apiKey: string) => {
     const url = `https://api.telnyx.com/v2/texml_applications`;
     const data = {
         friendly_name: moment().format(timestampFormat),
-        voice_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxVoice),
+        voice_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxVoice.full),
         voice_method: "post",
-        status_callback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
+        status_callback: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
         status_callback_method: "post",
     };
     return requestCurl('createTexmlApp', 'POST', url, telnyxHeaders(apiKey), data);
@@ -71,9 +71,9 @@ const createTexmlApp = async (apiKey: string) => {
 const updateTexmlApp = async (apiKey: string, twimlid: string) => {
     const url = `https://api.telnyx.com/v2/texml_applications/${twimlid}`;
     const data = {
-        voice_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxVoice),
+        voice_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxVoice.full),
         voice_method: "post",
-        status_callback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
+        status_callback: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
         status_callback_method: "post",
     };
     return requestCurl('updateTexmlApp', 'PATCH', url, telnyxHeaders(apiKey), data);
@@ -87,7 +87,7 @@ const createSIPApp = async (apiKey: string, userid: string, outboundProfileid: s
             connection_name: `sip${moment().format(timestampFormat)}`,
             user_name: `user${moment().format(timestampFormat)}`,
             password,
-            webhook_event_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
+            webhook_event_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
             outbound: { outbound_voice_profile_id: outboundProfileid },
             sip_uri_calling_preference: "unrestricted",
         });
@@ -101,7 +101,7 @@ const updateSIPApp = async (apiKey: string, uuid: string, outboundProfileid: str
     try {
         const client = new Telnyx({ apiKey });
         await client.credentialConnections.update(uuid, {
-            webhook_event_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxStatus),
+            webhook_event_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
             outbound: { outbound_voice_profile_id: outboundProfileid },
             sip_uri_calling_preference: "unrestricted",
         });

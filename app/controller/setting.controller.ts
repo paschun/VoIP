@@ -17,14 +17,14 @@ import Email from '../model/email.model.ts'
 import { combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
-import { WEBHOOK_PATHS } from '../helper/webhook-paths.ts'
+import { WEBHOOKS } from '../helper/webhook-paths.ts'
 import { getIO } from '../socket.ts'
 import { env } from '../../config/env.ts'
 import { ProviderError } from '../provider-error.ts'
 
 import { factory } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
-import { jsonBody, pathParams, queryParams } from '../validate.ts'
+import { jsonBody, pathParams, pathParams404, queryParams } from '../validate.ts'
 import { sendDoc, ack } from '../util/respond.hono.ts'
 import type { Env, JsonCtx, ParamCtx, QueryCtx } from '../factory.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
@@ -32,6 +32,7 @@ import type { SettingDoc } from '../../shared/schema/setting.ts'
 import {
   createSettingBody, type CreateSettingRequest,
   profileIdParam, type ProfileIdParam,
+  smsTypeParam, type SmsTypeParam,
   getNumberBody, type GetNumberRequest,
   sendSmsBody, type SendSmsRequest,
   conversationsQuery, type ConversationsQuery,
@@ -218,13 +219,13 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
     const created = await client.messagingProfiles.create({
       name: 'VoIP sms Web Application',
       enabled: true,
-      webhook_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxReceiveSms),
+      webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
       whitelisted_destinations: ['*'],
     })
     messagingProfileId = created.data?.id ?? ''
   } else {
     await client.messagingProfiles.update(setting.setting ?? '', {
-      webhook_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxReceiveSms),
+      webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
     })
     messagingProfileId = setting.setting ?? ''
   }
@@ -276,12 +277,12 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
   const client = twilio(twilio_sid, twilio_token)
   const update = body.override === 'true'
     ? {
-        smsUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioReceiveSms),
-        voiceUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioIncoming),
-        statusCallback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioStatus),
+        smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio),
+        voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioIncoming.full),
+        statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioStatus.full),
         voiceApplicationSid: '',
       }
-    : { smsUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioReceiveSms) }
+    : { smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio) }
   await client.incomingPhoneNumbers(sid).update(update)
   return sendDoc<SettingDoc>(c, setting)
 }
@@ -338,7 +339,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
           body: message,
           from: setting.number ?? '',
           to: toNumber,
-          statusCallback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioSmsStatus),
+          statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.sms.smsStatus.full.twilio),
           ...(media.length > 0 ? { mediaUrl: media } : {}),
         })
         sid = sent.sid
@@ -351,7 +352,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
           from: setting.number ?? '',
           to: toNumber,
           text: message,
-          webhook_url: combineURLs(env.BASE_URL, WEBHOOK_PATHS.telnyxSmsStatus),
+          webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.smsStatus.full.telnyx),
           ...(media.length > 0 ? { media_urls: media } : {}),
         })
         sid = sent.data?.id
@@ -383,9 +384,9 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
 }
 
 /** Inbound SMS/MMS webhook (Twilio form or Telnyx JSON). Persists the message, notifies the user, replies empty TwiML. */
-async function handleReceiveSms(c: Context<Env>) {
+async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
+  const { type } = c.req.valid('param')
   try {
-    const type = c.req.param('type')
     let media: string[] = []
     let toNumber: string
     let fromNumber: string
@@ -404,6 +405,7 @@ async function handleReceiveSms(c: Context<Env>) {
         Array.from({ length: numMedia }, (_, i) => ({ url: form[`MediaUrl${i}`] ?? '', contentType: form[`MediaContentType${i}`] ?? '' })),
       )
     } else {
+      // telnyx branch
       // todo: parse with zod
       const payload = (await c.req.json() as any).data.payload
       toNumber = payload.to[0].phone_number
@@ -505,9 +507,9 @@ function deleteTwilioMessageLater(setting: { twilio_sid?: string | null; twilio_
 }
 
 /** SMS status webhook (Twilio form or Telnyx JSON). Updates the stored message status, then acknowledges with a 2xx. */
-async function handleSmsStatus(c: Context<Env>) {
+async function handleSmsStatus(c: ParamCtx<SmsTypeParam>) {
+  const { type } = c.req.valid('param')
   try {
-    const type = c.req.param('type')
     let status: string
     let sid: string
     if (type === 'twilio') {
@@ -612,8 +614,8 @@ export const createProfile = factory.createHandlers(auth, jsonBody(createSetting
 export const listNumbers = factory.createHandlers(jsonBody(getNumberBody), listProviderNumbers)
 export const getProfile = factory.createHandlers(auth, pathParams(profileIdParam), fetchSetting)
 export const disconnectProvider = factory.createHandlers(auth, pathParams(profileIdParam), resetProviderConfig)
-export const receiveSms = factory.createHandlers(handleReceiveSms)
-export const smsStatus = factory.createHandlers(handleSmsStatus)
+export const receiveSms = factory.createHandlers(pathParams404(smsTypeParam), handleReceiveSms)
+export const smsStatus = factory.createHandlers(pathParams404(smsTypeParam), handleSmsStatus)
 export const sendMessage = factory.createHandlers(auth, jsonBody(sendSmsBody), handleSendSms)
 export const listConversations = factory.createHandlers(auth, queryParams(conversationsQuery), aggregateConversations)
 export const getConversationMessages = factory.createHandlers(auth, jsonBody(messageListBody), listMessages)

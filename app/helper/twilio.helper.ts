@@ -1,6 +1,6 @@
 import twilio from 'twilio'
 import { combineURLs } from './common.helper.ts'
-import { WEBHOOK_PATHS } from './webhook-paths.ts'
+import { WEBHOOKS } from './webhook-paths.ts'
 import { env } from '../../config/env.ts'
 import { ProviderError } from '../provider-error.ts'
 
@@ -23,8 +23,8 @@ const createTwiml = async (sid: string, token: string) => {
         const client = twilio(sid, token);
         const twiml = await client.applications.create({
             voiceMethod: "POST",
-            voiceUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioVoice),
-            statusCallback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioStatus),
+            voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioVoice.full),
+            statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioStatus.full),
             statusCallbackMethod: "POST",
             friendlyName: "Operationprivacy VoIPSuite",
         });
@@ -39,8 +39,8 @@ const updateTwiml = async (sid: string, token: string, twimlsid: string) => {
         const client = twilio(sid, token);
         const twiml = await client.applications(twimlsid).update({
             voiceMethod: "POST",
-            voiceUrl: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioVoice),
-            statusCallback: combineURLs(env.BASE_URL, WEBHOOK_PATHS.twilioStatus),
+            voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioVoice.full),
+            statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioStatus.full),
             statusCallbackMethod: "POST",
         });
         return twiml.sid

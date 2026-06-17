@@ -16,13 +16,14 @@ import { env } from '../../config/env.ts'
 import type { MediaDoc } from '../../shared/schema/media.ts'
 import type { ApiError } from '../../shared/api-contracts.ts'
 
-const maxSize = 10_000_000 // 10 MB
+/** Max accepted image-upload size, enforced per-request by the media route's bodyLimit (HTTP 413 if exceeded). */
+export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024 // 15 MB
 const allowedTypes = /jpeg|jpg|gif|png/ // mirror of the old multer fileFilter (mimetype + extension)
 
 // ── Handlers (signatures visible) ───────────────────────────────────────────────────────────────────────────────
 
-// Hono port of the old multer `.single('file')` upload. `bodyLimit` (on the chain) enforces the 10 MB cap that
-// multer's `limits.fileSize` used to; here we read the parsed `File`, re-check type/extension, write it to disk under
+// Hono port of the old multer `.single('file')` upload. `bodyLimit` (on the chain) enforces the {@link MAX_UPLOAD_BYTES}
+// cap that multer's `limits.fileSize` used to; here we read the parsed `File`, re-check type/extension, write it to disk under
 // `uploads/<date>/<hash><ext>`, then persist a Media doc and return it with `media` rewritten to an absolute URL.
 async function uploadMedia(c: Context<Env>) {
   const body = await c.req.parseBody()
@@ -67,6 +68,6 @@ cron.schedule('0 1 * * *', () => {
 export const upload = factory.createHandlers(
   auth,
   // http 413: Content Too Large
-  bodyLimit({ maxSize, onError: (c) => c.json({ message: 'File too large!' } satisfies ApiError, 413) }),
+  bodyLimit({ maxSize: MAX_UPLOAD_BYTES, onError: (c) => c.json({ message: 'File too large!' } satisfies ApiError, 413) }),
   uploadMedia,
 )

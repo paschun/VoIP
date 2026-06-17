@@ -3,7 +3,7 @@ import Setting from '../model/setting.model.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
 import { combineURLs } from '../helper/common.helper.ts'
-import { WEBHOOK_PATHS } from '../helper/webhook-paths.ts'
+import { WEBHOOKS } from '../helper/webhook-paths.ts'
 import { factory } from '../factory.ts'
 import type { JsonCtx, ParamCtx, ParamJsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
@@ -44,12 +44,12 @@ async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
   // helpers throw ProviderError on a provider failure, which onError renders as a 502.
   await twilioHelper.twimlFallbackUpdate({
     sid: setting.twilio_sid ?? '', token: setting.twilio_token ?? '', twimlsid: setting.twiml_app ?? '',
-    url: combineURLs(fallbackUrl, WEBHOOK_PATHS.twilioVoice),
+    url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioVoice.full),
   })
   await twilioHelper.numberFallbackUpdate({
     sid: setting.twilio_sid ?? '', token: setting.twilio_token ?? '', numbersid: setting.sid ?? '',
-    voice_url: combineURLs(fallbackUrl, WEBHOOK_PATHS.twilioIncoming),
-    sms_url: combineURLs(fallbackUrl, WEBHOOK_PATHS.twilioReceiveSms),
+    voice_url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioIncoming.full),
+    sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
   })
   return sendDoc<SettingDoc>(c, setting)
 }
@@ -70,15 +70,15 @@ async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
 
   await telnyxHelper.messageProfileFallback({
     apiKey: setting.api_key ?? '', setting: setting.setting ?? '',
-    url: combineURLs(fallbackUrl, WEBHOOK_PATHS.telnyxReceiveSms),
+    url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.telnyx),
   })
   await telnyxHelper.texmlAppFallback({
     apiKey: setting.api_key ?? '', twimlid: setting.telnyx_twiml ?? '',
-    url: combineURLs(fallbackUrl, WEBHOOK_PATHS.telnyxVoice),
+    url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxVoice.full),
   })
   await telnyxHelper.sipAppFallback({
     apiKey: setting.api_key ?? '', uuid: setting.sip_id ?? '',
-    url: combineURLs(fallbackUrl, WEBHOOK_PATHS.telnyxStatus),
+    url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
   })
   return sendDoc<SettingDoc>(c, setting)
 }

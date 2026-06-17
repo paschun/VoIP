@@ -26,6 +26,10 @@ export type CreateSettingRequest = z.infer<typeof createSettingBody>
 export const profileIdParam = z.object({ id: z.string().min(1) })
 export type ProfileIdParam = z.infer<typeof profileIdParam>
 
+/** The `:type` provider segment on the SMS webhook routes (`/receive-sms/:type`, `/sms-status/:type`). */
+export const smsTypeParam = z.object({ type: z.enum(['telnyx', 'twilio']) })
+export type SmsTypeParam = z.infer<typeof smsTypeParam>
+
 /** Public: list a provider's phone numbers from caller-supplied credentials (discriminated so each branch is required). */
 export const getNumberBody = z.discriminatedUnion('type', [
   z.object({ type: z.literal('telnyx'), api_key: z.string().min(1) }),

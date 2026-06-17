@@ -64,8 +64,11 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
     throw new HTTPException(401, { message: 'Unauthorized Access!' })
   }
 
+  // https://github.com/panva/jose/blob/HEAD/docs/jwt/sign/classes/SignJWT.md
+  // HS256 requires a 256-bit (32-byte) secret
   const token = await new SignJWT({ id: user.id, email: user.email, name: user.name })
     .setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(joseSecret)
+
   user.token = token
   await user.save()
 

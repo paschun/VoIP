@@ -1,6 +1,12 @@
 import { createFactory } from 'hono/factory'
 import type { Context } from 'hono'
-import type { AuthUser } from './middleware/auth.middleware.ts'
+
+/** The JWT payload the auth middleware (`./middleware/auth.hono.ts`) verifies and attaches as `c.get('user')`. */
+export interface AuthUser {
+  id: string
+  email: string
+  name: string
+}
 
 /**
  * Env for the typed Hono factory. One factory means the `Env` below is defined once: every middleware/handler built

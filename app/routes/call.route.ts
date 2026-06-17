@@ -1,14 +1,15 @@
 import { Hono } from 'hono'
 import type { Env } from '../factory.ts'
 import * as call from '../controller/call.controller.ts'
+import { WEBHOOKS } from '../helper/webhook-paths.ts'
 
-// Routes for `/api/call`. The webhook paths (make-call, status, incoming, telnyx, status/telnyx) are wired into the
-// Twilio/Telnyx provider config (see the webhook URLs in provider.controller), so they are fixed and unauthenticated --
-// the provider calls them and expects TwiML/XML back. Only `/token` is frontend-facing and authenticated.
+// Routes for `/api/call`. The webhook `route`s come from `WEBHOOKS.call` (the same source the provider-facing `full`
+// URLs derive from, so the route and the URL we register with the provider can't drift). They're fixed and
+// unauthenticated -- the provider calls them and expects TwiML/XML back. Only `/token` is frontend-facing and authed.
 export const callRoutes = new Hono<Env>()
   .post('/token', ...call.token)
-  .post('/make-call', ...call.makeCall)
-  .post('/status', ...call.status)
-  .post('/incoming', ...call.incoming)
-  .post('/telnyx', ...call.telnyx)
-  .post('/status/telnyx', ...call.statusTelnyx)
+  .post(WEBHOOKS.call.twilioVoice.route, ...call.makeCall)
+  .post(WEBHOOKS.call.twilioStatus.route, ...call.status)
+  .post(WEBHOOKS.call.twilioIncoming.route, ...call.incoming)
+  .post(WEBHOOKS.call.telnyxVoice.route, ...call.telnyx)
+  .post(WEBHOOKS.call.telnyxStatus.route, ...call.statusTelnyx)
