@@ -104,7 +104,7 @@ methods: {
   },
   commonMfa (data: { status: string; qr: string }) {
     // todo: this data type should be defined in shared api contract
-    this.$post('auth/mfa/save', data)
+    this.$post('auth/mfa', data)
       .then((response) => {
         if (response) {
           if (data.status === 'true') {
@@ -122,7 +122,7 @@ methods: {
       notifyError('Please enter verification code')
       return
     }
-    this.$post('auth/mfa/save', { status: 'true', qr: 'false', code: this.verification_code })
+    this.$post('auth/mfa', { status: 'true', qr: 'false', code: this.verification_code })
       .then((response) => {
         if (response) {
           this.qr = null
@@ -142,7 +142,7 @@ methods: {
     }
   },
   getMfaStatus () {
-    this.$post('auth/user/get', {})
+    this.$get('auth/me')
       .then((response) => {
         const enabled = response?.data?.mfa === 'true'
         this.realMfs = enabled

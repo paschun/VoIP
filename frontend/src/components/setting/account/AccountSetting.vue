@@ -61,7 +61,7 @@ export default defineComponent({
         confirmButtonText: 'Submit',
         showLoaderOnConfirm: true,
         preConfirm: (login) => {
-          return this.$post('auth/password/check', { password: login })
+          return this.$del('auth/account', { password: login })
             .catch(() => false)
         },
         allowOutsideClick: () => !this.$swal.isLoading()

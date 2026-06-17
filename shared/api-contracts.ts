@@ -141,8 +141,8 @@ export interface HardwareKey {
 /** Response of `profile/getdata` — every Setting/profile the signed-in user owns. */
 export type ProfilesResponse = ApiEnvelope<Profile[]>
 
-/** Response of `auth/get-version` — the latest git short hash (or fallback). */
-export type VersionResponse = ApiEnvelope<string>
+/** Response of `auth/get-version` -- the latest git short hash (or fallback). */
+export type VersionResponse = Ok<string>
 
 /** Payload of `call/token` — a provider access token plus the chosen profile. */
 export interface CallToken {

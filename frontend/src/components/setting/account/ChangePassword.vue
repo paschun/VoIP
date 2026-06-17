@@ -64,7 +64,7 @@ export default defineComponent({
       if (this.v$.$invalid) {
         return
       }
-      this.$post('auth/password/update', this.user)
+      this.$put('auth/password', this.user)
         .then((response) => {
           if (response) {
             notifySuccess('Password updated successfully')

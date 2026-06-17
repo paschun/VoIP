@@ -62,7 +62,7 @@ export default {
     const $get: ApiGet = <T = any>(url: string) => api.get<T>(url).catch(handleError)
     const $put: ApiPut = <T = any>(url: string, data?: unknown) => api.put<T>(url, data).catch(handleError)
     const $patch: ApiPatch = <T = any>(url: string, data?: unknown) => api.patch<T>(url, data).catch(handleError)
-    const $del: ApiDelete = <T = any>(url: string) => api.delete<T>(url).catch(handleError)
+    const $del: ApiDelete = <T = any>(url: string, data?: unknown) => api.delete<T>(url, data).catch(handleError)
     app.config.globalProperties.$post = $post
     app.config.globalProperties.$get = $get
     app.config.globalProperties.$put = $put

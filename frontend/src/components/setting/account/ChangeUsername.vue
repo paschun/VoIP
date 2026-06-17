@@ -51,7 +51,7 @@ export default defineComponent({
       if (this.v$.$invalid) {
         return
       }
-      this.$post('auth/username/update', this.form)
+      this.$patch('auth/username', this.form)
         .then((response) => {
           if (response) {
             Cookies.set('userdata', JSON.stringify(response.data), { expires: 30 })

@@ -9,11 +9,10 @@ import compression from 'compression'
 import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
-import authRoute from './app/routes/auth.route.ts'
 import settingRoute from './app/routes/setting.route.ts'
-// NOTE: email, media, profile, contact, provider, call and hardwarekey are migrated to Hono (their route files export
-// Hono groups, e.g. `emailRoutes` / `hardwarekeyRoutes`). They are not wired here anymore; the Hono server serves them
-// at the upcoming server-swap step. The other 2 groups (auth, setting) still run on Express below.
+// NOTE: every group except `setting` is migrated to Hono (their route files export Hono groups, e.g. `emailRoutes` /
+// `authRoutes`). They are not wired here anymore; the Hono server serves them at the upcoming server-swap step. Only
+// the `setting` group still runs on Express below.
 
 // App & settings
 // --------------
@@ -122,7 +121,6 @@ app.use('/uploads', express.static('uploads'));
 // API routes
 // ----------
 // Must be registered BEFORE the SPA wildcard below, otherwise the wildcard swallows them and returns index.html.
-authRoute(app);
 settingRoute(app);
 
 // SPA fallback

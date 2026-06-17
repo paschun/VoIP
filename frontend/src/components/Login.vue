@@ -186,7 +186,7 @@ mounted () {
 },
 methods: {
   fnLogin () {
-    this.$post('auth/check-directoryname', { dirname: appDirectory(this.$route) })
+    this.$get('auth/directory-name?name=' + encodeURIComponent(appDirectory(this.$route)))
       .then((response) => {
         const { status, dir } = response.data
         const loggedIn = !!Cookies.get('access_token')
@@ -206,12 +206,12 @@ methods: {
       .catch((e) => console.error(e))
   },
   getsignup () {
-    this.$post('auth/get-signup', {})
+    this.$get('auth/signup-enabled')
       .then((response) => { this.signUpOption = response?.data === 'on' })
       .catch(() => { this.signUpOption = false })
   },
   getVersion () {
-    this.$get<VersionResponse>('auth/get-version')
+    this.$get<VersionResponse>('auth/version')
       .then((response) => {
         if (response) {
           this.versionOption = response.data
@@ -230,7 +230,7 @@ methods: {
     this.$post('auth/login', this.user)
       .then((response) => {
         if (response) {
-          this.keys = response.harwarekey
+          this.keys = response.hardwarekey
           this.mfa = response.mfa
           this.verification_method = false
           if (response.status === 'hardwarekey') {
@@ -284,7 +284,7 @@ methods: {
     }
     this.submitted2 = true
     if (this.otpForm.otp.trim() !== '') {
-      this.$post('auth/otp-verify', { user: this.activeUser.user._id, verification_code: this.otpForm.otp })
+      this.$post('auth/otp/verify', { user: this.activeUser.user._id, verification_code: this.otpForm.otp })
         .then((response) => {
           if (response) {
             if (response.status === 'true') {

@@ -73,8 +73,8 @@ methods: {
     this.activeMenu = menu
   },
   async getVersion() {
-    const res = await this.$get<VersionResponse>("auth/get-version")
-    if (res && res.status) this.versionOption = res.data
+    const res = await this.$get<VersionResponse>("auth/version")
+    if (res) this.versionOption = res.data
   },
   passwordEnable (menu: string) {
     this.checkpasswordMenu = menu

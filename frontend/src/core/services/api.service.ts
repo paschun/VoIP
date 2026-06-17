@@ -69,8 +69,8 @@ export type ApiClientPost<F = never, D = unknown> = <T = D>(url: string, body?: 
 // PUT/PATCH share POST's call shape (url + JSON body); aliased so the globals can carry method-specific names.
 export type ApiClientPut<F = never, D = unknown> = ApiClientPost<F, D>
 export type ApiClientPatch<F = never, D = unknown> = ApiClientPost<F, D>
-// DELETE shares GET's call shape (url only -- the resource id goes in the path).
-export type ApiClientDelete<F = never, D = unknown> = ApiClientGet<F, D>
+// DELETE usually carries the resource id in the path, but allows an optional JSON body (e.g. a password to confirm).
+export type ApiClientDelete<F = never, D = unknown> = ApiClientPost<F, D>
 
 export const api: { get: ApiClientGet, post: ApiClientPost, put: ApiClientPut, patch: ApiClientPatch, delete: ApiClientDelete } = {
   /** Send a GET request. Returns the parsed JSON response body. */
@@ -85,6 +85,6 @@ export const api: { get: ApiClientGet, post: ApiClientPost, put: ApiClientPut, p
   /** Send a PATCH request with a JSON body (partial update). Returns the parsed JSON response body. */
   patch: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('PATCH', url, body),
 
-  /** Send a DELETE request. Returns the parsed JSON response body. */
-  delete: <T = unknown>(url: string): Promise<T> => request<T>('DELETE', url)
+  /** Send a DELETE request (optional JSON body to confirm). Returns the parsed JSON response body. */
+  delete: <T = unknown>(url: string, body?: unknown): Promise<T> => request<T>('DELETE', url, body)
 }

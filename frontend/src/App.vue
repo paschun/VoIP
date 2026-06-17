@@ -20,7 +20,7 @@ export default defineComponent({
   },
   methods: {
     getVersion () {
-      this.$get('auth/get-update-version')
+      this.$get('auth/version/update-available')
         .then((response) => {
           console.log('update available:', response.update)
           if (response.update === 'true') {

@@ -1,13 +1,12 @@
-import type { Request, Response } from 'express'
-import bcrypt from 'bcrypt'
-const saltRounds = 10;
-import Validator from 'validatorjs'
-
 import { execSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
-import pkg from '../../package.json' with { type: 'json' }
+import type { Context } from 'hono'
+import { HTTPException } from 'hono/http-exception'
+import bcrypt from 'bcrypt'
+import { SignJWT } from 'jose'
+import Speakeasy from 'speakeasy'
+import QRCode from 'qrcode'
 
+import pkg from '../../package.json' with { type: 'json' }
 import User from '../model/user.model.ts'
 import Hardwarekey from '../model/hardwarekey.model.ts'
 import Contact from '../model/contact.model.ts'
@@ -18,458 +17,267 @@ import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
 import { env } from '../../config/env.ts'
 
-import { SignJWT } from 'jose'
+import { factory } from '../factory.ts'
+import type { Env, JsonCtx, QueryCtx } from '../factory.ts'
+import { auth } from '../middleware/auth.hono.ts'
+import { jsonBody, queryParams } from '../validate.ts'
+import type { Ok, StringBoolean } from '../../shared/api-contracts.ts'
+import type { HardwarekeyListItem } from '../../shared/contracts/hardwarekey.ts'
+import {
+  loginBody, type LoginRequest,
+  registerBody, type RegisterRequest,
+  otpVerifyBody, type OtpVerifyRequest,
+  directoryNameQuery, type DirectoryNameQuery,
+  updateUsernameBody, type UpdateUsernameRequest,
+  updatePasswordBody, type UpdatePasswordRequest,
+  passwordBody, type PasswordRequest,
+  saveMfaBody, type SaveMfaRequest,
+  type UserData, type LoginResponse, type OtpVerifyResponse, type MfaQrResponse,
+  type CheckDirectoryName, type CheckDirectoryNameResponse, type UpdateAvailableResponse,
+} from '../../shared/contracts/auth.ts'
+
+const saltRounds = 10
 const joseSecret = new TextEncoder().encode(env.COOKIE_KEY)
+const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_page=1'
 
-import Speakeasy from 'speakeasy'
-import QRCode from 'qrcode'
+/** The user fields echoed to the client (also persisted in the `userdata` cookie). */
+const userDataResponseGen = (u: {
+  _id: { toString(): string }; name?: string | null; email?: string | null; token?: string | null
+}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', email: u.email ?? '', token: u.token ?? '' })
 
-const userDataResponseGen = ({ _id, name, email, token }) => ({ _id, name, email, token })
-
-const remoteVersionURL ='https://api.github.com/repos/paschun/VoIP/commits?per_page=1';
-
-// latest git commit short hash, fallback to package.json version.
+/** Running build id: the short git commit, falling back to `package.json`'s version. */
 const currentVersion = (() => {
-    try {
-        return execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname }).toString().trim()
-    } catch (err) {
-        console.error(err)
-        return pkg.version
-    }
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname }).toString().trim()
+  } catch (err) {
+    console.error(err)
+    return pkg.version
+  }
 })()
 
-export const login = async (req: Request, res: Response) => {
-    try{
-        let rules = {
-            email: 'required',
-            password: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            var email = req.body.email.toLowerCase()
-            var userData = {email:{ $eq: email}};
-            var user = await User.findOne(userData);
-            //res.send(user);
-            if(user){
-                var checkpassword = bcrypt.compareSync(req.body.password, user.password);
-                if(checkpassword){
-                    var obj = {id:user.id,email:user.email,name:user.name};
-                    const token = await new SignJWT(obj)
-                      .setProtectedHeader({ alg: 'HS256' })
-                      .setExpirationTime('30d')
-                      .sign(joseSecret);
-                    user.token = token;
-                    user.save();      
-                    var status = 'true';
-                    var harwarekey, mfa;
-                    if(user.hardwarekey && user.hardwarekey === 'true'){
-                        mfa = false
-                        if(user.mfa && user.mfa === 'true') {
-                            mfa = true;
-                        }
-                        status = 'hardwarekey';
-                        harwarekey = await Hardwarekey.find({ user:user._id, registrationComplete: true });
-                    } else
-                    if(user.mfa && user.mfa === 'true'){
-                        status = 'mfa';
-                        harwarekey = false
-                        mfa=true
-                    }else{
-                        harwarekey = false;
-                        mfa = false;
-                    }
-                    const userDataResponse = userDataResponseGen(user);
-                    res.send({status:status, message:'Successfully logged in.', data:userDataResponse, token:token, harwarekey:harwarekey, mfa:mfa});
-                    return;
-                }else{
-                    res.status(401).json({status:'false',message:'Unauthorized Access!'});
-                }
-            }else{
-                res.status(401).json({status:'false',message:'Unauthorized Access!'});
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-//otp-verify
-export const otpVerify = async (req: Request, res: Response) => {
-    try{
-        var userData = {_id:{$eq: req.body.user}};
-        var user = await User.findOne(userData);
-        if(user){
-            var verifyData = Speakeasy.totp.verify({
-                secret: user.mfa_token,
-                encoding: 'base32',
-                token: req.body.verification_code
-            });
-            if(verifyData){
-                res.status(200).json({status:'true',data:[],message:'verified successfully!'});
-            }else{
-                res.status(400).json({status:'false',message:'Please enter valid verification code!'});
-            }
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
+/** Authenticate; on success mint a 30d JWT and report whether a hardware-key or OTP second factor is still required. */
+async function authenticate(c: JsonCtx<LoginRequest>) {
+  const { email: rawEmail, password } = c.req.valid('json')
+  const email = rawEmail.toLowerCase()
+  const user = await User.findOne({ email: { $eq: email } })
+  if (!user || !bcrypt.compareSync(password, user.password ?? '')) {
+    throw new HTTPException(401, { message: 'Unauthorized Access!' })
+  }
 
-export const register = async (req: Request, res: Response) => {
-    try{
-        let rules = {
-            email: 'required',
-            password: 'required|between:6,100'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            var email = req.body.email.toLowerCase()
-            var checkEmail = await User.findOne({email: {$eq: email}});
-            if(checkEmail){
-                var errors = {errors: {email:['Username already exists!']}};
-                res.status(400).send({status: false, errors:errors, data: []});
-            }else{
-                const hash = bcrypt.hashSync(req.body.password, saltRounds);
-                var userData = {name:email, email:email,password:hash};
-                var saveUser = await User.create(userData);
+  const token = await new SignJWT({ id: user.id, email: user.email, name: user.name })
+    .setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(joseSecret)
+  user.token = token
+  await user.save()
 
-                const userDataResponse = userDataResponseGen(saveUser);
-                res.send({status:true, message:'User created successfully!', data:userDataResponse});
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-export const getSignUpOption = async (_req: Request, res: Response) => {
-    try{
-        var signup = env.SIGNUPS;
-        if(signup === 'on'){
-            res.send({status:true, message:'signup option!', data:signup});
-        }else{
-            res.status(400).send({status: false, errors:'signup not avilables', data: []}); 
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-export const getVersionOption = (_req: Request, res: Response) => {
-    res.send({ status: true, message: "version defined.", data: currentVersion });
-};
-
-export const checkDirectoryName = (req: Request, res: Response) => {
-    try{
-        var dir = env.APPDIRECTORY
-        if(dir){
-            if(req.body.dirname){
-                if(dir === req.body.dirname){
-                    res.send({status:true, message:'APPDIRECTORY Matched!', data:{status:'true', dir: dir}});
-                } else {
-                    res.send({status:true, message:'APPDIRECTORY Mismatch!', data:{status:'false', dir: dir}});
-                }
-            }else{
-                res.send({status:true, message:'APPDIRECTORY Mismatch!', data:{status:'no-name', dir: dir}});
-            }
-        }else{
-            if(req.body.dirname){
-                if('voip' === req.body.dirname){
-                    res.send({status:true, message:'APPDIRECTORY not defined!', data:{status:'nodir', dir: 'voip'}});
-                }else{
-                    res.send({status:true, message:'APPDIRECTORY Mismatch!', data:{status:'false', dir: dir}});
-                }
-            }else{
-                res.send({status:true, message:'APPDIRECTORY not defined!', data:{status:'no-name',  dir: 'voip'}});
-            }
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-export const getUpdateVersion = async (_req: Request, res: Response) => {
-    try{
-        const response = await fetch(remoteVersionURL);
-        if (response.ok) {
-            // todo : zod validate gh "commits" API schema
-                try {
-            const commits = await response.json();
-            const remoteVersion = commits[0].sha.slice(0, 7)
-                    if(currentVersion !== remoteVersion){
-                        res.send({update: 'true'});
-                    }else{
-                        res.send({update: 'false'});
-                    }
-                } catch (err) {
-                    console.error(err)
-                    res.send({update: 'false'});
-                }
-        }else{
-            res.send({update: 'false'});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-};
-
-export const updateUserName = async (req: Request, res: Response) => {
-    try{
-        let rules = {
-            email: 'required',
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            const user = await User.findOne({ email: { $eq: req.body.email } , _id: { $ne: req.user.id } });
-            if(user){
-                res.status(400).json({status:'false',message:'username already exists!'});
-            }else{
-                // var checkUser = await User.findById(req.user.id);
-                var checkUser = await User.findOne({_id: { $eq: req.user.id }});
-                if(checkUser){
-                    checkUser.email = req.body.email
-                    checkUser.name = req.body.email
-                    var saveEmail = await checkUser.save()
-                    const userDataResponse = userDataResponseGen(checkUser);
-                    res.send({status:true, message:'username updated successfully!', data:userDataResponse});
-                }else{
-                    res.status(400).json({status:'false',message:'User not found!'});
-                }
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
+  let status: LoginResponse['status'] = 'true'
+  let hardwarekey: LoginResponse['hardwarekey'] = false
+  let mfa = false
+  if (user.hardwarekey === 'true') {
+    status = 'hardwarekey'
+    mfa = user.mfa === 'true'
+    // todo: dont type cast here
+    hardwarekey = await Hardwarekey.find({ user: user._id, registrationComplete: true }) as unknown as HardwarekeyListItem[]
+  } else if (user.mfa === 'true') {
+    status = 'mfa'
+    mfa = true
+  }
+  return c.json({
+    status, message: 'Successfully logged in.', data: userDataResponseGen(user), token, hardwarekey, mfa,
+  } satisfies LoginResponse)
 }
 
-export const getUser = async (req: Request, res: Response) => {
-    try{
-        const user = await User.findOne({ _id: { $eq: req.user.id } });
-        if(user){
-            const userDataResponse = userDataResponseGen(user);
-            res.status(200).json({ status: "true", data: userDataResponse, message: "user get!" });
-        }else{
-            res.status(400).json({status:'false',message:'User not found!'});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
+/** Create an account (email is the initial username); reject a duplicate email. */
+async function createUser(c: JsonCtx<RegisterRequest>) {
+  // todo: make email lowercase in the schema validator?
+  const email = c.req.valid('json').email.toLowerCase()
+  if (await User.findOne({ email: { $eq: email } })) {
+    throw new HTTPException(409, { message: 'Username already exists!' })
+  }
+  const hash = bcrypt.hashSync(c.req.valid('json').password, saltRounds)
+  const saveUser = await User.create({ name: email, email, password: hash })
+  return c.json({ data: userDataResponseGen(saveUser) } satisfies Ok<UserData>, 201)
+}
+
+/** Verify a TOTP code during the OTP login step. */
+async function verifyOtp(c: JsonCtx<OtpVerifyRequest>) {
+  const { user: userId, verification_code } = c.req.valid('json')
+  const user = await User.findOne({ _id: { $eq: userId } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  const ok = Speakeasy.totp.verify({ secret: user.mfa_token ?? '', encoding: 'base32', token: verification_code })
+  if (!ok) throw new HTTPException(400, { message: 'Please enter valid verification code!' })
+  return c.json({ status: 'true', data: [], message: 'verified successfully!' } satisfies OtpVerifyResponse)
+}
+
+/** Whether self-signup is enabled (the `SIGNUPS` env flag, `'on'`/`'off'`). */
+function readSignupOption(c: Context<Env>) {
+  return c.json({ data: env.SIGNUPS } satisfies Ok<string>)
+}
+
+/** The running build id (see `currentVersion`). */
+function readVersion(c: Context<Env>) {
+  return c.json({ data: currentVersion } satisfies Ok<string>)
+}
+
+/** Whether a newer build than the running one exists upstream; any lookup failure reports `'false'`. */
+async function readUpdateAvailable(c: Context<Env>) {
+  let update: StringBoolean = 'false'
+  try {
+    const response = await fetch(remoteVersionURL)
+    if (response.ok) {
+      // TODO: zod-validate the GitHub "commits" API schema rather than trusting the shape.
+      const commits = await response.json() as Array<{ sha: string }>
+      const remoteVersion = commits[0]?.sha.slice(0, 7)
+      update = currentVersion !== remoteVersion ? 'true' : 'false'
     }
+  } catch (err) {
+    console.error(err)
+  }
+  return c.json({ update } satisfies UpdateAvailableResponse)
 }
 
-export const saveMfa = async (req: Request, res: Response) => {
-    try{
-        let rules = {
-            status: 'required',
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            var user = await User.findOne({ _id: { $eq: req.user.id } });
-            if(user){
-                if(req.body.status === 'true'){
-                    if(req.body.qr === 'true'){
-                        const secretCode = Speakeasy.generateSecret({
-                            name: `Operation Privacy (${req.user.email})`,
-                        });
-                        user.mfa_token = secretCode.base32
-                        await user.save()
-                        var image = await QRCode.toDataURL(secretCode.otpauth_url)
-                        var respnse = {
-                            image: image,
-                            secret: secretCode.base32
-                        }
-                        res.send(respnse);
-                    }else{
-                        var verifyData = Speakeasy.totp.verify({
-                            secret: user.mfa_token,
-                            encoding: 'base32',
-                            token: req.body.code
-                        });
-                        if(verifyData){
-                            user.mfa = 'true'
-                            await user.save()
+/** Compare the caller's app-directory against the configured `APPDIRECTORY`, reporting match/mismatch/unconfigured. */
+async function matchDirectoryName(c: QueryCtx<DirectoryNameQuery>) {
+  const dirname = c.req.valid('query').name
+  const dir = env.APPDIRECTORY
+  let result: CheckDirectoryName
+  if (dir) {
+    if (!dirname) result = { status: 'no-name', dir }
+    else result = { status: dir === dirname ? 'true' : 'false', dir }
+  } else if (dirname === 'voip') {
+    result = { status: 'nodir', dir: 'voip' }
+  } else if (dirname) {
+    result = { status: 'false', dir }
+  } else {
+    result = { status: 'no-name', dir: 'voip' }
+  }
+  return c.json({ data: result } satisfies CheckDirectoryNameResponse)
+}
 
-                        const userDataResponse = userDataResponseGen(user);
-                        res.status(200).json({status: "true", data: userDataResponse, message: "verified successfully!" });
-                        }else{
-                            res.status(400).json({status:'false',message:'Please enter valid verification code!'});
-                        }
-                    }
-                }else{
-                    user.mfa = req.body.status
-                    await user.save()
+/** Rename the caller (email doubles as username); reject if the new email is taken by another account. */
+async function changeUsername(c: JsonCtx<UpdateUsernameRequest>) {
+  const userId = c.get('user').id
+  const email = c.req.valid('json').email
+  if (await User.findOne({ email: { $eq: email }, _id: { $ne: userId } })) {
+    throw new HTTPException(409, { message: 'username already exists!' })
+  }
+  const user = await User.findOne({ _id: { $eq: userId } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  user.email = email
+  user.name = email
+  await user.save()
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+}
 
-                    const userDataResponse = userDataResponseGen(user);
-                    res.status(200).json({status:'true',data:userDataResponse,message:'status saved successfully!'});
-                }
-            }else{
-                // var checkUser = await User.findById(req.user.id);
-                var checkUser = await User.findOne({_id: { $eq: req.user.id }});
-                if(checkUser){
-                    checkUser.email = req.body.email
-                    checkUser.name = req.body.email
-                    var saveEmail = await checkUser.save()
+/** Change the caller's password after checking the old one. */
+async function changePassword(c: JsonCtx<UpdatePasswordRequest>) {
+  const { old_password, password } = c.req.valid('json')
+  const user = await User.findOne({ _id: { $eq: c.get('user').id } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  if (!bcrypt.compareSync(old_password, user.password ?? '')) {
+    throw new HTTPException(400, { message: 'Please enter a valid old password!' })
+  }
+  user.password = bcrypt.hashSync(password, saltRounds)
+  await user.save()
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+}
 
-                    const userDataResponse = userDataResponseGen(checkUser);
-                    res.send({status:true, message:'username updated successfully!', data:userDataResponse});
-                }else{
-                    res.status(400).json({status:'false',message:'User not found!'});
-                }
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
+/** Confirm the caller's password (gate before showing a protected settings menu). */
+async function verifyPassword(c: JsonCtx<PasswordRequest>) {
+  const user = await User.findOne({ _id: { $eq: c.get('user').id } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  if (!bcrypt.compareSync(c.req.valid('json').password, user.password ?? '')) {
+    throw new HTTPException(400, { message: 'please enter valid password!' })
+  }
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+}
+
+/** Verify the caller's password, then irreversibly delete the account and all its data. */
+async function removeAccount(c: JsonCtx<PasswordRequest>) {
+  const userId = c.get('user').id
+  const user = await User.findOne({ _id: { $eq: userId } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  if (!bcrypt.compareSync(c.req.valid('json').password, user.password ?? '')) {
+    throw new HTTPException(400, { message: 'Please enter a valid password!' })
+  }
+  await deleteAllAccountData(userId)
+  return c.json({ data: [] } satisfies Ok<never[]>)
+}
+
+/** The caller's user record. */
+async function readUser(c: Context<Env>) {
+  const user = await User.findOne({ _id: { $eq: c.get('user').id } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  // TODO: the response omits `mfa`, but the settings UI reads `data.mfa` to show MFA state, so the toggle always reads
+  // as off. Adding `mfa` to `UserData`/`userDataResponseGen` would fix it (it also lands in the `userdata` cookie).
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+}
+
+/** Toggle MFA: mint a secret+QR (`qr:'true'`), verify the code to enable (`qr:'false'`), or disable (`status:'false'`). */
+async function saveMfaSetting(c: JsonCtx<SaveMfaRequest>) {
+  const authUser = c.get('user')
+  const body = c.req.valid('json')
+  const user = await User.findOne({ _id: { $eq: authUser.id } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+
+  // todo: bah, stringbools!!
+  if (body.status === 'true') {
+    if (body.qr === 'true') {
+      const secretCode = Speakeasy.generateSecret({ name: `Operation Privacy (${authUser.email})` })
+      user.mfa_token = secretCode.base32
+      await user.save()
+      const image = await QRCode.toDataURL(secretCode.otpauth_url ?? '')
+      return c.json({ image, secret: secretCode.base32 } satisfies MfaQrResponse)
     }
+    const ok = Speakeasy.totp.verify({ secret: user.mfa_token ?? '', encoding: 'base32', token: body.code ?? '' })
+    if (!ok) throw new HTTPException(400, { message: 'Please enter valid verification code!' })
+    user.mfa = 'true'
+  } else {
+    user.mfa = body.status as StringBoolean
+  }
+  await user.save()
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
 }
 
-export const updatePassword = async (req: Request, res: Response) => {
-    try{
-        let rules = {
-            old_password: 'required',
-            password: 'required',
-            c_password: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkUser = await User.findById(req.user.id);
-            var checkUser = await User.findOne({_id: { $eq: req.user.id }});
-            if(checkUser){
-                var checkpassword = bcrypt.compareSync(req.body.old_password, checkUser.password);
-                if(checkpassword){
-                    const hash = bcrypt.hashSync(req.body.password, saltRounds);
-                    checkUser.password = hash
-                    var saveEmail = await checkUser.save()
-
-                    const userDataResponse = userDataResponseGen(checkUser);
-                    res.send({status:true, message:'Password updated successfully!', data:userDataResponse});
-                }else{
-                    res.status(400).json({status:'false',message:'Please enter a valid old password!'});
-                }
-            }else{
-                res.status(400).json({status:'false',message:'User not found!'});
-            }
-        }else{
-            res.status(419).send({status: false, errors:validation.errors, data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-}
-export const passwordVerify = async(req: Request, res: Response) => {
-    try{
-        let rules = {
-            password: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            var checkUser = await User.findOne({_id: {$eq: req.user.id }});
-            if(checkUser){
-                var checkpassword = bcrypt.compareSync(req.body.password, checkUser.password);
-                if(checkpassword){
-                    const userDataResponse = userDataResponseGen(checkUser);
-                    res.send({status:'true', message:'Password checked!', data:userDataResponse});
-                }else{
-                    res.status(400).json({status:'false',message:'please enter valid password!'});
-                }
-            }else{
-                res.status(400).json({status:'false',message:'User not found!'});
-            }
-        }else{
-            res.status(400).send({status: false, message:'Password required!', data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
-}
-export const checkPassword = async (req: Request, res: Response) => {
-    try{
-        let rules = {
-            password: 'required'
-        };
-        let validation = new Validator(req.body, rules);
-        if(validation.passes()){
-            // var checkUser = await User.findById(req.user.id);
-            var checkUser = await User.findOne({_id: {$eq: req.user.id }});
-            if(checkUser){
-                var checkpassword = bcrypt.compareSync(req.body.password, checkUser.password);
-                if(checkpassword){
-                    var response = await deleteAllAccountData(req.user.id)
-                    res.send(response)
-                }else{
-                    res.status(400).json({status:'false',message:'Please enter a valid password!'});
-                }
-            }else{
-                res.status(400).json({status:'false',message:'User not found!'});
-            }
-        }else{
-            res.status(400).send({status: false, message:'Password required!', data: []});
-        }
-    }catch(error){
-        res.status(400).json({status:'false',message:'something is wrong'});
-    }
+/** Best-effort teardown of every record + provider resource owned by `userid`, then the user itself. */
+async function deleteAllAccountData(userid: string) {
+  await Contact.deleteMany({ user: userid })
+  await Email.deleteMany({ user: userid })
+  await Message.deleteMany({ user: userid })
+  const settings = await Setting.find({ user: { $eq: userid } })
+  for (const s of settings) {
+    // Destructure first so the truthiness guards narrow these (a doc property's narrowing would reset across `await`).
+    const { api_key, sid, sip_id, telnyx_outbound, telnyx_twiml, setting } = s
+    const { twilio_sid, twilio_token, app_key, twiml_app } = s
+    try {
+      if (s.type === 'telnyx') {
+        if (api_key && sid) await telnyxHelper.updatePhoneNumber(api_key, sid)
+        if (api_key && sip_id) await telnyxHelper.deleteSIPApp(api_key, sip_id)
+        if (api_key && telnyx_outbound) await telnyxHelper.deleteOutboundVoice(api_key, telnyx_outbound)
+        if (api_key && telnyx_twiml) await telnyxHelper.deleteTexmlApp(api_key, telnyx_twiml)
+        if (api_key && sid) await telnyxHelper.emptyMessageProfile(api_key, sid)
+        if (api_key && setting) await telnyxHelper.deleteMessageProfile(api_key, setting)
+      }
+      if (s.type === 'twilio' && twilio_sid && twilio_token) {
+        if (app_key) await twilioHelper.removeAPIKey(twilio_sid, twilio_token, app_key)
+        if (app_key && twiml_app) await twilioHelper.deleteTwiml(twilio_sid, twilio_token, twiml_app)
+        if (app_key && sid) await twilioHelper.unlinkNumber(twilio_sid, twilio_token, sid)
+      }
+    } catch { /* best-effort: ignore provider failures so one bad credential can't block account deletion */ }
+  }
+  await Setting.deleteMany({ user: userid })
+  await User.deleteOne({ _id: userid })
 }
 
-const deleteAllAccountData = (userid: string) => {
-    // console.log(outboundProfileid)
-    return new Promise(async (resolve,reject) =>  {
-        try{
-            var response = {status:'true', message:'Password checked!', data:[]}; 
-            await Contact.deleteMany({user: userid});
-            await Email.deleteMany({user: userid});
-            await Message.deleteMany({user: userid});
-            var settings =await Setting.find({user:{ $eq: userid}});
-            for(var i = 0; i < settings.length; i++) {
-                try{
-                    if(settings[i].type === 'telnyx'){
-                        if(settings[i].api_key && settings[i].sid){
-                            await telnyxHelper.updatePhoneNumber(settings[i].api_key, settings[i].sid)
-                        }
-                        if(settings[i].api_key && settings[i].sip_id){
-                            await telnyxHelper.deleteSIPApp(settings[i].api_key, settings[i].sip_id)
-                        }
-                        if(settings[i].api_key && settings[i].telnyx_outbound){
-                            await telnyxHelper.deleteOutboundVoice(settings[i].api_key, settings[i].telnyx_outbound)
-                        }
-                        if(settings[i].api_key && settings[i].telnyx_twiml){
-                            await telnyxHelper.deleteTexmlApp(settings[i].api_key, settings[i].telnyx_twiml)
-                        }
-                        if(settings[i]._id && settings[i].sid){
-                            await telnyxHelper.emptyMessageProfile(settings[i].api_key, settings[i].sid)
-                        }
-                        if(settings[i].api_key && settings[i].setting){
-                            await telnyxHelper.deleteMessageProfile(settings[i].api_key, settings[i].setting)
-                        }
-                    }
-                    if(settings[i].type === 'twilio' && settings[i].twilio_sid && settings[i].twilio_token){
-                        if(settings[i].app_key){
-                            await twilioHelper.removeAPIKey(settings[i].twilio_sid, settings[i].twilio_token, settings[i].app_key)
-                        }
-                        if(settings[i].app_key){
-                            await twilioHelper.deleteTwiml(settings[i].twilio_sid, settings[i].twilio_token, settings[i].twiml_app)
-                        }
-                        if(settings[i].app_key){
-                            await twilioHelper.unlinkNumber(settings[i].twilio_sid, settings[i].twilio_token, settings[i].sid)
-                        }
-                    }
-                }catch(error){
-
-                }
-            }
-            await Setting.deleteMany({user: userid});
-            await User.deleteOne({_id: userid});
-            resolve(response);
-        }catch(error){
-            console.log(error)
-            resolve(false);
-        }
-    });
-}
-
-
-
+export const login = factory.createHandlers(jsonBody(loginBody), authenticate)
+export const register = factory.createHandlers(jsonBody(registerBody), createUser)
+export const otpVerify = factory.createHandlers(jsonBody(otpVerifyBody), verifyOtp)
+export const signupEnabled = factory.createHandlers(readSignupOption)
+export const getVersion = factory.createHandlers(readVersion)
+export const getUpdateAvailable = factory.createHandlers(readUpdateAvailable)
+export const getDirectoryName = factory.createHandlers(queryParams(directoryNameQuery), matchDirectoryName)
+export const updateUsername = factory.createHandlers(auth, jsonBody(updateUsernameBody), changeUsername)
+export const updatePassword = factory.createHandlers(auth, jsonBody(updatePasswordBody), changePassword)
+export const passwordVerify = factory.createHandlers(auth, jsonBody(passwordBody), verifyPassword)
+export const deleteAccount = factory.createHandlers(auth, jsonBody(passwordBody), removeAccount)
+export const getCurrentUser = factory.createHandlers(auth, readUser)
+export const saveMfa = factory.createHandlers(auth, jsonBody(saveMfaBody), saveMfaSetting)

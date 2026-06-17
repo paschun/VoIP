@@ -66,7 +66,7 @@ import { api } from '@/core/services/api.service.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { notifyError } from '@/notify.ts'
 import type { RouteLocationRaw } from 'vue-router'
-import type { ApiEnvelope } from '@shared/api-contracts.ts'
+import type { Ok } from '@shared/api-contracts.ts'
 
 export default defineComponent({
   name: 'SignupView',
@@ -81,7 +81,7 @@ export default defineComponent({
         c_password: ''
       },
       submitted: false,
-      signUpOption: false
+      signUpOption: false // todo: is this used for anything?
     }
   },
   validations () {
@@ -115,16 +115,14 @@ export default defineComponent({
           this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
         })
         .catch(error => {
-          if (error.status === 401) {
+          if (error.status === 401 || error.status === 409) {
             notifyError(error.data?.message, 'Oops...')
-          } else if (error.status === 400) {
-            notifyError(error.data?.errors?.errors?.email?.[0], 'Oops...')
           }
         })
     },
 
     getsignup () {
-      api.post<ApiEnvelope<string>>('auth/get-signup', {})
+      api.get<Ok<string>>('auth/signup-enabled')
         .then(response => {
           if (response?.data === 'on') {
             this.signUpOption = true

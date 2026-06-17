@@ -1,24 +1,22 @@
-import express, { type Express } from 'express'
+import { Hono } from 'hono'
+import type { Env } from '../factory.ts'
 import * as user from '../controller/user.controller.ts'
-import auth from '../middleware/auth.middleware.ts'
 
-export default (app: Express) => {
-    const router = express.Router();
-    router.post("/login", user.login);
-    router.post("/register", user.register);
-    router.post("/otp-verify", user.otpVerify);
-    router.post("/get-signup", user.getSignUpOption);
-    router.get("/get-version", user.getVersionOption);
-    router.get("/get-update-version", user.getUpdateVersion);
-    router.post("/check-directoryname", user.checkDirectoryName);
-    
+// Routes for `/api/auth`. The first block is unauthenticated (login/signup/version/directory checks); the second is
+// authenticated account + MFA management. Verbs are REST-honest: GET for pure reads, PATCH/PUT for updates, DELETE for
+// account removal (the password is sent in the body to confirm).
+export const authRoutes = new Hono<Env>()
+  .post('/login', ...user.login)
+  .post('/register', ...user.register)
+  .post('/otp/verify', ...user.otpVerify)
+  .get('/signup-enabled', ...user.signupEnabled)
+  .get('/version', ...user.getVersion)
+  .get('/version/update-available', ...user.getUpdateAvailable)
+  .get('/directory-name', ...user.getDirectoryName)
 
-    router.post('/username/update', auth, user.updateUserName);
-    router.post('/password/update', auth, user.updatePassword);
-    router.post('/password/check', auth, user.checkPassword);
-    router.post('/user/get', auth, user.getUser);
-    router.post('/mfa/save', auth, user.saveMfa); 
-    router.post('/password/verify', auth, user.passwordVerify); 
-
-    app.use('/api/auth', router);
-};
+  .patch('/username', ...user.updateUsername)
+  .put('/password', ...user.updatePassword)
+  .post('/password/verify', ...user.passwordVerify)
+  .delete('/account', ...user.deleteAccount)
+  .get('/me', ...user.getCurrentUser)
+  .post('/mfa', ...user.saveMfa)

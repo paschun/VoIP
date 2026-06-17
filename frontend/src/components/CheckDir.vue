@@ -12,7 +12,7 @@ export default defineComponent({
   },
   methods: {
     checkDirectoryName () {
-      this.$post('auth/check-directoryname', { dirname: appDirectory(this.$route) })
+      this.$get('auth/directory-name?name=' + encodeURIComponent(appDirectory(this.$route)))
         .then((response) => {
           console.log('CheckDir', response)
           const status = response?.data?.status
