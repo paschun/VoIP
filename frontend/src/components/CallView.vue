@@ -166,7 +166,7 @@ import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
 import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
 import VueSelect, { type Option } from 'vue3-select-component'
 import { contactsToOptions, parseJSON } from '@/helper.ts'
-import type { ApiEnvelope, CallToken } from '@shared/api-contracts.ts'
+import type { CallTokenData, CallTokenResponse } from '@shared/contracts/call.ts'
 
 export default defineComponent({
   props: ['contacts'],
@@ -205,9 +205,10 @@ export default defineComponent({
     this.deviceSetup(tokenData)
   },
   methods: {
-    deviceSetup (tokenData: CallToken | false) {
+    deviceSetup (tokenData: CallTokenData | false) {
       if (tokenData) {
-        if (tokenData.type === 'twilio') {
+        // `CallTokenData` is a union keyed on which payload arrived: Twilio sends a `token`, Telnyx sends the `setting`.
+        if ('token' in tokenData) {
           this.callType = 'twilio'
           const device = new Device(tokenData.token)
           device.on('registered', () => console.log('Connected'))
@@ -224,7 +225,7 @@ export default defineComponent({
           })
           device.register()
           this.device = device
-        } else if (tokenData.type === 'telnyx' && tokenData.setting.sip_username && tokenData.setting.sip_password) {
+        } else if ('setting' in tokenData && tokenData.setting.sip_username && tokenData.setting.sip_password) {
           this.callType = 'telnyx'
           const client = new TelnyxRTC({
             login: tokenData.setting.sip_username,
@@ -268,11 +269,11 @@ export default defineComponent({
         }
       }
     },
-    getToken (): Promise<CallToken | false> {
-      return new Promise<CallToken | false>(resolve => {
+    getToken (): Promise<CallTokenData | false> {
+      return new Promise<CallTokenData | false>(resolve => {
         const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
         if (profileLocal) {
-          this.$post<ApiEnvelope<CallToken>>('call/token', { setting_id: profileLocal._id })
+          this.$post<CallTokenResponse>('call/token', { setting_id: profileLocal._id })
             .then((response) => {
               resolve(response ? response.data : false)
             })

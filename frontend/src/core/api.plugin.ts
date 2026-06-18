@@ -48,7 +48,7 @@ const handleError = (err: ApiError): false => {
 // Signatures of the globals installed below: the raw client signatures with
 // `false` folded into the return (401/400 are swallowed by `handleError`) and a
 // `T = any` default so untyped call sites stay `any`. Pass a contract type for a
-// typed response: `this.$post<ApiEnvelope<Foo>>(url)`.
+// typed response: `this.$post<Ok<Foo>>(url)`.
 // Re-used by the `ComponentCustomProperties` augmentation in shims-global.d.ts.
 export type ApiPost = ApiClientPost<false, any>
 export type ApiGet = ApiClientGet<false, any>

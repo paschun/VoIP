@@ -36,6 +36,7 @@ export type SaveMfaRequest = z.infer<typeof saveMfaBody>
 /** The user projection echoed back on auth/profile actions (also stored in the `userdata` cookie). */
 export type UserData = { _id: string; name: string; email: string; token: string; mfa: StringBoolean }
 export type UserResponse = Ok<UserData>
+// todo: is UserData ever actually used by the clients?
 
 /** Bespoke (not `Ok<T>`): the login result drives three frontend branches (key challenge / OTP / straight in). */
 export type LoginResponse = {

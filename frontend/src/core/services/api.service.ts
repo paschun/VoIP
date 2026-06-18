@@ -32,9 +32,10 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
     ? resource
     : combineURLs(baseURL, resource)
 
-  const headers: Record<string, string> = {
+  // todo: this is kind of odd that it is stored as cookie but passed as http token header instead of `credentials: include`
+  const headers: HeadersInit = {
     'Cache-Control': 'no-cache',
-    token: Cookies.get('access_token') ?? ''
+    token: Cookies.get('access_token') ?? '',
   }
   const init: RequestInit = { method, headers }
   if (body !== undefined) {

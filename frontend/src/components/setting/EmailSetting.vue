@@ -82,9 +82,18 @@ import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, requiredIf } from '@vuelidate/validators'
 import { notifySuccess } from '@/notify.ts'
-import type { Profile, ProfilesResponse, StringBoolean } from '@shared/api-contracts.ts'
+import type { StringBoolean } from '@shared/api-contracts.ts'
+import type { SettingDoc } from '@shared/schema/setting.ts'
+import type { GetProfilesResponse } from '@shared/contracts/profile.ts'
 import type { EmailDoc } from '@shared/schema/email.ts'
 import type { EmailSettingsResponse, SaveEmailSettingsResponse, SaveEmailSettingResponse } from '@shared/contracts/email.ts'
+
+/**
+ * Only the profile fields this view binds (id, display name, the notification toggle). Picked from `SettingDoc` rather
+ * than holding the whole doc: a reactive `SettingDoc[]` trips TS2589 (the `Jsonify`-based wire type is too deep for
+ * Vue's reactivity unwrap), and the list only needs these three.
+ */
+type ProfileRow = Pick<SettingDoc, '_id' | 'profile' | 'emailnotification'>
 
 /** The editable subset of the Email document the form lets the user change (a frontend concern, not a wire contract). */
 type EmailFields = Pick<EmailDoc,
@@ -118,7 +127,7 @@ export default defineComponent({
     const strFalse: StringBoolean = 'false'
     return { v$: useVuelidate(), strTrue, strFalse }
   },
-  data (): { form: EmailForm; saveEmailSettingsAttempted: boolean; showProfile: boolean; profiles: Profile[] } {
+  data (): { form: EmailForm; saveEmailSettingsAttempted: boolean; showProfile: boolean; profiles: ProfileRow[] } {
     return {
       form: toEmailForm(),
       saveEmailSettingsAttempted: false,
@@ -177,7 +186,7 @@ export default defineComponent({
         })
     },
     getProfiles () {
-      this.$get<ProfilesResponse>('profile')
+      this.$get<GetProfilesResponse>('profile')
         .then((response) => {
           if (response) {
             this.profiles = response.data

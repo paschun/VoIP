@@ -1,29 +1,17 @@
 /**
- * API contracts shared between the VoIP frontend and the Express backend.
+ * API contracts shared between the VoIP frontend and the Hono backend.
  *
- * The frontend imports these via the `@shared` alias (see vite.config.js /
- * tsconfig.json). The backend is currently plain JS, but can adopt these
- * incrementally with JSDoc and `// @ts-check`, e.g.:
- *
- *   /** @typedef {import('../shared/api-contracts').Contact} Contact *\/
- *
- * Most backend handlers wrap their payload in `ApiEnvelope`.
+ * The frontend imports these via the `@shared` alias (see vite.config.js / tsconfig.json); the backend imports the same
+ * files directly. Per-endpoint request/response contracts live in `shared/contracts/*`; the data model in
+ * `shared/schema/*`.
  */
 
 /** HTTP verbs used across the app -- the frontend `request()` wrapper and the backend's Telnyx REST caller. */
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-/** Standard `{ status, message, data }` envelope returned by most endpoints. */
-export interface ApiEnvelope<T = unknown> {
-  status: boolean | string
-  message?: string
-  data: T
-}
-
 /**
- * Hono-era success body: just the payload. No `status`/`message` — the frontend reads neither on success (success
- * toasts are hardcoded client-side). Pair with `sendDoc<T>` / `c.json`. Supersedes `ApiEnvelope` as groups migrate;
- * once no handler emits the old envelope, `ApiEnvelope`/`ApiErrorEnvelope` are deleted (see `error-handling-plan.md`).
+ * Success body: just the payload. No `status`/`message` — the frontend reads neither on success (success toasts are
+ * hardcoded client-side). Pair with `sendDoc<T>` / `c.json`.
  */
 export interface Ok<T> {
   data: T
@@ -36,19 +24,6 @@ export interface Ok<T> {
  */
 export interface ApiError {
   message: string
-}
-
-/**
- * Error-path envelope: `status` (a falsy `false`/`'false'`) and an optional `message`, with **no** payload — error
- * responses don't carry data. Union it with `ApiEnvelope<T>` in a contract so a typed `res` lets the error branches
- * omit `data` while the success branch still requires it. `data?: undefined` (rather than dropping the key) keeps
- * `response.data` readable on the union, so the frontend can guard with `if (res && res.data)` without narrowing on
- * `status` first.
- */
-export interface ApiErrorEnvelope {
-  status: boolean | string
-  message?: string
-  data?: undefined
 }
 
 /**
@@ -75,26 +50,6 @@ export interface User {
   email: string
   name?: string
   mfa?: StringBoolean
-}
-
-/** A messaging/calling profile and its provider Setting (Twilio or Telnyx). */
-export interface Profile {
-  _id: string
-  profile: string
-  number?: string
-  type?: 'twilio' | 'telnyx' | string
-  /** Unviewed-message count for this profile (Mongoose virtual). */
-  messageCount?: number
-  /** Total-message count for the owning user (Mongoose virtual). */
-  totalCount?: number
-  /** Whether email notifications are on. Mongoose enum, so a string not a boolean. */
-  emailnotification?: StringBoolean
-  /** Provider credentials, present once the profile is configured. */
-  api_key?: string
-  twilio_sid?: string
-  twilio_token?: string
-  sip_username?: string
-  sip_password?: string
 }
 
 export interface Contact {
@@ -141,15 +96,5 @@ export interface HardwareKey {
   credentials?: string[]
 }
 
-/** Response of `profile/getdata` — every Setting/profile the signed-in user owns. */
-export type ProfilesResponse = ApiEnvelope<Profile[]>
-
 /** Response of `auth/get-version` -- the latest git short hash (or fallback). */
 export type VersionResponse = Ok<string>
-
-/** Payload of `call/token` — a provider access token plus the chosen profile. */
-export interface CallToken {
-  type: 'twilio' | 'telnyx' | string
-  token: string
-  setting: Profile
-}
