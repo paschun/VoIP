@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { SignJWT } from 'jose'
 import Speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
