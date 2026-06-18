@@ -125,8 +125,8 @@ import Cookies from 'js-cookie'
 import { publicKeyCredentialToJSON } from '@/helper.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { notifyError } from '@/notify.ts'
+import { client, request } from '@/core/rpc.client.ts'
 import type { RouteLocationRaw } from 'vue-router'
-import type { VersionResponse } from '@shared/api-contracts.ts'
 
 /** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
 const preformatGetAssertReq = (getAssert: any): any => {
@@ -205,19 +205,13 @@ methods: {
       })
       .catch((e) => console.error(e))
   },
-  getsignup () {
-    this.$get('auth/signup-enabled')
-      .then((response) => { this.signUpOption = response?.data === 'on' })
-      .catch(() => { this.signUpOption = false })
+  async getsignup () {
+    const res = await request(client.api.auth['signup-enabled'].$get())
+    this.signUpOption = res.ok && res.data === 'on'
   },
-  getVersion () {
-    this.$get<VersionResponse>('auth/version')
-      .then((response) => {
-        if (response) {
-          this.versionOption = response.data
-        }
-      })
-      .catch(() => {})
+  async getVersion () {
+    const res = await request(client.api.auth.version.$get())
+    if (res.ok) this.versionOption = res.data
   },
   handleSubmit (e: Event) {
     e.preventDefault()

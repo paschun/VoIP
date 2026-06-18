@@ -18,13 +18,20 @@ export interface Ok<T> {
 }
 
 /**
- * The single error shape on the wire — `message` is the one field the client consumes (`handleError` →
- * `swalError(err.data.message)`). Thrown server-side as `HTTPException` and rendered once in `app.onError`; never part
- * of a success contract (the client gets it as a swallowed/rejected response, not a resolved value).
+ * The single error shape on the wire — `message` is the one field the client consumes. Thrown server-side as
+ * `HTTPException` and rendered once in `app.onError`; never part of a success contract. The frontend `request` helper
+ * surfaces it (plus the HTTP status) as the failure arm of {@link ApiResult}.
  */
 export interface ApiError {
   message: string
 }
+
+/**
+ * Discriminated result of a frontend API call, built from the two wire shapes: on success the `Ok<T>` body tagged
+ * `ok: true`; on failure the `ApiError` body plus the HTTP `status`, tagged `ok: false`. Call sites branch with
+ * `if (!res.ok)` and read `res.data` / `res.message` -- no lossy `false` sentinel, no try/catch.
+ */
+export type ApiResult<T> = (Ok<T> & { ok: true }) | (ApiError & { ok: false; status?: number })
 
 /**
  * Several Mongoose models persist booleans as the string enum `'true' | 'false'`

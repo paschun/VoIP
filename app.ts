@@ -5,6 +5,8 @@ import { secureHeaders } from 'hono/secure-headers'
 import { bodyLimit } from 'hono/body-limit'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
+import type { ApplyGlobalResponse } from 'hono/client'
+import type { ApiError } from './shared/api-contracts.ts'
 import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
@@ -110,8 +112,22 @@ const routes = app
   .route('/api/provider', providerRoutes)
   .route('/api/setting', settingRoutes)
 
-/** The RPC API surface: every `/api/...` route with its validated input and `c.json()` output. Consumed by `hc<AppType>`. */
-export type AppType = typeof routes
+// `onError` (app/error.ts) renders every thrown error as `{ message }` at the HTTPException's status, but `hc` can't
+// infer responses from a global error handler -- so `ApplyGlobalResponse` merges the error contract into every route.
+// Statuses: controllers throw 400/401/403/404/409/422; onError adds 502 (ProviderError) and 500 (fallback).
+type ApiErrors = {
+  400: { json: ApiError }
+  401: { json: ApiError }
+  403: { json: ApiError }
+  404: { json: ApiError }
+  409: { json: ApiError }
+  422: { json: ApiError }
+  500: { json: ApiError }
+  502: { json: ApiError }
+}
+
+/** The RPC API surface: every `/api/...` route with its validated input, `c.json()` output, and error contract. Consumed by `hc<AppType>`. */
+export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
 
 // Static assets + SPA fallback
 // ----------------------------

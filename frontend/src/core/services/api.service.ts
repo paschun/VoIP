@@ -1,5 +1,5 @@
 import Cookies from 'js-cookie'
-import { combineURLs } from '../../helper.ts'
+import { combineURLs } from '@/helper.ts'
 import type { HttpMethod } from '@shared/api-contracts.ts'
 
 /**
@@ -12,10 +12,14 @@ import type { HttpMethod } from '@shared/api-contracts.ts'
  * Network failures throw a regular Error with no `.status`.
  */
 
-const baseURL = combineURLs(
-  window.location.origin === 'http://localhost:8080' ? 'http://localhost:3000' : '',
-  '/api'
-)
+/**
+ * API scheme + hostname + port, prepended to every API path.
+ *
+ * Prod: empty string '' -- a root-relative URL, so the browser resolves it against the page's own origin (frontend and
+ * backend are served behind one host). Dev: the Vite server (:8080) and Express backend (:3000) are different
+ * origins, so we need the absolute `http://localhost:3000` prefix; a relative `/api` on dev would hit Vite instead.
+ */
+const API_HOST = window.location.origin === 'http://localhost:8080' ? 'http://localhost:3000' : ''
 
 /** Error thrown by `api.*` calls on non-2xx responses. */
 export class ApiError extends Error {
@@ -28,9 +32,7 @@ export class ApiError extends Error {
  * JSON). Throws an `ApiError` (with `status`/`data`) on non-2xx responses.
  */
 async function request<T = unknown>(method: HttpMethod, resource: string, body?: unknown): Promise<T> {
-  const url = /^https?:\/\//i.test(resource)
-    ? resource
-    : combineURLs(baseURL, resource)
+  const url = combineURLs(API_HOST, '/api', resource)
 
   // todo: this is kind of odd that it is stored as cookie but passed as http token header instead of `credentials: include`
   const headers: HeadersInit = {
