@@ -30,13 +30,23 @@ type OkJson<R> = Awaited<R> extends infer CR
 type OkBody<R> = OkJson<R> extends Ok<infer T> ? T : never
 
 /**
+ * Guard against silent `never`. When a response has no `Ok<T>` success body (a bespoke multi-field endpoint that
+ * doesn't fit this wrapper, or a broken type), `OkBody` is `never` -- which propagates invisibly because `never` is
+ * assignable to everything. This swaps it for a branded object so any use of `res.data` is a readable compile error
+ * instead. `[T] extends [never]` is tuple-wrapped so it detects `never` without distributing.
+ */
+type RequireBody<T> = [T] extends [never]
+  ? { readonly __error: 'request(): endpoint has no Ok<T> success body -- handle it without request()' }
+  : T
+
+/**
  * Sends a typed `hc` request and returns an {@link ApiResult}: `{ ok: true, data }` with the unwrapped payload on
  * success, or `{ ok: false, status, message }` on failure -- after running the central {@link notifyApiError} (401
  * bounce / 4xx-5xx toast). Call sites branch with `if (!res.ok)` and never try/catch for HTTP errors.
  *
  * TODO: do we even need ok: true | false ??
  */
-export async function request<R extends Promise<ClientResponse<unknown, number, 'json'>>> (req: R): Promise<ApiResult<OkBody<R>>> {
+export async function request<R extends Promise<ClientResponse<unknown, number, 'json'>>> (req: R): Promise<ApiResult<RequireBody<OkBody<R>>>> {
   let res
   try {
     res = await req
@@ -46,7 +56,7 @@ export async function request<R extends Promise<ClientResponse<unknown, number, 
   }
   if (res.ok) {
     // todo: this seems wrong, to wrap the result in an Ok<> shape. Because not all the backend route handlers' responses use the Ok<> shape.
-    const body = await res.json() as Ok<OkBody<R>>
+    const body = await res.json() as Ok<RequireBody<OkBody<R>>>
     return { ok: true, ...body }
   }
   const body = await res.json().catch(() => null) as ApiError | null

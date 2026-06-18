@@ -13,7 +13,7 @@
     "start": "NODE_ENV=production node --env-file=.env app.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc",
     "oxlint": "oxlint --ignore-pattern 'frontend/**'"
   },
   "dependencies": {

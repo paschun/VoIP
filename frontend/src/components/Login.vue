@@ -181,31 +181,30 @@ computed: {
 },
 mounted () {
   this.fnLogin()
-  this.getsignup()
+  this.getSignup()
   this.getVersion()
 },
 methods: {
-  fnLogin () {
-    this.$get('auth/directory-name?name=' + encodeURIComponent(appDirectory(this.$route)))
-      .then((response) => {
-        const { status, dir } = response.data
-        const loggedIn = !!Cookies.get('access_token')
+  async fnLogin () {
+    const res = await request(client.api.auth['directory-name'].$get({ query: { name: appDirectory(this.$route) } }))
+    if (!res.ok) return
+    const { status, dir } = res.data
+    const loggedIn = !!Cookies.get('access_token')
 
-        if (loggedIn) {
-          if (status === 'nodir' || status === 'no-name' || status === 'true') {
-            this.$router.push({ name: 'dashboard', params: { appdirectory: dir } })
-          } else if (status === 'false') {
-            this.$router.push({ name: 'error' })
-          }
-        } else if ((status === 'nodir' || status === 'no-name') && dir === 'voip') {
-          this.$router.push({ name: 'login', params: { appdirectory: dir } })
-        } else if (status === 'false' || status === 'no-name') {
-          this.$router.push({ name: 'error' })
-        }
-      })
-      .catch((e) => console.error(e))
+    // todo: this is a mess
+    if (loggedIn) {
+      if (status === 'nodir' || status === 'no-name' || status === 'true') {
+        this.$router.push({ name: 'dashboard', params: { appdirectory: dir } })
+      } else if (status === 'false') {
+        this.$router.push({ name: 'error' })
+      }
+    } else if ((status === 'nodir' || status === 'no-name') && dir === 'voip') {
+      this.$router.push({ name: 'login', params: { appdirectory: dir } })
+    } else if (status === 'false' || status === 'no-name') {
+      this.$router.push({ name: 'error' })
+    }
   },
-  async getsignup () {
+  async getSignup () {
     const res = await request(client.api.auth['signup-enabled'].$get())
     this.signUpOption = res.ok && res.data === 'on'
   },

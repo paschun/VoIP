@@ -99,7 +99,7 @@ export default defineComponent({
     }
   },
   mounted () {
-    this.getsignup()
+    this.getSignup()
   },
   methods: {
     handleSubmit (e: Event) {
@@ -121,7 +121,7 @@ export default defineComponent({
         })
     },
 
-    getsignup () {
+    getSignup () {
       api.get<Ok<string>>('auth/signup-enabled')
         .then(response => {
           if (response?.data === 'on') {

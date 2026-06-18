@@ -18,8 +18,12 @@ const VALIDATION_FAILED = 422
 //
 // Pick by Content-Type of the caller: `jsonBody` for app fetch/`$post` and Telnyx webhooks (application/json);
 // `formBody` for Twilio webhooks and HTML form / file-upload posts (x-www-form-urlencoded / multipart).
+//
+// `status` is generic so its literal type (`422`/`404`) is preserved into `c.json(..., status)` -- otherwise the
+// validation-error response infers the whole `ContentfulStatusCode` union as its status, and RPC consumers can't tell
+// it apart from a 2xx success (the `{ message }` body would leak into success-body extraction on the client).
 const makeHook =
-  (status: ContentfulStatusCode) =>
+  <S extends ContentfulStatusCode>(status: S) =>
   (result: { success: true } | { success: false; error: readonly StandardSchemaV1.Issue[] }, c: Context) =>
     result.success ? undefined : c.json({ message: result.error[0]?.message ?? 'Validation failed' } satisfies ApiError, status)
 
