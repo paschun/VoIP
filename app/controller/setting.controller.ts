@@ -5,7 +5,7 @@ import moment from 'moment'
 import mongoose from 'mongoose'
 import twilio from 'twilio'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
-import { openpgpEncrypt } from 'nodemailer-openpgp'
+import { createMessage, encrypt, readKey } from 'openpgp'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
@@ -53,39 +53,46 @@ interface SendEmailSetting {
   pgpPublicKey?: string | null
 }
 
-// nodemailer-openpgp adds these two options on top of the standard mail options; the package ships no types.
-type EncryptableMailOptions = SendMailOptions & { encryptionKeys?: unknown[]; shouldEncrypt?: boolean }
+/** PGP-encrypt a UTF-8 string against an armored public key, returning ASCII-armored ciphertext. */
+async function pgpEncrypt(text: string, armoredKey: string): Promise<string> {
+  const encryptionKeys = await readKey({ armoredKey })
+  return encrypt({ message: await createMessage({ text }), encryptionKeys })
+}
 
 /** Send an SMTP (optionally PGP-encrypted) email notification. Best-effort: resolves false instead of rejecting. */
-function sendEmail(setting: SendEmailSetting, email: { subject: string; text: string; html: string }): Promise<boolean> {
-  return new Promise((resolve) => {
-    try {
-      // todo: dont cast to number, ideally handled in validation
-      const transporter = nodemailer.createTransport({
-        host: setting.host,
-        port: Number(setting.port),
-        secure: setting.secure, // true for 465, false for other ports
-        auth: { user: setting.email, pass: setting.password },
-      })
-      const mailOptions: EncryptableMailOptions = {
-        from: setting.sender_email,
-        to: setting.to_email,
-        subject: email.subject,
-        text: email.text,
-        html: email.html,
-      }
-      if (setting.pgpEncryptEnabled) {
-        transporter.use('stream', openpgpEncrypt())
-        mailOptions.encryptionKeys = [setting.pgpPublicKey]
-        mailOptions.shouldEncrypt = true
-      }
-      void transporter.sendMail(mailOptions)
-      resolve(true)
-    } catch (e) {
-      console.error(e)
-      resolve(false)
+async function sendEmail(setting: SendEmailSetting, email: { subject: string; text: string; html: string }): Promise<boolean> {
+  try {
+    // todo: dont cast to number, ideally handled in validation
+    const transporter = nodemailer.createTransport({
+      host: setting.host,
+      port: Number(setting.port),
+      secure: setting.secure, // true for 465, false for other ports
+      auth: { user: setting.email, pass: setting.password },
+    })
+    const mailOptions = {
+      from: setting.sender_email,
+      to: setting.to_email,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+    } satisfies SendMailOptions
+    // pgpPublicKey is nullish, but gated here via a truthy check
+    if (setting.pgpEncryptEnabled && setting.pgpPublicKey) {
+      // nodemailer-openpgp transformed the whole message body into a proper PGP/MIME structure.
+      // https://github.com/nodemailer/nodemailer-openpgp/blob/master/lib/nodemailer-openpgp.js
+      // (Content-Type: multipart/encrypted; protocol="application/pgp-encrypted" with a Version: 1 part + encrypted.asc).
+      // This replacement encrypts the text/html strings inline instead.
+      // Both produce ciphertext a client can decrypt, but ours isn't PGP/MIME.
+      // Mail clients won't auto-detect it as an encrypted message, they'll show an armored blob.
+      mailOptions.text = await pgpEncrypt(mailOptions.text, setting.pgpPublicKey)
+      mailOptions.html = await pgpEncrypt(mailOptions.html, setting.pgpPublicKey)
     }
-  })
+    void transporter.sendMail(mailOptions)
+    return true
+  } catch (e) {
+    console.error(e)
+    return false
+  }
 }
 
 /** Stream a remote file (provider-hosted MMS media) to disk. */
