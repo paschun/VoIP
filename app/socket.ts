@@ -5,6 +5,11 @@ import { env } from '../config/env.ts'
 
 let io: Server | undefined
 
+// maybe todo:
+// 1) authenticate the handshake (validate the access token via socket.handshake.auth.token in io.use(...) middleware, same jose verify as auth.hono.ts)
+// 2) authorize joins so a user can only join their own user/profile channel.
+// look at io.use()
+
 // Accepts whatever `@hono/node-server`'s `serve()` returns (its `ServerType` union); socket.io's constructor takes all three.
 export function initIO(server: HttpServer | Http2Server | Http2SecureServer) {
   // Mirror the HTTP CORS policy (app.ts): the Vite dev client (localhost:8080) connects cross-origin; in prod the
