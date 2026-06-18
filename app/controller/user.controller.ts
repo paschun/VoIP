@@ -37,6 +37,9 @@ import {
 } from '../../shared/contracts/auth.ts'
 
 const saltRounds = 10
+// HS256 algo expects a key size of >= 256 Bits == 32 chars.
+// Uint8Array.BYTES_PER_ELEMENT === 1 , each character becomes a single element in byte array, so each char is 8 bits.
+// 256 bits / 8 bits per char == 32 chars
 const joseSecret = new TextEncoder().encode(env.COOKIE_KEY)
 const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_page=1'
 
@@ -65,9 +68,13 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
   }
 
   // https://github.com/panva/jose/blob/HEAD/docs/jwt/sign/classes/SignJWT.md
-  // HS256 requires a 256-bit (32-byte) secret
+  // HS256 requires a 256-bit (32-byte) secret (symmetric encryption)
   const token = await new SignJWT({ id: user.id, email: user.email, name: user.name })
     .setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(joseSecret)
+  // 3 parts (b64 encoded) : header.payload.signature
+  // decoded JOSE (JSON Object Signing and Encryption) header: { "alg": "HS256" }
+  // decoded payload:{ "id": "6322cb0813d8a71034f6efcc", "email": "example", "name": "example", "exp": 1782625311 }
+  // signature: MAC of the encoded JOSE Header and encoded JWS Payload with the HMAC SHA-256 algorithm and base64url encoding the HMAC value
 
   user.token = token
   await user.save()
