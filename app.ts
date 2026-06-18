@@ -96,15 +96,22 @@ app.use(bodyLimit({ maxSize: Math.ceil(MAX_UPLOAD_BYTES * MULTIPART_OVERHEAD_FAC
 // ----------
 // Registered before the static handlers so `/api/*` never falls through to the SPA. The /api/call and /api/setting
 // mounts must match the prefix baked into the provider webhook URLs (see WEBHOOKS in helper/webhook-paths.ts).
-app.route('/api/auth', authRoutes)
-app.route('/api/call', callRoutes)
-app.route('/api/contact', contactRoutes)
-app.route('/api/email', emailRoutes)
-app.route('/api/hardwarekey', hardwarekeyRoutes)
-app.route('/api/media', mediaRoutes)
-app.route('/api/profile', profileRoutes)
-app.route('/api/provider', providerRoutes)
-app.route('/api/setting', settingRoutes)
+// Chained (not statement-per-line) so the accumulated per-route schema is captured in one type: `AppType` is the RPC
+// contract the frontend `hc<AppType>` client consumes (see frontend/src/core/rpc.client.ts). `app` is the same
+// instance, so the later static/SPA `app.use`/`app.get` statements below still apply.
+const routes = app
+  .route('/api/auth', authRoutes)
+  .route('/api/call', callRoutes)
+  .route('/api/contact', contactRoutes)
+  .route('/api/email', emailRoutes)
+  .route('/api/hardwarekey', hardwarekeyRoutes)
+  .route('/api/media', mediaRoutes)
+  .route('/api/profile', profileRoutes)
+  .route('/api/provider', providerRoutes)
+  .route('/api/setting', settingRoutes)
+
+/** The RPC API surface: every `/api/...` route with its validated input and `c.json()` output. Consumed by `hc<AppType>`. */
+export type AppType = typeof routes
 
 // Static assets + SPA fallback
 // ----------------------------
