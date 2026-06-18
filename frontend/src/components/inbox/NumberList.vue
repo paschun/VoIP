@@ -415,7 +415,21 @@
 </template>
 
 <script lang="ts">
+/**
+ * Backend endpoints used (this.$post/$get -> core/api.plugin.ts):
+ *   GET  contact/get-all           onaddContact()
+ *   POST profile/getdata-one       getOneProfile()        { setting } - just used to get/set this.activeProfile
+ *   POST profile/delete-profile    deleteProfile()        { user, profile_id }
+ *   POST setting/sms-number-list   getNumberList()        { user, setting }
+ *   POST setting/get-setting       getSetting()           { user, setting }
+ *   POST setting/delete-key        deleteApiKey()         { user, profile_id }
+ *   POST setting/get-number        getNumbers()           (the user/setting object + type)
+ *   POST setting/check-setting     handleSubmit()         (sendData)
+ *   POST setting/create            submitCreateSetting()  (sendData)
+ */
 import { defineComponent } from "vue";
+import { mapStores } from "pinia";
+import { useProfileStore } from "@/stores/profile.ts";
 import ThemeButton from "@/components/ThemeButton.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
@@ -437,6 +451,7 @@ function getValidString(str: string): string {
 }
 
 export default defineComponent({
+  emits: ["onaddContact", "activeChat", "clicked"],
   components: {
     ProfileView,
     LoadingSpinner,
@@ -489,6 +504,14 @@ export default defineComponent({
       profile: { required }
     }
   },
+  computed: {
+    ...mapStores(useProfileStore)
+  },
+  watch: {
+    "profileStore.activeProfile"() {
+      this.getOneProfile();
+    }
+  },
   mounted() {
     this.userdata = parseJSON(Cookies.get("userdata"));
     this.onaddContact();
@@ -499,7 +522,6 @@ export default defineComponent({
       distThreshold: 120,
       distMax: 140
     });
-    EventBus.$on("getOneProfile", () => this.getOneProfile());
     EventBus.$on("contactAdded", (number: any) => {
       this.getNumberList();
       setTimeout(() => {
@@ -557,11 +579,10 @@ export default defineComponent({
       }
     },
     refreshProfile() {
-      (this.$refs.childComponent as any).getallProfile();
+      (this.$refs.childComponent as any).getAllProfiles();
     },
     onClickChild(value: any) {
       this.activeProfile = value;
-      this.messageListLoader = true;
       this.getNumberList();
       value.refresh = true;
       this.$emit("activeChat", value);
@@ -584,6 +605,7 @@ export default defineComponent({
     },
     getNumberList() {
       this.numbers = [];
+      this.messageListLoader = true;
       this.$get("setting/conversations?profile=" + this.activeProfile._id)
         .then(response => {
           if (response) {
@@ -649,7 +671,7 @@ export default defineComponent({
           this.activeProfile = response.data;
           localStorage.removeItem("activeProfile");
           (this.$refs["my-modal"] as any).hide();
-          (this.$refs.childComponent as any).getallProfile();
+          (this.$refs.childComponent as any).getAllProfiles();
           setTimeout(() => {
             (this.$refs.childComponent as any).activeFirstProfile();
           }, 2000);
@@ -685,7 +707,7 @@ export default defineComponent({
         this.twilioNumbers = [];
         this.activeProfile = response.data;
         this.hideShowDeleteIcon(response.data);
-        (this.$refs.childComponent as any).getallProfile();
+        (this.$refs.childComponent as any).getAllProfiles();
       } catch (e) {
         console.error(e);
       }
@@ -829,8 +851,8 @@ export default defineComponent({
           (this.$refs["my-modal"] as any).hide();
           this.activeProfile = response.data;
           this.hideShowDeleteIcon(response.data);
-          (this.$refs.childComponent as any).getallProfile();
-          EventBus.$emit("changeProfile2", true);
+          (this.$refs.childComponent as any).getAllProfiles();
+          this.profileStore.setActiveProfile(response.data);
           this.v$.$reset();
         }
       } catch (e) {

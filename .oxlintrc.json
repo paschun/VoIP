@@ -14,6 +14,14 @@
     // "typescript/no-explicit-any": "warn",
     // "typescript/no-non-null-assertion": "warn",
     // "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
-    "import/no-cycle": "error"
+    "import/no-cycle": "error",
+
+    "no-var": "error",
+    // enable these and more: migrated-rules.txt
+    // "typescript/prefer-optional-chain": "error"
+    // "prefer-const": "error",
+    // "prefer-rest-params": "error",
+    // "prefer-spread": "error"
+
   }
 }

@@ -330,6 +330,12 @@
 </template>
 
 <script lang="ts">
+/**
+ * Backend endpoints used (this.$post/$get -> core/api.plugin.ts):
+ *   POST setting/message-list-delete   deletechat()         { user, number }
+ *   POST setting/send-sms              commonSendMessage()  { user, numbers, message, profile, media }
+ *   POST setting/message-list          showChat()           { user, number: { telnyx_number, _id }, profile }
+ */
 import { defineComponent } from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
@@ -342,6 +348,8 @@ import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
+import { mapStores } from "pinia";
+import { useProfileStore } from "@/stores/profile.ts";
 import { EventBus } from "@/event-bus.ts";
 import { combineURLs, contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
 import type { Message } from '@shared/api-contracts.ts';
@@ -431,8 +439,22 @@ export default defineComponent({
     };
   },
   computed: {
+    ...mapStores(useProfileStore),
     contactSelectOptions(): Option<string>[] {
       return contactsToOptions(this.contacts);
+    },
+  },
+  watch: {
+    // Active profile changed (selection or settings update): reset the open chat
+    // and re-mount the call tab. Was the `changeProfile`/`changeProfile2` events.
+    "profileStore.activeProfile"() {
+      // unselect any active message thread
+      this.activeChat = null;
+      // forces Vue to destroy and recreate <call-view> so the calling SDK re-initializes against the newly-selected profile
+      this.activeCallTab = false;
+      setTimeout(() => {
+        this.activeCallTab = true;
+      }, 1500);
     },
   },
   validations: {
@@ -453,21 +475,6 @@ export default defineComponent({
         this.showChat(this.activeChat);
       }
     });
-    EventBus.$on("changeProfile2", () => {
-      this.activeChat = null;
-      this.activeCallTab = false;
-      setTimeout(() => {
-        this.activeCallTab = true;
-      }, 1500);
-    });
-    EventBus.$on("changeProfile", () => {
-      this.activeChat = null;
-      this.activeCallTab = false;
-      setTimeout(() => {
-        this.activeCallTab = true;
-      }, 1500);
-    });
-
     if (!Cookies.get("access_token")) {
       this.$router.push({ name: 'home' });
     }
@@ -615,7 +622,7 @@ export default defineComponent({
       this.dropArea.classList.remove("highlight");
     },
     activeProfileView(profile: any) {
-      if (profile.refresh !== undefined && profile.refresh) {
+      if (profile.refresh) {
         this.messages = [];
       }
       this.activeProfile = profile;
