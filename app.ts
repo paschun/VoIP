@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises'
-import { Hono } from 'hono'
 import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
@@ -10,6 +9,7 @@ import { env } from './config/env.ts'
 import { connectDB } from './config/db.config.ts'
 import { initIO } from './app/socket.ts'
 import { onError } from './app/error.ts'
+import { factory } from './app/factory.ts'
 import { rateLimit } from './app/middleware/rate-limit.ts'
 import { authRoutes } from './app/routes/auth.route.ts'
 import { callRoutes } from './app/routes/call.route.ts'
@@ -22,7 +22,9 @@ import { profileRoutes } from './app/routes/profile.route.ts'
 import { providerRoutes } from './app/routes/provider.route.ts'
 import { settingRoutes } from './app/routes/setting.route.ts'
 
-const app = new Hono()
+// `factory.createApp()` (not `new Hono()`) so the root app carries the factory's `Env` -- `c.get('user')` is typed
+// `AuthUser` on guarded routes without re-declaring the generic here (the same factory builds every group's handlers).
+const app = factory.createApp()
 
 // Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see app/error.ts).
 app.onError(onError)
