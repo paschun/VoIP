@@ -50,7 +50,7 @@ export const emailCreateBody = (z.fromJSONSchema(emailSchema.toJSONSchema()) as 
  * Request body of `email/save/setting` — flips one profile's email-notification flag. Hand-written (it spans `Setting`,
  * not the Email model, so there's nothing to derive): `setting_id` is the target `Setting._id`, and `status` is the
  * `StringBoolean` that `Setting.emailnotification` stores (enum `'true' | 'false'`). The old handler did `c.req.json()`
- * untyped and let a bad `status` fail Mongoose enum validation (→ 400); validating here rejects it up front (→ 419).
+ * untyped and let a bad `status` fail Mongoose enum validation (→ 400); validating here rejects it up front (→ 422).
  */
  // TODO: derive zod validator (id, status/emailnotification) from Setting schema
 export const emailSaveSettingBody = z.object({

@@ -14,7 +14,7 @@ export type CallTokenData =
 export type CallTokenResponse = Ok<CallTokenData>
 
 // Provider webhook payloads. These are unauthenticated provider callbacks, and a webhook must never reject a provider
-// with 419, so `.partial()` makes every field optional in one shot -- validation here exists only to TYPE the handful
+// with 422, so `.partial()` makes every field optional in one shot -- validation here exists only to TYPE the handful
 // of fields we read (catching field-name typos at compile time), not to gate the request. Form values are always
 // strings. (`.partial()`, not `.optional()` on the whole object: the body is always present, it's the *fields* that
 // may be absent; `.optional()` would type the whole object as possibly-`undefined`.)

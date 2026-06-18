@@ -1,12 +1,12 @@
 import { sValidator } from '@hono/standard-validator'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { Context } from 'hono'
-import type { ContentfulStatusCode, UnofficialStatusCode } from 'hono/utils/http-status'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { ApiError } from '../shared/api-contracts.ts'
 
-// 419 is non-standard (not in Hono's StatusCode union), so it's tagged with `UnofficialStatusCode` as Hono documents
-// for custom codes. Kept here as the one place the migration reproduces the app's legacy validation-failure status.
-const VALIDATION_FAILED = 419 as UnofficialStatusCode
+// 422 Unprocessable Content (RFC 9110): the body parsed fine but failed schema validation.
+// A real `ContentfulStatusCode` (unlike the app's old non-standard 419).
+const VALIDATION_FAILED = 422
 
 // Request-body validation wrappers over @hono/standard-validator (`sValidator`). Standard Schema means these accept
 // any conforming schema (our `shared/schema` zod schemas included) with no zod-specific adapter.

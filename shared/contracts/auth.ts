@@ -34,7 +34,7 @@ export const saveMfaBody = z.object({ status: z.string().min(1), qr: z.string().
 export type SaveMfaRequest = z.infer<typeof saveMfaBody>
 
 /** The user projection echoed back on auth/profile actions (also stored in the `userdata` cookie). */
-export type UserData = { _id: string; name: string; email: string; token: string }
+export type UserData = { _id: string; name: string; email: string; token: string; mfa: StringBoolean }
 export type UserResponse = Ok<UserData>
 
 /** Bespoke (not `Ok<T>`): the login result drives three frontend branches (key challenge / OTP / straight in). */

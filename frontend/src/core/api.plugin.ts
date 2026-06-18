@@ -6,7 +6,7 @@ import { api } from '@/core/services/api.service.ts'
 import { ApiError, type ApiClientGet, type ApiClientPost, type ApiClientPut, type ApiClientPatch, type ApiClientDelete } from '@/core/services/api.service.ts'
 
 // Shared API error handler (formerly in core/module/common.module.js).
-// 401 -> notify (+ clear auth & bounce to login only if a session cookie exists); 400/403/409/422 -> notify.
+// 401 -> notify (+ clear auth & bounce to login only if a session cookie exists); 400/403/409/422 and 5xx -> notify.
 // Always resolves to `false` so callers can guard on a falsy return
 // instead of try/catch -- i.e. $post/$get never reject in normal operation.
 const swalError = (text?: string) => Swal.fire({
@@ -32,11 +32,16 @@ const handleError = (err: ApiError): false => {
   // 400 Bad Request (malformed/invalid input)
   // 403 Forbidden (authenticated but not allowed / called out of order),
   // 409 Conflict (duplicate, e.g. a name/number that already exists)
-  // 422 Unprocessable (well-formed but breaks a business rule, e.g. the 500-contact cap) -> show the server message.
+  // 422 Unprocessable (well-formed but breaks a business rule or fails validation, e.g. the 500-contact cap) -> show
+  // the server message.
   } else if (err.status === 400 || err.status === 403 || err.status === 409 || err.status === 422) {
     void swalError(err.data?.message)
+  // 5xx server fault (500 internal, 502 provider failure): the body is `{ message }` but may be generic, so fall back
+  // to a friendly default rather than surfacing a bare status.
+  } else if (err.status !== undefined && err.status >= 500) {
+    void swalError(err.data?.message ?? 'Something went wrong')
   }
-  // Any other status (404, 5xx, ...) falls through to a silent `false`; callers guard on the falsy return.
+  // Any other status (404, ...) falls through to a silent `false`; callers guard on the falsy return.
   return false
 }
 

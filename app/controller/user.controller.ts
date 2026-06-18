@@ -42,8 +42,8 @@ const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_
 
 /** The user fields echoed to the client (also persisted in the `userdata` cookie). */
 const userDataResponseGen = (u: {
-  _id: { toString(): string }; name?: string | null; email?: string | null; token?: string | null
-}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', email: u.email ?? '', token: u.token ?? '' })
+  _id: { toString(): string }; name?: string | null; email?: string | null; token?: string | null; mfa?: StringBoolean | null
+}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', email: u.email ?? '', token: u.token ?? '', mfa: u.mfa ?? 'false' })
 
 /** Running build id: the short git commit, falling back to `package.json`'s version. */
 const currentVersion = (() => {
@@ -210,8 +210,6 @@ async function removeAccount(c: JsonCtx<PasswordRequest>) {
 async function readUser(c: Context<Env>) {
   const user = await User.findOne({ _id: { $eq: c.get('user').id } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
-  // TODO: the response omits `mfa`, but the settings UI reads `data.mfa` to show MFA state, so the toggle always reads
-  // as off. Adding `mfa` to `UserData`/`userDataResponseGen` would fix it (it also lands in the `userdata` cookie).
   return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
 }
 
