@@ -38,8 +38,7 @@ test('user (a plain required ObjectId) is still required', async () => {
 
 // Contrast: a plain `required: String` rejects '' -- the exact behaviour EmptyString overrides.
 test('a plain required String rejects empty string (control)', async () => {
-  const Plain = mongoose.models.PlainReqString
-    ?? mongoose.model('PlainReqString', new mongoose.Schema({ name: { type: String, required: true } }))
+  const Plain = mongoose.model('PlainReqString', new mongoose.Schema({ name: { type: String, required: true } }))
   const err = await new Plain({ name: '' }).validate().catch(e => e)
   expect(err?.errors?.name?.kind).toBe('required')
 })

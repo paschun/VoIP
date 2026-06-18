@@ -20,9 +20,6 @@
     "checkJs": true,
     "skipLibCheck": true,
 
-    // looser checking options
-    "noImplicitAny": false,
-
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
