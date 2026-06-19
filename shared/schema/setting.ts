@@ -36,7 +36,10 @@ export const settingSchema = new Schema({
   id: false, // mongoose by default creates an `id` virtual which is `_id` stringified.
 })
 
-/** Full JSON shape of a Setting/profile over the wire. The intersection adds what `WireDoc` can't infer -- see `wire.md`. */
+/**
+ * Full JSON shape of a Setting/profile over the wire. The counts are optional because they're a list/detail projection
+ * (`list`/`getOne` populate them; `create`/`delete` don't) -- consumers fall back to 0 rather than treat absent as 0.
+ */
 export type SettingDoc = WireDoc<typeof settingSchema> & {
   // id: string // mongoose `id` virtual; on the wire via toJSON:{virtuals:true}, read by the frontend
   messageCount?: number // count virtuals; uninferable, populated only by getProfiles/getProfile

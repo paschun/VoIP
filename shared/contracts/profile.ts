@@ -12,6 +12,5 @@ export type CreateProfileRequest = z.infer<typeof profileCreateBody>
 export const profileIdParam = z.object({ id: z.string().min(1) })
 export type ProfileIdParam = z.infer<typeof profileIdParam>
 
-// The RPC routes infer their own response shapes from `c.json` (see `shared/wire.md`); this alias survives only for the
-// legacy `EmailSetting.vue`, which still fetches profiles via the old `$get<T>` path. Drop it once that view moves to RPC.
+// Only `EmailSetting.vue` still uses this, via the old `$get<T>` path. Drop it once that view moves to RPC.
 export type GetProfilesResponse = Ok<SettingDoc[]>

@@ -51,6 +51,14 @@ describe('GET /api/profile -- list with populated count virtuals', () => {
     expectTypeOf(work._id).toEqualTypeOf<string>()
     expectTypeOf(work.created_at).toEqualTypeOf<string>()
   })
+
+  test('a user with no profiles gets 200 and an empty list, not a 404', async () => {
+    const res = await client.index.$get({}, auth)
+    expect(res.status).toBe(200)
+    if (res.status !== 200) return
+    const body = await res.json()
+    expect(body.data).toEqual([])
+  })
 })
 
 describe('GET /api/profile/:id -- single profile detail', () => {

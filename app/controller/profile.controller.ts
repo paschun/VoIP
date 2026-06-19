@@ -33,14 +33,14 @@ export const profileWithUnread = (userId: string, profileId: string, onFail?: ()
     // mongoose types have trouble inferring type when populating virtual, so add it as generic param in populate
     .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: 'false' } }) // unread only
     .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: 'false' } })
+    // https://github.com/Automattic/mongoose/blob/9.7.1/lib/query.js#L4669
     .orFail(onFail)
 )
 
-export const profilesWithUnread = (userId: string, onFail?: () => NativeError) => (
+export const profilesWithUnread = (userId: string) => (
   Setting.find({ user: { $eq: userId } }) // type: Document[]
     .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: 'false' } }) // type: PopulateDocumentResult<Document>
     .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: 'false' } })
-    .orFail(onFail)
 )
 
 async function getProfile(c: ParamCtx<ProfileIdParam>) {
@@ -50,9 +50,8 @@ async function getProfile(c: ParamCtx<ProfileIdParam>) {
   return c.json({ data } satisfies Ok)
 }
 async function getProfiles(c: Context<Env>) {
-  const profiles = await profilesWithUnread(c.get('user').id, () => new HTTPException(404, { message: 'No profiles found for you' }))
-  // orFail on an array checks .length === 0
-  // https://github.com/Automattic/mongoose/blob/9.7.1/lib/query.js#L4664
+  // A user with no profiles yet is a valid empty list, not a 404.
+  const profiles = await profilesWithUnread(c.get('user').id)
   const data = profiles.map((d) => d.toObject({ flattenObjectIds: true }))
   return c.json({ data } satisfies Ok)
 }
@@ -66,7 +65,7 @@ async function removeProfile(c: ParamCtx<ProfileIdParam>) {
   await Message.deleteMany({ setting: setting._id })
 
   // Best-effort provider teardown: each call is wrapped so a failed cleanup doesn't block the delete. `?? ''` covers
-  // fields the type allows to be null \u2014 the provider rejects the empty value and the catch swallows it.
+  // fields the type allows to be null -- the provider rejects the empty value and the catch swallows it.
   const apiKey = setting.api_key
   const settingId = setting.setting
   if (setting.type === 'telnyx' && apiKey && settingId) {

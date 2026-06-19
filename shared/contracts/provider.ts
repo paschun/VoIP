@@ -22,7 +22,6 @@ export const numberLookupBody = z.discriminatedUnion('type', [
 ])
 export type NumberLookupRequest = z.infer<typeof numberLookupBody>
 
-// The webhook-patch routes infer their response shapes from `c.json` (see `shared/wire.md`).
 // Provider passthrough payloads (Twilio/Telnyx SDK or REST shapes); the frontend reads them via dotted paths, so they
 // stay loose here rather than mirroring each SDK's response type.
 export type WebhookConfigResponse = Ok<unknown>
