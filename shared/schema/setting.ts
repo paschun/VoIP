@@ -25,7 +25,8 @@ export const settingSchema = new Schema({
   telnyx_outbound: { type: String, default: null },
   created_at: { type: Date, default: Date.now },
 }, {
-  // Populated count virtuals (not persisted to mongo). Defined in the constructor so `WireDoc` can infer their type info.
+  // Populated count virtuals (not persisted). Declared here + `toJSON.virtuals` so `.populate()` fills them and they
+  // serialize; their value type is not inferable from the schema -- see `SettingCounts` below.
   virtuals: {
     // Count where settingSchema._id is equal to Message.setting
     messageCount: { options: { ref: 'Message', localField: '_id', foreignField: 'setting', count: true } },
@@ -36,5 +37,13 @@ export const settingSchema = new Schema({
   toObject: { virtuals: true },
 })
 
-/** Full JSON shape of a Setting/profile as the frontend receives it (ids/dates stringified, virtuals included). */
-export type SettingDoc = WireDoc<typeof settingSchema>
+/**
+ * The populated count virtuals. Mongoose cannot infer a `{ count: true }` populate virtual's value type -- there's no
+ * getter to read, and its own `InferSchemaType`/`ObtainSchemaGeneric` (like our `WireDoc`) yield `unknown` -- so the
+ * `number` is declared here. Present only on the list/detail reads that `.populate()` them (`getProfiles`/`getProfile`),
+ * absent on create/delete, hence optional. Verified end-to-end against the real routes in `test/profile.route.test.ts`.
+ */
+type SettingCounts = { messageCount?: number; totalCount?: number }
+
+/** Full JSON shape of a Setting/profile as the frontend receives it (ObjectId/Date stringified, counts when populated). */
+export type SettingDoc = WireDoc<typeof settingSchema> & SettingCounts

@@ -18,11 +18,11 @@ import type { Profile } from '@shared/api-contracts.ts'
 //   - activeProfile      -> any change incl. detail refresh (unread counts,
 //                          provider creds). Bind displays/payloads to this.
 export const useProfileStore = defineStore('profile', () => {
-  // Source of truth: persisted + schema-validated. `_id: ''` means "none yet".
-  const activeProfile = useValidatedStorage<Profile>(
+  // Source of truth: persisted + schema-validated. `null` means "none selected yet".
+  const activeProfile = useValidatedStorage<Profile | null>(
     'activeProfile',
-    profileSchema as unknown as ZodType<Profile>,
-    { _id: '', profile: '' }
+    profileSchema as unknown as ZodType<Profile | null>,
+    null
   )
 
   // refs become state
@@ -30,15 +30,20 @@ export const useProfileStore = defineStore('profile', () => {
   const loading = ref(false)
 
   // computed become getters
-  const activeProfileId = computed(() => activeProfile.value._id)
-  const activeProfileType = computed(() => activeProfile.value.type ?? '')
-  const hasActiveProfile = computed(() => activeProfile.value._id !== '')
+  const activeProfileId = computed(() => activeProfile.value?._id ?? '')
+  const activeProfileType = computed(() => activeProfile.value?.type ?? '')
+  const hasActiveProfile = computed(() => activeProfile.value !== null)
 
   // functions become actions
 
   /** Set the active profile (a new object reference each call -> watchers fire). */
   function setActiveProfile (profile: Profile) {
     activeProfile.value = profile
+  }
+
+  /** Clear the selection (fires watchers). Used after deleting the selected profile. */
+  function clearActiveProfile () {
+    activeProfile.value = null
   }
 
   /**
@@ -49,9 +54,10 @@ export const useProfileStore = defineStore('profile', () => {
   async function loadProfiles (): Promise<Profile[] | false> {
     loading.value = true
     try {
-      const list = await profileService.list()
-      if (list) profiles.value = list
-      return list
+      const res = await profileService.list()
+      if (!res.ok) return false
+      profiles.value = res.data
+      return res.data
     } finally {
       loading.value = false
     }
@@ -59,18 +65,18 @@ export const useProfileStore = defineStore('profile', () => {
 
   /** Resolve the stored selection against a list (matching id, else the first). */
   function resolveActiveProfile (list: Profile[]): Profile | undefined {
-    return list.find(p => p._id === activeProfile.value._id) ?? list[0]
+    return list.find(p => p._id === activeProfile.value?._id) ?? list[0]
   }
 
   /** Create a profile, select it (fires watchers), and refresh the list. */
   async function createProfile (name: string): Promise<Profile | false> {
     loading.value = true
     try {
-      const created = await profileService.create(name)
-      if (!created) return false
-      setActiveProfile(created)
+      const res = await profileService.create(name)
+      if (!res.ok) return false
+      setActiveProfile(res.data)
       await loadProfiles()
-      return created
+      return res.data
     } finally {
       loading.value = false
     }
@@ -78,9 +84,22 @@ export const useProfileStore = defineStore('profile', () => {
 
   /** Re-fetch the active profile's detail (unread counts, settings) in place. */
   async function refreshActiveProfile (): Promise<void> {
-    if (activeProfile.value._id === '') return
-    const fresh = await profileService.getOne(activeProfile.value._id)
-    if (fresh) setActiveProfile(fresh)
+    if (!activeProfile.value) return
+    const res = await profileService.getOne(activeProfile.value._id)
+    if (res.ok) setActiveProfile(res.data)
+  }
+
+  /**
+   * Delete the active profile, clear the selection (routes through the store instead of NumberList's direct
+   * `localStorage.removeItem`), and refresh the list. Returns whether it deleted.
+   */
+  async function deleteActiveProfile (): Promise<boolean> {
+    if (!activeProfile.value) return false
+    const res = await profileService.remove(activeProfile.value._id)
+    if (!res.ok) return false
+    clearActiveProfile()
+    await loadProfiles()
+    return true
   }
 
   return {
@@ -91,9 +110,11 @@ export const useProfileStore = defineStore('profile', () => {
     activeProfileType,
     hasActiveProfile,
     setActiveProfile,
+    clearActiveProfile,
     loadProfiles,
     resolveActiveProfile,
     createProfile,
-    refreshActiveProfile
+    refreshActiveProfile,
+    deleteActiveProfile
   }
 })

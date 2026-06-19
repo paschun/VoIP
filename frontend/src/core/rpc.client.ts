@@ -2,7 +2,7 @@ import { hc } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import Cookies from 'js-cookie'
-import { notifyApiError } from '@/core/api.plugin.ts'
+import { notifyApiError } from '@/core/services/handle-error.ts'
 import type { ApiResult, Ok, ApiError } from '@shared/api-contracts.ts'
 import type { AppType } from '../../../app.ts'
 

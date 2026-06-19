@@ -89,6 +89,6 @@ async function removeProfile(c: ParamCtx<ProfileIdParam>) {
 }
 
 export const create = factory.createHandlers(auth, jsonBody(profileCreateBody), createProfile)
-export const getData = factory.createHandlers(auth, getProfiles)
+export const getAll = factory.createHandlers(auth, getProfiles)
 export const getOne = factory.createHandlers(auth, pathParams(profileIdParam), getProfile)
 export const deleteProfile = factory.createHandlers(auth, pathParams(profileIdParam), removeProfile)
