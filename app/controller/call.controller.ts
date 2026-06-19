@@ -13,9 +13,8 @@ import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, formBody } from '../validate.ts'
 import { ack } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
-import type { SettingDoc } from '../../shared/schema/setting.ts'
 import {
-  getTokenBody, type GetTokenRequest, type CallTokenData,
+  getTokenBody, type GetTokenRequest,
   twilioVoiceWebhook, type TwilioVoiceWebhook,
   twilioStatusWebhook, type TwilioStatusWebhook,
   twilioInboundWebhook, type TwilioInboundWebhook,
@@ -124,10 +123,10 @@ async function issueToken(c: JsonCtx<GetTokenRequest>) {
       identity: c.get('user').id,
     })
     token.addGrant(voiceGrant)
-    return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok<CallTokenData>)
+    return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok)
   }
 
-  return c.json({ data: { type: setting.type ?? 'telnyx', setting: setting as unknown as SettingDoc } } satisfies Ok<CallTokenData>)
+  return c.json({ data: { type: setting.type ?? 'telnyx', setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok)
 }
 
 /** Twilio outbound: the TwiML app's voice URL. Returns dial TwiML so Twilio bridges the call to the dialed number. */

@@ -25,10 +25,9 @@ import { ProviderError } from '../provider-error.ts'
 import { factory } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams, pathParams404, queryParams } from '../validate.ts'
-import { sendDoc, ack } from '../util/respond.hono.ts'
+import { ack } from '../util/respond.hono.ts'
 import type { Env, JsonCtx, ParamCtx, QueryCtx } from '../factory.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
-import type { SettingDoc } from '../../shared/schema/setting.ts'
 import {
   createSettingBody, type CreateSettingRequest,
   profileIdParam, type ProfileIdParam,
@@ -156,7 +155,8 @@ async function resetProviderConfig(c: ParamCtx<ProfileIdParam>) {
   setting.telnyx_twiml = null
   setting.telnyx_outbound = null
   await setting.save()
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 /** Create or update a profile's provider config; dispatches on the provider type. */
@@ -175,7 +175,8 @@ async function renameProfile(c: JsonCtx<CreateSettingRequest>, userId: string, b
   if (!setting) throw new HTTPException(404, { message: 'setting not found!' })
   setting.profile = body.profile
   await setting.save()
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
@@ -242,7 +243,8 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
   if (body.override === 'true') {
     await client.phoneNumbers.update(sid ?? '', { connection_id: setting.telnyx_twiml ?? '' })
   }
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
@@ -291,14 +293,16 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
       }
     : { smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio) }
   await client.incomingPhoneNumbers(sid).update(update)
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 /** Fetch one of the caller's profiles (scoped to the auth token). */
 async function fetchSetting(c: ParamCtx<ProfileIdParam>) {
   const setting = await Setting.findOne({ user: { $eq: c.get('user').id }, _id: { $eq: c.req.valid('param').id } })
   if (!setting) throw new HTTPException(404, { message: 'Setting not found!' })
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 /** Public: list the phone numbers on the supplied provider account (used while configuring a profile). */

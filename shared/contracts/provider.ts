@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import type { Ok } from '../api-contracts.ts'
-import type { SettingDoc } from '../schema/setting.ts'
 
 // Which Setting (profile) the provider config belongs to; carried in the path.
 export const settingIdParam = z.object({ settingId: z.string().min(1) })
@@ -23,7 +22,7 @@ export const numberLookupBody = z.discriminatedUnion('type', [
 ])
 export type NumberLookupRequest = z.infer<typeof numberLookupBody>
 
-export type WebhookUpdateResponse = Ok<SettingDoc>
+// The webhook-patch routes infer their response shapes from `c.json` (see `shared/wire.md`).
 // Provider passthrough payloads (Twilio/Telnyx SDK or REST shapes); the frontend reads them via dotted paths, so they
 // stay loose here rather than mirroring each SDK's response type.
 export type WebhookConfigResponse = Ok<unknown>

@@ -8,9 +8,7 @@ import { factory } from '../factory.ts'
 import type { JsonCtx, ParamCtx, ParamJsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams } from '../validate.ts'
-import { sendDoc } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
-import type { SettingDoc } from '../../shared/schema/setting.ts'
 import {
   settingIdParam, type SettingIdParam,
   webhookFallbackBody, type WebhookFallbackRequest,
@@ -51,7 +49,8 @@ async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
     voice_url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioIncoming.full),
     sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
   })
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
@@ -80,7 +79,8 @@ async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
     apiKey: setting.api_key ?? '', uuid: setting.sip_id ?? '',
     url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
   })
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 async function lookupNumber(c: JsonCtx<NumberLookupRequest>) {

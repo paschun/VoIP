@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import type { Ok } from '../api-contracts.ts'
-import type { SettingDoc } from '../schema/setting.ts'
 
 // --- requests ---
 
@@ -66,7 +65,6 @@ export type ConversationParam = z.infer<typeof conversationParam>
 
 // --- responses ---
 
-export type SettingResponse = Ok<SettingDoc>
-
+// The single-setting routes infer their response shapes from `c.json` (see `shared/wire.md`).
 /** `get-number` is a provider-shaped passthrough: Telnyx nests `{ data }`, Twilio returns a flat list. */
 export type ProviderNumbersResponse = Ok<{ data: unknown[] } | unknown[]>

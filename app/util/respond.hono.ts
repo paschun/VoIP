@@ -13,7 +13,7 @@ import type { Ok } from '../../shared/api-contracts.ts'
 export const sendDoc = <T extends { _id: string } | null>(c: Context, data: Document | null) =>
   c.json({ data: data as unknown as T } satisfies Ok<T>)
 
-/** Array counterpart of `sendDoc` for list endpoints, e.g. `sendDocs<SettingDoc>(c, docs)`. */
+/** Array counterpart of `sendDoc` for list endpoints, e.g. `sendDocs<ContactDoc>(c, docs)`. */
 export const sendDocs = <T extends { _id: string }>(c: Context, data: Document[]) =>
   c.json({ data: data as unknown as T[] } satisfies Ok<T[]>)
 
