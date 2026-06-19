@@ -156,7 +156,7 @@ async function resetProviderConfig(c: ParamCtx<ProfileIdParam>) {
   setting.telnyx_outbound = null
   await setting.save()
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 /** Create or update a profile's provider config; dispatches on the provider type. */
@@ -176,7 +176,7 @@ async function renameProfile(c: JsonCtx<CreateSettingRequest>, userId: string, b
   setting.profile = body.profile
   await setting.save()
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
@@ -244,7 +244,7 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
     await client.phoneNumbers.update(sid ?? '', { connection_id: setting.telnyx_twiml ?? '' })
   }
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
@@ -294,7 +294,7 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
     : { smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio) }
   await client.incomingPhoneNumbers(sid).update(update)
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 /** Fetch one of the caller's profiles (scoped to the auth token). */
@@ -302,7 +302,7 @@ async function fetchSetting(c: ParamCtx<ProfileIdParam>) {
   const setting = await Setting.findOne({ user: { $eq: c.get('user').id }, _id: { $eq: c.req.valid('param').id } })
   if (!setting) throw new HTTPException(404, { message: 'Setting not found!' })
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 /** Public: list the phone numbers on the supplied provider account (used while configuring a profile). */
@@ -310,10 +310,10 @@ async function listProviderNumbers(c: JsonCtx<GetNumberRequest>) {
   const body = c.req.valid('json')
   if (body.type === 'telnyx') {
     const phoneNumber = await new Telnyx({ apiKey: body.api_key }).phoneNumbers.list()
-    return c.json({ data: { data: phoneNumber.data } } satisfies Ok<{ data: unknown[] }>)
+    return c.json({ data: { data: phoneNumber.data } } satisfies Ok<{ data: unknown[] }>, 200)
   }
   const numbers = await twilio(body.twilio_sid, body.twilio_token).incomingPhoneNumbers.list()
-  return c.json({ data: numbers } satisfies Ok<unknown[]>)
+  return c.json({ data: numbers } satisfies Ok<unknown[]>, 200)
 }
 
 /** Normalize a dialed number: strip formatting, then prefix +1 for a bare 10-digit US number. */
@@ -391,7 +391,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
   }
 
   const messages = await Message.create(messageRecords)
-  return c.json({ data: messages } satisfies Ok<unknown[]>)
+  return c.json({ data: messages } satisfies Ok<unknown[]>, 200)
 }
 
 /** Inbound SMS/MMS webhook (Twilio form or Telnyx JSON). Persists the message, notifies the user, replies empty TwiML. */
@@ -604,7 +604,7 @@ async function removeConversation(c: ParamCtx<ConversationParam>) {
     user: { $eq: c.get('user').id },
     number: { $eq: c.req.valid('param').number },
   })
-  return c.json({ data: messages } satisfies Ok<unknown>)
+  return c.json({ data: messages } satisfies Ok<unknown>, 200)
 }
 
 /** Messages in a conversation; marks the unread ones read first. Returns a bare array. */

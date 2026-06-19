@@ -10,11 +10,9 @@ import Media from '../model/media.model.ts'
 import { factory } from '../factory.ts'
 import type { Env } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
-import { sendDoc } from '../util/respond.hono.ts'
 import { combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
 import { env } from '../../config/env.ts'
-import type { MediaDoc } from '../../shared/schema/media.ts'
-import type { ApiError } from '../../shared/api-contracts.ts'
+import type { ApiError, Ok } from '../../shared/api-contracts.ts'
 
 /** Max accepted image-upload size, enforced per-request by the media route's bodyLimit (HTTP 413 if exceeded). */
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024 // 15 MB
@@ -44,7 +42,8 @@ async function uploadMedia(c: Context<Env>) {
   const media = await Media.create({ media: `uploads/${date}/${filename}`, user: c.get('user').id })
   // just the uploads path is stored in mongo, but the full url is returned to the client
   media.media = combineURLs(env.BASE_URL, media.media)
-  return sendDoc<MediaDoc>(c, media)
+  const data = media.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok, 200)
 }
 
 // todo: remove all folders older than 7 days

@@ -30,7 +30,7 @@ async function getTwilioWebhookConfig(c: ParamCtx<SettingIdParam>) {
   const app = await twilioHelper.twimlGet({
     sid: setting.twilio_sid ?? '', token: setting.twilio_token ?? '', twimlsid: setting.twiml_app ?? '',
   })
-  return c.json({ data: app } satisfies Ok<unknown>)
+  return c.json({ data: app } satisfies Ok<unknown>, 200)
 }
 
 async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
@@ -50,7 +50,7 @@ async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
     sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
   })
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
@@ -59,7 +59,7 @@ async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
   const messageProfile = await telnyxHelper.messageProfileGet({
     apiKey: setting.api_key ?? '', setting: setting.setting ?? '',
   })
-  return c.json({ data: messageProfile } satisfies Ok<unknown>)
+  return c.json({ data: messageProfile } satisfies Ok<unknown>, 200)
 }
 
 async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
@@ -80,17 +80,17 @@ async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
     url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
   })
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function lookupNumber(c: JsonCtx<NumberLookupRequest>) {
   const body = c.req.valid('json')
   if (body.type === 'telnyx') {
     const numberData = await telnyxHelper.getNumberData({ number_sid: body.sid, apiKey: body.api_key })
-    return c.json({ data: numberData } satisfies Ok<unknown>)
+    return c.json({ data: numberData } satisfies Ok<unknown>, 200)
   }
   const numberData = await twilioHelper.numberGet({ sid: body.twilio_sid, token: body.twilio_token, numbersid: body.sid })
-  return c.json({ data: numberData } satisfies Ok<unknown>)
+  return c.json({ data: numberData } satisfies Ok<unknown>, 200)
 }
 
 export const twilioWebhookGet = factory.createHandlers(auth, pathParams(settingIdParam), getTwilioWebhookConfig)

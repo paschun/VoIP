@@ -175,7 +175,7 @@ async function changeUsername(c: JsonCtx<UpdateUsernameRequest>) {
   user.email = email
   user.name = email
   await user.save()
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Change the caller's password after checking the old one. */
@@ -188,7 +188,7 @@ async function changePassword(c: JsonCtx<UpdatePasswordRequest>) {
   }
   user.password = bcrypt.hashSync(password, saltRounds)
   await user.save()
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Confirm the caller's password (gate before showing a protected settings menu). */
@@ -198,7 +198,7 @@ async function verifyPassword(c: JsonCtx<PasswordRequest>) {
   if (!bcrypt.compareSync(c.req.valid('json').password, user.password ?? '')) {
     throw new HTTPException(400, { message: 'please enter valid password!' })
   }
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Verify the caller's password, then irreversibly delete the account and all its data. */
@@ -210,14 +210,14 @@ async function removeAccount(c: JsonCtx<PasswordRequest>) {
     throw new HTTPException(400, { message: 'Please enter a valid password!' })
   }
   await deleteAllAccountData(userId)
-  return c.json({ data: [] } satisfies Ok<never[]>)
+  return c.json({ data: [] } satisfies Ok<never[]>, 200)
 }
 
 /** The caller's user record. */
 async function readUser(c: Context<Env>) {
   const user = await User.findOne({ _id: { $eq: c.get('user').id } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Toggle MFA: mint a secret+QR (`qr:'true'`), verify the code to enable (`qr:'false'`), or disable (`status:'false'`). */
@@ -243,7 +243,7 @@ async function saveMfaSetting(c: JsonCtx<SaveMfaRequest>) {
     user.mfa = body.status as StringBoolean
   }
   await user.save()
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>)
+  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Best-effort teardown of every record + provider resource owned by `userid`, then the user itself. */

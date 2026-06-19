@@ -6,10 +6,8 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams, queryParams } from '../validate.ts'
-import { sendDoc, sendDocs } from '../util/respond.hono.ts'
 import { normalizeNumber } from '../helper/common.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
-import type { ContactDoc } from '../../shared/schema/contact.ts'
 import {
   contactBody, type ContactRequest,
   contactBulkBody, type ContactBulkRequest,
@@ -23,15 +21,17 @@ async function getContacts(c: Context<Env>) {
   // collation locale 'en' makes the first_name sort case-insensitive and locale-aware (so 'bob' and 'Bob' order
   // together); without it Mongo sorts by raw bytes (all uppercase before lowercase).
   // sort `1` == ascending
-  const data = await Contact.find({ user: { $eq: c.get('user').id } }).collation({ locale: 'en' }).sort({ first_name: 1 })
-  return sendDocs<ContactDoc>(c, data)
+  const contacts = await Contact.find({ user: { $eq: c.get('user').id } }).collation({ locale: 'en' }).sort({ first_name: 1 })
+  const data = contacts.map((d) => d.toObject({ flattenObjectIds: true }))
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function lookupContact(c: QueryCtx<ContactLookupQuery>) {
   const number = normalizeNumber(c.req.valid('query').number)
   const contact = await Contact.findOne({ user: { $eq: c.get('user').id }, number: { $eq: number } })
   // note: only first_name and last_name are used by client
-  return sendDoc<ContactDoc | null>(c, contact)
+  const data = contact ? contact.toObject({ flattenObjectIds: true }) : null
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function createContact(c: JsonCtx<ContactRequest>) {
@@ -45,7 +45,8 @@ async function createContact(c: JsonCtx<ContactRequest>) {
   }
   const saved = await Contact.create({ user, number, first_name: body.first_name, last_name: body.last_name ?? '', note: body.note ?? '' })
   await Message.updateMany({ user: { $eq: user }, number: { $eq: number } }, { contact: saved._id })
-  return sendDoc<ContactDoc>(c, saved)
+  const data = saved.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
@@ -63,7 +64,7 @@ async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
     created++
   }
   // TODO: `data: created` isnt used on the client at all. maybe we can omit it.
-  return c.json({ data: { created } } satisfies Ok<{ created: number }>)
+  return c.json({ data: { created } } satisfies Ok<{ created: number }>, 200)
 }
 
 async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
@@ -77,7 +78,8 @@ async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
   contact.number = normalizeNumber(body.number)
   contact.note = body.note ?? ''
   await contact.save()
-  return sendDoc<ContactDoc>(c, contact)
+  const data = contact.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function deleteContact(c: ParamCtx<ContactIdParam>) {
@@ -85,12 +87,12 @@ async function deleteContact(c: ParamCtx<ContactIdParam>) {
   // Scope by user so a user can only delete their own contacts.
   const result = await Contact.deleteOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
   if (result.deletedCount === 0) throw new HTTPException(404, { message: 'Contact not found!' })
-  return c.json({ data: null } satisfies Ok<null>)
+  return c.json({ data: null } satisfies Ok<null>, 200)
 }
 
 async function deleteAllContacts(c: Context<Env>) {
   await Contact.deleteMany({ user: { $eq: c.get('user').id } })
-  return c.json({ data: null } satisfies Ok<null>)
+  return c.json({ data: null } satisfies Ok<null>, 200)
 }
 
 export const getAll = factory.createHandlers(auth, getContacts)

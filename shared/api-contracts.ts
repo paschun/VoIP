@@ -12,7 +12,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 /**
  * Success body: just the payload. No `status`/`message` — the frontend reads neither on success (success toasts are
- * hardcoded client-side). Pair with `sendDoc<T>` / `c.json`.
+ * hardcoded client-side). Send via `c.json({ data } satisfies Ok, 200)`.
  */
 export interface Ok<T = unknown> {
   data: T

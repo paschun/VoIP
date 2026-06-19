@@ -7,9 +7,7 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody } from '../validate.ts'
-import { sendDoc } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
-import type { EmailDoc } from '../../shared/schema/email.ts'
 import { emailCreateBody, type EmailCreateRequest, emailSaveSettingBody, type EmailSaveSettingRequest } from '../../shared/contracts/email.ts'
 
 // throws if invalid
@@ -52,14 +50,16 @@ async function upsertEmail(c: JsonCtx<EmailCreateRequest>) {
     // `new` returns modified document rather than the original
     { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true },
   )
-  return sendDoc<EmailDoc>(c, email)
+  const data = email.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function getEmailSettings(c: Context<Env>) {
   // no request payload to validate — GET with no query/params; identity comes from `auth`'s `c.get('user')`.
   // No try/catch: an unexpected failure throws and `app.onError` logs it once as a 500.
   const emailSettings = await Email.findOne({ user: c.get('user').id })
-  return sendDoc<EmailDoc | null>(c, emailSettings)
+  const data = emailSettings ? emailSettings.toObject({ flattenObjectIds: true }) : null
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function saveEmailNotification(c: JsonCtx<EmailSaveSettingRequest>) {
@@ -70,7 +70,7 @@ async function saveEmailNotification(c: JsonCtx<EmailSaveSettingRequest>) {
   setting.emailnotification = status
   await setting.save()
   // todo: is `null` here needed?
-  return c.json({ data: null } satisfies Ok<null>)
+  return c.json({ data: null } satisfies Ok<null>, 200)
 }
 
 // ── Route handler chains (middleware + validation + handler), spread into the Hono group in email.route.ts ──────────

@@ -8,7 +8,6 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx, ParamCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams } from '../validate.ts'
-import { sendDocs } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
   registerKeyBody, type RegisterKeyRequest,
@@ -126,7 +125,8 @@ async function verifyAuthentication(c: Context<Env>) {
 /** List the caller's completed hardware keys. */
 async function getKeys(c: Context<Env>) {
   const keys = await Hardwarekey.find({ user: c.get('user').id, registrationComplete: true })
-  return sendDocs<HardwarekeyListItem>(c, keys)
+  const data = keys.map((d) => d.toObject({ flattenObjectIds: true }))
+  return c.json({ data } satisfies Ok, 200)
 }
 
 /** Delete one of the caller's keys (owner-scoped, so a non-owned id can't be removed); idempotent. */
@@ -139,7 +139,7 @@ async function deleteRecord(c: ParamCtx<DeleteKeyParams>) {
   }
   const remaining = await Hardwarekey.findOne({ user: userId, registrationComplete: true })
   if (!remaining) await User.updateOne({ _id: userId }, { hardwarekey: 'false' })
-  return c.json({ data: [] } satisfies Ok<HardwarekeyListItem[]>)
+  return c.json({ data: [] } satisfies Ok<HardwarekeyListItem[]>, 200)
 }
 
 /** Parse a JSON body, tolerating an empty/absent one (the ceremony's `register`/`login` posts vary). */

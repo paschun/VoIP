@@ -123,10 +123,10 @@ async function issueToken(c: JsonCtx<GetTokenRequest>) {
       identity: c.get('user').id,
     })
     token.addGrant(voiceGrant)
-    return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok)
+    return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok, 200)
   }
 
-  return c.json({ data: { type: setting.type ?? 'telnyx', setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok)
+  return c.json({ data: { type: setting.type ?? 'telnyx', setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok, 200)
 }
 
 /** Twilio outbound: the TwiML app's voice URL. Returns dial TwiML so Twilio bridges the call to the dialed number. */
