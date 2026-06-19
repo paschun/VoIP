@@ -25,7 +25,7 @@ async function createProfile(c: JsonCtx<CreateProfileRequest>) {
   if (exists) throw new HTTPException(409, { message: 'Profile already exists!' })
   const saved = await Setting.create({ user, profile })
   const data = saved.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 export const profileWithUnread = (userId: string, profileId: string, onFail?: () => NativeError) => (
@@ -47,13 +47,13 @@ async function getProfile(c: ParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
   const profile = await profileWithUnread(c.get('user').id, id, () => new HTTPException(404, { message: 'Profile not found!' }))
   const data = profile.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 async function getProfiles(c: Context<Env>) {
   // A user with no profiles yet is a valid empty list, not a 404.
   const profiles = await profilesWithUnread(c.get('user').id)
   const data = profiles.map((d) => d.toObject({ flattenObjectIds: true }))
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 async function removeProfile(c: ParamCtx<ProfileIdParam>) {
@@ -98,7 +98,7 @@ async function removeProfile(c: ParamCtx<ProfileIdParam>) {
 
   await Setting.deleteOne({ _id: { $eq: id } })
   const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok)
+  return c.json({ data } satisfies Ok, 200)
 }
 
 export const create = factory.createHandlers(auth, jsonBody(profileCreateBody), createProfile)

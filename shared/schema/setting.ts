@@ -41,7 +41,6 @@ export const settingSchema = new Schema({
  * (`list`/`getOne` populate them; `create`/`delete` don't) -- consumers fall back to 0 rather than treat absent as 0.
  */
 export type SettingDoc = WireDoc<typeof settingSchema> & {
-  // id: string // mongoose `id` virtual; on the wire via toJSON:{virtuals:true}, read by the frontend
   messageCount?: number // count virtuals; uninferable, populated only by getProfiles/getProfile
   totalCount?: number
 }

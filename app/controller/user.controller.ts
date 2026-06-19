@@ -120,12 +120,12 @@ async function verifyOtp(c: JsonCtx<OtpVerifyRequest>) {
 
 /** Whether self-signup is enabled (the `SIGNUPS` env flag, `'on'`/`'off'`). */
 function readSignupOption(c: Context<Env>) {
-  return c.json({ data: env.SIGNUPS } satisfies Ok<string>)
+  return c.json({ data: env.SIGNUPS } satisfies Ok<string>, 200)
 }
 
 /** The running build id (see `currentVersion`). */
 function readVersion(c: Context<Env>) {
-  return c.json({ data: currentVersion } satisfies Ok<string>)
+  return c.json({ data: currentVersion } satisfies Ok<string>, 200)
 }
 
 /** Whether a newer build than the running one exists upstream; any lookup failure reports `'false'`. */
@@ -160,7 +160,7 @@ async function matchDirectoryName(c: QueryCtx<DirectoryNameQuery>) {
   } else {
     result = { status: 'no-name', dir: 'voip' }
   }
-  return c.json({ data: result } satisfies CheckDirectoryNameResponse)
+  return c.json({ data: result } satisfies CheckDirectoryNameResponse, 200)
 }
 
 /** Rename the caller (email doubles as username); reject if the new email is taken by another account. */
