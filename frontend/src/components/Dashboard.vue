@@ -744,7 +744,7 @@ export default defineComponent({
       const { telnyx_number, _id } = activechat;
       this.$post("setting/conversations/messages", {
         number: { telnyx_number, _id },
-        profile: this.activeProfile.id,
+        profile: this.activeProfile._id,
       })
         .then((response) => {
           if (response) {

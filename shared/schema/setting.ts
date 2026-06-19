@@ -11,10 +11,10 @@ export const settingSchema = new Schema({
   sid: String,
   twilio_sid: String,
   twilio_token: String,
-  profile: String,
+  profile: String, // display name
   emailnotification: { type: String, enum: ['false', 'true'], default: 'false' },
   type: { type: String, enum: ['telnyx', 'twilio'], default: 'telnyx' },
-  user: { type: Schema.Types.ObjectId, ref: 'User' },
+  user: { type: Schema.Types.ObjectId, ref: 'User' }, // user that owns this profile
   app_key: { type: String, default: null },
   app_secret: { type: String, default: null },
   twiml_app: { type: String, default: null },
@@ -25,8 +25,6 @@ export const settingSchema = new Schema({
   telnyx_outbound: { type: String, default: null },
   created_at: { type: Date, default: Date.now },
 }, {
-  // Populated count virtuals (not persisted). Declared here + `toJSON.virtuals` so `.populate()` fills them and they
-  // serialize; their value type is not inferable from the schema -- see `SettingCounts` below.
   virtuals: {
     // Count where settingSchema._id is equal to Message.setting
     messageCount: { options: { ref: 'Message', localField: '_id', foreignField: 'setting', count: true } },
@@ -35,15 +33,12 @@ export const settingSchema = new Schema({
   },
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
+  id: false, // mongoose by default creates an `id` virtual which is `_id` stringified.
 })
 
-/**
- * The populated count virtuals. Mongoose cannot infer a `{ count: true }` populate virtual's value type -- there's no
- * getter to read, and its own `InferSchemaType`/`ObtainSchemaGeneric` (like our `WireDoc`) yield `unknown` -- so the
- * `number` is declared here. Present only on the list/detail reads that `.populate()` them (`getProfiles`/`getProfile`),
- * absent on create/delete, hence optional. Verified end-to-end against the real routes in `test/profile.route.test.ts`.
- */
-type SettingCounts = { messageCount?: number; totalCount?: number }
-
-/** Full JSON shape of a Setting/profile as the frontend receives it (ObjectId/Date stringified, counts when populated). */
-export type SettingDoc = WireDoc<typeof settingSchema> & SettingCounts
+/** Full JSON shape of a Setting/profile over the wire. The intersection adds what `WireDoc` can't infer -- see `wire.md`. */
+export type SettingDoc = WireDoc<typeof settingSchema> & {
+  // id: string // mongoose `id` virtual; on the wire via toJSON:{virtuals:true}, read by the frontend
+  messageCount?: number // count virtuals; uninferable, populated only by getProfiles/getProfile
+  totalCount?: number
+}

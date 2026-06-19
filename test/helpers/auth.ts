@@ -7,5 +7,5 @@ const secret = new TextEncoder().encode(env.COOKIE_KEY)
 
 /** Sign a JWT for a test user; only `id` matters to the profile/hardwarekey controllers. */
 export function signToken (id: string, email = 'test@example.com', name = 'Test User'): Promise<string> {
-  return new SignJWT({ id, email, name }).setProtectedHeader({ alg: 'HS256' }).sign(secret)
+  return new SignJWT({ id, email, name }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(secret)
 }

@@ -1,5 +1,4 @@
-import { describe, test, expect, expectTypeOf, beforeAll, afterAll, afterEach } from 'vitest'
-import assert from 'node:assert/strict'
+import { describe, test, expect, expectTypeOf, beforeAll, afterAll, afterEach, assert } from 'vitest'
 import mongoose from 'mongoose'
 import { testClient } from 'hono/testing'
 
@@ -47,8 +46,8 @@ describe('GET /api/profile -- list with populated count virtuals', () => {
     expect(new Date(work.created_at).toISOString()).toBe(work.created_at)
 
     // ...and the RPC-inferred type matches that runtime shape (compile-time assertions)
-    expectTypeOf(work.messageCount).toEqualTypeOf<number | undefined>()
-    expectTypeOf(work.totalCount).toEqualTypeOf<number | undefined>()
+    expectTypeOf(work.messageCount).toEqualTypeOf<number>()
+    expectTypeOf(work.totalCount).toEqualTypeOf<number>()
     expectTypeOf(work._id).toEqualTypeOf<string>()
     expectTypeOf(work.created_at).toEqualTypeOf<string>()
   })
@@ -59,12 +58,12 @@ describe('GET /api/profile/:id -- single profile detail', () => {
     const mine = await Setting.create({ user: userId, profile: 'Work', type: 'twilio' })
     await Message.create({ setting: mine._id, user: userId, isview: 'false' })
 
-    const res = await client[':id'].$get({ param: { id: mine.id } }, auth)
+    const res = await client[':id'].$get({ param: { id: mine._id.toString() } }, auth)
     expect(res.status).toBe(200)
     if (res.status !== 200) return
     const body = await res.json()
     expect(body.data.messageCount).toBe(1)
-    expect(body.data._id).toBe(mine.id)
+    expect(body.data._id).toBe(mine._id.toString())
   })
 
   test('404s for an id the user does not own', async () => {

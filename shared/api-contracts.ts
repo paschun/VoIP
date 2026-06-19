@@ -14,7 +14,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
  * Success body: just the payload. No `status`/`message` — the frontend reads neither on success (success toasts are
  * hardcoded client-side). Pair with `sendDoc<T>` / `c.json`.
  */
-export interface Ok<T> {
+export interface Ok<T = unknown> {
   data: T
 }
 

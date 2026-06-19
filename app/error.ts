@@ -1,5 +1,6 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import mongoose from 'mongoose'
 import { ProviderError } from './provider-error.ts'
 import type { ApiError } from '../shared/api-contracts.ts'
 
@@ -15,6 +16,14 @@ import type { ApiError } from '../shared/api-contracts.ts'
  */
 export function onError(err: Error, c: Context) {
   console.error(err)
+
+  // unused rn
+  // https://github.com/Automattic/mongoose/blob/9.7.1/lib/query.js#L4718
+  // https://github.com/Automattic/mongoose/blob/9.7.1/lib/error/notFound.js#L25
+  if (err instanceof mongoose.Error.DocumentNotFoundError) {
+    // err.message has internal info (query filter + model name)
+    return c.json({ message: err.message } satisfies ApiError, 404)
+  }
 
   if (err instanceof HTTPException) {
     return c.json({ message: err.message } satisfies ApiError, err.status)

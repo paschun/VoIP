@@ -1,5 +1,4 @@
-import { describe, test, expect, expectTypeOf, beforeAll, afterAll, afterEach } from 'vitest'
-import assert from 'node:assert/strict'
+import { describe, test, expect, expectTypeOf, beforeAll, afterAll, afterEach, assert } from 'vitest'
 import mongoose from 'mongoose'
 import { testClient } from 'hono/testing'
 

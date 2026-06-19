@@ -10,8 +10,7 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx, ParamCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams } from '../validate.ts'
-import { sendDoc, sendDocs } from '../util/respond.hono.ts'
-import type { SettingDoc } from '../../shared/schema/setting.ts'
+import type { Ok } from '../../shared/api-contracts.ts'
 import {
   profileCreateBody, type CreateProfileRequest,
   profileIdParam, type ProfileIdParam,
@@ -25,30 +24,44 @@ async function createProfile(c: JsonCtx<CreateProfileRequest>) {
   const exists = await Setting.findOne({ user: { $eq: user }, profile: { $eq: profile } })
   if (exists) throw new HTTPException(409, { message: 'Profile already exists!' })
   const saved = await Setting.create({ user, profile })
-  return sendDoc<SettingDoc>(c, saved)
+  const data = saved.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
-async function getProfiles(c: Context<Env>) {
-  const data = await Setting.find({ user: { $eq: c.get('user').id } })
-    .populate({ path: 'messageCount', match: { isview: 'false' } }) // unread only
-    .populate({ path: 'totalCount', match: { isview: 'false' } })
-  return sendDocs<SettingDoc>(c, data)
-}
+export const profileWithUnread = (userId: string, profileId: string, onFail?: () => NativeError) => (
+  Setting.findOne({ user: { $eq: userId }, _id: { $eq: profileId } }) // type: Document
+    // mongoose types have trouble inferring type when populating virtual, so add it as generic param in populate
+    .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: 'false' } }) // unread only
+    .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: 'false' } })
+    .orFail(onFail)
+)
+
+export const profilesWithUnread = (userId: string, onFail?: () => NativeError) => (
+  Setting.find({ user: { $eq: userId } }) // type: Document[]
+    .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: 'false' } }) // type: PopulateDocumentResult<Document>
+    .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: 'false' } })
+    .orFail(onFail)
+)
 
 async function getProfile(c: ParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
-  const data = await Setting.findOne({ user: { $eq: c.get('user').id }, _id: { $eq: id } })
-    .populate({ path: 'messageCount', match: { isview: 'false' } })
-    .populate({ path: 'totalCount', match: { isview: 'false' } })
-  if (!data) throw new HTTPException(404, { message: 'Profile not found!' })
-  return sendDoc<SettingDoc>(c, data)
+  const profile = await profileWithUnread(c.get('user').id, id, () => new HTTPException(404, { message: 'Profile not found!' }))
+  const data = profile.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
+}
+async function getProfiles(c: Context<Env>) {
+  const profiles = await profilesWithUnread(c.get('user').id, () => new HTTPException(404, { message: 'No profiles found for you' }))
+  // orFail on an array checks .length === 0
+  // https://github.com/Automattic/mongoose/blob/9.7.1/lib/query.js#L4664
+  const data = profiles.map((d) => d.toObject({ flattenObjectIds: true }))
+  return c.json({ data } satisfies Ok)
 }
 
 async function removeProfile(c: ParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
   // Scope by user so one user can't delete another's profile by guessing its id (IDOR); a non-owned id 404s.
   const setting = await Setting.findOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
-  if (!setting) throw new HTTPException(404, { message: 'Profile not found!' })
+    .orFail(() => new HTTPException(404, { message: 'Profile not found!' }))
 
   await Message.deleteMany({ setting: setting._id })
 
@@ -85,7 +98,8 @@ async function removeProfile(c: ParamCtx<ProfileIdParam>) {
   }
 
   await Setting.deleteOne({ _id: { $eq: id } })
-  return sendDoc<SettingDoc>(c, setting)
+  const data = setting.toObject({ flattenObjectIds: true })
+  return c.json({ data } satisfies Ok)
 }
 
 export const create = factory.createHandlers(auth, jsonBody(profileCreateBody), createProfile)

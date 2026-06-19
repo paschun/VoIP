@@ -4,11 +4,8 @@ import type { ContactDoc } from '../shared/schema/contact.ts'
 import type { MediaDoc } from '../shared/schema/media.ts'
 import type { SettingDoc } from '../shared/schema/setting.ts'
 
-// Compile-time contract checks on `WireDoc<typeof schema>`: it must mirror exactly what `c.json` emits -- ObjectId/Date
-// stringified, booleans preserved, `__v` present -- and must NOT carry a phantom `id`. Only `settingSchema` opts into
-// mongoose's built-in `id` virtual (it sets `toJSON: { virtuals: true }`); email/contact/media don't, so their wire
-// type must stay free of `id` or a component reading `doc.id` would type-check against a field the server never sends.
-// These are pure type assertions -- no runtime, no DB; `npx tsc` is what actually verifies them.
+// Compile-time checks that `WireDoc` mirrors what `c.json` emits: ObjectId/Date -> string, booleans/`__v` preserved,
+// and no virtuals leak in (it derives from the raw doc) -- hence no `id`. Pure type assertions; `npx tsc` verifies them.
 
 describe('EmailDoc wire shape', () => {
   test('ObjectId/Date -> string, booleans preserved, __v present, no phantom id', () => {
@@ -43,7 +40,7 @@ describe('MediaDoc wire shape', () => {
 })
 
 describe('SettingDoc wire shape', () => {
-  test('ObjectId/Date -> string; count virtuals are optional numbers (declared, not inferable)', () => {
+  test('ObjectId/Date -> string; counts are optional numbers', () => {
     expectTypeOf<SettingDoc['_id']>().toEqualTypeOf<string>()
     expectTypeOf<SettingDoc['created_at']>().toEqualTypeOf<string>()
     expectTypeOf<SettingDoc['messageCount']>().toEqualTypeOf<number | undefined>()
