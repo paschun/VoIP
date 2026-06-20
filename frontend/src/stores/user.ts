@@ -1,16 +1,19 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { useLocalStorage, StorageSerializers } from '@vueuse/core'
+import type { InferResponseType } from 'hono/client'
+import type { SuccessStatusCode } from 'hono/utils/http-status'
+import { authToken as token } from '@/core/auth-token.ts'
 import { client, request } from '@/core/rpc.client.ts'
-import type { UserData } from '@shared/contracts/auth.ts'
+
+/** The signed-in user, inferred from the `PATCH /api/auth/username` 200 body (`{ data: UserData }`). */
+type UserData = InferResponseType<typeof client.api.auth.username.$patch, SuccessStatusCode>['data']
 
 /** Signed-in user + auth token, persisted to localStorage (reactive, survives refresh). Single source for both; written/cleared together. */
 export const useUserStore = defineStore('user', () => {
   const userData = useLocalStorage<UserData | null>('userdata', null, { serializer: StorageSerializers.object })
-  // token is attached to each API request as the `token:` header
-  const token = useLocalStorage<string | null>('access_token', null)
 
-  const isLoggedIn = computed(() => token.value !== null)
+  const isLoggedIn = computed(() => token.value.length > 0)
 
   /** Persist user + token together (login, key/OTP verify). */
   function login (data: UserData, accessToken: string) {
@@ -32,7 +35,7 @@ export const useUserStore = defineStore('user', () => {
   /** Clear user + token (logout, 401). */
   function logout () {
     userData.value = null
-    token.value = null
+    token.value = ''
   }
 
   return { userData, token, isLoggedIn, login, setUser, changeUsername, logout }

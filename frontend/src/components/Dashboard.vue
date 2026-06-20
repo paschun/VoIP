@@ -593,7 +593,7 @@ export default defineComponent({
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
       xhr.open("POST", fileUploadURL, true);
-      xhr.setRequestHeader("token", this.userStore.token ?? "");
+      xhr.setRequestHeader("token", this.userStore.token);
       xhr.upload.addEventListener("progress", (e) => {
         this.updateProgress(i, (e.loaded * 100.0) / e.total || 100);
       });

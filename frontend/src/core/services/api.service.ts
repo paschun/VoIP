@@ -37,7 +37,7 @@ async function request<T = unknown>(method: HttpMethod, resource: string, body?:
   // todo: this is kind of odd that it is stored in localStorage but passed as an http token header instead of `credentials: include`
   const headers: HeadersInit = {
     'Cache-Control': 'no-cache',
-    token: useUserStore().token ?? '',
+    token: useUserStore().token,
   }
   const init: RequestInit = { method, headers }
   if (body !== undefined) {

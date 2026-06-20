@@ -2,7 +2,7 @@ import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import { notifyApiError } from '@/core/services/handle-error.ts'
 import type { AppType } from '../../../app.ts'
-import { useUserStore } from '@/stores/user.ts'
+import { authToken } from '@/core/auth-token.ts'
 
 // Dev serves the SPA on :8080 with the API on :3000; in prod the API is same-origin. `/api` is baked into `AppType`'s
 // route tree, so the base is the origin only (e.g. `client.api.auth.login.$post`).
@@ -11,13 +11,11 @@ const origin = window.location.origin === 'http://localhost:8080' ? 'http://loca
 /**
  * Typed RPC client over the backend `AppType`: paths, inputs, and outputs are inferred from the server routes, e.g.
  * `client.api.auth.login.$post({ json: { email, password } })`. The token + no-cache headers attach per request (a
- * function, so the current token is read from the user store each time). Pair with {@link request} to unwrap the body
- * + run the central error UX.
- *
- * using pinia stores works outside a component as long as an active Pinia exists
+ * function, so the current token is read fresh each time). The token comes from the {@link authToken} leaf module, not
+ * the user store: keeping `client` store-independent is what lets the stores infer their types from `client`.
  */
 export const client = hc<AppType>(origin, {
-  headers: () => ({ token: useUserStore().token ?? '', 'Cache-Control': 'no-cache' })
+  headers: () => ({ token: authToken.value, 'Cache-Control': 'no-cache' })
 })
 
 
