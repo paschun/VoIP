@@ -348,7 +348,6 @@ import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
-import { mapStores } from "pinia";
 import { useProfileStore } from "@/stores/profile.ts";
 import { EventBus } from "@/event-bus.ts";
 import { combineURLs, contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
@@ -401,7 +400,7 @@ export default defineComponent({
     'v-select': VueSelect,
   },
   setup() {
-    return { v$: useVuelidate() };
+    return { v$: useVuelidate(), profileStore: useProfileStore() };
   },
   data() {
     return {
@@ -439,7 +438,6 @@ export default defineComponent({
     };
   },
   computed: {
-    ...mapStores(useProfileStore),
     contactSelectOptions(): Option<string>[] {
       return contactsToOptions(this.contacts);
     },

@@ -11,7 +11,6 @@
  * (useProfileStore) and uses it directly as the call setting.
  */
 import { defineComponent } from 'vue'
-import { mapStores } from 'pinia'
 import { useProfileStore } from '@/stores/profile.ts'
 import MessageSetting from './call/telnyx/MessageSetting.vue'
 import TwimlSetting from './call/twilio/TwimlSetting.vue'
@@ -21,8 +20,8 @@ export default defineComponent({
   data () {
     return { setting: null as Record<string, any> | null }
   },
-  computed: {
-    ...mapStores(useProfileStore)
+  setup () {
+    return { profileStore: useProfileStore() }
   },
   watch: {
     'profileStore.activeProfile' () {

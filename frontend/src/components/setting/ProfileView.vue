@@ -51,7 +51,6 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
-import { mapStores } from 'pinia'
 import { notifySuccess } from '@/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -59,11 +58,8 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 export default defineComponent({
   components: { LoadingSpinner },
   emits: ['clicked'],
-  computed: {
-    ...mapStores(useProfileStore)
-  },
   setup () {
-    return { v$: useVuelidate() }
+    return { v$: useVuelidate(), profileStore: useProfileStore() }
   },
   data () {
     return {

@@ -428,7 +428,6 @@
  *   POST setting/create            submitCreateSetting()  (sendData)
  */
 import { defineComponent } from "vue";
-import { mapStores } from "pinia";
 import { useProfileStore } from "@/stores/profile.ts";
 import ThemeButton from "@/components/ThemeButton.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
@@ -461,7 +460,7 @@ export default defineComponent({
     CustomAutocompleteSelect
   },
   setup() {
-    return { v$: useVuelidate() };
+    return { v$: useVuelidate(), profileStore: useProfileStore() };
   },
   data() {
     return {
@@ -503,9 +502,6 @@ export default defineComponent({
       twilio_number: { required },
       profile: { required }
     }
-  },
-  computed: {
-    ...mapStores(useProfileStore)
   },
   watch: {
     "profileStore.activeProfile"() {

@@ -5,8 +5,6 @@ import { createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import VueSweetalert2 from 'vue-sweetalert2'
 import ApiPlugin from '@/core/api.plugin.ts'
-import { notifyError } from '@/notify.ts'
-import { isReported } from '@/core/services/handle-error.ts'
 
 // Global styles (order matters)
 import 'bootstrap/dist/css/bootstrap.css'
