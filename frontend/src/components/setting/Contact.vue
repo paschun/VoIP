@@ -199,7 +199,6 @@ export default defineComponent({
       baseurl: '',
       modelFileValue: '',
       submitted: false,
-      userdata: null,
       editId: false as any,
       submitted2: false,
       search_contacts: [] as Contact[],

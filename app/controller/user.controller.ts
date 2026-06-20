@@ -98,12 +98,16 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
 
 /** Create an account (email is the initial username); reject a duplicate email. */
 async function createUser(c: JsonCtx<RegisterRequest>) {
-  // todo: make email lowercase in the schema validator?
-  const email = c.req.valid('json').email.toLowerCase()
+  const valid = c.req.valid('json')
+  // todo: do tolowercase in zod validator
+  const email = valid.email.toLowerCase()
+  const { password } = valid
+
   if (await User.findOne({ email: { $eq: email } })) {
     throw new HTTPException(409, { message: 'Username already exists!' })
   }
-  const hash = bcrypt.hashSync(c.req.valid('json').password, saltRounds)
+
+  const hash = bcrypt.hashSync(password, saltRounds)
   const saveUser = await User.create({ name: email, email, password: hash })
   return c.json({ data: userDataResponseGen(saveUser) } satisfies Ok<UserData>, 201)
 }

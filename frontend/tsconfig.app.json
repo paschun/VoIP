@@ -20,7 +20,7 @@
     // - no → it's ambient, and in v6 it needs an explicit "types" entry.
 
     // unplugin-icons generates virtual `~icons/*` modules + auto-imported `<i-bi-*>` components; this declares their types.
-    "types": ["vite/client", "unplugin-icons/types/vue", "js-cookie", "papaparse", "pulltorefreshjs"],
+    "types": ["vite/client", "unplugin-icons/types/vue" ],
 
     // Path mapping for cleaner imports (mirrors vite `resolve.alias`).
     "paths": {

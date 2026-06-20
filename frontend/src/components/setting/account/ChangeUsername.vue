@@ -17,13 +17,13 @@
 import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
-import Cookies from 'js-cookie'
 import { notifySuccess } from '@/notify.ts'
-import { parseJSON } from '@/helper.ts'
+import { client, request } from '@/core/rpc.client.ts'
+import { useUserStore } from '@/stores/user.ts'
 
 export default defineComponent({
   setup () {
-    return { v$: useVuelidate() }
+    return { v$: useVuelidate(), userStore: useUserStore() }
   },
   data () {
     return {
@@ -39,26 +39,18 @@ export default defineComponent({
     }
   },
   mounted () {
-    const userdata = parseJSON(Cookies.get('userdata'))
-    if (userdata.email !== undefined) {
-      this.form.email = userdata.email
-    }
+    this.form.email = this.userStore.userdata?.email ?? ''
   },
   methods: {
-    handleSubmit () {
+    async handleSubmit () {
       this.submitted3 = true
       this.v$.$touch()
       if (this.v$.$invalid) {
         return
       }
-      this.$patch('auth/username', this.form)
-        .then((response) => {
-          if (response) {
-            Cookies.set('userdata', JSON.stringify(response.data), { expires: 30 })
-            notifySuccess('Username updated successfully')
-          }
-        })
-        .catch((e) => console.error(e))
+      const { data } = await request(client.api.auth.username.$patch({ json: this.form }))
+      this.userStore.setUser(data)
+      notifySuccess('Username updated successfully')
     }
   }
 })
