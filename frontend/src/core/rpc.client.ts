@@ -1,8 +1,8 @@
 import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
-import Cookies from 'js-cookie'
 import { notifyApiError } from '@/core/services/handle-error.ts'
 import type { AppType } from '../../../app.ts'
+import { useUserStore } from '@/stores/user.ts'
 
 // Dev serves the SPA on :8080 with the API on :3000; in prod the API is same-origin. `/api` is baked into `AppType`'s
 // route tree, so the base is the origin only (e.g. `client.api.auth.login.$post`).
@@ -13,9 +13,11 @@ const origin = window.location.origin === 'http://localhost:8080' ? 'http://loca
  * `client.api.auth.login.$post({ json: { email, password } })`. The token + no-cache headers attach per request (a
  * function, so the current cookie is always read). Pair with {@link request} to unwrap the body + run the central
  * error UX.
+ *
+ * using pinia stores works outside a component as long as an active Pinia exists
  */
 export const client = hc<AppType>(origin, {
-  headers: () => ({ token: Cookies.get('access_token') ?? '', 'Cache-Control': 'no-cache' })
+  headers: () => ({ token: useUserStore().token ?? '', 'Cache-Control': 'no-cache' })
 })
 
 

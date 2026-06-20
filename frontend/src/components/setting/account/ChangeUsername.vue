@@ -2,8 +2,8 @@
     <div class="p-1">
         <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
            <div class="form-group mt-2">
-                <input class="form-control" name="email" v-model="form.email" placeholder="Enter Username" :class="{ 'is-invalid': submitted3 && v$.form.email.$error }" />
-                <div v-if="submitted3 && v$.form.email.$error" class="invalid-feedback">
+                <input class="form-control" name="email" v-model="form.email" placeholder="Enter Username" :class="{ 'is-invalid': submitted && v$.form.email.$error }" />
+                <div v-if="submitted && v$.form.email.$error" class="invalid-feedback">
                     <span v-if="v$.form.email.required.$invalid">Email Is Required</span>
                 </div>
             </div>
@@ -18,7 +18,6 @@ import { defineComponent } from 'vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { notifySuccess } from '@/notify.ts'
-import { client, request } from '@/core/rpc.client.ts'
 import { useUserStore } from '@/stores/user.ts'
 
 export default defineComponent({
@@ -30,7 +29,7 @@ export default defineComponent({
       form: {
         email: ''
       },
-      submitted3: false
+      submitted: false
     }
   },
   validations: {
@@ -43,13 +42,12 @@ export default defineComponent({
   },
   methods: {
     async handleSubmit () {
-      this.submitted3 = true
+      this.submitted = true
       this.v$.$touch()
       if (this.v$.$invalid) {
         return
       }
-      const { data } = await request(client.api.auth.username.$patch({ json: this.form }))
-      this.userStore.setUser(data)
+      await this.userStore.changeUsername(this.form.email)
       notifySuccess('Username updated successfully')
     }
   }
