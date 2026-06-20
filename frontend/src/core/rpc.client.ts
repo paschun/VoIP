@@ -1,9 +1,7 @@
-import { hc } from 'hono/client'
+import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
-import type { SuccessStatusCode, StatusCode } from 'hono/utils/http-status'
 import Cookies from 'js-cookie'
 import { notifyApiError } from '@/core/services/handle-error.ts'
-import type { ApiResult, Ok, ApiError } from '@shared/api-contracts.ts'
 import type { AppType } from '../../../app.ts'
 
 // Dev serves the SPA on :8080 with the API on :3000; in prod the API is same-origin. `/api` is baked into `AppType`'s
@@ -13,50 +11,71 @@ const origin = window.location.origin === 'http://localhost:8080' ? 'http://loca
 /**
  * Typed RPC client over the backend `AppType`: paths, inputs, and outputs are inferred from the server routes, e.g.
  * `client.api.auth.login.$post({ json: { email, password } })`. The token + no-cache headers attach per request (a
- * function, so the current cookie is always read). Pair with {@link request} to get an `ApiResult`.
+ * function, so the current cookie is always read). Pair with {@link request} to unwrap the body + run the central
+ * error UX.
  */
 export const client = hc<AppType>(origin, {
   headers: () => ({ token: Cookies.get('access_token') ?? '', 'Cache-Control': 'no-cache' })
 })
 
+
+/*
+https://github.com/honojs/hono/blob/v4.12.26/src/client/utils.ts#L92
+https://github.com/honojs/hono/blob/v4.12.26/src/client/fetch-result-please.ts
+^ for parseResponse and DetailedError
+
+from parseResponse:
+```
+if (!_fetchRes.ok) {
+  throw new DetailedError(`${_fetchRes.status} ${_fetchRes.statusText}`, {
+    statusCode: _fetchRes?.status,
+    detail: {
+      data: _fetchRes?._data,
+      statusText: _fetchRes?.statusText,
+    },
+  })
+}
+```
+from DetailedError:
+```
+  constructor(
+    message: string,
+    options: { detail?: any; code?: any; statusCode?: number; log?: any } = {}
+  ) {
+    super(message)
+    this.name = 'DetailedError'
+    this.log = options.log
+    this.detail = options.detail
+    this.code = options.code
+    this.statusCode = options.statusCode
+  }
+```
+*/
+
 /**
- * Sends a typed `hc` request and returns an {@link ApiResult}: `{ ok: true, data }` with the unwrapped payload on
- * success, or `{ ok: false, status, message }` on failure -- after running the central {@link notifyApiError} (401
- * bounce / 4xx-5xx toast). Call sites branch with `if (!res.ok)` and never try/catch for HTTP errors.
+ * Wrap an `hc` call: on success resolve to the unwrapped, RPC-inferred 200 body (e.g. `{ data: Profile }`); on any
+ * non-2xx or network fault run the central {@link notifyApiError} (401 bounce / 4xx-5xx toast), mark the error as
+ * reported, and re-throw so it's never swallowed. Since it's marked, callers can simply let it bubble (the global net
+ * in main.ts skips reported errors) -- reach for `try/catch` only to branch on failure or to run cleanup in `finally`.
  *
- * Why handlers must pass a concrete success status (`c.json(data, 200)`):
- * - Backend: hono derives `ok` from the status type `U` as `U extends SuccessStatusCode ? true : ...? false : boolean`.
- *   A status-less `c.json(data)` defaults `U` to the broad `ContentfulStatusCode` (which spans both success and error
- *   codes), so `res.ok` widens from the literal `true` to `boolean` -- it's no longer a usable discriminant.
- * - Frontend: the param below is a discriminated union keyed on `ok` -- a `SuccessStatusCode` arm (whose `ok` computes
- *   to the literal `true`) and an error arm (literal `false`). `if (res.ok)` is discriminant narrowing: TS knows `ok`
- *   is a disjoint unit type across the members, so the truthiness test filters the union to the member(s) whose `ok`
- *   can be `true` and drops the `false` arm. Inside the block `res` is the success member alone, so `res.json()`
- *   resolves to that member's overload returning `Ok<T>`. This hinges on `ok` being a unit literal: a
- *   `ContentfulStatusCode` success member has `ok: boolean` (not disjoint), fits neither arm, and wouldn't typecheck;
- *   `if (res.ok)` couldn't drop it from either branch. A pinned `200` lands it in the success arm. The data shape
- *   itself stays fully RPC-inferred -- `200` pins only the status.
+ * Built on hono's {@link parseResponse}, which maximizes success-side inference (the resolved type is exactly the 200
+ * body, status-filtered) but discards all error typing: a non-2xx throws a {@link DetailedError} whose fields are
+ * `any`. Our server `{ message }` lives at `err.detail.data.message`, the status at `err.statusCode`; `err.message`
+ * is only `"<status> <statusText>"`. `instanceof DetailedError` distinguishes an HTTP error (response arrived) from a
+ * network/parse fault (fetch rejected before a Response).
  *
- * TODO: do we even need ok: true | false ??
+ * if you need a typed failure shape, don't use {@link parseResponse}.`
  */
-export async function request<T> (
-  req: Promise<
-    | ClientResponse<Ok<T>, SuccessStatusCode, 'json'>
-    | ClientResponse<unknown, Exclude<StatusCode, SuccessStatusCode>, 'json'>
-  >
-): Promise<ApiResult<T>> {
-  let res
-  try {
-    res = await req
-  } catch {
-    notifyApiError(undefined)
-    return { ok: false, message: 'Network error' }
-  }
-  if (res.ok) {
-    const body = await res.json()
-    return { ok: true, ...body }
-  }
-  const body = await res.json().catch(() => null) as ApiError | null
-  notifyApiError(res.status, body?.message)
-  return { ok: false, status: res.status, message: body?.message ?? `Request failed (${res.status})` }
+export function request<T extends ClientResponse<unknown>> (req: T | Promise<T>) {
+  return parseResponse(req).catch(async (err: unknown) => {
+    console.error(err)
+    if (err instanceof DetailedError) {
+      // DetailedError from parseResponse will only have `.{name,message,statusCode,detail.{data,statusText}}
+      // Our error from backend always sends a response body with `{ message }`, which will be `.detail.data.message` on DetailedError
+      await notifyApiError(err.statusCode, err.detail?.data?.message)
+    } else if (err instanceof Error) {
+      await notifyApiError(undefined, err.toString())
+    }
+    throw err
+  })
 }

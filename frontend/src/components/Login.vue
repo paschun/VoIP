@@ -187,7 +187,6 @@ mounted () {
 methods: {
   async fnLogin () {
     const res = await request(client.api.auth['directory-name'].$get({ query: { name: appDirectory(this.$route) } }))
-    if (!res.ok) return
     const { status, dir } = res.data
     const loggedIn = !!Cookies.get('access_token')
 
@@ -206,11 +205,11 @@ methods: {
   },
   async getSignup () {
     const res = await request(client.api.auth['signup-enabled'].$get())
-    this.signUpOption = res.ok && res.data === 'on'
+    this.signUpOption = res.data === 'on'
   },
   async getVersion () {
     const res = await request(client.api.auth.version.$get())
-    if (res.ok) this.versionOption = res.data
+    this.versionOption = res.data
   },
   handleSubmit (e: Event) {
     e.preventDefault()

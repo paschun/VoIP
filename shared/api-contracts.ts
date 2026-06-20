@@ -5,8 +5,6 @@
  * files directly. Per-endpoint request/response contracts live in `shared/contracts/*`; the data model in
  * `shared/schema/*`.
  */
-import type { SettingDoc } from './schema/setting.ts'
-
 /** HTTP verbs used across the app -- the frontend `request()` wrapper and the backend's Telnyx REST caller. */
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -67,9 +65,6 @@ export interface Contact {
   number: string
   note?: string
 }
-
-/** A messaging/calling profile as the frontend consumes it -- the Setting wire doc (Hono RPC infers this exact shape). */
-export type Profile = SettingDoc
 
 /** A conversation row in the SMS inbox (a number + its latest message). */
 export interface Conversation {

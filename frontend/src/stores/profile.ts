@@ -1,43 +1,48 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { ZodType } from 'zod'
-import { useValidatedStorage } from '@/composables/useValidatedStorage.ts'
-import { profileSchema, profileService } from '@/core/services/profile.service.ts'
-import type { Profile } from '@shared/api-contracts.ts'
+import { StorageSerializers, useLocalStorage } from '@vueuse/core'
+import type { InferResponseType } from 'hono/client'
+import type { SuccessStatusCode } from 'hono/utils/http-status'
+import { client, request } from '@/core/rpc.client.ts'
 
-// The currently-selected profile, shared across the app and persisted to
-// localStorage (validated on every read/write). Replaces the old
-// changeProfile/changeProfile2/getOneProfile EventBus signals: selection is now
-// reactive state and interested components `watch` it.
+// getProfile and getAllProfiles routes include virtual counts
+// create + delete do not
+
+/**
+ * A profile as returned by create/delete -- the plain Setting wire doc, fully inferred from the `POST /api/profile`
+ * 200 body (`{ data: Profile }`). No `messageCount`/`totalCount`: those routes don't populate the count virtuals.
+ */
+type Profile = InferResponseType<typeof client.api.profile.$post, SuccessStatusCode>['data']
+
+/**
+ * A profile as returned by list/getOne, which additionally `.populate()` the unread + total message counts. Extends
+ * {@link Profile} with the two count fields
+ */
+type ProfileWithUnread = InferResponseType<typeof client.api.profile[':id']['$get'], SuccessStatusCode>['data']
+
+// The currently-selected profile, shared across the app and persisted to localStorage. Replaces the old
+// changeProfile/changeProfile2/getOneProfile EventBus signals: selection is now reactive state and interested
+// components `watch` it.
 //
 // Two flavours of "change" to watch, depending on intent:
-//   - activeProfileId   -> the *selection* changed (different profile). Gate
-//                          side effects (refetch lists, re-init the call SDK) on
-//                          this so a detail refresh of the same profile doesn't
-//                          trigger a refetch storm / re-entrancy.
-//   - activeProfile      -> any change incl. detail refresh (unread counts,
-//                          provider creds). Bind displays/payloads to this.
+//   - activeProfileId   -> the *selection* changed (different profile). Gate side effects (refetch lists, re-init the
+//                          call SDK) on this so a detail refresh of the same profile doesn't trigger a refetch storm.
+//   - activeProfile      -> any change incl. detail refresh (unread counts, provider creds). Bind displays to this.
 export const useProfileStore = defineStore('profile', () => {
-  // Source of truth: persisted + schema-validated. `null` means "none selected yet".
-  const activeProfile = useValidatedStorage<Profile | null>(
-    'activeProfile',
-    profileSchema as unknown as ZodType<Profile | null>,
-    null
-  )
+  // `object` serializer = JSON read/write (the default `any` serializer would mangle objects). `null` = none selected.
+  const activeProfile = useLocalStorage<Profile | ProfileWithUnread | null>('activeProfile', null, {
+    serializer: StorageSerializers.object
+  })
 
-  // refs become state
-  const profiles = ref<Profile[]>([])
+  const profiles = ref<ProfileWithUnread[]>([])
   const loading = ref(false)
 
-  // computed become getters
   const activeProfileId = computed(() => activeProfile.value?._id ?? '')
   const activeProfileType = computed(() => activeProfile.value?.type ?? '')
   const hasActiveProfile = computed(() => activeProfile.value !== null)
 
-  // functions become actions
-
   /** Set the active profile (a new object reference each call -> watchers fire). */
-  function setActiveProfile (profile: Profile) {
+  function setActiveProfile (profile: Profile | ProfileWithUnread) {
     activeProfile.value = profile
   }
 
@@ -47,36 +52,34 @@ export const useProfileStore = defineStore('profile', () => {
   }
 
   /**
-   * Fetch every profile into `profiles` (for the selector list + unread badges).
-   * Pure refresh: does NOT change the selection or fire the change watchers, so
-   * it's safe to call on pull-to-refresh / incoming messages. Returns the list.
+   * Fetch every profile into `profiles` (selector list + unread badges). Pure refresh: does NOT change the selection
+   * or fire the change watchers, so it's safe on pull-to-refresh / incoming messages. Returns the list; throws (after
+   * the central toast) on failure.
    */
-  async function loadProfiles (): Promise<Profile[] | false> {
+  async function loadProfiles (): Promise<ProfileWithUnread[]> {
     loading.value = true
     try {
-      const res = await profileService.list()
-      if (!res.ok) return false
-      profiles.value = res.data
-      return res.data
+      const { data } = await request(client.api.profile.$get())
+      profiles.value = data
+      return data
     } finally {
       loading.value = false
     }
   }
 
   /** Resolve the stored selection against a list (matching id, else the first). */
-  function resolveActiveProfile (list: Profile[]): Profile | undefined {
+  function resolveActiveProfile (list: ProfileWithUnread[]): ProfileWithUnread | undefined {
     return list.find(p => p._id === activeProfile.value?._id) ?? list[0]
   }
 
-  /** Create a profile, select it (fires watchers), and refresh the list. */
-  async function createProfile (name: string): Promise<Profile | false> {
+  /** Create a profile, select it (fires watchers), and refresh the list. Returns it; throws on failure. */
+  async function createProfile (name: string): Promise<Profile> {
     loading.value = true
     try {
-      const res = await profileService.create(name)
-      if (!res.ok) return false
-      setActiveProfile(res.data)
+      const { data } = await request(client.api.profile.$post({ json: { profile: name } }))
+      setActiveProfile(data)
       await loadProfiles()
-      return res.data
+      return data
     } finally {
       loading.value = false
     }
@@ -85,21 +88,16 @@ export const useProfileStore = defineStore('profile', () => {
   /** Re-fetch the active profile's detail (unread counts, settings) in place. */
   async function refreshActiveProfile (): Promise<void> {
     if (!activeProfile.value) return
-    const res = await profileService.getOne(activeProfile.value._id)
-    if (res.ok) setActiveProfile(res.data)
+    const { data } = await request(client.api.profile[':id'].$get({ param: { id: activeProfile.value._id } }))
+    setActiveProfile(data)
   }
 
-  /**
-   * Delete the active profile, clear the selection (routes through the store instead of NumberList's direct
-   * `localStorage.removeItem`), and refresh the list. Returns whether it deleted.
-   */
-  async function deleteActiveProfile (): Promise<boolean> {
-    if (!activeProfile.value) return false
-    const res = await profileService.remove(activeProfile.value._id)
-    if (!res.ok) return false
+  /** Delete the active profile, clear the selection, and refresh the list. */
+  async function deleteActiveProfile (): Promise<void> {
+    if (!activeProfile.value) return
+    await request(client.api.profile[':id'].$delete({ param: { id: activeProfile.value._id } }))
     clearActiveProfile()
     await loadProfiles()
-    return true
   }
 
   return {

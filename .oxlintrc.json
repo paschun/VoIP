@@ -22,6 +22,5 @@
     // "prefer-const": "error",
     // "prefer-rest-params": "error",
     // "prefer-spread": "error"
-
   }
 }

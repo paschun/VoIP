@@ -99,7 +99,6 @@ export default defineComponent({
     // profile-changed watchers. Used on mount + after create/delete.
     async initSelection () {
       const list = await this.profileStore.loadProfiles()
-      if (!list) return
       const selected = this.profileStore.resolveActiveProfile(list)
       if (selected) this.changeProfile(selected)
     },
@@ -116,11 +115,9 @@ export default defineComponent({
       this.isLoading = true
       try {
         const created = await this.profileStore.createProfile(this.form.profile)
-        if (created) {
-          notifySuccess('Profile added successfully!')
-          this.$emit('clicked', created)
-          ;(this.$refs['add-profile'] as any).hide()
-        }
+        notifySuccess('Profile added successfully!')
+        this.$emit('clicked', created)
+        ;(this.$refs['add-profile'] as any).hide()
       } finally {
         this.isLoading = false
       }
