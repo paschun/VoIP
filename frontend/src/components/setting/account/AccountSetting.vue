@@ -30,8 +30,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import Cookies from 'js-cookie'
 import { appDirectory } from '@/router/helpers.ts'
+import { useUserStore } from '@/stores/user.ts'
 import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
 import CallSetting from '../CallSetting.vue'
@@ -39,6 +39,9 @@ import SettingsSection from '../SettingsSection.vue'
 
 export default defineComponent({
   components: { ChangeUsername, ChangePassword, CallSetting, SettingsSection },
+  setup () {
+    return { userStore: useUserStore() }
+  },
   data () {
     return {
       activeMenu: 'setting'
@@ -75,8 +78,7 @@ export default defineComponent({
         showCancelButton: false,
         confirmButtonText: 'Ok'
       })
-      Cookies.remove('access_token')
-      Cookies.remove('userdata')
+      this.userStore.logout()
       window.location.href = `/${appDirectory(this.$route)}/`
     }
   }

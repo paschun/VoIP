@@ -51,7 +51,7 @@
                   >
                 </div>
                 <div v-else>
-                  <span v-if="userdata">{{ userdata.name }}</span>
+                  <span v-if="userStore.userData">{{ userStore.userData.name }}</span>
                 </div>
                 <div>
                   <i-bi-person-badge
@@ -429,19 +429,19 @@
  */
 import { defineComponent } from "vue";
 import { useProfileStore } from "@/stores/profile.ts";
+import { useUserStore } from "@/stores/user.ts";
 import ThemeButton from "@/components/ThemeButton.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
 import { useVuelidate } from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
-import Cookies from "js-cookie";
 import { notifySuccess, notifyInfo } from "@/notify.ts";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus.ts";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
-import { parseJSON, formatTimestamp } from "@/helper.ts";
+import { formatTimestamp } from "@/helper.ts";
 import type { Conversation } from "@shared/api-contracts.ts";
 import { appDirectory } from "@/router/helpers.ts";
 
@@ -460,7 +460,7 @@ export default defineComponent({
     CustomAutocompleteSelect
   },
   setup() {
-    return { v$: useVuelidate(), profileStore: useProfileStore() };
+    return { v$: useVuelidate(), profileStore: useProfileStore(), userStore: useUserStore() };
   },
   data() {
     return {
@@ -480,7 +480,6 @@ export default defineComponent({
       messageListLoader: true,
       numbers: [] as Conversation[],
       search_numbers: [] as Conversation[],
-      userdata: null as any,
       activeProfile: null as any,
       tNumbers: [] as any[],
       twilioNumbers: [] as any[],
@@ -509,7 +508,6 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.userdata = parseJSON(Cookies.get("userdata"));
     this.onaddContact();
     PullToRefresh.init({
       mainElement: ".contact-list",
@@ -595,8 +593,7 @@ export default defineComponent({
       this.$emit("clicked", id);
     },
     logout() {
-      Cookies.remove("access_token");
-      Cookies.remove("userdata");
+      this.userStore.logout();
       window.location.href = `/${appDirectory(this.$route)}/`;
     },
     getNumberList() {
@@ -762,7 +759,7 @@ export default defineComponent({
         const sendData: any = {
           api_key: this.user.api_key,
           number: this.user.number,
-          user: this.userdata._id,
+          user: this.userStore.userData?._id,
           sid,
           type: this.selected,
           twilio_sid: this.user.twilio_sid,

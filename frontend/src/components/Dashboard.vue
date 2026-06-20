@@ -342,13 +342,13 @@ import { required } from "@vuelidate/validators";
 import VueTagsInput from '@sipec/vue3-tags-input'
 import VueSelect, { type Option } from 'vue3-select-component'
 import { io } from "socket.io-client";
-import Cookies from 'js-cookie';
 import NumberList from "./inbox/NumberList.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
 import { useProfileStore } from "@/stores/profile.ts";
+import { useUserStore } from "@/stores/user.ts";
 import { EventBus } from "@/event-bus.ts";
 import { combineURLs, contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
 import type { Message } from '@shared/api-contracts.ts';
@@ -400,7 +400,7 @@ export default defineComponent({
     'v-select': VueSelect,
   },
   setup() {
-    return { v$: useVuelidate(), profileStore: useProfileStore() };
+    return { v$: useVuelidate(), profileStore: useProfileStore(), userStore: useUserStore() };
   },
   data() {
     return {
@@ -423,8 +423,6 @@ export default defineComponent({
       },
       chatListLoader: false,
       submitted2: false,
-      userdata: null as any,
-      access_token: null as any,
       messages: [] as Message[],
       messageBody: "",
       socket: null as any,
@@ -473,7 +471,7 @@ export default defineComponent({
         this.showChat(this.activeChat);
       }
     });
-    if (!Cookies.get("access_token")) {
+    if (!this.userStore.isLoggedIn) {
       this.$router.push({ name: 'home' });
     }
     this.updateVw();
@@ -489,9 +487,7 @@ export default defineComponent({
         this.showChat(this.activeChat);
       }
     });
-    this.userdata = parseJSON(Cookies.get("userdata"));
-    this.access_token = Cookies.get("access_token");
-    this.socket.emit("join_profile_channel", this.userdata._id.toString());
+    this.socket.emit("join_profile_channel", this.userStore.userData?._id.toString());
 
     this.socket.on("user_message", (data: any) => {
       if (this.activeChatData) {
@@ -597,7 +593,7 @@ export default defineComponent({
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
       xhr.open("POST", fileUploadURL, true);
-      xhr.setRequestHeader("token", this.access_token);
+      xhr.setRequestHeader("token", this.userStore.token ?? "");
       xhr.upload.addEventListener("progress", (e) => {
         this.updateProgress(i, (e.loaded * 100.0) / e.total || 100);
       });
@@ -694,7 +690,7 @@ export default defineComponent({
     },
     commonSendMessage(numbers: any, message: any) {
       const messageData = {
-        user: this.userdata._id,
+        user: this.userStore.userData?._id,
         numbers,
         message,
         profile: this.activeProfile,

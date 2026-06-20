@@ -11,8 +11,8 @@ const origin = window.location.origin === 'http://localhost:8080' ? 'http://loca
 /**
  * Typed RPC client over the backend `AppType`: paths, inputs, and outputs are inferred from the server routes, e.g.
  * `client.api.auth.login.$post({ json: { email, password } })`. The token + no-cache headers attach per request (a
- * function, so the current cookie is always read). Pair with {@link request} to unwrap the body + run the central
- * error UX.
+ * function, so the current token is read from the user store each time). Pair with {@link request} to unwrap the body
+ * + run the central error UX.
  *
  * using pinia stores works outside a component as long as an active Pinia exists
  */

@@ -1,5 +1,5 @@
-import Cookies from 'js-cookie'
 import { combineURLs } from '@/helper.ts'
+import { useUserStore } from '@/stores/user.ts'
 import type { HttpMethod } from '@shared/api-contracts.ts'
 
 /**
@@ -34,10 +34,10 @@ export class ApiError extends Error {
 async function request<T = unknown>(method: HttpMethod, resource: string, body?: unknown): Promise<T> {
   const url = combineURLs(API_HOST, '/api', resource)
 
-  // todo: this is kind of odd that it is stored as cookie but passed as http token header instead of `credentials: include`
+  // todo: this is kind of odd that it is stored in localStorage but passed as an http token header instead of `credentials: include`
   const headers: HeadersInit = {
     'Cache-Control': 'no-cache',
-    token: Cookies.get('access_token') ?? '',
+    token: useUserStore().token ?? '',
   }
   const init: RequestInit = { method, headers }
   if (body !== undefined) {

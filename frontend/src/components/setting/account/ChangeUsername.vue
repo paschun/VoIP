@@ -38,7 +38,7 @@ export default defineComponent({
     }
   },
   mounted () {
-    this.form.email = this.userStore.userdata?.email ?? ''
+    this.form.email = this.userStore.userData?.email ?? ''
   },
   methods: {
     async handleSubmit () {

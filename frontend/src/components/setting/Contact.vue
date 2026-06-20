@@ -194,7 +194,6 @@ export default defineComponent({
   },
   data () {
     return {
-      access_token: null,
       headers: null,
       baseurl: '',
       modelFileValue: '',

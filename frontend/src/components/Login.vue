@@ -121,8 +121,8 @@ import { defineComponent } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { useVuelidate } from '@vuelidate/core'
 import { required, minLength } from '@vuelidate/validators'
-import Cookies from 'js-cookie'
 import { publicKeyCredentialToJSON } from '@/helper.ts'
+import { useUserStore } from '@/stores/user.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { notifyError } from '@/notify.ts'
 import { client, request } from '@/core/rpc.client.ts'
@@ -141,7 +141,7 @@ export default defineComponent({
 name: 'LoginView',
 components: { ThemeButton },
 setup () {
-  return { v$: useVuelidate() }
+  return { v$: useVuelidate(), userStore: useUserStore() }
 },
 data () {
   return {
@@ -188,7 +188,7 @@ methods: {
   async fnLogin () {
     const res = await request(client.api.auth['directory-name'].$get({ query: { name: appDirectory(this.$route) } }))
     const { status, dir } = res.data
-    const loggedIn = !!Cookies.get('access_token')
+    const loggedIn = this.userStore.isLoggedIn
 
     // todo: this is a mess
     if (loggedIn) {
@@ -235,8 +235,7 @@ methods: {
             this.activeUser.user = response.data
             this.otpScreen = true
           } else {
-            Cookies.set('access_token', response.token, { expires: 30 })
-            Cookies.set('userdata', JSON.stringify(response.data), { expires: 30 })
+            this.userStore.login(response.data, response.token)
             this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
           }
         }
@@ -257,8 +256,7 @@ methods: {
         const serverResponse = await this.$post('hardwarekey/authentication/verify', newCredentialInfo)
         if (serverResponse) {
           if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
-          Cookies.set('access_token', this.activeUser.token, { expires: 30 })
-          Cookies.set('userdata', JSON.stringify(this.activeUser.user), { expires: 30 })
+          this.userStore.login(this.activeUser.user, this.activeUser.token)
           this.activeUser.token = ''
           this.activeUser.user = null
           this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
@@ -280,8 +278,7 @@ methods: {
         .then((response) => {
           if (response) {
             if (response.status === 'true') {
-              Cookies.set('access_token', this.activeUser.token, { expires: 30 })
-              Cookies.set('userdata', JSON.stringify(this.activeUser.user), { expires: 30 })
+              this.userStore.login(this.activeUser.user, this.activeUser.token)
               this.activeUser.token = ''
               this.activeUser.user = null
               this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })

@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2'
-import Cookies from 'js-cookie'
 import router from '@/router/index.ts'
+import { useUserStore } from '@/stores/user.ts'
 import type { ApiError } from '@/core/services/api.service.ts'
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status'
 
@@ -39,9 +39,9 @@ export async function notifyApiError(status?: ApiErrorStatus, message?: string):
   // e.g. a wrong security key) just notifies and lets the user retry in place.
   } else if (status === 401) {
     void swalError({ title: status, text: message })
-    if (Cookies.get('access_token')) {
-      Cookies.remove('access_token')
-      Cookies.remove('userdata')
+    const user = useUserStore()
+    if (user.isLoggedIn) {
+      user.logout()
       const path = window.location.pathname.split('/')[1]
       // todo: test this await
       await router.push(`/${path}/`)
