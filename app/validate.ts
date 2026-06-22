@@ -1,4 +1,4 @@
-import { sValidator } from '@hono/standard-validator'
+import { sValidator, type Hook } from '@hono/standard-validator'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
@@ -22,17 +22,21 @@ const VALIDATION_FAILED = 422
 // `status` is generic so its literal type (`422`/`404`) is preserved into `c.json(..., status)` -- otherwise the
 // validation-error response infers the whole `ContentfulStatusCode` union as its status, and RPC consumers can't tell
 // it apart from a 2xx success (the `{ message }` body would leak into success-body extraction on the client).
+// 
+// result of hook is only used if it is of type `Response`
+// https://github.com/honojs/middleware/blob/main/packages/standard-validator/src/index.ts#L154
+// returning result.data would have no effect
 const makeHook =
   <S extends ContentfulStatusCode>(status: S) =>
   (result: { success: true } | { success: false; error: readonly StandardSchemaV1.Issue[] }, c: Context) =>
     result.success ? undefined : c.json({ message: result.error[0]?.message ?? 'Validation failed' } satisfies ApiError, status)
 
-const hook = makeHook(VALIDATION_FAILED)
+const hook422 = makeHook(VALIDATION_FAILED)
 
-export const jsonBody = <S extends StandardSchemaV1>(schema: S) => sValidator('json', schema, hook)
-export const formBody = <S extends StandardSchemaV1>(schema: S) => sValidator('form', schema, hook)
+export const jsonBody = <S extends StandardSchemaV1>(schema: S) => sValidator('json', schema, hook422)
+export const formBody = <S extends StandardSchemaV1>(schema: S) => sValidator('form', schema, hook422)
 // Path-param validation (`/:id`): binds `c.req.valid('param')` to the schema's output type.
-export const pathParams = <S extends StandardSchemaV1>(schema: S) => sValidator('param', schema, hook)
+export const pathParams = <S extends StandardSchemaV1>(schema: S, hook: Parameters<typeof sValidator>[2] = hook422) => sValidator('param', schema, hook)
 export const pathParams404 = <S extends StandardSchemaV1>(schema: S) => sValidator('param', schema, makeHook(404))
 // Query-string validation (`?number=`): binds `c.req.valid('query')` to the schema's output type.
-export const queryParams = <S extends StandardSchemaV1>(schema: S) => sValidator('query', schema, hook)
+export const queryParams = <S extends StandardSchemaV1>(schema: S) => sValidator('query', schema, hook422)

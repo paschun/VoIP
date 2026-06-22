@@ -3,5 +3,24 @@
   "semi": false,
   "singleQuote": true,
   "printWidth": 120,
+  "sortImports": {
+    "newlinesBetween": false,
+    "customGroups": [
+      { "groupName": "hono", "elementNamePattern": ["hono"] },
+      { "groupName": "hono-subpath", "elementNamePattern": ["hono/**", "@hono/**"] },
+      { "groupName": "mongoose", "elementNamePattern": ["mongoose", "mongoose/**"] }
+    ],
+    "groups": [
+      "builtin",
+      "hono",
+      "hono-subpath",
+      "mongoose",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "style",
+      "unknown"
+    ]
+  },
   "ignorePatterns": []
 }
