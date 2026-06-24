@@ -58,13 +58,14 @@ describe('mongoose Id path param validator', () => {
       test('pathParams - sValidator wrapper works', async () => {
         const app = new Hono()
         app.onError(thrw)
-        const spyHook = vi.fn()
-        const validatorHandler = pathParams(Id, spyHook)
-        app.get('/:id', validatorHandler)
+        const handler = vi.fn((c: Context) => c.json({ ok: true }))
+        app.get('/:id', pathParams(Id), handler)
 
         const id = 'f'.repeat(24)
-        await app.request(`/${id}`)
-        expect(spyHook).toHaveBeenCalledWith({ data: { id }, success: true, target: 'param' }, expect.anything())
+        const res = await app.request(`/${id}`)
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ ok: true })
+        expect(handler).toHaveBeenCalled()
       })
     })
 

@@ -1,4 +1,4 @@
-import { sValidator, type Hook } from '@hono/standard-validator'
+import { sValidator } from '@hono/standard-validator'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
@@ -35,8 +35,8 @@ const hook422 = makeHook(VALIDATION_FAILED)
 
 export const jsonBody = <S extends StandardSchemaV1>(schema: S) => sValidator('json', schema, hook422)
 export const formBody = <S extends StandardSchemaV1>(schema: S) => sValidator('form', schema, hook422)
-// Path-param validation (`/:id`): binds `c.req.valid('param')` to the schema's output type.
-export const pathParams = <S extends StandardSchemaV1>(schema: S, hook: Parameters<typeof sValidator>[2] = hook422) => sValidator('param', schema, hook)
+/** Path-param validation (`/:id`): binds `c.req.valid('param')` to the schema's output type. */
+export const pathParams = <S extends StandardSchemaV1>(schema: S) => sValidator('param', schema, hook422)
 export const pathParams404 = <S extends StandardSchemaV1>(schema: S) => sValidator('param', schema, makeHook(404))
-// Query-string validation (`?number=`): binds `c.req.valid('query')` to the schema's output type.
+/** Query-string validation (`?number=`): binds `c.req.valid('query')` to the schema's output type. */
 export const queryParams = <S extends StandardSchemaV1>(schema: S) => sValidator('query', schema, hook422)

@@ -1,22 +1,19 @@
 import { MongoMemoryServer } from 'mongodb-memory-server-core'
 import mongoose from 'mongoose'
 
-let mongod: MongoMemoryServer | undefined
-
-// Use the system mongod (Homebrew) -- `-core` never auto-downloads a binary, so point it at the installed one.
-// Override with MONGOMS_SYSTEM_BINARY if it lives elsewhere; otherwise fall back to a PATH lookup.
-const systemBinary = process.env.MONGOMS_SYSTEM_BINARY ?? '/opt/homebrew/bin/mongod'
+let mongod: MongoMemoryServer
 
 /** Start an in-memory MongoDB and point Mongoose at it. Call in `beforeAll`. */
 export async function connectMemoryDb (): Promise<void> {
-  mongod = await MongoMemoryServer.create({ binary: { systemBinary } })
+  // if systemBinary is not set, it will attempt to download the binary to ~/.cache
+  mongod = await MongoMemoryServer.create({ binary: { systemBinary: '/opt/homebrew/bin/mongod', version: '8.3.4' } })
   await mongoose.connect(mongod.getUri())
 }
 
 /** Tear down the connection and the in-memory server. Call in `afterAll`. */
 export async function disconnectMemoryDb (): Promise<void> {
   await mongoose.disconnect()
-  await mongod?.stop()
+  await mongod.stop()
 }
 
 /** Wipe every collection so each test starts clean. Call in `afterEach`. */

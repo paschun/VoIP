@@ -83,8 +83,8 @@ describe('GET /api/profile/:id -- single profile detail', () => {
 describe('POST /api/profile -- create returns a profile without counts', () => {
   test('count virtuals are absent on the create response (not populated)', async () => {
     const res = await client.index.$post({ json: { profile: 'Fresh' } }, auth)
-    expect(res.status).toBe(200)
-    if (res.status !== 200) return
+    expect(res.status).toBe(201)
+    if (res.status !== 201) return
     const body = await res.json()
     expect(body.data.profile).toBe('Fresh')
     expect('messageCount' in body.data).toBe(false)
