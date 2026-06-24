@@ -9,10 +9,10 @@
                 <b-input-group-text>
                   <i-bi-person-fill />
                 </b-input-group-text>
-              <input class="form-control chat-input" type="text" placeholder="Username" v-model="loginR$.$value.email" :class="{ 'is-invalid': loginR$.email.$error }" title="Enter Username">
+              <input class="form-control chat-input" type="text" placeholder="Username" v-model="loginR$.$value.name" :class="{ 'is-invalid': loginR$.name.$error }" title="Enter Username">
                </b-input-group>
-              <div v-if="loginR$.email.$error" class="invalid-feedback">
-                <span v-for="error of loginR$.$errors.email" :key="error">{{ error }}</span>
+              <div v-if="loginR$.name.$error" class="invalid-feedback">
+                <span v-for="error of loginR$.$errors.name" :key="error">{{ error }}</span>
               </div>
             </div>
             <div class="form-group mb-2 mt-4">
@@ -144,9 +144,9 @@ export default defineComponent({
 name: 'LoginView',
 components: { ThemeButton },
 setup () {
-  const formState = ref({ email: '', password: '' })
+  const formState = ref({ name: '', password: '' })
   const { r$: loginR$ } = useRegle(formState, {
-    email: { required: withMessage(required, 'Username is required'), minLength: withMessage(minLength(2), 'Username too short') },
+    name: { required: withMessage(required, 'Username is required'), minLength: withMessage(minLength(2), 'Username too short') },
     password: { required: withMessage(required, 'Password is required'), minLength: withMessage(minLength(6), 'Password too short') }
   })
   const { r$: otpR$ } = useRegle({ otp: '' }, {
@@ -289,7 +289,7 @@ methods: {
         user: null,
         token: ''
       }
-      this.formState = { email: '', password: '' }
+      this.formState = { name: '', password: '' }
     } else if (method === 'mfa') {
       this.keyScreen = false
       this.otpScreen = true

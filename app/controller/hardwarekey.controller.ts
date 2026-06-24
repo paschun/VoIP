@@ -55,7 +55,7 @@ async function buildRegistrationChallenge(c: Context<Env>) {
   const publicKey: Record<string, any> = {
     challenge: sessData.challenge,
     rp: { name: 'Operation Privacy' },
-    user: { id: keyUser.id, name: userData?.email, displayName: userData?.name },
+    user: { id: keyUser.id, name: userData?.name, displayName: userData?.name },
     pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
     attestation: 'direct',
   }

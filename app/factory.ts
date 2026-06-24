@@ -4,7 +4,6 @@ import type { Context } from 'hono'
 /** The JWT payload the auth middleware (`./middleware/auth.hono.ts`) verifies and attaches as `c.get('user')`. */
 export interface AuthUser {
   id: string
-  email: string
   name: string
 }
 

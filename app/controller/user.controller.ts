@@ -46,8 +46,8 @@ const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_
 
 /** The user fields echoed to the client (also persisted in the `userdata` cookie). */
 const userDataResponseGen = (u: {
-  _id: { toString(): string }; name?: string | null; email?: string | null; token?: string | null; mfa?: StringBoolean | null
-}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', email: u.email ?? '', token: u.token ?? '', mfa: u.mfa ?? 'false' })
+  _id: { toString(): string }; name?: string | null; token?: string | null; mfa?: StringBoolean | null
+}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', token: u.token ?? '', mfa: u.mfa ?? 'false' })
 
 /** Running build id: the short git commit, falling back to `package.json`'s version. */
 const currentVersion = (() => {
@@ -61,20 +61,20 @@ const currentVersion = (() => {
 
 /** Authenticate; on success mint a 30d JWT and report whether a hardware-key or OTP second factor is still required. */
 async function authenticate(c: JsonCtx<LoginRequest>) {
-  const { email: rawEmail, password } = c.req.valid('json')
-  const email = rawEmail.toLowerCase()
-  const user = await User.findOne({ email: { $eq: email } })
+  const { name: rawName, password } = c.req.valid('json')
+  const name = rawName.toLowerCase()
+  const user = await User.findOne({ name: { $eq: name } })
   if (!user || !bcrypt.compareSync(password, user.password ?? '')) {
     throw new HTTPException(401, { message: 'Unauthorized Access!' })
   }
 
   // https://github.com/panva/jose/blob/HEAD/docs/jwt/sign/classes/SignJWT.md
   // HS256 requires a 256-bit (32-byte) secret (symmetric encryption)
-  const token = await new SignJWT({ id: user.id, email: user.email, name: user.name })
+  const token = await new SignJWT({ id: user.id, name: user.name })
     .setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(joseSecret)
   // 3 parts (b64 encoded) : header.payload.signature
   // decoded JOSE (JSON Object Signing and Encryption) header: { "alg": "HS256" }
-  // decoded payload:{ "id": "6322cb0813d8a71034f6efcc", "email": "example", "name": "example", "exp": 1782625311 }
+  // decoded payload:{ "id": "6322cb0813d8a71034f6efcc", "name": "example", "exp": 1782625311 }
   // signature: MAC of the encoded JOSE Header and encoded JWS Payload with the HMAC SHA-256 algorithm and base64url encoding the HMAC value
 
   user.token = token
@@ -97,19 +97,19 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
   } satisfies LoginResponse)
 }
 
-/** Create an account (email is the initial username); reject a duplicate email. */
+/** Create an account; reject a duplicate username. */
 async function createUser(c: JsonCtx<RegisterRequest>) {
   const valid = c.req.valid('json')
   // todo: do tolowercase in zod validator
-  const email = valid.email.toLowerCase()
+  const name = valid.name.toLowerCase()
   const { password } = valid
 
-  if (await User.findOne({ email: { $eq: email } })) {
+  if (await User.findOne({ name: { $eq: name } })) {
     throw new HTTPException(409, { message: 'Username already exists!' })
   }
 
   const hash = bcrypt.hashSync(password, saltRounds)
-  await User.create({ name: email, email, password: hash })
+  await User.create({ name, password: hash })
   // No body: registration isn't authentication (no token issued), so the client just redirects to login.
   return c.body(null, 201)
 }
@@ -169,18 +169,17 @@ async function matchDirectoryName(c: QueryCtx<DirectoryNameQuery>) {
   return c.json({ data: result } satisfies CheckDirectoryNameResponse, 200)
 }
 
-/** Rename the caller (email doubles as username); reject if the new email is taken by another account. */
+/** Rename the caller; reject if the new username is taken by another account. */
 async function changeUsername(c: JsonCtx<UpdateUsernameRequest>) {
   // todo: handle if user tries to change username to the same username. I think right now it would return 409 ?
   const userId = c.get('user').id
-  const email = c.req.valid('json').email
-  if (await User.findOne({ email: { $eq: email }, _id: { $ne: userId } })) {
+  const name = c.req.valid('json').name
+  if (await User.findOne({ name: { $eq: name }, _id: { $ne: userId } })) {
     throw new HTTPException(409, { message: 'Username already exists!' })
   }
   const user = await User.findOne({ _id: { $eq: userId } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
-  user.email = email
-  user.name = email
+  user.name = name
   await user.save()
   return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
@@ -237,7 +236,7 @@ async function saveMfaSetting(c: JsonCtx<SaveMfaRequest>) {
   // todo: bah, stringbools!!
   if (body.status === 'true') {
     if (body.qr === 'true') {
-      const secretCode = Speakeasy.generateSecret({ name: `Operation Privacy (${authUser.email})` })
+      const secretCode = Speakeasy.generateSecret({ name: `Operation Privacy (${authUser.name})` })
       user.mfa_token = secretCode.base32
       await user.save()
       const image = await QRCode.toDataURL(secretCode.otpauth_url ?? '')

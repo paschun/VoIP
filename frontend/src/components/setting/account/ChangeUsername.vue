@@ -2,7 +2,7 @@
     <div class="p-1">
         <form @submit.prevent="changeUsername" class="ml-2 mr-2">
            <div class="form-group mt-2">
-                <input class="form-control" name="email" v-model="r$.$value" placeholder="Enter Username" :class="{ 'is-invalid': r$.$error }" />
+                <input class="form-control" v-model="r$.$value" placeholder="Enter Username" :class="{ 'is-invalid': r$.$error }" />
                 <div v-if="r$.$error" class="invalid-feedback">
                     <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
                 </div>
@@ -25,10 +25,10 @@ import { useUserStore } from '@/stores/user.ts'
 export default defineComponent({
   setup () {
     const userStore = useUserStore()
-    // email doubles as the username (the model keeps name === email). A standalone ref is the whole single-field form,
-    // email is snapshotted from the store (one-time copy, not a live binding).
-    const email = ref(userStore.userData?.email ?? '')
-    const { r$ } = useRegle(email, { required, minLength: minLength(2), lowercase })
+    // A standalone ref is the whole single-field form; the username is snapshotted from the store (one-time copy, not a
+    // live binding).
+    const name = ref(userStore.userData?.name ?? '')
+    const { r$ } = useRegle(name, { required, minLength: minLength(2), lowercase })
     return { r$, userStore }
   },
   methods: {

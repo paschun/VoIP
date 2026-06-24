@@ -53,8 +53,7 @@ export type IsoDateString = string
 
 export interface User {
   _id: string
-  email: string
-  name?: string
+  name: string
   mfa?: StringBoolean
 }
 

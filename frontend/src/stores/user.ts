@@ -29,8 +29,8 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /** Change the username on the backend and store the returned user. */
-  async function changeUsername (email: string) {
-    const { data } = await request(client.api.auth.username.$patch({ json: { email } }))
+  async function changeUsername (name: string) {
+    const { data } = await request(client.api.auth.username.$patch({ json: { name } }))
     setUser(data)
   }
 

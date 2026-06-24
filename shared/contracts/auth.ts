@@ -2,10 +2,10 @@ import { z } from 'zod'
 import type { Ok, StringBoolean } from '../api-contracts.ts'
 import type { HardwarekeyListItem } from './hardwarekey.ts'
 
-export const loginBody = z.object({ email: z.string().min(1), password: z.string().min(1) })
+export const loginBody = z.object({ name: z.string().min(1), password: z.string().min(1) })
 export type LoginRequest = z.infer<typeof loginBody>
 
-export const registerBody = z.object({ email: z.string().min(1), password: z.string().min(6).max(100) })
+export const registerBody = z.object({ name: z.string().min(1), password: z.string().min(6).max(100) })
 export type RegisterRequest = z.infer<typeof registerBody>
 
 export const otpVerifyBody = z.object({ user: z.string().min(1), verification_code: z.string().min(1) })
@@ -15,7 +15,7 @@ export type OtpVerifyRequest = z.infer<typeof otpVerifyBody>
 export const directoryNameQuery = z.object({ name: z.string().optional() })
 export type DirectoryNameQuery = z.infer<typeof directoryNameQuery>
 
-export const updateUsernameBody = z.object({ email: z.string().min(1) })
+export const updateUsernameBody = z.object({ name: z.string().min(1) })
 export type UpdateUsernameRequest = z.infer<typeof updateUsernameBody>
 
 export const updatePasswordBody = z.object({
@@ -34,7 +34,7 @@ export const saveMfaBody = z.object({ status: z.string().min(1), qr: z.string().
 export type SaveMfaRequest = z.infer<typeof saveMfaBody>
 
 /** The user projection echoed back on auth/profile actions (also stored in the `userdata` cookie). */
-export type UserData = { _id: string; name: string; email: string; token: string; mfa: StringBoolean }
+export type UserData = { _id: string; name: string; token: string; mfa: StringBoolean }
 export type UserResponse = Ok<UserData>
 // todo: is UserData ever actually used by the clients?
 

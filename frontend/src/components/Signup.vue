@@ -8,10 +8,10 @@
                   <b-input-group-text>
                     <i-bi-person-fill />
                   </b-input-group-text>
-                <input class="form-control chat-input" type="text" placeholder="Username" v-model="r$.$value.email" :class="{ 'is-invalid': r$.email.$error }" title="Enter Username">
+                <input class="form-control chat-input" type="text" placeholder="Username" v-model="r$.$value.name" :class="{ 'is-invalid': r$.name.$error }" title="Enter Username">
                 </b-input-group>
-                <div v-if="r$.email.$error" class="invalid-feedback">
-                  <span v-for="error of r$.email.$errors" :key="error">{{ error }}</span>
+                <div v-if="r$.name.$error" class="invalid-feedback">
+                  <span v-for="error of r$.name.$errors" :key="error">{{ error }}</span>
                 </div>
               </div>
               <div class="form-group mb-2 mt-4">
@@ -67,9 +67,9 @@ import type { RouteLocationRaw } from 'vue-router'
 export default defineComponent({
   name: 'SignupView',
   setup () {
-    const form = reactive({ email: '', password: '', c_password: '' })
+    const form = reactive({ name: '', password: '', c_password: '' })
     const { r$ } = useRegle(form, {
-      email: {
+      name: {
         required: withMessage(required, 'Username is required'), // default: This field is required
         minLength: minLength(2),
         lowercase
@@ -99,11 +99,11 @@ export default defineComponent({
       const { valid, data } = await this.r$.$validate()
       if (!valid) return
       try {
-        await request(client.api.auth.register.$post({ json: { email: data.email, password: data.password } }))
+        await request(client.api.auth.register.$post({ json: { name: data.name, password: data.password } }))
       } catch (err) {
         // Duplicate username comes back as a 409
         if (err instanceof DetailedError) {
-          this.r$.$setExternalErrors({ email: [err.detail?.data?.message] })
+          this.r$.$setExternalErrors({ name: [err.detail?.data?.message] })
         }
         throw err // skips logic below
       }
