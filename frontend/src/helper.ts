@@ -2,7 +2,7 @@
  * Functions shared across more than one file. Single-use helpers live in the
  * file that uses them.
  */
-import type { Option } from 'vue3-select-component'
+import type { SelectOptionData } from 'vue3-select-component'
 import type { Contact, Conversation, Message } from '@shared/api-contracts.ts'
 
 /**
@@ -67,7 +67,7 @@ export const formatTimestamp = (value: Conversation['created_at'] | Message['cre
 }
 
 /** Map contacts to `v-select` options (label = full name, value = number). */
-export const contactsToOptions = (contacts: Contact[]): Option<string>[] =>
+export const contactsToOptions = (contacts: Contact[]): SelectOptionData<string>[] =>
   contacts.map((c) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
 
 /** Join URL fragments with exactly one `/` between them. */

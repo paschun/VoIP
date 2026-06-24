@@ -335,7 +335,7 @@ import { defineComponent, useTemplateRef } from "vue";
 import { useRegle } from "@regle/core";
 import { required, withMessage } from "@regle/rules";
 import VueTagsInput from '@sipec/vue3-tags-input'
-import VueSelect, { type Option } from 'vue3-select-component'
+import { Select, type SelectOptionData } from 'vue3-select-component'
 import { io } from "socket.io-client";
 import NumberList from "./inbox/NumberList.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
@@ -398,7 +398,7 @@ export default defineComponent({
     ThemeButton,
     CallView,
     CheckDir,
-    'v-select': VueSelect,
+    'v-select': Select,
   },
   setup() {
     const { r$ } = useRegle(
@@ -454,7 +454,7 @@ export default defineComponent({
     };
   },
   computed: {
-    contactSelectOptions(): Option<string>[] {
+    contactSelectOptions(): SelectOptionData<string>[] {
       return contactsToOptions(this.contacts);
     },
   },
@@ -537,7 +537,7 @@ export default defineComponent({
         this.callView?.makeCall(this.activeChat._id);
       }
     },
-    contactChangeEvent(option: Option<string>) {
+    contactChangeEvent(option: SelectOptionData<string>) {
       this.tags.push({ text: option.value, tiClasses: ["ti-valid"] });
       this.selectedContact = "";
     },

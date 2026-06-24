@@ -164,13 +164,13 @@
 import { defineComponent } from 'vue'
 import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
 import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
-import VueSelect, { type Option } from 'vue3-select-component'
+import { Select, type SelectOptionData } from 'vue3-select-component'
 import { contactsToOptions, parseJSON } from '@/helper.ts'
 import type { CallTokenData, CallTokenResponse } from '@shared/contracts/call.ts'
 
 export default defineComponent({
   props: ['contacts'],
-  components: { 'v-select': VueSelect },
+  components: { 'v-select': Select },
   data (): {
     number: any
     connection: any
@@ -440,7 +440,7 @@ export default defineComponent({
     removeNumber () {
       this.number = this.number.slice(0, -1)
     },
-    contactChangeEvent (option: Option<string>) {
+    contactChangeEvent (option: SelectOptionData<string>) {
       this.number = option.value.replace('+', '')
       this.selectedContact = ''
     },
@@ -463,7 +463,7 @@ export default defineComponent({
     },
   },
   computed: {
-    contactSelectOptions (): Option<string>[] {
+    contactSelectOptions (): SelectOptionData<string>[] {
       return contactsToOptions(this.contacts ?? [])
     }
   },
