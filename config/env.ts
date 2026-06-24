@@ -18,9 +18,8 @@ const schema = z.object({
   COOKIE_KEY: z.string().min(32), // 32 chars == 32 bytes == 256 bits, for HS256 JWT algo
   PORT: z.coerce.number().int().min(1).max(65535).default(3000), // render.com sets this to 10000
   HTTPS: z.stringbool().default(false), // false implies dev mode
-  // Parsed as a bool string (true/false/on/off/1/0/...), then re-serialized to 'on'/'off' — it's echoed to the client
-  // verbatim and the frontend compares `data === 'on'`. Absent → false → 'off' (signups disabled).
-  SIGNUPS: z.stringbool().default(false).transform((on) => (on ? 'on' : 'off')),
+  // Parsed as a bool string (true/false/on/off/1/0/...). Absent → false (signups disabled).
+  SIGNUPS: z.stringbool().default(false),
   // Subdirectory the app is served under (see .env notes). Also echoed to the client.
   APPDIRECTORY: z.string().trim().default('voip'),
 })

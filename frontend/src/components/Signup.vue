@@ -8,11 +8,10 @@
                   <b-input-group-text>
                     <i-bi-person-fill />
                   </b-input-group-text>
-                <input class="form-control chat-input" type="text" placeholder="Username" v-model="user.email" :class="{ 'is-invalid': submitted && v$.user.email.$error }" title="Enter Username">
+                <input class="form-control chat-input" type="text" placeholder="Username" v-model="r$.$value.email" :class="{ 'is-invalid': r$.email.$error }" title="Enter Username">
                 </b-input-group>
-                <div v-if="submitted && v$.user.email.$error" class="invalid-feedback">
-                  <span v-if="v$.user.email.required.$invalid">Username is required</span>
-                  <span v-if="v$.user.email.minLength.$invalid">Please enter a valid Username</span>
+                <div v-if="r$.email.$error" class="invalid-feedback">
+                  <span v-for="error of r$.email.$errors" :key="error">{{ error }}</span>
                 </div>
               </div>
               <div class="form-group mb-2 mt-4">
@@ -20,11 +19,10 @@
                   <b-input-group-text>
                     <i-bi-shield-lock />
                   </b-input-group-text>
-                <input class="chat-input form-control" v-model="user.password"  type="password" placeholder="Password" :class="{ 'is-invalid': submitted && v$.user.password.$error }" title="Enter Password">
+                <input class="chat-input form-control" v-model="r$.$value.password" type="password" placeholder="Password" :class="{ 'is-invalid': r$.password.$error }" title="Enter Password">
                 </b-input-group>
-                <div v-if="submitted && v$.user.password.$error" class="invalid-feedback">
-                    <span v-if="v$.user.password.required.$invalid">Password is required</span>
-                    <span v-if="v$.user.password.minLength.$invalid">Please enter a valid password</span>
+                <div v-if="r$.password.$error" class="invalid-feedback">
+                    <span v-for="error of r$.password.$errors" :key="error">{{ error }}</span>
                 </div>
               </div>
               <div class="form-group mb-2 mt-2">
@@ -32,15 +30,14 @@
                   <b-input-group-text>
                     <i-bi-shield-lock />
                   </b-input-group-text>
-                <input class="chat-input form-control" v-model="user.c_password"  type="password" placeholder="Confirm Password" id="clogin-input" :class="{ 'is-invalid': submitted && v$.user.c_password.$error }" title="Enter Password Again">
+                <input class="chat-input form-control" v-model="r$.$value.c_password" type="password" placeholder="Confirm Password" :class="{ 'is-invalid': r$.c_password.$error }" title="Enter Password Again">
                 </b-input-group>
-                <div v-if="submitted && v$.user.c_password.$error" class="invalid-feedback">
-                    <span v-if="v$.user.c_password.required.$invalid">Password is required<br></span>
-                    <span v-if="v$.user.c_password.sameAsPassword.$invalid">Password and confirm password are not match!</span>
+                <div v-if="r$.c_password.$error" class="invalid-feedback">
+                    <span v-for="error of r$.c_password.$errors" :key="error">{{ error }}</span>
                 </div>
               </div>
               <div class="d-grid">
-                <button class="btn btn-primary mt-3" type="submit">Sign Up</button>
+                <button class="btn btn-primary mt-3" type="submit" :disabled="!r$.$correct">Sign Up</button>
               </div>
               <div class="my-2 small">
                 Already have an account? <router-link :to="loginRoute" class="mx-2">Login</router-link>
@@ -59,39 +56,35 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { useVuelidate } from '@vuelidate/core'
-import { required, minLength, sameAs } from '@vuelidate/validators'
-import { api } from '@/core/services/api.service.ts'
+import { defineComponent, reactive } from 'vue'
+import { useRegle } from '@regle/core'
+import { required, minLength, sameAs, lowercase, withMessage } from '@regle/rules'
+import { DetailedError } from 'hono/client'
+import { client, request } from '@/core/rpc.client.ts'
 import { appDirectory } from '@/router/helpers.ts'
-import { notifyError } from '@/notify.ts'
 import type { RouteLocationRaw } from 'vue-router'
-import type { Ok } from '@shared/api-contracts.ts'
 
 export default defineComponent({
   name: 'SignupView',
   setup () {
-    return { v$: useVuelidate() }
-  },
-  data () {
-    return {
-      user: {
-        email: '',
-        password: '',
-        c_password: ''
+    const form = reactive({ email: '', password: '', c_password: '' })
+    const { r$ } = useRegle(form, {
+      email: {
+        required: withMessage(required, 'Username is required'), // default: This field is required
+        minLength: minLength(2),
+        lowercase
       },
-      submitted: false,
-      signUpOption: false // todo: is this used for anything?
-    }
-  },
-  validations () {
-    return {
-      user: {
-        email: { required, minLength: minLength(2) },
-        password: { required, minLength: minLength(6) },
-        c_password: { required, sameAsPassword: sameAs(this.user.password) },
+      password: {
+        required: withMessage(required, 'Password is required'),
+        minLength: minLength(6),
+      },
+      // c_password is frontend-validation only. Field is not passed to backend.
+      c_password: {
+        required: required,
+        sameAs: sameAs(() => form.password),
       }
-    }
+    })
+    return { r$ }
   },
   computed: {
     loginRoute (): RouteLocationRaw {
@@ -99,42 +92,30 @@ export default defineComponent({
     }
   },
   mounted () {
-    this.getSignup()
+    void this.redirectIfSignupDisabled()
   },
   methods: {
-    handleSubmit (e: Event) {
-      e.preventDefault()
-      this.submitted = true
-      this.v$.$touch()
-      if (this.v$.$invalid) {
-        return
+    async handleSubmit () {
+      const { valid, data } = await this.r$.$validate()
+      if (!valid) return
+      try {
+        await request(client.api.auth.register.$post({ json: { email: data.email, password: data.password } }))
+      } catch (err) {
+        // Duplicate username comes back as a 409
+        if (err instanceof DetailedError) {
+          this.r$.$setExternalErrors({ email: [err.detail?.data?.message] })
+        }
+        throw err // skips logic below
       }
-
-      api.post('auth/register', this.user)
-        .then(() => {
-          this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
-        })
-        .catch(error => {
-          if (error.status === 401 || error.status === 409) {
-            notifyError(error.data?.message, 'Oops...')
-          }
-        })
+      this.$router.push(this.loginRoute) // pure-JS navigation, not a reload of the page
     },
 
-    getSignup () {
-      api.get<Ok<string>>('auth/signup-enabled')
-        .then(response => {
-          if (response?.data === 'on') {
-            this.signUpOption = true
-          } else {
-            this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
-          }
-        })
-        .catch(() => {
-          this.signUpOption = false
-        })
+    async redirectIfSignupDisabled () {
+      // todo: this API call in both here and Login.vue . dedupe somehow?
+      const { data } = await request(client.api.auth['signup-enabled'].$get())
+      // todo: not the best security mechanism. should be blocked on the router level ideally
+      if (!data) this.$router.push(this.loginRoute)
     }
   }
 })
 </script>
-

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <loading-spinner :show="isLoading" />
+    <loading-spinner :show="profileStore.profileIsLoading" />
     <div v-for="profile in profileStore.profiles" :key="profile._id" >
       <b-dropdown-item-button @click="changeProfile(profile)">
         <div class="d-flex flex-row">
@@ -28,15 +28,15 @@
     <b-dropdown-divider></b-dropdown-divider>
     <b-modal ref="add-profile" id="add-profile" size="lg" title="Add Profile" no-footer>
       <span class="small text-secondary">Profile</span>
-      <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
+      <form @submit.prevent="addProfile" class="ml-2 mr-2">
         <div class="form-group mt-2">
-          <input class="form-control chat-input" v-model="form.profile" name="profile" placeholder="Enter Profile" :class="{ 'is-invalid': submitted3 && v$.form.profile.$error }" />
-          <div v-if="submitted3 && v$.form.profile.$error" class="invalid-feedback">
-            <span v-if="v$.form.profile.required.$invalid">Profile are required</span>
+          <input class="form-control chat-input" v-model="r$.$value" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }" />
+          <div v-if="r$.$error" class="invalid-feedback">
+            <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
           </div>
         </div>
         <div class="d-grid d-md-flex mt-3">
-          <button class="btn btn-primary" type="submit">Save</button>
+          <button class="btn btn-primary" type="submit" :disabled="!r$.$correct">Save</button>
         </div>
       </form>
     </b-modal>
@@ -48,9 +48,11 @@
  * Profile data goes through the profile store / profileService (no direct
  * $post here): loadProfiles -> profile/getdata, createProfile -> profile/create.
  */
-import { defineComponent } from 'vue'
-import { useVuelidate } from '@vuelidate/core'
-import { required } from '@vuelidate/validators'
+import { defineComponent, useTemplateRef } from 'vue'
+import type { BModal } from 'bootstrap-vue-next'
+import { useRegle } from '@regle/core'
+import { DetailedError } from 'hono/client'
+import { required, withMessage } from '@regle/rules'
 import { notifySuccess } from '@/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -59,21 +61,12 @@ export default defineComponent({
   components: { LoadingSpinner },
   emits: ['clicked'],
   setup () {
-    return { v$: useVuelidate(), profileStore: useProfileStore() }
-  },
-  data () {
-    return {
-      submitted3: false,
-      isLoading: false,
-      form: {
-        profile: ''
-      }
-    }
-  },
-  validations: {
-    form: {
-      profile: {required}
-    }
+    const { r$ } = useRegle('', {
+      required: withMessage(required, 'Profile is required') // default: This field is required
+    })
+    // type inference on useTemplateRef works with composition API `<script setup> + Volar`
+    const addProfileModal = useTemplateRef<InstanceType<typeof BModal>>('add-profile')
+    return { r$, profileStore: useProfileStore(), addProfileModal }
   },
   mounted () {
     this.initSelection()
@@ -91,31 +84,34 @@ export default defineComponent({
         this.$emit('clicked', null)
       }
     },
-    // Load the list and select once (stored profile, else the first), firing the
-    // profile-changed watchers. Used on mount + after create/delete.
+    /**
+     * Load the list and select once (stored profile, else the first), firing the profile-changed watchers. Used on
+     * mount + after create/delete.
+     */
     async initSelection () {
       const list = await this.profileStore.loadProfiles()
       const selected = this.profileStore.resolveActiveProfile(list)
       if (selected) this.changeProfile(selected)
     },
-    // List/badge refresh only (no re-selection) for pull-to-refresh / new message.
+    /** List/badge refresh only (no re-selection) for pull-to-refresh / new message. */
     getAllProfiles () {
       void this.profileStore.loadProfiles()
     },
-    async handleSubmit () {
-      this.submitted3 = true
-      this.v$.$touch()
-      if (this.v$.$invalid) {
-        return
-      }
-      this.isLoading = true
+    async addProfile () {
+      const { valid, data } = await this.r$.$validate()
+      if (!valid) return
       try {
-        const created = await this.profileStore.createProfile(this.form.profile)
+        const created = await this.profileStore.createProfile(data) // loading state will also be `true` for subsequent loadProfiles
         notifySuccess('Profile added successfully!')
         this.$emit('clicked', created)
-        ;(this.$refs['add-profile'] as any).hide()
-      } finally {
-        this.isLoading = false
+        this.addProfileModal?.hide() // ?. covers the null before mount
+        this.r$.$reset({ toState: '' })
+      } catch (err) {
+        // 409 "Profile already exists!"
+        if (err instanceof DetailedError) {
+          this.r$.$setExternalErrors([err.detail?.data?.message])
+        }
+        throw err
       }
     }
   }

@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose'
 
 const userSchema = new Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, lowercase: true },
-    password: { type: String, required: true },
+    name: { type: String, required: true, lowercase: true, minLength: 2 }, // todo: name is a duplicate of email, can remove one
+    email: { type: String, required: true, lowercase: true, minLength: 2 },
+    password: { type: String, required: true, minLength: 6 },
     token: String,
     otp: String,
     mfa: {

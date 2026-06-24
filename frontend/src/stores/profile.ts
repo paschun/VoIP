@@ -35,7 +35,7 @@ export const useProfileStore = defineStore('profile', () => {
   })
 
   const profiles = ref<ProfileWithUnread[]>([])
-  const loading = ref(false)
+  const profileIsLoading = ref(false) // used in ProfileView
 
   const activeProfileId = computed(() => activeProfile.value?._id ?? '')
   const activeProfileType = computed(() => activeProfile.value?.type ?? '')
@@ -57,13 +57,13 @@ export const useProfileStore = defineStore('profile', () => {
    * the central toast) on failure.
    */
   async function loadProfiles (): Promise<ProfileWithUnread[]> {
-    loading.value = true
+    profileIsLoading.value = true
     try {
       const { data } = await request(client.api.profile.$get())
       profiles.value = data
       return data
     } finally {
-      loading.value = false
+      profileIsLoading.value = false
     }
   }
 
@@ -74,14 +74,15 @@ export const useProfileStore = defineStore('profile', () => {
 
   /** Create a profile, select it (fires watchers), and refresh the list. Returns it; throws on failure. */
   async function createProfile (name: string): Promise<Profile> {
-    loading.value = true
+    profileIsLoading.value = true
     try {
       const { data } = await request(client.api.profile.$post({ json: { profile: name } }))
       setActiveProfile(data)
       await loadProfiles()
       return data
     } finally {
-      loading.value = false
+      // omitting `catch` means the error isn't caught and keeps propagating
+      profileIsLoading.value = false
     }
   }
 
@@ -103,7 +104,7 @@ export const useProfileStore = defineStore('profile', () => {
   return {
     activeProfile,
     profiles,
-    loading,
+    profileIsLoading,
     activeProfileId,
     activeProfileType,
     hasActiveProfile,

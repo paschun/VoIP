@@ -1,9 +1,8 @@
 import type { Context } from 'hono'
 
 /**
- * Acknowledge a provider webhook with a bare 2xx and no body. For callbacks that don't consume a reply (Twilio/Telnyx
- * status callbacks, Telnyx event webhooks) -- a non-2xx makes the provider retry, but they ignore any body we send.
- *
- * todo: change this to 204 "no content"?
+ * Bare 204 with no body, for endpoints whose caller doesn't consume a response: provider webhooks that ignore any
+ * reply (Twilio/Telnyx status callbacks, Telnyx event webhooks), and actions with nothing to return (e.g. a password
+ * change). The instruction-fetch legs (TwiML/TeXML voice, inbound-SMS reply) return a real body, so they don't use this.
  */
-export const ack = (c: Context) => c.body(null, 200)
+export const ack = (c: Context) => c.body(null, 204)

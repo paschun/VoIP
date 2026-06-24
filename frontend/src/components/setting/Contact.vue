@@ -65,7 +65,7 @@
             </template>
         </b-offcanvas>
 
-        <b-modal  ref="modal-contact" id="modal-contact" title="Contact" no-footer>
+        <b-modal ref="contactModal" id="modal-contact" title="Contact" no-footer>
            <div class="card mt-4">
           <div class="card-body">
             <b-tabs content-class="mt-3">
@@ -73,23 +73,26 @@
                 <form @submit.prevent="handleSubmit">
                   <div class=" form-group m-auto mb-2">
                     <label>First Name</label>
-                    <input class="form-control" type="text" placeholder="First Name" v-model="form.first_name" id="first_name" name="first_name" :class="{ 'is-invalid': submitted && v$.form.first_name.$error }"  />
-                    <div v-if="submitted && v$.form.first_name.required.$invalid" class="invalid-feedback">First Name is required</div>
+                    <input class="form-control" type="text" placeholder="First Name" v-model="r$.$value.first_name" :class="{ 'is-invalid': r$.first_name.$error }"  />
+                    <div v-if="r$.first_name.$error" class="invalid-feedback">
+                      <span v-for="error of r$.$errors.first_name" :key="error">{{ error }}</span>
+                    </div>
                   </div>
                   <div class="form-group m-auto mb-2">
                     <label>Last Name</label>
-                    <input class="form-control" type="text" placeholder="Last Name" v-model="form.last_name" id="last_name" name="last_name"  />
+                    <input class="form-control" type="text" placeholder="Last Name" v-model="r$.$value.last_name"  />
                   </div>
                   <div class="form-group m-auto mb-2">
                     <label>Number</label>
-                    <input class="form-control" type="text" placeholder="Number" v-model="form.number" id="number" name="number" :class="{ 'is-invalid': submitted && v$.form.number.$error }"  />
-                    <div v-if="submitted && v$.form.number.required.$invalid" class="invalid-feedback">Number is required</div>
-                    <div v-if="submitted && v$.form.number.phonenumber.$invalid" class="invalid-feedback">Please enter valid number. </div>
+                    <input class="form-control" type="text" placeholder="Number" v-model="r$.$value.number" :class="{ 'is-invalid': r$.number.$error }"  />
+                    <div v-if="r$.number.$error" class="invalid-feedback">
+                      <span v-for="error of r$.$errors.number" :key="error">{{ error }}</span>
+                    </div>
                   </div>
 
                   <div class="form-group m-auto mb-2">
                     <label>Note</label>
-                    <input class="form-control" type="text" placeholder="Note" v-model="form.note" id="note" name="note"  />
+                    <input class="form-control" type="text" placeholder="Note" v-model="r$.$value.note"  />
                   </div>
                   <div class="d-flex justify-content-start bd-highlight">
                     <div class="bd-highlight"><button type="submit" class="btn btn-primary float-right">Save</button></div>
@@ -105,7 +108,7 @@
                   <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !modelFileValue }">{{ modelFileValue || 'Choose file' }}</span>
                 </label>
                 <div class="form-group mb-2 mt-4 d-none">
-                  <input type="file" id="model_file_input2" class="form-control chat-input" name="csvFile" accept=".csv" @change="onSelect">
+                  <input type="file" id="model_file_input2" class="form-control chat-input" accept=".csv" @change="onSelect">
                 </div>
                 <div class="d-flex justify-content-start bd-highlight">
                   <div class="bd-highlight"><button type="button" @click="handleSubmit2()" class="btn btn-primary float-right">Save</button></div>
@@ -118,50 +121,30 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent, ref, useTemplateRef, type PropType } from 'vue'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
 import type { Contact } from '@shared/api-contracts.ts'
-import { useVuelidate } from '@vuelidate/core'
-import { required, helpers } from '@vuelidate/validators'
+import { useRegle } from '@regle/core'
+import { required, regex, withMessage } from '@regle/rules'
+import type { BModal } from 'bootstrap-vue-next'
 import Papa from 'papaparse'
 import { EventBus } from '@/event-bus.ts'
 
-// type TContact = Omit<Contact, '_id'>
-type TContact = {
-  first_name: string
-  last_name: string
-  number: string
-  note: string
+type TContact = Omit<Contact, '_id'>
+
+const phonenumber = regex(/^\+?[-0-9() ]{5,17}$/)
+
+function convertToCsv (rows: TContact[], headerList: (keyof TContact)[]): string {
+  const header = headerList.join(',')
+  const body = rows.map(
+    (row) => 
+      headerList.map((prop) => row[prop]).join(',')
+    ).join('\r\n')
+  return header + '\r\n' + body + '\r\n'
 }
 
-// eslint-disable-next-line no-useless-escape
-const phonenumber = helpers.regex(/^\+?[0-9\(\-\)\ ]{5,17}$/)
-
-// todo: this can take a contact type
-function ConvertToCSV (objArray: any, headerList: string[]): string {
-  const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
-  let result = ''
-
-  let header = ''
-  for (const h of headerList) {
-    header += h + ','
-  }
-  header = header.slice(0, -1)
-  result += header + '\r\n'
-
-  for (const item of array) {
-    let row = ''
-    for (const prop of headerList) {
-      row += item[prop] + ','
-    }
-    result += row.slice(0, -1) + '\r\n'
-  }
-  return result
-}
-
-function downloadFile (data: any, filename = 'data') {
-  const csvData = ConvertToCSV(data, ['first_name', 'last_name', 'number', 'note'])
-  console.log(csvData)
+function downloadFile (rows: TContact[], filename = 'data') {
+  const csvData = convertToCsv(rows, ['first_name', 'last_name', 'number', 'note'])
   const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const dwldLink = document.createElement('a')
@@ -187,44 +170,32 @@ const sampleContacts = [
 export default defineComponent({
   name: 'ContactList',
   setup () {
-    return { v$: useVuelidate() }
+    const formState = ref({ first_name: '', last_name: '', number: '', note: '' })
+    const { r$ } = useRegle(formState, {
+      first_name: { required: withMessage(required, 'First Name is required') },
+      number: { required: withMessage(required, 'Number is required'), phonenumber: withMessage(phonenumber, 'Please enter valid number. ') }
+    })
+    const contactModal = useTemplateRef<InstanceType<typeof BModal>>('contactModal')
+    return { r$, formState, contactModal }
   },
   props: {
     contacts: { type: Array as PropType<Contact[]>, default: () => [] as Contact[] }
   },
   data () {
     return {
-      headers: null,
-      baseurl: '',
       modelFileValue: '',
-      submitted: false,
-      editId: false as any,
-      submitted2: false,
+      editId: '',
       search_contacts: [] as Contact[],
-      form: {
-        first_name: '',
-        last_name: '',
-        number: '',
-        note: ''
-      },
       query: '',
-      csvUploadArray2: [] as TContact[],
-    }
-  },
-  validations: {
-    form: {
-      first_name: { required },
-      last_name: {},
-      number: { required, phonenumber },
-      note: {}
+      csvUploadArray2: [] as TContact[]
     }
   },
   mounted () {
-    EventBus.$on('addContact', (number: any) => {
-      this.editId = false
+    EventBus.$on('addContact', (number: string) => {
+      this.editId = ''
       this.emptyContact()
-      ;(this.$refs['modal-contact'] as any).show()
-      this.form.number = number
+      this.contactModal?.show()
+      this.formState.number = number
     })
   },
   methods: {
@@ -232,86 +203,63 @@ export default defineComponent({
       downloadFile(this.contacts, 'contacts')
     },
     emptyContact () {
-      this.form.first_name = ''
-      this.form.last_name = ''
-      this.form.number = ''
-      this.form.note = ''
+      this.formState = { first_name: '', last_name: '', number: '', note: '' }
     },
 
     async onSelect (event: Event) {
-      console.log(event)
       const target = event.target as HTMLInputElement
       if (!target?.files) return
       const fileToRead = target.files[0]
       this.modelFileValue = fileToRead.name
       this.csvUploadArray2 = await this.readFile(fileToRead)
-      console.log('converted CSV to JSON to be uploaded:', this.csvUploadArray2)
     },
 
     async readFile (file: File): Promise<TContact[]> {
       const fileText = await file.text()
 
-      const { data: csvdata, errors } = Papa.parse<string[]>(fileText, { header: false }) // convert csv to json
+      const { data: csvdata, errors } = Papa.parse<string[]>(fileText, { header: false })
       if (errors.length) {
-        for (const err of errors) {
-          void notifyError(JSON.stringify(err))
-        }
+        errors.forEach((err) => void notifyError(JSON.stringify(err), 'Error parsing CSV'))
         return []
       }
 
-      const result: TContact[] = []
-      for (let i = 0; i < csvdata.length; ++i) {
-        if (i !== 0) {
-          const row = csvdata[i]
-          const first = row[0]
-          if (typeof first === 'string' && first !== '') {
-            const arrayData = {
-              'first_name': first,
-              'last_name': row[1],
-              'number': row[2],
-              'note': row[3]
-            }
-            result.push(arrayData)
-          }
-        }
-      }
-      return result
+      // Skip the header row; keep rows with a non-empty first name.
+      return csvdata.slice(1)
+        .filter((row) => typeof row[0] === 'string' && row[0] !== '')
+        .map((row) => ({ first_name: row[0], last_name: row[1], number: row[2], note: row[3] }))
     },
     downloadSampleCSV () {
       downloadFile(sampleContacts, 'sample_file')
     },
     openContactModel () {
-      this.editId = false
+      this.editId = ''
       this.emptyContact()
-      ;(this.$refs['modal-contact'] as any).show()
+      this.contactModal?.show()
     },
-    handleSubmit () {
-      this.submitted = true
-      this.v$.$touch()
-      // stop here if form is invalid
-      if (this.v$.$invalid) return
+    async handleSubmit () {
+      const { valid, data } = await this.r$.$validate()
+      if (!valid) return
 
-      const submit = this.editId
-        ? this.$put(`contact/${this.editId}`, this.form)
-        : this.$post('contact', this.form)
-      submit
-        .then((response) => {
-          if (response) {
-            ;(this.$refs['modal-contact'] as any).hide()
-            this.$emit('onaddContact', true)
-            EventBus.$emit('contactAdded', this.form.number)
-            this.emptyContact()
-            this.submitted = false
-          }
-        })
-        .catch((e) => console.error(e))
+      try {
+        const response = this.editId
+          ? await this.$put(`contact/${this.editId}`, data)
+          : await this.$post('contact', data)
+        if (response) {
+          this.contactModal?.hide()
+          this.$emit('onaddContact', true)
+          EventBus.$emit('contactAdded', data.number)
+          this.emptyContact()
+        }
+      } catch (e) {
+        console.error(e)
+      }
     },
 
     handleSubmit2 () {
       if (this.csvUploadArray2.length > 0) {
         this.$post('contact/bulk', { contacts: this.csvUploadArray2 })
           .then(() => {
-            ;(this.$refs['modal-contact'] as any).hide()
+            this.contactModal?.hide()
             this.$emit('onaddContact', true)
             this.modelFileValue = ''
           })
@@ -320,7 +268,7 @@ export default defineComponent({
         void notifyError('Please upload valid file!')
       }
     },
-    async deleteContact (id: any) {
+    async deleteContact (id: string) {
       const result = await this.$swal.fire({
         icon: 'info',
         title: 'Do you want to delete this contact?',
@@ -341,15 +289,15 @@ export default defineComponent({
         console.error(e)
       }
     },
-    updateContact (contact: any) {
+    updateContact (contact: Contact) {
       this.editId = contact._id
-      this.form = {
+      this.formState = {
         first_name: contact.first_name,
         last_name: contact.last_name,
         number: contact.number,
-        note: contact.note
+        note: contact.note ?? ''
       }
-      ;(this.$refs['modal-contact'] as any).show()
+      this.contactModal?.show()
     },
     async deleteAll () {
       const result = await this.$swal.fire({

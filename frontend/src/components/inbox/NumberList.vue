@@ -158,13 +158,13 @@
         </div>
       </div>
     </div>
-    <!-- setting modal -->
-    <b-modal ref="my-modal" id="modal-1" size="lg" title="Settings" hide-footer>
+    <!-- todo: extract this modal into its own component? -->
+    <b-modal ref="profileSettingModal" id="profile-setting-modal" size="lg" title="Settings" hide-footer>
       <theme-button id-hide="false" />
-      <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
+      <form @submit.prevent="saveProviderSetting" class="ml-2 mr-2">
         <b-form-radio-group
           id="btn-radios-2"
-          v-model="selected"
+          v-model="r$.$value.type"
           :options="options"
           button-variant="outline-primary"
           size="lg"
@@ -185,15 +185,15 @@
                   class="form-control"
                   type="text"
                   placeholder="Alias/Name"
-                  v-model="user.profile"
-                  :class="{ 'is-invalid': submitted && v$.user.profile.$error }"
+                  v-model="r$.$value.profile"
+                  :class="{ 'is-invalid': r$.profile.$error }"
                 />
                 <div
-                  v-if="submitted && v$.user.profile.$error"
+                  v-if="r$.profile.$error"
                   class="invalid-feedback"
                 >
-                  <span v-if="v$.user.profile.required.$invalid"
-                    >Profile is required</span
+                  <span v-for="error of r$.$errors.profile" :key="error"
+                    >{{ error }}</span
                   >
                 </div>
               </div>
@@ -209,7 +209,7 @@
             </div>
           </div>
         </div>
-        <div class="card form-group mt-4 overflow-visible-card" v-if="selected == 'telnyx'">
+        <div class="card form-group mt-4 overflow-visible-card" v-if="r$.$value.type === 'telnyx'">
           <div class="card-body">
             <div class="row mb-2">
               <div class="col-auto m-auto">
@@ -223,20 +223,15 @@
                   class="form-control"
                   type="text"
                   placeholder="Telnyx API Key"
-                  v-model="user.api_key"
-                  :class="{
-                    'is-invalid':
-                      submitted && v$.user.api_key.$error && user.profile == ''
-                  }"
+                  v-model="r$.$value.api_key"
+                  :class="{ 'is-invalid': r$.api_key.$error }"
                 />
                 <div
-                  v-if="
-                    submitted && v$.user.api_key.$error && user.profile == ''
-                  "
+                  v-if="r$.api_key.$error"
                   class="invalid-feedback"
                 >
-                  <span v-if="v$.user.api_key.required.$invalid"
-                    >API Key is required</span
+                  <span v-for="error of r$.$errors.api_key" :key="error"
+                    >{{ error }}</span
                   >
                 </div>
               </div>
@@ -256,19 +251,17 @@
               <div class="col col-lg-6 m-auto">
                 <div class="form-group">
                   <custom-autocomplete-select
-                    v-model="user.number"
+                    v-model="r$.$value.number"
                     :options="tNumbers"
                     labelProp="phone_number"
                     valueProp="phone_number"
                   ></custom-autocomplete-select>
                   <div
-                    v-if="
-                      submitted && v$.user.number.$error && user.profile == ''
-                    "
+                    v-if="r$.number.$error"
                     class="invalid-feedback"
                   >
-                    <span v-if="v$.user.number.required.$invalid"
-                      >Number is required</span
+                    <span v-for="error of r$.$errors.number" :key="error"
+                      >{{ error }}</span
                     >
                   </div>
                 </div>
@@ -287,7 +280,7 @@
             </div>
           </div>
         </div>
-        <div class="card form-group mt-4 overflow-visible-card" v-if="selected == 'twilio'">
+        <div class="card form-group mt-4 overflow-visible-card" v-if="r$.$value.type === 'twilio'">
           <div class="card-body">
             <div class="row mb-2">
               <div class="col-auto col-lg-3 m-auto">
@@ -301,22 +294,15 @@
                   class="form-control"
                   type="text"
                   placeholder="Twilio SID"
-                  v-model="user.twilio_sid"
-                  :class="{
-                    'is-invalid':
-                      submitted &&
-                      v$.user.twilio_sid.$error &&
-                      user.profile == ''
-                  }"
+                  v-model="r$.$value.twilio_sid"
+                  :class="{ 'is-invalid': r$.twilio_sid.$error }"
                 />
                 <div
-                  v-if="
-                    submitted && v$.user.twilio_sid.$error && user.profile == ''
-                  "
+                  v-if="r$.twilio_sid.$error"
                   class="invalid-feedback"
                 >
-                  <span v-if="v$.user.twilio_sid.required.$invalid"
-                    >Twilio sid is required</span
+                  <span v-for="error of r$.$errors.twilio_sid" :key="error"
+                    >{{ error }}</span
                   >
                 </div>
               </div>
@@ -334,24 +320,15 @@
                   class="form-control "
                   type="text"
                   placeholder="Twilio Token"
-                  v-model="user.twilio_token"
-                  :class="{
-                    'is-invalid':
-                      submitted &&
-                      v$.user.twilio_token.$error &&
-                      user.profile == ''
-                  }"
+                  v-model="r$.$value.twilio_token"
+                  :class="{ 'is-invalid': r$.twilio_token.$error }"
                 />
                 <div
-                  v-if="
-                    submitted &&
-                      v$.user.twilio_token.$error &&
-                      user.profile == ''
-                  "
+                  v-if="r$.twilio_token.$error"
                   class="invalid-feedback"
                 >
-                  <span v-if="v$.user.twilio_token.required.$invalid"
-                    >Twilio token is required</span
+                  <span v-for="error of r$.$errors.twilio_token" :key="error"
+                    >{{ error }}</span
                   >
                 </div>
               </div>
@@ -371,21 +348,17 @@
               <div class="col col-lg-6 m-auto">
                 <div class="form-group">
                   <custom-autocomplete-select
-                  v-model="user.twilio_number"
+                  v-model="r$.$value.twilio_number"
                   :options="twilioNumbers"
                   labelProp="phoneNumber"
                   valueProp="phoneNumber"
                 ></custom-autocomplete-select>
                   <div
-                    v-if="
-                      submitted &&
-                        v$.user.twilio_number.$error &&
-                        user.profile == ''
-                    "
+                    v-if="r$.twilio_number.$error"
                     class="invalid-feedback"
                   >
-                    <span v-if="v$.user.twilio_number.required.$invalid"
-                      >Number is required</span
+                    <span v-for="error of r$.$errors.twilio_number" :key="error"
+                      >{{ error }}</span
                     >
                   </div>
                 </div>
@@ -416,26 +389,27 @@
 
 <script lang="ts">
 /**
- * Backend endpoints used (this.$post/$get -> core/api.plugin.ts):
- *   GET  contact/get-all           onaddContact()
- *   POST profile/getdata-one       getOneProfile()        { setting } - just used to get/set this.activeProfile
- *   POST profile/delete-profile    deleteProfile()        { user, profile_id }
- *   POST setting/sms-number-list   getNumberList()        { user, setting }
- *   POST setting/get-setting       getSetting()           { user, setting }
- *   POST setting/delete-key        deleteApiKey()         { user, profile_id }
- *   POST setting/get-number        getNumbers()           (the user/setting object + type)
- *   POST setting/check-setting     handleSubmit()         (sendData)
- *   POST setting/create            submitCreateSetting()  (sendData)
+ * Still on the legacy `this.$get/$post/$del` API plugin (core/api.plugin.ts), so these calls are untyped -- unlike the
+ * components migrated to the typed RPC client.
+ *
+ * this component contains the telnyx/twilio modal when you click settings->profile settings
+ *
+ * TODO: this modal does two jobs and guesses intent from `profile === ""`. Split into two single-purpose flows:
+ *   1. createProfile(name):     form = { profile: required }          -> POST profile; make it active
+ *   2. configureProvider():     variant on `type`, provider fields required (active profile assumed, name
+ *                               shown read-only)                       -> POST setting/profiles
+ * Then neither form needs requiredIf/`configuringProvider`; step 1 can reuse ProfileView's create flow.
  */
-import { defineComponent } from "vue";
+import { defineComponent, ref, useTemplateRef } from "vue";
+import type { BModal } from "bootstrap-vue-next";
 import { useProfileStore } from "@/stores/profile.ts";
 import { useUserStore } from "@/stores/user.ts";
 import ThemeButton from "@/components/ThemeButton.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ProfileView from "@/components/setting/ProfileView.vue";
 import Contact from "@/components/setting/Contact.vue";
-import { useVuelidate } from "@vuelidate/core";
-import { required } from "@vuelidate/validators";
+import { useRegle, createVariant } from "@regle/core";
+import { required, requiredIf, literal, withMessage } from "@regle/rules";
 import { notifySuccess, notifyInfo } from "@/notify.ts";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
@@ -449,6 +423,34 @@ function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;
 }
 
+/** A profile's provider configuration, as edited in the settings modal. `type` discriminates which provider's fields the variant rules require. */
+interface ProviderSettingForm {
+  type: 'telnyx' | 'twilio';
+  profile: string;
+  api_key: string;
+  number: string;
+  twilio_sid: string;
+  twilio_token: string;
+  twilio_number: string;
+}
+/** A purchasable Telnyx number from the provider-numbers lookup (`id` is the lookup's sid). */
+interface TelnyxNumber {
+  id: string;
+  phone_number: string;
+}
+/** A purchasable Twilio number from the provider-numbers lookup. */
+interface TwilioNumber {
+  sid: string;
+  phoneNumber: string;
+}
+/** The form values plus server-side identifiers, POSTed to number-lookup / setting creation. */
+interface ProviderSettingPayload extends ProviderSettingForm {
+  user: string | undefined;
+  setting: string;
+  sid: string;
+  override?: string;
+}
+
 export default defineComponent({
   emits: ["onaddContact", "activeChat", "clicked"],
   components: {
@@ -460,47 +462,59 @@ export default defineComponent({
     CustomAutocompleteSelect
   },
   setup() {
-    return { v$: useVuelidate(), profileStore: useProfileStore(), userStore: useUserStore() };
+    const form = ref<ProviderSettingForm>({
+      type: "telnyx",
+      profile: "",
+      api_key: "",
+      number: "",
+      twilio_sid: "",
+      twilio_token: "",
+      twilio_number: ""
+    });
+    // Provider fields are required only when no profile name is entered (i.e. configuring the active profile's provider).
+    const requiredWhenConfiguring = (msg: string) => withMessage(requiredIf(() => !form.value.profile), msg);
+    const { r$ } = useRegle(form, () => {
+      const provider = createVariant(form, "type", [
+        {
+          type: { literal: literal("telnyx") },
+          api_key: { required: requiredWhenConfiguring("API Key is required") },
+          number: { required: requiredWhenConfiguring("Number is required") }
+        },
+        {
+          type: { literal: literal("twilio") },
+          twilio_sid: { required: requiredWhenConfiguring("Twilio sid is required") },
+          twilio_token: { required: requiredWhenConfiguring("Twilio token is required") },
+          twilio_number: { required: requiredWhenConfiguring("Number is required") }
+        }
+      ]);
+      return {
+        profile: { required: withMessage(required, "Profile is required") },
+        ...provider.value
+      };
+    });
+    const childComponent = useTemplateRef<InstanceType<typeof ProfileView>>("childComponent");
+    const profileSettingModal = useTemplateRef<InstanceType<typeof BModal>>("profileSettingModal");
+    return { r$, form, profileStore: useProfileStore(), userStore: useUserStore(), childComponent, profileSettingModal };
   },
   data() {
     return {
-      user: {
-        api_key: "",
-        number: "",
-        twilio_sid: "",
-        twilio_token: "",
-        twilio_number: "",
-        profile: ""
-      },
       query: "",
-      isLoading: false,
+      isLoading: false, // todo: fixme
       contacts: [] as any[],
       activeChat: "",
-      submitted: false,
       messageListLoader: true,
       numbers: [] as Conversation[],
       search_numbers: [] as Conversation[],
-      activeProfile: null as any,
-      tNumbers: [] as any[],
-      twilioNumbers: [] as any[],
+      activeProfile: null as any, // todo: replace with profileStore
+      tNumbers: [] as TelnyxNumber[],
+      twilioNumbers: [] as TwilioNumber[],
       activeItem: null as any,
       options: [
         { text: "Telnyx", value: "telnyx" },
         { text: "Twilio", value: "twilio" }
       ],
-      selected: "telnyx",
       showDelete: false
     };
-  },
-  validations: {
-    user: {
-      api_key: { required },
-      number: { required },
-      twilio_sid: { required },
-      twilio_token: { required },
-      twilio_number: { required },
-      profile: { required }
-    }
   },
   watch: {
     "profileStore.activeProfile"() {
@@ -536,7 +550,6 @@ export default defineComponent({
       this.refreshProfile();
     },
     searchContact() {
-      // console.log(this.numbers)
       const search = new RegExp(this.query, "i");
       this.search_numbers = this.numbers.filter(item =>
         search.test(item._id) ||
@@ -573,7 +586,7 @@ export default defineComponent({
       }
     },
     refreshProfile() {
-      (this.$refs.childComponent as any).getAllProfiles();
+      this.childComponent?.getAllProfiles();
     },
     onClickChild(value: any) {
       this.activeProfile = value;
@@ -624,11 +637,10 @@ export default defineComponent({
       this.$get("setting/profiles/" + this.activeProfile._id)
         .then(response => {
           if (response?.data) {
-            this.user = response.data;
+            this.form = response.data;
             this.hideShowDeleteIcon(response.data);
-            this.user.twilio_number = response.data.number;
+            this.form.twilio_number = response.data.number;
             this.getNumbers(response.data.type);
-            this.selected = response.data.type;
           }
         })
         .catch(e => {
@@ -654,19 +666,15 @@ export default defineComponent({
         const response = await this.$del(`profile/${this.activeProfile._id}`);
         if (response.data) {
           notifySuccess("Profile deleted successfully!");
-          this.user.api_key = "";
-          this.user.number = "";
-          this.user.twilio_sid = "";
-          this.user.twilio_token = "";
-          this.user.twilio_number = "";
+          this.r$.$reset({ toOriginalState: true }); // reset to empty
           this.tNumbers = [];
           this.twilioNumbers = [];
           this.activeProfile = response.data;
           localStorage.removeItem("activeProfile");
-          (this.$refs["my-modal"] as any).hide();
-          (this.$refs.childComponent as any).getAllProfiles();
+          this.profileSettingModal?.hide();
+          this.childComponent?.getAllProfiles();
           setTimeout(() => {
-            (this.$refs.childComponent as any).activeFirstProfile();
+            this.childComponent?.activeFirstProfile();
           }, 2000);
         }
       } catch (e) {
@@ -691,29 +699,27 @@ export default defineComponent({
       try {
         const response = await this.$del("setting/profiles/" + this.activeProfile._id + "/provider");
         notifySuccess("Key deleted successfully!");
-        this.user.api_key = "";
-        this.user.number = "";
-        this.user.twilio_sid = "";
-        this.user.twilio_token = "";
-        this.user.twilio_number = "";
+        // Clear only the provider fields, keeping `profile`: the profile still exists (just its provider config is
+        // gone) and the modal stays open, so its name must remain visible. A full reset would blank it.
+        this.form = { ...this.form, api_key: "", number: "", twilio_sid: "", twilio_token: "", twilio_number: "" };
         this.tNumbers = [];
         this.twilioNumbers = [];
         this.activeProfile = response.data;
         this.hideShowDeleteIcon(response.data);
-        (this.$refs.childComponent as any).getAllProfiles();
+        this.childComponent?.getAllProfiles();
       } catch (e) {
         console.error(e);
       }
     },
-    getNumbers(type: any) {
-      const settings = this.user as any;
-      settings.type = type;
+    getNumbers(type: 'telnyx' | 'twilio') {
+      const providerSettings = this.r$.$value;
+      providerSettings.type = type;
       if (type === "telnyx") {
         this.tNumbers = [];
       } else {
         this.twilioNumbers = [];
       }
-      this.$post("setting/provider-numbers", settings)
+      this.$post("setting/provider-numbers", providerSettings)
         .then(response => {
           if (response) {
             if (type === "telnyx") {
@@ -727,126 +733,107 @@ export default defineComponent({
           console.error(e);
         });
     },
-    async handleSubmit() {
-      this.submitted = true;
-      this.v$.$touch();
-      if (
-        this.user.profile !== "" ||
-        (this.selected === "telnyx" &&
-          !this.v$.user.api_key.$error &&
-          !this.v$.user.number.$error &&
-          !this.v$.user.profile.$error) ||
-        (this.selected === "twilio" &&
-          !this.v$.user.twilio_sid.$error &&
-          !this.v$.user.twilio_token.$error &&
-          !this.v$.user.twilio_number.$error &&
-          !this.v$.user.profile.$error)
-      ) {
-        let sid = "";
-        if (this.selected === "telnyx") {
-          for (let i = 0; i < this.tNumbers.length; i++) {
-            if (this.tNumbers[i].phone_number === this.user.number) {
-              sid = this.tNumbers[i].id;
-            }
-          }
-        } else {
-          for (let j = 0; j < this.twilioNumbers.length; j++) {
-            if (this.twilioNumbers[j].phoneNumber === this.user.twilio_number) {
-              sid = this.twilioNumbers[j].sid;
-            }
-          }
-        }
-        const sendData: any = {
-          api_key: this.user.api_key,
-          number: this.user.number,
-          user: this.userStore.userData?._id,
-          sid,
-          type: this.selected,
-          twilio_sid: this.user.twilio_sid,
-          twilio_token: this.user.twilio_token,
-          twilio_number: this.user.twilio_number,
-          setting: this.activeProfile._id,
-          profile: this.user.profile
-        };
-        this.isLoading = true;
-        try {
-          const response = await this.$post("provider/number-lookup", sendData);
-          let isCall = false;
-          if (response) {
-            if (
-              this.selected === "telnyx" &&
-              response.data.data.connection_id !== undefined &&
-              response.data.data.connection_id &&
-              response.data.data.connection_id !== ""
-            ) {
-              isCall = true;
-            }
-
-            if (this.selected === "twilio") {
-              let appSidavilable = false;
-              if (
-                response.data.voiceApplicationSid !== undefined &&
-                response.data.voiceApplicationSid &&
-                response.data.voiceApplicationSid !== ""
-              ) {
-                isCall = true;
-                appSidavilable = true;
-              }
-              if (!appSidavilable) {
-                if (
-                  response.data.voiceUrl !== undefined &&
-                  response.data.voiceUrl &&
-                  response.data.voiceUrl !== ""
-                ) {
-                  isCall = true;
-                }
-              }
-            }
-            if (isCall) {
-              // runs after the `finally` block which sets `isLoading = false`
-              this.$swal
-                .fire({
-                  icon: "warning",
-                  title: "Call Setting",
-                  text: "The call setting is already available. Do you want to override the call setting?",
-                  showDenyButton: true,
-                  confirmButtonText: "Yes, override it",
-                  denyButtonText: `No, Keep old`
-                })
-                .then(result => {
-                  let updateCallSetting = false;
-                  if (result.isConfirmed) {
-                    updateCallSetting = true;
-                    sendData.override = "true";
-                  } else if (result.isDenied) {
-                    updateCallSetting = true;
-                    sendData.override = "false";
-                  }
-                  if (updateCallSetting) this.submitCreateSetting(sendData);
-                });
-            } else {
-              sendData.override = "true";
-              await this.submitCreateSetting(sendData);
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        } finally {
-          this.isLoading = false;
-        }
-      }
-    },
-    async submitCreateSetting(sendData: any) {
+    async saveProviderSetting() {
+      // $validate marks all fields dirty (surfacing errors) and returns whether the form passes its rules.
+      const { valid } = await this.r$.$validate();
+      if (!valid) return;
+      // r$.$value is reactive and the awaits below give the user a window to edit the form; snapshot the flat
+      // string values so the payload reflects exactly what was validated. (`data` would be weaker-typed here:
+      // its conditionally-required provider fields are MaybeOutput<string>, not string.)
+      const providerSettings = { ...this.r$.$value };
+      const sid = providerSettings.type === "telnyx"
+        ? (this.tNumbers.find(n => n.phone_number === providerSettings.number)?.id ?? "")
+        : (this.twilioNumbers.find(n => n.phoneNumber === providerSettings.twilio_number)?.sid ?? "");
+      const providerSettingPayload: ProviderSettingPayload = {
+        api_key: providerSettings.api_key,
+        number: providerSettings.number,
+        user: this.userStore.userData?._id,
+        sid,
+        type: providerSettings.type,
+        twilio_sid: providerSettings.twilio_sid,
+        twilio_token: providerSettings.twilio_token,
+        twilio_number: providerSettings.twilio_number,
+        setting: this.activeProfile._id,
+        profile: providerSettings.profile
+      };
       this.isLoading = true;
       try {
-        const response = await this.$post("setting/profiles", sendData);
+        const response = await this.$post("provider/number-lookup", providerSettingPayload);
+        let isCall = false;
         if (response) {
-          (this.$refs["my-modal"] as any).hide();
+          if (
+            providerSettings.type === "telnyx" &&
+            response.data.data.connection_id !== undefined &&
+            response.data.data.connection_id &&
+            response.data.data.connection_id !== ""
+          ) {
+            isCall = true;
+          }
+
+          if (providerSettings.type === "twilio") {
+            let appSidavilable = false;
+            if (
+              response.data.voiceApplicationSid !== undefined &&
+              response.data.voiceApplicationSid &&
+              response.data.voiceApplicationSid !== ""
+            ) {
+              isCall = true;
+              appSidavilable = true;
+            }
+            if (!appSidavilable) {
+              if (
+                response.data.voiceUrl !== undefined &&
+                response.data.voiceUrl &&
+                response.data.voiceUrl !== ""
+              ) {
+                isCall = true;
+              }
+            }
+          }
+          if (isCall) {
+            // runs after the `finally` block which sets `isLoading = false`
+            this.$swal
+              .fire({
+                icon: "warning",
+                title: "Call Setting",
+                text: "The call setting is already available. Do you want to override the call setting?",
+                showDenyButton: true,
+                confirmButtonText: "Yes, override it",
+                denyButtonText: `No, Keep old`
+              })
+              .then(result => {
+                let updateCallSetting = false;
+                if (result.isConfirmed) {
+                  updateCallSetting = true;
+                  providerSettingPayload.override = "true";
+                } else if (result.isDenied) {
+                  updateCallSetting = true;
+                  providerSettingPayload.override = "false";
+                }
+                if (updateCallSetting) this.createProviderSetting(providerSettingPayload);
+              });
+          } else {
+            providerSettingPayload.override = "true";
+            await this.createProviderSetting(providerSettingPayload);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
+      this.isLoading = true;
+      try {
+        const response = await this.$post("setting/profiles", providerSettingPayload);
+        if (response) {
+          this.profileSettingModal?.hide();
           this.activeProfile = response.data;
           this.hideShowDeleteIcon(response.data);
-          (this.$refs.childComponent as any).getAllProfiles();
+          this.childComponent?.getAllProfiles();
           this.profileStore.setActiveProfile(response.data);
-          this.v$.$reset();
+          this.r$.$reset(); // just-saved values are the new baseline
         }
       } catch (e) {
         console.error(e);

@@ -17,6 +17,19 @@ import { pathParams } from '../app/validate.ts'
 // User.validate()
 //
 
+/*
+// types/mongoose-standard-schema.d.ts
+import 'mongoose'; // makes this a module so `declare module` augments rather than redeclares
+
+declare module 'mongoose' {
+  namespace StandardSchemaV1 {
+    interface Props<Output = unknown> {
+      readonly types?: { readonly input: Output; readonly output: Output } | undefined;
+    }
+  }
+}
+*/
+
 const thrw = (e: Error | HTTPResponseError) => {
   throw e
 }

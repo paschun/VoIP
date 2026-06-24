@@ -21,6 +21,7 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx, QueryCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, queryParams } from '../validate.ts'
+import { ack } from '../util/respond.hono.ts'
 import type { Ok, StringBoolean } from '../../shared/api-contracts.ts'
 import type { HardwarekeyListItem } from '../../shared/contracts/hardwarekey.ts'
 import {
@@ -108,8 +109,9 @@ async function createUser(c: JsonCtx<RegisterRequest>) {
   }
 
   const hash = bcrypt.hashSync(password, saltRounds)
-  const saveUser = await User.create({ name: email, email, password: hash })
-  return c.json({ data: userDataResponseGen(saveUser) } satisfies Ok<UserData>, 201)
+  await User.create({ name: email, email, password: hash })
+  // No body: registration isn't authentication (no token issued), so the client just redirects to login.
+  return c.body(null, 201)
 }
 
 /** Verify a TOTP code during the OTP login step. */
@@ -124,7 +126,7 @@ async function verifyOtp(c: JsonCtx<OtpVerifyRequest>) {
 
 /** Whether self-signup is enabled (the `SIGNUPS` env flag, `'on'`/`'off'`). */
 function readSignupOption(c: Context<Env>) {
-  return c.json({ data: env.SIGNUPS } satisfies Ok<string>, 200)
+  return c.json({ data: env.SIGNUPS } satisfies Ok<boolean>, 200)
 }
 
 /** The running build id (see `currentVersion`). */
@@ -169,10 +171,11 @@ async function matchDirectoryName(c: QueryCtx<DirectoryNameQuery>) {
 
 /** Rename the caller (email doubles as username); reject if the new email is taken by another account. */
 async function changeUsername(c: JsonCtx<UpdateUsernameRequest>) {
+  // todo: handle if user tries to change username to the same username. I think right now it would return 409 ?
   const userId = c.get('user').id
   const email = c.req.valid('json').email
   if (await User.findOne({ email: { $eq: email }, _id: { $ne: userId } })) {
-    throw new HTTPException(409, { message: 'username already exists!' })
+    throw new HTTPException(409, { message: 'Username already exists!' })
   }
   const user = await User.findOne({ _id: { $eq: userId } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
@@ -192,7 +195,7 @@ async function changePassword(c: JsonCtx<UpdatePasswordRequest>) {
   }
   user.password = bcrypt.hashSync(password, saltRounds)
   await user.save()
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
+  return ack(c)
 }
 
 /** Confirm the caller's password (gate before showing a protected settings menu). */

@@ -24,8 +24,9 @@ const allowedTypes = /jpeg|jpg|gif|png/ // mirror of the old multer fileFilter (
 // cap that multer's `limits.fileSize` used to; here we read the parsed `File`, re-check type/extension, write it to disk under
 // `uploads/<date>/<hash><ext>`, then persist a Media doc and return it with `media` rewritten to an absolute URL.
 async function uploadMedia(c: Context<Env>) {
+  // todo: this is not a safe parse
   const body = await c.req.parseBody()
-  const file = body['file']
+  const file = body.file
   if (!(file instanceof File)) throw new HTTPException(400, { message: 'No file uploaded!' })
   const ext = path.extname(file.name).toLowerCase()
   if (!allowedTypes.test(file.type) || !allowedTypes.test(ext)) {
@@ -41,9 +42,8 @@ async function uploadMedia(c: Context<Env>) {
   // falsy, so there's no "not created" branch to guard; a real failure throws and `app.onError` logs it once as a 500.
   const media = await Media.create({ media: `uploads/${date}/${filename}`, user: c.get('user').id })
   // just the uploads path is stored in mongo, but the full url is returned to the client
-  media.media = combineURLs(env.BASE_URL, media.media)
-  const data = media.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+  const fullMediaUrl = combineURLs(env.BASE_URL, media.media)
+  return c.json({ data: { media: fullMediaUrl } } satisfies Ok, 200)
 }
 
 // todo: remove all folders older than 7 days

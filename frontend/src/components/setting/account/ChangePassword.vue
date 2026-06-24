@@ -1,84 +1,74 @@
 <template>
     <div class="p-1">
-        <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
+        <form @submit.prevent="changePassword" class="ml-2 mr-2">
           <div class="form-group mb-2 mt-4">
-            <input class="form-control" v-model="user.old_password" name="password" type="password" placeholder="Old Password" :class="{ 'is-invalid': submitted && v$.user.old_password.$error }">
-            <div v-if="submitted && v$.user.old_password.$error" class="invalid-feedback">
-                <span v-if="v$.user.old_password.required.$invalid">old Password is required</span>
+            <input class="form-control" v-model="r$.$value.old_password" type="password" placeholder="Old Password" :class="{ 'is-invalid': r$.old_password.$error }">
+            <div v-if="r$.old_password.$error" class="invalid-feedback">
+                <span v-for="error of r$.old_password.$errors" :key="error">{{ error }}</span>
             </div>
           </div>
 
           <div class="form-group mb-2 mt-4">
-            <input class="form-control" v-model="user.password"  type="password" placeholder="New Password" id="login-input" :class="{ 'is-invalid': submitted && v$.user.password.$error }">
-            <div v-if="submitted && v$.user.password.$error" class="invalid-feedback">
-                <span v-if="v$.user.password.required.$invalid">Password is required</span>
-                <span v-if="v$.user.password.minLength.$invalid">Please enter a valid password</span>
+            <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }">
+            <div v-if="r$.password.$error" class="invalid-feedback">
+                <span v-for="error of r$.password.$errors" :key="error">{{ error }}</span>
             </div>
           </div>
-              <div class="form-group mb-2 mt-2">
-                <input class="form-control" v-model="user.c_password"  type="password" placeholder="Confirm Password" id="clogin-input" :class="{ 'is-invalid': submitted && v$.user.c_password.$error }">
-                <div v-if="submitted && v$.user.c_password.$error" class="invalid-feedback">
-                    <span v-if="v$.user.c_password.required.$invalid">Confirm Password is required<br></span>
-                    <span v-if="v$.user.c_password.sameAsPassword.$invalid">Password and confirm password are not match!</span>
-                </div>
-              </div>
+
+          <div class="form-group mb-2 mt-2">
+            <input class="form-control" v-model="r$.$value.c_password" type="password" placeholder="Confirm Password" :class="{ 'is-invalid': r$.c_password.$error }">
+            <div v-if="r$.c_password.$error" class="invalid-feedback">
+                <span v-for="error of r$.c_password.$errors" :key="error">{{ error }}</span>
+            </div>
+          </div>
             <div class="form-group">
-                <button class="btn btn-success mt-2" type="submit">Change</button>
+                <button class="btn btn-success mt-2" type="submit" :disabled="!r$.$correct">Change</button>
             </div>
         </form>
     </div>
 </template>
+
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { useVuelidate } from '@vuelidate/core'
-import { required, minLength, sameAs } from '@vuelidate/validators'
+import { defineComponent, reactive } from 'vue'
+import { useRegle } from '@regle/core'
+import { required, minLength, sameAs, withMessage } from '@regle/rules'
+import { DetailedError } from 'hono/client'
 import { notifySuccess } from '@/notify.ts'
+import { client, request } from '@/core/rpc.client.ts'
 
 export default defineComponent({
   setup () {
-    return { v$: useVuelidate() }
-  },
-  data () {
-    return {
-      user: {
-        old_password: '',
-        password: '',
-        c_password: ''
+    const form = reactive({ old_password: '', password: '', c_password: '' })
+    const { r$ } = useRegle(form, {
+      old_password: { required: withMessage(required, 'Old Password is required') }, // default: This field is required
+      password: {
+        required: withMessage(required, 'Password is required'),
+        minLength: minLength(6), // default: The value must be at least 6 characters long
       },
-      submitted: false
-    }
-  },
-  validations () {
-    return {
-      user: {
-        old_password: { required },
-        password: { required, minLength: minLength(6) },
-        c_password: { required, sameAsPassword: sameAs(this.user.password) }
+      c_password: {
+        required: withMessage(required, 'Confirm Password is required'),
+        // c_password doesn't need to recheck length because too-short password blocks total validation
+        // backend currently has a length validator on c_password as well
+        sameAs: withMessage(sameAs(() => form.password), 'Password and confirm password do not match!') // default: The value must be equal to the password value
       }
-    }
+    })
+    return { r$ }
   },
   methods: {
-    handleSubmit () {
-      this.submitted = true
-      this.v$.$touch()
-      if (this.v$.$invalid) {
-        return
+    async changePassword () {
+      const { valid, data } = await this.r$.$validate()
+      if (!valid) return
+      try {
+        await request(client.api.auth.password.$put({ json: data }))
+      } catch (err) {
+        // The only field-level server error is a wrong old password (400)
+        if (err instanceof DetailedError) {
+          this.r$.$setExternalErrors({ old_password: [err.detail?.data?.message] })
+        }
+        throw err // skips logic below
       }
-      this.$put('auth/password', this.user)
-        .then((response) => {
-          if (response) {
-            notifySuccess('Password updated successfully')
-            this.submitted = false
-            this.user = {
-              old_password: '',
-              password: '',
-              c_password: ''
-            }
-          }
-        })
-        .catch((e) => {
-          console.error(e)
-        })
+      this.r$.$reset({ toOriginalState: true })
+      notifySuccess('Password updated successfully')
     }
   }
 })

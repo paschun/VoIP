@@ -3,23 +3,23 @@
     <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
       <div class="form-group mt-2">
         <label>{{ mainLabel }}</label>
-        <input class="form-control main-url-control" v-model="form.main_url" readonly />
+        <input class="form-control main-url-control" v-model="mainUrl" readonly />
       </div>
       <div class="form-group mt-2">
         <label>{{ fallbackLabel }}</label>
         <input
           class="form-control"
-          v-model="form.url"
+          v-model="r$.$value"
           :placeholder="fallbackPlaceholder"
-          :class="{ 'is-invalid': submitted && v$.form.url.$error }"
+          :class="{ 'is-invalid': r$.$error }"
         />
-        <div v-if="submitted && v$.form.url.$error" class="invalid-feedback">
-          <span v-if="v$.form.url.required.$invalid">{{ requiredMessage }}</span>
-          <span v-if="v$.form.url.url.$invalid">{{ invalidMessage }}</span>
+        <div v-if="r$.$error" class="invalid-feedback">
+          <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
         </div>
       </div>
       <div class="form-group">
-        <button class="btn btn-success mt-2" type="submit">Update</button>
+        <!-- todo: use $correct here? -->
+        <button class="btn btn-success mt-2" type="submit" :disabled="r$.$invalid">Update</button>
       </div>
     </form>
   </div>
@@ -27,12 +27,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { useVuelidate } from '@vuelidate/core'
+import { useRegle } from '@regle/core'
 import { notifySuccess } from '@/notify.ts'
-import { required, helpers } from '@vuelidate/validators'
-
-// eslint-disable-next-line no-useless-escape
-const url = helpers.regex(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/)
+import { required, withMessage, httpUrl } from '@regle/rules'
 
 /** Read a property out of an object using a dotted path (e.g. "data.data.webhook_url"). */
 const pickPath = (obj: any, path: string): any => path.split('.').reduce((acc, k) => acc?.[k], obj)
@@ -53,8 +50,13 @@ const toOrigin = (str: string): string => {
  */
 export default defineComponent({
   name: 'FallbackUrlSetting',
-  setup () {
-    return { v$: useVuelidate() }
+  setup (props) {
+    const { r$ } = useRegle('', {
+      required: withMessage(required, () => props.requiredMessage), // default: This field is required
+      // keyed `validUrl`, not `url`, so it doesn't collide with Regle's built-in `url` rule name
+      validUrl: withMessage(httpUrl, () => props.invalidMessage) // default: The value is not a valid http URL address
+    })
+    return { r$ }
   },
   props: {
     /** Resource base path; GET `${resource}/${settingId}` loads current values, PUT `${resource}/${settingId}` saves. */
@@ -77,13 +79,9 @@ export default defineComponent({
   },
   data () {
     return {
-      form: { url: '', main_url: '' },
-      submitted: false,
+      mainUrl: '',
       setting: null as any
     }
-  },
-  validations: {
-    form: { url: { required, url } }
   },
   mounted () {
     this.getCallSetting()
@@ -99,24 +97,24 @@ export default defineComponent({
           const main = pickPath(response, this.mainPath)
           const fallback = pickPath(response, this.fallbackPath)
           const normalize = (v: any) => this.normalizeHost && v ? toOrigin(v) : v
-          this.form.main_url = normalize(main) ?? ''
-          if (fallback) this.form.url = normalize(fallback)
+          this.mainUrl = normalize(main) ?? ''
+          if (fallback) this.r$.$value = normalize(fallback)
         })
         .catch((e) => console.error(e))
     },
-    handleSubmit () {
-      this.submitted = true
-      this.v$.$touch()
-      if (this.v$.$invalid) return
+    async handleSubmit () {
+      const { valid, data } = await this.r$.$validate()
+      if (!valid) return
 
-      const submitUrl = this.normalizeSubmit ? toOrigin(this.form.url) : this.form.url
-      this.$patch(`${this.resource}/${this.setting}`, { fallbackUrl: submitUrl })
-        .then((response) => {
-          if (!response) return
-          notifySuccess(this.successMessage)
-          this.getCallSetting()
-        })
-        .catch((e) => console.error(e))
+      const submitUrl = this.normalizeSubmit ? toOrigin(data) : data
+      try {
+        const response = await this.$patch(`${this.resource}/${this.setting}`, { fallbackUrl: submitUrl })
+        if (!response) return
+        notifySuccess(this.successMessage)
+        this.getCallSetting()
+      } catch (e) {
+        console.error(e)
+      }
     }
   }
 })

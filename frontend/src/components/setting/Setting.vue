@@ -6,8 +6,8 @@
             <ul class="list-group">
               <li class="list-group-item" @click="enableMenu('email')" style="cursor: pointer">
                 <i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
-              <!-- #modal-1 is currently in NumberList.vue -->
-              <li class="list-group-item" v-b-modal.modal-1 style="cursor: pointer">
+              <!-- #profile-setting-modal lives in NumberList.vue -->
+              <li class="list-group-item" v-b-modal.profile-setting-modal style="cursor: pointer">
                 <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
               </li>
               <li class="list-group-item" @click="enableMenu('account')" style="cursor: pointer">

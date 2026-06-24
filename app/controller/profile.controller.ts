@@ -25,7 +25,7 @@ async function createProfile(c: JsonCtx<CreateProfileRequest>) {
   if (exists) throw new HTTPException(409, { message: 'Profile already exists!' })
   const saved = await Setting.create({ user, profile })
   const data = saved.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+  return c.json({ data } satisfies Ok, 201)
 }
 
 export const profileWithUnread = (userId: string, profileId: string, onFail?: () => NativeError) => (

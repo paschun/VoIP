@@ -13,7 +13,7 @@
       v-if="vw < 576"
       class="d-sm-none"
       id="sidebar-no-header"
-      ref="mySidebar2"
+      ref="mobileSidebar"
       aria-labelledby="sidebar-no-header-title"
       no-header
       shadow
@@ -99,7 +99,7 @@
         <div
           id="drop-area"
           style="z-index: 1"
-          :class="uploadedImages.length > 0 ? 'activeImageArea' : 'inactive'"
+          :class="uploadedImages.length ? 'activeImageArea' : 'inactive'"
         >
           <form class="my-form">
             <p>
@@ -127,7 +127,7 @@
           <div class="row" id="gallery">
             <div class="col-lg-4" v-for="image in uploadedImages" :key="image">
               <img style="width: 150px" :src="image" />
-              <a href="javascript:void(0)" @click="removeFromPrevie(image)">
+              <a href="javascript:void(0)" @click="removeFromPreview(image)">
                 <span
                   class="
                     start-100
@@ -164,14 +164,14 @@
               <div
                 class="chat-bubble"
                 v-bind:class="{
-                  me: message.type == 'send',
-                  you: message.type == 'receive',
+                  me: message.type === 'send',
+                  you: message.type === 'receive',
                 }"
               >
                 <div
                   v-bind:class="{
-                    'my-mouth': message.type == 'send',
-                    'your-mouth': message.type == 'receive',
+                    'my-mouth': message.type === 'send',
+                    'your-mouth': message.type === 'receive',
                   }"
                 ></div>
                 <div class="content">
@@ -243,7 +243,7 @@
     </section>
     <!-- modal -->
     <b-modal
-      ref="my-modal2"
+      ref="composeMsgModal"
       id="modal-2"
       size="lg"
       title="Compose Message"
@@ -267,7 +267,7 @@
         <div class="form-group mt-4">
           <vue-tags-input
             class="form-control chat-input"
-            v-model="sms.numbers"
+            v-model="r$.$value.sms.numbers"
             :tags="tags"
             placeholder="Enter phone number"
             @tags-changed="onTagsChanged"
@@ -280,16 +280,16 @@
           <textarea
             rows="8"
             class="form-control chat-input"
-            v-model="sms.message"
+            v-model="r$.$value.sms.message"
             placeholder="Type Message here"
-            :class="{ 'is-invalid': submitted2 && v$.sms.message.$error }"
+            :class="{ 'is-invalid': submitted2 && r$.sms.message.$error }"
           >
           </textarea>
           <div
-            v-if="submitted2 && v$.sms.message.$error"
+            v-if="submitted2 && r$.sms.message.$error"
             class="invalid-feedback"
           >
-            <span v-if="v$.sms.message.required.$invalid">Message is required</span>
+            <span v-for="error of r$.$errors.sms.message" :key="error">{{ error }}</span>
           </div>
         </div>
         <!-- send images over MMS -->
@@ -330,15 +330,10 @@
 </template>
 
 <script lang="ts">
-/**
- * Backend endpoints used (this.$post/$get -> core/api.plugin.ts):
- *   POST setting/message-list-delete   deletechat()         { user, number }
- *   POST setting/send-sms              commonSendMessage()  { user, numbers, message, profile, media }
- *   POST setting/message-list          showChat()           { user, number: { telnyx_number, _id }, profile }
- */
-import { defineComponent } from "vue";
-import { useVuelidate } from "@vuelidate/core";
-import { required } from "@vuelidate/validators";
+/** Main messaging view: conversation list (NumberList), the chat thread, the compose SMS/MMS modal, and the call tab. */
+import { defineComponent, useTemplateRef } from "vue";
+import { useRegle } from "@regle/core";
+import { required, withMessage } from "@regle/rules";
 import VueTagsInput from '@sipec/vue3-tags-input'
 import VueSelect, { type Option } from 'vue3-select-component'
 import { io } from "socket.io-client";
@@ -347,12 +342,18 @@ import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
+import type { BModal, BOffcanvas } from "bootstrap-vue-next";
 import { useProfileStore } from "@/stores/profile.ts";
 import { useUserStore } from "@/stores/user.ts";
 import { EventBus } from "@/event-bus.ts";
 import { combineURLs, contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
 import type { Message } from '@shared/api-contracts.ts';
 import { notifyError, notifyInfo } from '@/notify.ts';
+import type { client } from '@/core/rpc.client.ts'
+import type { InferResponseType } from 'hono/client'
+import type { SuccessStatusCode } from 'hono/utils/http-status'
+
+type UploadResponseSuccess = InferResponseType<typeof client.api.media.uploads.$post, SuccessStatusCode>
 
 function preventDefaults(e: Event) {
   e.preventDefault();
@@ -368,7 +369,7 @@ function getVw(): number {
 
 function getVh(): number {
   return Math.round(Math.max(
-    (document.documentElement as any).innerHeight ?? 0,
+    document.documentElement.clientHeight ?? 0,
     window.innerHeight ?? 0
   ));
 }
@@ -400,7 +401,28 @@ export default defineComponent({
     'v-select': VueSelect,
   },
   setup() {
-    return { v$: useVuelidate(), profileStore: useProfileStore(), userStore: useUserStore() };
+    const { r$ } = useRegle(
+      { sms: { numbers: "", message: "" } },
+      {
+        sms: {
+          numbers: { required },
+          message: { required: withMessage(required, "Message is required") },
+        },
+      }
+    );
+    const callView = useTemplateRef<InstanceType<typeof CallView>>("callView");
+    const numberList = useTemplateRef<InstanceType<typeof NumberList>>("numberList");
+    const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>("mobileSidebar");
+    const composeMsgModal = useTemplateRef<InstanceType<typeof BModal>>("composeMsgModal");
+    return {
+      r$,
+      profileStore: useProfileStore(),
+      userStore: useUserStore(),
+      callView,
+      numberList,
+      mobileSidebar,
+      composeMsgModal
+    };
   },
   data() {
     return {
@@ -409,7 +431,7 @@ export default defineComponent({
       selectedContact: "",
       dropArea: null as any,
       progressBar: null as any,
-      uploadProgress: [] as number[],
+      uploadProgress: [] as number[], // numbers from 0 to 100
       uploadedImages: [] as any[],
       activeChatData: false,
       activeProfile: null as any,
@@ -417,10 +439,6 @@ export default defineComponent({
       // which runs over the SMS Message model (app/model/message.model.ts)
       activeChat: "" as any,
       tags: [] as any[],
-      sms: {
-        numbers: "",
-        message: "",
-      },
       chatListLoader: false,
       submitted2: false,
       messages: [] as Message[],
@@ -453,12 +471,6 @@ export default defineComponent({
       }, 1500);
     },
   },
-  validations: {
-    sms: {
-      numbers: { required },
-      message: { required },
-    },
-  },
   created() {
     window.addEventListener("resize", this.updateVw, { passive: true });
   },
@@ -482,7 +494,7 @@ export default defineComponent({
     const socket = io(this.baseurl, { transports: ["websocket"] });
     this.socket = socket;
     this.socket.on("new_message", () => {
-      (this.$refs.numberList as any).getNumberList();
+      this.numberList?.getNumberList();
       if (this.activeChatData) {
         this.showChat(this.activeChat);
       }
@@ -493,10 +505,10 @@ export default defineComponent({
       if (this.activeChatData) {
         this.showChat(this.activeChat);
       } else {
-        (this.$refs.numberList as any).getOneProfile();
-        (this.$refs.numberList as any).refreshProfile();
+        this.numberList?.getOneProfile();
+        this.numberList?.refreshProfile();
       }
-      (this.$refs.numberList as any).getNumberList();
+      this.numberList?.getNumberList();
       this.notifyMe(data.number, data.message);
     });
     this.dropArea = document.getElementById("drop-area1");
@@ -504,12 +516,12 @@ export default defineComponent({
       this.dropArea.addEventListener(eventName, preventDefaults, false);
     });
     ["dragenter", "dragover"].forEach((eventName) => {
-      this.dropArea.addEventListener(eventName, this.highlight, false);
+      this.dropArea.addEventListener(eventName, this.highlight.bind(this), false);
     });
     ["dragleave", "drop"].forEach((eventName) => {
-      this.dropArea.addEventListener(eventName, this.unhighlight, false);
+      this.dropArea.addEventListener(eventName, this.unhighlight.bind(this), false);
     });
-    this.dropArea.addEventListener("drop", this.handleDrop, false);
+    this.dropArea.addEventListener("drop", this.handleDrop.bind(this), false);
     this.progressBar = document.getElementById("progress-bar");
   },
   methods: {
@@ -522,7 +534,7 @@ export default defineComponent({
     },
     makeCall() {
       if (this.activeChat) {
-        (this.$refs.callView as any).makeCall(this.activeChat._id);
+        this.callView?.makeCall(this.activeChat._id);
       }
     },
     contactChangeEvent(option: Option<string>) {
@@ -547,66 +559,76 @@ export default defineComponent({
     },
     updateProgress(fileNumber: number, percent: number) {
       this.uploadProgress[fileNumber] = percent;
-      const total =
-        this.uploadProgress.reduce((tot, curr) => tot + curr, 0) /
-        this.uploadProgress.length;
+      // this is incorrect because it averages percentages, when will be wrong when there are some small and some big files. need to track bytes and totals separately
+      const total = this.uploadProgress.reduce((tot, curr) => tot + curr, 0) / this.uploadProgress.length;
       this.progressBar.value = total;
     },
-    handleDrop(e: any) {
+    handleDrop(e: DragEvent) {
       const dt = e.dataTransfer;
-      const files = dt.files;
-
-      this.handleFiles(files);
+      if (!dt) throw new Error('DataTransfer should never be null when dispatched by browser')
+      this.handleFiles(dt.files);
     },
     onFilesPick(e: Event, modelFile = false) {
-      this.handleFiles((e.target as HTMLInputElement).files, modelFile);
+      // todo: consider using v-model instead of change events: https://vuejs.org/guide/essentials/forms.html
+      const target = e.target as HTMLInputElement
+      // target.files will always be non-null, there is no way for to unselect files in a way that fires a change event.
+      // even if in code, we set `target.value = null`, it will not fire a change event
+      if (!target.files) return
+      this.handleFiles(target.files, modelFile);
     },
-    handleFiles(files: any, modelFile = false) {
+    handleFiles(fileList: FileList, modelFile = false) {
+      const files = Object.freeze([...fileList]) // turn fileList into a normal array so we can .map/.forEach on it
       if (modelFile) {
         this.modelMms = true;
-        const filesData: any[] = [];
-        for (let i = 0; i < files.length; i++) {
-          filesData.push(files[i].name);
-        }
-        this.modelFileValue = filesData.join();
+        this.modelFileValue = files.map(f => f.name).join()
       } else {
         this.modelMms = false;
       }
-      files = [...files];
       this.initializeProgress(files.length);
-      files.forEach(this.uploadFile.bind(this));
+      // todo: get path with hono RPC $path() or $url() - client.api...$url()
+      files.forEach((f, i) => this.uploadFile<UploadResponseSuccess>(combineURLs(this.baseurl, '/api/media/uploads'), f, (e: ProgressEvent<XMLHttpRequestEventTarget>) => {
+        this.updateProgress(i, e.lengthComputable ? (e.loaded * 100) / e.total : 100) // fallback to 100%
+      }).then(res => this.uploadedImages.push(res.data.media)))
     },
-    removeFromPrevie(image: any) {
-      const images = [];
-      for (let i = 0; i < this.uploadedImages.length; i++) {
-        if (this.uploadedImages[i] !== image) {
-          images.push(this.uploadedImages[i]);
-        }
-      }
-      this.uploadedImages = images;
+    removeFromPreview(image: any) {
+      this.uploadedImages = this.uploadedImages.filter((img) => img !== image);
       if (this.uploadedImages.length <= 0) {
         document.getElementById("drop-area")!.style.display = "none";
       }
     },
-    uploadFile(file: any, i: number) {
-      const fileUploadURL = combineURLs(this.baseurl, '/api/media/uploads');
+    uploadFile<T>(url: string, file: File, onProgress: (e: ProgressEvent<XMLHttpRequestEventTarget>) => void): Promise<T> {
+      // todo: this can be extracted out of the view layer
+      const { promise, resolve, reject } = Promise.withResolvers<T>()
       const xhr = new XMLHttpRequest();
-      const formData = new FormData();
-      xhr.open("POST", fileUploadURL, true);
-      xhr.setRequestHeader("token", this.userStore.token);
-      xhr.upload.addEventListener("progress", (e) => {
-        this.updateProgress(i, (e.loaded * 100.0) / e.total || 100);
-      });
+      xhr.responseType = 'json'; // browser parses the body for you
+      // once you set a non-default responseType, accessing xhr.responseText throws an InvalidStateError
 
-      xhr.addEventListener("readystatechange", () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          this.uploadedImages.push(`${response.data.media}`);
+      const formData = new FormData();
+
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("token", this.userStore.token); // set-header must be after .open()
+
+      xhr.upload.addEventListener("progress", onProgress);
+      
+      xhr.addEventListener('load', () => {
+        // With `xhr.responseType = 'json'`, If the server returns a body that isn't valid JSON (an HTML error page, an empty body, etc.),
+        // the browser doesn't throw - it just sets xhr.response to null
+        if (xhr.response === null) {
+          reject(new Error('Media upload: Expected JSON response but got an unparseable body'));
+        } else if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(xhr.response as T); // not a string, already a parsed object because of `xhr.responseType = 'json'`
+        } else {
+          reject(new Error(xhr.response.message));
         }
       });
+      
+      xhr.addEventListener('error', () => reject(new Error('Network error on media upload'))); // ProgressEvent
 
-      formData.append("file", file);
+      // todo: FormData only needed to send extra fields alongside the file. can remove FormData and just send(file)
+      formData.append("file", file); 
       xhr.send(formData);
+      
+      return promise
     },
     highlight() {
       document.getElementById("drop-area")!.style.display = "block";
@@ -668,7 +690,7 @@ export default defineComponent({
       try {
         await this.$del("setting/conversations/" + encodeURIComponent(this.activeChat._id));
         if (this.activeChatData) this.showChat(this.activeChat);
-        (this.$refs.numberList as any).getNumberList();
+        this.numberList?.getNumberList();
       } catch (e) {
         console.error(e);
       }
@@ -700,19 +722,19 @@ export default defineComponent({
         .then((response) => {
           if (response) {
             this.messageBody = "";
-            this.sms.numbers = "";
-            this.sms.message = "";
+            this.r$.$value.sms.numbers = "";
+            this.r$.$value.sms.message = "";
             this.uploadedImages = [];
             this.modelFileValue = "";
             document.getElementById("drop-area")!.style.display = "none";
             this.tags = [];
-            (this.$refs.numberList as any).getNumberList();
+            this.numberList?.getNumberList();
             if (this.activeChatData) {
               this.showChat(this.activeChat);
             }
-            (this.$refs["my-modal2"] as any).hide();
+            this.composeMsgModal?.hide();
             if (this.vw < 576) {
-              (this.$refs["mySidebar2"] as any).hide();
+              this.mobileSidebar?.hide();
             }
           }
           this.isLoading = false;
@@ -729,7 +751,7 @@ export default defineComponent({
       document.getElementById("drop-area")!.style.display = "none";
       this.uploadedImages = [];
       if (this.vw < 576) {
-        (this.$refs["mySidebar2"] as any).hide();
+        this.mobileSidebar?.hide();
       }
     },
     showChat(activechat: any) {
@@ -749,15 +771,17 @@ export default defineComponent({
               scroll.animate({ scrollTop: scroll.scrollHeight });
               this.chatListLoader = false;
             }, 1000);
-            (this.$refs.numberList as any).refreshProfile();
-            (this.$refs.numberList as any).getOneProfile();
+            this.numberList?.refreshProfile();
+            this.numberList?.getOneProfile();
           }
         })
         .catch((e) => console.error(e));
     },
-    handleSubmit2() {
+    async handleSubmit2() {
       this.submitted2 = true;
-      this.v$.$touch();
+      // todo: validation in this is odd
+      await this.r$.$validate();
+
       this.isLoading = true;
       if (this.tags.length <= 0) {
         notifyError("please enter number!", "Oops...");
@@ -765,8 +789,8 @@ export default defineComponent({
       }
       const numbers = this.tags.map(({ text }) => text)
 
-      if (!this.v$.sms.message.$error || this.uploadedImages.length > 0) {
-        this.commonSendMessage(numbers, this.sms.message);
+      if (!this.r$.sms.message.$error || this.uploadedImages.length > 0) {
+        this.commonSendMessage(numbers, this.r$.$value.sms.message);
       } else {
         notifyError("Message or file required!", "Oops...");
         this.isLoading = false;

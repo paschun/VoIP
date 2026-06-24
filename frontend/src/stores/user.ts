@@ -11,7 +11,9 @@ type UserData = InferResponseType<typeof client.api.auth.username.$patch, Succes
 
 /** Signed-in user + auth token, persisted to localStorage (reactive, survives refresh). Single source for both; written/cleared together. */
 export const useUserStore = defineStore('user', () => {
-  const userData = useLocalStorage<UserData | null>('userdata', null, { serializer: StorageSerializers.object })
+  const userData = useLocalStorage<UserData | null>('user-data', null, { serializer: StorageSerializers.object })
+
+  // todo: activeUser
 
   const isLoggedIn = computed(() => token.value.length > 0)
 

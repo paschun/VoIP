@@ -5,7 +5,7 @@
     "typeAware": true
   },
   "rules": {
-    "eqeqeq": [ "error", "always" ],
+    "eqeqeq": "error",
     "no-restricted-globals": [ "error",
       { "name": "isNaN", "message": "Use Number.isNaN instead." },
       { "name": "isFinite", "message": "Use Number.isFinite instead." }
@@ -15,6 +15,8 @@
     // "typescript/no-non-null-assertion": "warn",
     // "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
     // "import/no-cycle": "error",
+    "no-redeclare": "error",
+    "no-param-reassign": "error",
 
     "no-var": "error",
     // enable these and more: migrated-rules.txt

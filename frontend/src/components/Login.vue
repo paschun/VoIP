@@ -3,17 +3,16 @@
       <div class="login-box dark-mode p-3">
           <theme-button id-hide="false" />
           <h1 class="dark-mode">Login</h1>
-          <form @submit.prevent="handleSubmit" class="ml-2 mr-2" v-if="!otpScreen && !keyScreen">
+          <form @submit.prevent="submitLogin" class="ml-2 mr-2" v-if="!otpScreen && !keyScreen">
             <div class="form-group mt-4">
               <b-input-group>
                 <b-input-group-text>
                   <i-bi-person-fill />
                 </b-input-group-text>
-              <input class="form-control chat-input" type="text" placeholder="Username" v-model="user.email" :class="{ 'is-invalid': submitted && v$.user.email.$error }" title="Enter Username">
+              <input class="form-control chat-input" type="text" placeholder="Username" v-model="loginR$.$value.email" :class="{ 'is-invalid': loginR$.email.$error }" title="Enter Username">
                </b-input-group>
-              <div v-if="submitted && v$.user.email.$error" class="invalid-feedback">
-                <span v-if="v$.user.email.required.$invalid">Username is required</span>
-                <span v-if="v$.user.email.minLength.$invalid">Username is invalid</span>
+              <div v-if="loginR$.email.$error" class="invalid-feedback">
+                <span v-for="error of loginR$.$errors.email" :key="error">{{ error }}</span>
               </div>
             </div>
             <div class="form-group mb-2 mt-4">
@@ -21,11 +20,10 @@
                 <b-input-group-text>
                   <i-bi-shield-lock />
                 </b-input-group-text>
-              <input class="chat-input form-control" v-model="user.password"  type="password" placeholder="Password" :class="{ 'is-invalid': submitted && v$.user.password.$error }" title="Enter Password">
+              <input class="chat-input form-control" v-model="loginR$.$value.password"  type="password" placeholder="Password" :class="{ 'is-invalid': loginR$.password.$error }" title="Enter Password">
              </b-input-group>
-              <div v-if="submitted && v$.user.password.$error" class="invalid-feedback">
-                  <span v-if="v$.user.password.required.$invalid">Password is required</span>
-                  <span v-if="v$.user.password.minLength.$invalid">Password is invalid</span>
+              <div v-if="loginR$.password.$error" class="invalid-feedback">
+                  <span v-for="error of loginR$.$errors.password" :key="error">{{ error }}</span>
               </div>
             </div>
             <div class="d-grid">
@@ -38,19 +36,19 @@
               New registrations are disabled
             </div>
           </form>
-          <form class="ml-2 mr-2 text-center" v-bind:class="{ 'd-none': !otpScreen }" @submit.prevent="handleSubmit2">
+          <form class="ml-2 mr-2 text-center" v-bind:class="{ 'd-none': !otpScreen }" @submit.prevent="verifyOtp">
             <div class="form-group my-4">
               <label>Enter Verification Code</label>
-              <input class="totp" v-model="otpForm.otp"  type="form-control" maxlength="6" placeholder="000000" :class="{ 'is-invalid': submitted2 && otpError }" @keyup.enter="handleSubmit2($event)">
-              <div v-if="submitted2 && otpError" class="invalid-feedback">
-                  <span>Verification code is required</span>
+              <input class="totp" v-model="otpR$.$value.otp" type="text" maxlength="6" placeholder="000000" :class="{ 'is-invalid': otpR$.otp.$error }" @keyup.enter="verifyOtp">
+              <div v-if="otpR$.otp.$error" class="invalid-feedback">
+                  <span v-for="error of otpR$.$errors.otp" :key="error">{{ error }}</span>
               </div>
             </div>
             <div class="text-center">
-              <button class="btn btn-success m-3 px-5" type="button" v-on:click="handleSubmit2($event)" id="login-button2">Verify</button>
+              <button class="btn btn-success m-3 px-5" type="button" @click="verifyOtp" id="login-button2">Verify</button>
             </div>
             <div class="p-2">
-                 <a href="javascript:void(0)" @click="chooseMethods('show_method')">Choose A Different Verification Method</a>
+                 <button type="button" class="btn btn-link p-0" @click="chooseMethods('show_method')">Choose A Different Verification Method</button>
             </div>
           </form>
 
@@ -64,7 +62,7 @@
                     </div>
                     <div class="border-dark px-2" style="border-left: 1px solid;">
                       <h4>Security Key</h4>
-                      <p>Use a hardwaree security key that is paired with your account. </p>
+                      <p>Use a hardware security key that is paired with your account.</p>
                     </div>
                   </div>
                 </div>
@@ -83,7 +81,7 @@
                 </div>
               </div>
               <div class="p-2">
-                <a class="mt-2" href="javascript:void(0)" @click="chooseMethods('Cancel')">Cancel</a>
+                <button type="button" class="btn btn-link p-0 mt-2" @click="chooseMethods('Cancel')">Cancel</button>
               </div>
             </div>
             <div v-else>
@@ -99,7 +97,7 @@
                   </div>
                 </div>
               </div>
-              <a href="javascript:void(0)" @click="chooseMethods('show_method')">Choose A Different Verification Method</a>
+              <button type="button" class="btn btn-link p-0" @click="chooseMethods('show_method')">Choose A Different Verification Method</button>
             </div>
           </form>
 
@@ -117,16 +115,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
-import { useVuelidate } from '@vuelidate/core'
-import { required, minLength } from '@vuelidate/validators'
+import { useRegle } from '@regle/core'
+import { required, minLength, withMessage } from '@regle/rules'
 import { publicKeyCredentialToJSON } from '@/helper.ts'
 import { useUserStore } from '@/stores/user.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { notifyError } from '@/notify.ts'
 import { client, request } from '@/core/rpc.client.ts'
 import type { RouteLocationRaw } from 'vue-router'
+
+interface HardwareKey {
+  _id: string
+  title: string
+}
 
 /** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
 const preformatGetAssertReq = (getAssert: any): any => {
@@ -141,37 +144,29 @@ export default defineComponent({
 name: 'LoginView',
 components: { ThemeButton },
 setup () {
-  return { v$: useVuelidate(), userStore: useUserStore() }
+  const formState = ref({ email: '', password: '' })
+  const { r$: loginR$ } = useRegle(formState, {
+    email: { required: withMessage(required, 'Username is required'), minLength: withMessage(minLength(2), 'Username too short') },
+    password: { required: withMessage(required, 'Password is required'), minLength: withMessage(minLength(6), 'Password too short') }
+  })
+  const { r$: otpR$ } = useRegle({ otp: '' }, {
+    otp: { required: withMessage(required, 'Verification code is required') }
+  })
+  return { loginR$, otpR$, formState, userStore: useUserStore() }
 },
 data () {
   return {
     otpScreen: false,
-    otpError: false,
     signUpOption: false,
     versionOption: 'v1.0.0',
     activeUser: {
       user: null as any,
       token: ''
     },
-    user: {
-      email: '',
-      password: ''
-    },
-    otpForm: {
-      otp: ''
-    },
-    submitted: false,
-    submitted2: false,
     keyScreen: false,
-    keys: [] as any[],
+    keys: [] as HardwareKey[],
     mfa: false,
     verification_method: false
-  }
-},
-validations: {
-  user: {
-    email: { required, minLength: minLength(2) },
-    password: { required, minLength: minLength(6) }
   }
 },
 computed: {
@@ -205,21 +200,17 @@ methods: {
   },
   async getSignup () {
     const res = await request(client.api.auth['signup-enabled'].$get())
-    this.signUpOption = res.data === 'on'
+    this.signUpOption = res.data
   },
   async getVersion () {
     const res = await request(client.api.auth.version.$get())
     this.versionOption = res.data
   },
-  handleSubmit (e: Event) {
-    e.preventDefault()
-    this.submitted = true
-    this.v$.$touch()
-    if (this.v$.$invalid) {
-      return
-    }
+  async submitLogin () {
+    const { valid, data } = await this.loginR$.$validate()
+    if (!valid) return
 
-    this.$post('auth/login', this.user)
+    this.$post('auth/login', data)
       .then((response) => {
         if (response) {
           this.keys = response.hardwarekey
@@ -242,7 +233,7 @@ methods: {
       })
       .catch(() => {})
   },
-  async verifyKey (key: any) {
+  async verifyKey (key: HardwareKey) {
     let getAssertionChallenge
     try {
       getAssertionChallenge = await this.$post('hardwarekey/authentication/challenge', { user: this.activeUser.user._id, title: key.title })
@@ -267,28 +258,20 @@ methods: {
       notifyError('Login failed with security key.', 'Key!')
     }
   },
-  handleSubmit2 (e?: Event) {
-    if (e?.preventDefault) {
-      console.log("Prevented default!")
-      e.preventDefault();
-    }
-    this.submitted2 = true
-    if (this.otpForm.otp.trim() !== '') {
-      this.$post('auth/otp/verify', { user: this.activeUser.user._id, verification_code: this.otpForm.otp })
-        .then((response) => {
-          if (response) {
-            if (response.status === 'true') {
-              this.userStore.login(this.activeUser.user, this.activeUser.token)
-              this.activeUser.token = ''
-              this.activeUser.user = null
-              this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-            }
-          }
-        })
-        .catch(() => {})
-    } else {
-      this.otpError = true
-    }
+  async verifyOtp () {
+    const { valid } = await this.otpR$.$validate()
+    if (!valid) return
+
+    this.$post('auth/otp/verify', { user: this.activeUser.user._id, verification_code: this.otpR$.$value.otp })
+      .then((response) => {
+        if (response?.status === 'true') {
+          this.userStore.login(this.activeUser.user, this.activeUser.token)
+          this.activeUser.token = ''
+          this.activeUser.user = null
+          this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
+        }
+      })
+      .catch(() => {})
   },
   chooseMethods (method: string) {
     if (method === 'hardware_key') {
@@ -306,10 +289,7 @@ methods: {
         user: null,
         token: ''
       }
-      this.user = {
-        email: '',
-        password: ''
-      }
+      this.formState = { email: '', password: '' }
     } else if (method === 'mfa') {
       this.keyScreen = false
       this.otpScreen = true
