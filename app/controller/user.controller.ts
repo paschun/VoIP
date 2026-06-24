@@ -2,7 +2,6 @@ import { execSync } from 'node:child_process'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import bcrypt from 'bcryptjs'
-import { SignJWT } from 'jose'
 import Speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
 
@@ -36,12 +35,9 @@ import {
   type UserData, type LoginResponse, type OtpVerifyResponse, type MfaQrResponse,
   type CheckDirectoryName, type CheckDirectoryNameResponse, type UpdateAvailableResponse,
 } from '../../shared/contracts/auth.ts'
+import { signToken } from '../helper/common.helper.ts'
 
 const saltRounds = 10
-// HS256 algo expects a key size of >= 256 Bits == 32 chars.
-// Uint8Array.BYTES_PER_ELEMENT === 1 , each character becomes a single element in byte array, so each char is 8 bits.
-// 256 bits / 8 bits per char == 32 chars
-const joseSecret = new TextEncoder().encode(env.COOKIE_KEY)
 const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_page=1'
 
 /** The user fields echoed to the client (also persisted in the `userdata` cookie). */
@@ -68,15 +64,7 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
     throw new HTTPException(401, { message: 'Unauthorized Access!' })
   }
 
-  // https://github.com/panva/jose/blob/HEAD/docs/jwt/sign/classes/SignJWT.md
-  // HS256 requires a 256-bit (32-byte) secret (symmetric encryption)
-  const token = await new SignJWT({ id: user.id, name: user.name })
-    .setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(joseSecret)
-  // 3 parts (b64 encoded) : header.payload.signature
-  // decoded JOSE (JSON Object Signing and Encryption) header: { "alg": "HS256" }
-  // decoded payload:{ "id": "6322cb0813d8a71034f6efcc", "name": "example", "exp": 1782625311 }
-  // signature: MAC of the encoded JOSE Header and encoded JWS Payload with the HMAC SHA-256 algorithm and base64url encoding the HMAC value
-
+  const token = await signToken(user.id, user.name)
   user.token = token
   await user.save()
 

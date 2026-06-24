@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import { testClient } from 'hono/testing'
 
 import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
-import { signToken } from './helpers/auth.ts'
+import { signToken } from '../app/helper/common.helper.ts'
 import { hardwarekeyRoutes } from '../app/routes/hardwarekey.route.ts'
 import Hardwarekey from '../app/model/hardwarekey.model.ts'
 
@@ -16,7 +16,7 @@ let auth: { headers: { token: string } }
 
 beforeAll(async () => {
   await connectMemoryDb()
-  auth = { headers: { token: await signToken(userId) } }
+  auth = { headers: { token: await signToken(userId, 'Test User') } }
 })
 afterAll(disconnectMemoryDb)
 afterEach(clearDb)

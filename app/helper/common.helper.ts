@@ -1,7 +1,11 @@
+import { SignJWT } from 'jose'
+import { env } from '../../config/env.ts'
+
 export const uploadFolderFormat = 'YYYYMMDD'
 
-// Join path segments into one URL, trimming the slashes at each seam so there are no doubles.
-// The first segment keeps any leading slash and the last keeps any trailing slash.
+/** Join path segments into one URL, trimming the slashes at each seam so there are no doubles.
+ * The first segment keeps any leading slash and the last keeps any trailing slash.
+ */
 const combineURLs = (...urls: string[]): string => {
     if (urls.length === 0) return '';
     return urls.reduce((base, segment) => {
@@ -23,6 +27,25 @@ const normalizeNumber = (raw: string): string => {
     return digits
 }
 
+/** HS256 algo expects a key size of >= 256 Bits == 32 chars.
+ * Uint8Array.BYTES_PER_ELEMENT === 1 , each character becomes a single element in byte array, so each char is 8 bits.
+ * 256 bits / 8 bits per char == 32 chars
+ */
+const jwtSecret = new TextEncoder().encode(env.COOKIE_KEY)
+
+/** Sign a JWT. Only `id` matters to the profile/hardwarekey controllers.
+ * 
+ * https://github.com/panva/jose/blob/HEAD/docs/jwt/sign/classes/SignJWT.md
+ * HS256 requires a 256-bit (32-byte) secret (symmetric encryption)
+ * 3 parts (b64 encoded) : header.payload.signature
+ * decoded JOSE (JSON Object Signing and Encryption) header: { "alg": "HS256" }
+ * decoded payload:{ "id": "6322cb0813d8a71034f6efcc", "name": "example", "exp": 1782625311 }
+ * signature: MAC of the encoded JOSE Header and encoded JWS Payload with the HMAC SHA-256 algorithm and base64url encoding the HMAC value
+ */
+const signToken = (id: string, name: string): Promise<string> => (
+  new SignJWT({ id, name }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(jwtSecret)
+)
+
 export {
-    combineURLs, normalizeNumber,
+    combineURLs, normalizeNumber, signToken, jwtSecret
 }

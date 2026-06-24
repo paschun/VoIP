@@ -1,10 +1,8 @@
 import { jwtVerify } from 'jose'
-import { env } from '../../config/env.ts'
 import { factory } from '../factory.ts'
 import type { AuthUser } from '../factory.ts'
 import type { ApiError } from '../../shared/api-contracts.ts'
-
-const joseSecret = new TextEncoder().encode(env.COOKIE_KEY)
+import { jwtSecret } from '../helper/common.helper.ts'
 
 // Verifies the JWT in the `token` header (jose), stashes the payload as `c.set('user', …)` for downstream handlers,
 // and short-circuits with a 401 carrying the shared `ApiError` shape (`{ message }`) -- the frontend's `handleError`
@@ -14,7 +12,7 @@ export const auth = factory.createMiddleware(async (c, next) => {
   const token = c.req.header('token')
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, joseSecret)
+      const { payload } = await jwtVerify(token, jwtSecret)
       // todo: no cast
       c.set('user', payload as unknown as AuthUser)
       await next()
