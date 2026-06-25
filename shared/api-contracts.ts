@@ -34,7 +34,7 @@ export type ApiResult<T> = (Ok<T> & { ok: true }) | (ApiError & { ok: false; sta
 
 /**
  * Several Mongoose models persist booleans as the string enum `'true' | 'false'`
- * (e.g. `Setting.emailnotification`, `User.mfa`, `Message.isview`). Type them as
+ * (e.g. `Setting.emailnotification`, `Message.isview`). Type them as
  * this so the frontend can compare/bind against the literal strings.
  */
 export type StringBoolean = 'true' | 'false'

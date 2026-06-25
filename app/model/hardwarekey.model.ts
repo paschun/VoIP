@@ -1,32 +1,21 @@
 import { Schema, model } from 'mongoose'
 
-const hardwarekeySchema = new Schema({
-    title: String,
-    registrationComplete: {
-        type: Boolean,
-        default: false,
-    },
-    // WebAuthn credential IDs (base64url strings) the client sends as `payload.id`; flat array of scalars
-    credentials: [String], // implicitly has a default `[]`
-    id: {
-        type: String,
-        default: null,
-    },
-    userHandleToUsername: {
-        type: String,
-        default: null,
-    },
-    aaguid: {
-        type: String,
-        default: null,
-    },
+const hardwareKeySchema = new Schema({
+    title: { type: String, required: true },
+    registrationComplete: { type: Boolean, required: true },
+    // The single WebAuthn credential id (base64url) minted for this registration. One key document = one credential.
+    credentialId: { type: String, default: null },
+    // WebAuthn user handle (base64url random) minted at enrollment and embedded in the credential; the assertion returns
+    // it on login so we can find this key.
+    userHandle: { type: String, required: true },
+    aaguid: { type: String, default: null },
     user: {
         type: Schema.Types.ObjectId,
         ref: 'User',
+        required: true,
     },
     created_at: { type: Date, default: Date.now },
 })
-const Hardwarekey = model('Hardwarekey', hardwarekeySchema)
-// console.dir(hardwarekeySchema.toJSONSchema(), { depth: 5 })
+const HardwareKey = model('HardwareKey', hardwareKeySchema)
 
-export default Hardwarekey
+export default HardwareKey

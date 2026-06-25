@@ -6,30 +6,6 @@ import type { SelectOptionData } from 'vue3-select-component'
 import type { Contact, Conversation, Message } from '@shared/api-contracts.ts'
 
 /**
- * Recursively convert a PublicKeyCredential (or chunks of it) into a
- * JSON-serializable shape. ArrayBuffers become base64url strings.
- *
- * Used by both the login flow (assertion) and the hardware-key registration
- * flow.
- */
-export const publicKeyCredentialToJSON = (pubKeyCred: any): any => {
-  if (Array.isArray(pubKeyCred)) {
-    return pubKeyCred.map(publicKeyCredentialToJSON)
-  }
-  if (pubKeyCred instanceof ArrayBuffer) {
-    return new Uint8Array(pubKeyCred).toBase64({ alphabet: 'base64url' })
-  }
-  if (pubKeyCred && typeof pubKeyCred === 'object') {
-    const obj: Record<string, any> = {}
-    for (const key in pubKeyCred) {
-      obj[key] = publicKeyCredentialToJSON(pubKeyCred[key])
-    }
-    return obj
-  }
-  return pubKeyCred
-}
-
-/**
  * `JSON.parse` a value that may be absent — e.g. `localStorage.getItem(...)` or
  * `cookie.get(...)`, which return `string | null`. Returns `null` for a
  * null/undefined input (mirroring the old `JSON.parse(null)` → null behavior)

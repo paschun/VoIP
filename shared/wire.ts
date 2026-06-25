@@ -12,5 +12,5 @@ it just needs to handle:
 - ObjectId - turn it into string
 - NativeDate - into string as well
 - virtual numbers messageCount + totalCount
-- hardwareKeySchema.credentials is a string[]
+- hardwareKeySchema.credentialId is a string | null
 */

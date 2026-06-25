@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import type { Ok, StringBoolean } from '../api-contracts.ts'
-import type { HardwarekeyListItem } from './hardwarekey.ts'
+import type { Ok } from '../api-contracts.ts'
 
 export const loginBody = z.object({ name: z.string().min(1), password: z.string().min(1) })
 export type LoginRequest = z.infer<typeof loginBody>
@@ -8,8 +7,9 @@ export type LoginRequest = z.infer<typeof loginBody>
 export const registerBody = z.object({ name: z.string().min(1), password: z.string().min(6).max(100) })
 export type RegisterRequest = z.infer<typeof registerBody>
 
-export const otpVerifyBody = z.object({ user: z.string().min(1), verification_code: z.string().min(1) })
-export type OtpVerifyRequest = z.infer<typeof otpVerifyBody>
+/** `POST /totp/verify` body: the user id (from the login step) + the 6-digit TOTP code to check. */
+export const totpVerifyBody = z.object({ userId: z.string().min(1), code: z.string().min(1) })
+export type TotpVerifyRequest = z.infer<typeof totpVerifyBody>
 
 /** `GET /directory-name`: `name` is optional -- the handler distinguishes "no name supplied" from a mismatch. */
 export const directoryNameQuery = z.object({ name: z.string().optional() })
@@ -29,33 +29,19 @@ export type UpdatePasswordRequest = z.infer<typeof updatePasswordBody>
 export const passwordBody = z.object({ password: z.string().min(1) })
 export type PasswordRequest = z.infer<typeof passwordBody>
 
-/** `status` toggles MFA on/off; with `status:'true'`, `qr:'true'` mints a secret+QR and `qr:'false'`+`code` verifies it. */
-export const saveMfaBody = z.object({ status: z.string().min(1), qr: z.string().optional(), code: z.string().optional() })
-export type SaveMfaRequest = z.infer<typeof saveMfaBody>
+/** `POST /totp` body: the client-held secret (minted by `POST /totp/qr`) + a code proving the user scanned it. */
+export const enableTotpBody = z.object({ secret: z.string().min(1), code: z.string().min(1) })
+export type EnableTotpRequest = z.infer<typeof enableTotpBody>
 
-/** The user projection echoed back on auth/profile actions (also stored in the `userdata` cookie). */
-export type UserData = { _id: string; name: string; token: string; mfa: StringBoolean }
+/** The user projection echoed back on auth/profile actions (also stored in the `userdata` cookie). The auth token is
+ * not part of it -- it's stateless and returned separately, only by login. */
+export type UserData = { _id: string; name: string; totp: boolean }
 export type UserResponse = Ok<UserData>
 // todo: is UserData ever actually used by the clients?
 
-/** Bespoke (not `Ok<T>`): the login result drives three frontend branches (key challenge / OTP / straight in). */
-export type LoginResponse = {
-  status: 'true' | 'hardwarekey' | 'mfa'
-  message: string
-  data: UserData
-  token: string
-  hardwarekey: HardwarekeyListItem[] | false
-  mfa: boolean
-}
-
-/** `POST /otp-verify` success body; the frontend gates on `status === 'true'`. */
-export type OtpVerifyResponse = { status: 'true'; data: never[]; message: string }
-
-/** `POST /mfa/save` with `qr:'true'`: the enrolment QR data-URL + the base32 secret to display. */
-export type MfaQrResponse = { image: string; secret: string }
+/** `POST /totp/qr`: the enrollment QR data-URL + base32 secret to display (and pass back on enable). Not persisted. */
+export type TotpQrInfo = { image: string; secret: string }
+export type TotpQrResponse = Ok<TotpQrInfo>
 
 export type CheckDirectoryName = { status: 'true' | 'false' | 'nodir' | 'no-name'; dir: string }
 export type CheckDirectoryNameResponse = Ok<CheckDirectoryName>
-
-/** `GET /get-update-version`: whether a newer build than the running one exists upstream. */
-export type UpdateAvailableResponse = { update: StringBoolean }

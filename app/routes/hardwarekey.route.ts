@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import type { Env } from '../factory.ts'
 import * as hardwarekey from '../controller/hardwarekey.controller.ts'
 
-// Routes for `/api/hardwarekey` -- the WebAuthn enrolment + login ceremony plus key management.
+// Routes for `/api/hardwarekey` -- the WebAuthn enrollment + login ceremony plus key management.
 //
 // The collection is REST: `GET /` lists the caller's keys, `DELETE /:id` removes one. The ceremony steps are
 // non-idempotent server actions (they mint/consume one-time challenges), so they stay POST under `registration/*`

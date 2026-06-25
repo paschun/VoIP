@@ -67,8 +67,8 @@
                   </div>
                 </div>
               </div>
-              <div class="card" v-if="mfa">
-                <div class="card-body" style="cursor: pointer;" @click="chooseMethods('mfa')" >
+              <div class="card" v-if="totpAvailable">
+                <div class="card-body" style="cursor: pointer;" @click="chooseMethods('totp')" >
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="px-4">
                       <i-bi-calculator-fill />
@@ -119,7 +119,6 @@ import { defineComponent, ref } from 'vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { useRegle } from '@regle/core'
 import { required, minLength, withMessage } from '@regle/rules'
-import { publicKeyCredentialToJSON } from '@/helper.ts'
 import { useUserStore } from '@/stores/user.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { notifyError } from '@/notify.ts'
@@ -128,16 +127,7 @@ import type { RouteLocationRaw } from 'vue-router'
 
 interface HardwareKey {
   _id: string
-  title: string
-}
-
-/** Convert challenge + allowCredentials[].id from base64url strings to Uint8Arrays in-place. */
-const preformatGetAssertReq = (getAssert: any): any => {
-  getAssert.challenge = Uint8Array.fromBase64(getAssert.challenge, { alphabet: 'base64url' })
-  for (const cred of getAssert.allowCredentials ?? []) {
-    cred.id = Uint8Array.fromBase64(cred.id, { alphabet: 'base64url' })
-  }
-  return getAssert
+  title: string | null
 }
 
 export default defineComponent({
@@ -165,7 +155,7 @@ data () {
     },
     keyScreen: false,
     keys: [] as HardwareKey[],
-    mfa: false,
+    totpAvailable: false,
     verification_method: false
   }
 },
@@ -210,68 +200,61 @@ methods: {
     const { valid, data } = await this.loginR$.$validate()
     if (!valid) return
 
-    this.$post('auth/login', data)
-      .then((response) => {
-        if (response) {
-          this.keys = response.hardwarekey
-          this.mfa = response.mfa
-          this.verification_method = false
-          if (response.status === 'hardwarekey') {
-            this.activeUser.token = response.token
-            this.activeUser.user = response.data
-            this.keyScreen = true
-            this.otpScreen = false
-          } else if (response.status === 'mfa') {
-            this.activeUser.token = response.token
-            this.activeUser.user = response.data
-            this.otpScreen = true
-          } else {
-            this.userStore.login(response.data, response.token)
-            this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-          }
-        }
-      })
-      .catch(() => {})
+    const res = await request(client.api.auth.login.$post({ json: data }))
+    const { user, token, hardwareKeys } = res.data
+    this.keys = hardwareKeys
+    this.totpAvailable = user.totp
+    this.verification_method = false
+    // Which second factor to use is the client's choice: prefer a hardware key, then TOTP, else log straight in.
+    if (hardwareKeys.length) {
+      this.activeUser.token = token
+      this.activeUser.user = user
+      this.keyScreen = true
+      this.otpScreen = false
+    } else if (user.totp) {
+      this.activeUser.token = token
+      this.activeUser.user = user
+      this.otpScreen = true
+    } else {
+      this.userStore.login(user, token)
+      this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
+    }
   },
   async verifyKey (key: HardwareKey) {
-    let getAssertionChallenge
+    const challengeRes = await request(client.api.hardwarekey.authentication.challenge.$post({ json: { userId: this.activeUser.user._id, title: key.title ?? '' } }))
+    const requestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(challengeRes.data.publicKey)
+    let assertion: PublicKeyCredential | null
     try {
-      getAssertionChallenge = await this.$post('hardwarekey/authentication/challenge', { user: this.activeUser.user._id, title: key.title })
-    } catch {}
-    if (!getAssertionChallenge) return
-    getAssertionChallenge = preformatGetAssertReq(getAssertionChallenge)
-    try {
-      let newCredentialInfo = await navigator.credentials.get({publicKey: getAssertionChallenge})
-      newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-      try {
-        const serverResponse = await this.$post('hardwarekey/authentication/verify', newCredentialInfo)
-        if (serverResponse) {
-          if (serverResponse.status !== 'true') { throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage) }
-          this.userStore.login(this.activeUser.user, this.activeUser.token)
-          this.activeUser.token = ''
-          this.activeUser.user = null
-          this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-        }
-      } catch {}
+      assertion = await navigator.credentials.get({ publicKey: requestOptions }) as PublicKeyCredential | null
     } catch (error) {
       console.error(error)
-      notifyError('Login failed with security key.', 'Key!')
+      notifyError('Failed to get credentials from user', 'Key Error!')
+      return
     }
+    if (!assertion) {
+      notifyError('No credential was returned', 'Key Error!')
+      return
+    }
+    // `navigator.credentials.get()` always yields an authentication assertion, but `toJSON()` is typed as the
+    // create()-or-get() union: `RegistrationResponseJSON | AuthenticationResponseJSON`.
+    // Narrow it to read the user handle the server resolves the key by.
+    const { userHandle } = (assertion.toJSON() as AuthenticationResponseJSON).response
+    await request(client.api.hardwarekey.authentication.verify.$post({ json: { userId: this.activeUser.user._id, response: { userHandle } } }))
+    this.userStore.login(this.activeUser.user, this.activeUser.token)
+    this.activeUser.token = ''
+    this.activeUser.user = null
+    this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
   },
   async verifyOtp () {
     const { valid } = await this.otpR$.$validate()
     if (!valid) return
 
-    this.$post('auth/otp/verify', { user: this.activeUser.user._id, verification_code: this.otpR$.$value.otp })
-      .then((response) => {
-        if (response?.status === 'true') {
-          this.userStore.login(this.activeUser.user, this.activeUser.token)
-          this.activeUser.token = ''
-          this.activeUser.user = null
-          this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-        }
-      })
-      .catch(() => {})
+    // If verification fails this will get a http 400 response and throw
+    await request(client.api.auth.totp.verify.$post({ json: { userId: this.activeUser.user._id, code: this.otpR$.$value.otp } }))
+    this.userStore.login(this.activeUser.user, this.activeUser.token)
+    this.activeUser.token = ''
+    this.activeUser.user = null
+    this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
   },
   chooseMethods (method: string) {
     if (method === 'hardware_key') {
@@ -289,8 +272,8 @@ methods: {
         user: null,
         token: ''
       }
-      this.formState = { name: '', password: '' }
-    } else if (method === 'mfa') {
+      this.formState = { name: '', password: '' } // todo: change to $reset
+    } else if (method === 'totp') {
       this.keyScreen = false
       this.otpScreen = true
       this.verification_method = false

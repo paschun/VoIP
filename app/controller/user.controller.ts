@@ -7,7 +7,7 @@ import QRCode from 'qrcode'
 
 import pkg from '../../package.json' with { type: 'json' }
 import User from '../model/user.model.ts'
-import Hardwarekey from '../model/hardwarekey.model.ts'
+import HardwareKey from '../model/hardwarekey.model.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
 import Message from '../model/message.model.ts'
@@ -21,19 +21,18 @@ import type { Env, JsonCtx, QueryCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, queryParams } from '../validate.ts'
 import { ack } from '../util/respond.hono.ts'
-import type { Ok, StringBoolean } from '../../shared/api-contracts.ts'
-import type { HardwarekeyListItem } from '../../shared/contracts/hardwarekey.ts'
+import type { Ok } from '../../shared/api-contracts.ts'
 import {
   loginBody, type LoginRequest,
   registerBody, type RegisterRequest,
-  otpVerifyBody, type OtpVerifyRequest,
+  totpVerifyBody, type TotpVerifyRequest,
   directoryNameQuery, type DirectoryNameQuery,
   updateUsernameBody, type UpdateUsernameRequest,
   updatePasswordBody, type UpdatePasswordRequest,
   passwordBody, type PasswordRequest,
-  saveMfaBody, type SaveMfaRequest,
-  type UserData, type LoginResponse, type OtpVerifyResponse, type MfaQrResponse,
-  type CheckDirectoryName, type CheckDirectoryNameResponse, type UpdateAvailableResponse,
+  enableTotpBody, type EnableTotpRequest,
+  type UserData, type TotpQrInfo,
+  type CheckDirectoryName, type CheckDirectoryNameResponse,
 } from '../../shared/contracts/auth.ts'
 import { signToken } from '../helper/common.helper.ts'
 
@@ -42,8 +41,9 @@ const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_
 
 /** The user fields echoed to the client (also persisted in the `userdata` cookie). */
 const userDataResponseGen = (u: {
-  _id: { toString(): string }; name?: string | null; token?: string | null; mfa?: StringBoolean | null
-}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', token: u.token ?? '', mfa: u.mfa ?? 'false' })
+  _id: { toString(): string }; name?: string | null; totpSecret?: string | null
+}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', totp: (u.totpSecret ?? null) !== null })
+// todo: this is used in 3 routes. do they all need this info?
 
 /** Running build id: the short git commit, falling back to `package.json`'s version. */
 const currentVersion = (() => {
@@ -55,7 +55,7 @@ const currentVersion = (() => {
   }
 })()
 
-/** Authenticate; on success mint a 30d JWT and report whether a hardware-key or OTP second factor is still required. */
+/** Authenticate; on success mint a 30d JWT and report which second factor (if any) the client must still clear. */
 async function authenticate(c: JsonCtx<LoginRequest>) {
   const { name: rawName, password } = c.req.valid('json')
   const name = rawName.toLowerCase()
@@ -64,25 +64,15 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
     throw new HTTPException(401, { message: 'Unauthorized Access!' })
   }
 
+  // Auth is stateless (the middleware verifies the header JWT token), so the minted token isn't persisted -- it's
+  // returned once here for the client to hold.
   const token = await signToken(user.id, user.name)
-  user.token = token
-  await user.save()
 
-  let status: LoginResponse['status'] = 'true'
-  let hardwarekey: LoginResponse['hardwarekey'] = false
-  let mfa = false
-  if (user.hardwarekey === 'true') {
-    status = 'hardwarekey'
-    mfa = user.mfa === 'true'
-    // todo: dont type cast here
-    hardwarekey = await Hardwarekey.find({ user: user._id, registrationComplete: true }) as unknown as HardwarekeyListItem[]
-  } else if (user.mfa === 'true') {
-    status = 'mfa'
-    mfa = true
-  }
-  return c.json({
-    status, message: 'Successfully logged in.', data: userDataResponseGen(user), token, hardwarekey, mfa,
-  } satisfies LoginResponse)
+  // Report the available second factors; the client picks which to use (TOTP availability is `user.totp`).
+  const keys = await HardwareKey.find({ user: user._id, registrationComplete: true })
+  const hardwareKeys = keys.map((k) => ({ _id: k._id.toString(), title: k.title ?? null }))
+  const data = { user: userDataResponseGen(user), token, hardwareKeys }
+  return c.json({ data } satisfies Ok, 200)
 }
 
 /** Create an account; reject a duplicate username. */
@@ -102,14 +92,14 @@ async function createUser(c: JsonCtx<RegisterRequest>) {
   return c.body(null, 201)
 }
 
-/** Verify a TOTP code during the OTP login step. */
-async function verifyOtp(c: JsonCtx<OtpVerifyRequest>) {
-  const { user: userId, verification_code } = c.req.valid('json')
+/** Verify a TOTP code during the login second-factor step. */
+async function verifyTotp(c: JsonCtx<TotpVerifyRequest>) {
+  const { userId, code } = c.req.valid('json')
   const user = await User.findOne({ _id: { $eq: userId } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
-  const ok = Speakeasy.totp.verify({ secret: user.mfa_token ?? '', encoding: 'base32', token: verification_code })
+  const ok = Speakeasy.totp.verify({ secret: user.totpSecret ?? '', encoding: 'base32', token: code })
   if (!ok) throw new HTTPException(400, { message: 'Please enter valid verification code!' })
-  return c.json({ status: 'true', data: [], message: 'verified successfully!' } satisfies OtpVerifyResponse)
+  return ack(c)
 }
 
 /** Whether self-signup is enabled (the `SIGNUPS` env flag, `'on'`/`'off'`). */
@@ -124,19 +114,19 @@ function readVersion(c: Context<Env>) {
 
 /** Whether a newer build than the running one exists upstream; any lookup failure reports `'false'`. */
 async function readUpdateAvailable(c: Context<Env>) {
-  let update: StringBoolean = 'false'
+  let updateAvailable = false
   try {
     const response = await fetch(remoteVersionURL)
     if (response.ok) {
       // TODO: zod-validate the GitHub "commits" API schema rather than trusting the shape.
       const commits = await response.json() as Array<{ sha: string }>
       const remoteVersion = commits[0]?.sha.slice(0, 7)
-      update = currentVersion !== remoteVersion ? 'true' : 'false'
+      updateAvailable = currentVersion !== remoteVersion
     }
   } catch (err) {
     console.error(err)
   }
-  return c.json({ update } satisfies UpdateAvailableResponse)
+  return c.json({ data: updateAvailable } satisfies Ok<boolean>, 200)
 }
 
 /** Compare the caller's app-directory against the configured `APPDIRECTORY`, reporting match/mismatch/unconfigured. */
@@ -192,7 +182,7 @@ async function verifyPassword(c: JsonCtx<PasswordRequest>) {
   if (!bcrypt.compareSync(c.req.valid('json').password, user.password ?? '')) {
     throw new HTTPException(400, { message: 'please enter valid password!' })
   }
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
+  return ack(c)
 }
 
 /** Verify the caller's password, then irreversibly delete the account and all its data. */
@@ -204,40 +194,51 @@ async function removeAccount(c: JsonCtx<PasswordRequest>) {
     throw new HTTPException(400, { message: 'Please enter a valid password!' })
   }
   await deleteAllAccountData(userId)
-  return c.json({ data: [] } satisfies Ok<never[]>, 200)
+  return ack(c)
 }
 
 /** The caller's user record. */
 async function readUser(c: Context<Env>) {
   const user = await User.findOne({ _id: { $eq: c.get('user').id } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  // only `totp` field is used by caller in Mfa.vue
   return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
 }
 
-/** Toggle MFA: mint a secret+QR (`qr:'true'`), verify the code to enable (`qr:'false'`), or disable (`status:'false'`). */
-async function saveMfaSetting(c: JsonCtx<SaveMfaRequest>) {
+/** Mint a fresh TOTP secret + QR for enrollment. NOT persisted -- the client passes it back to {@link enableTotp} to confirm. */
+async function mintTotpQr(c: Context<Env>) {
   const authUser = c.get('user')
-  const body = c.req.valid('json')
-  const user = await User.findOne({ _id: { $eq: authUser.id } })
-  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  const secretCode = Speakeasy.generateSecret({ name: `Operation Privacy (${authUser.name})` })
+  const image = await QRCode.toDataURL(secretCode.otpauth_url ?? '')
+  // 202 Accepted: enrollment is provisional until `enableTotp` verifies a code -- the secret here is never persisted.
+  return c.json({ data: { image, secret: secretCode.base32 } } satisfies Ok<TotpQrInfo>, 202)
+}
 
-  // todo: bah, stringbools!!
-  if (body.status === 'true') {
-    if (body.qr === 'true') {
-      const secretCode = Speakeasy.generateSecret({ name: `Operation Privacy (${authUser.name})` })
-      user.mfa_token = secretCode.base32
-      await user.save()
-      const image = await QRCode.toDataURL(secretCode.otpauth_url ?? '')
-      return c.json({ image, secret: secretCode.base32 } satisfies MfaQrResponse)
-    }
-    const ok = Speakeasy.totp.verify({ secret: user.mfa_token ?? '', encoding: 'base32', token: body.code ?? '' })
-    if (!ok) throw new HTTPException(400, { message: 'Please enter valid verification code!' })
-    user.mfa = 'true'
-  } else {
-    user.mfa = body.status as StringBoolean
-  }
+/**
+ * Enable TOTP: verify the client-held secret (minted by the QR step) against `code`, then store it.
+ * An unverified/abandoned secret never reaches the DB, so presence of `totpSecret` implies TOTP is enabled.
+ * We get the secret from the client, but its not a security issue, because if they want to screw up their own account
+ * by sending an invalid secret that's fine.
+ */
+async function enableTotp(c: JsonCtx<EnableTotpRequest>) {
+  const { secret, code } = c.req.valid('json')
+  const user = await User.findOne({ _id: { $eq: c.get('user').id } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  const ok = Speakeasy.totp.verify({ secret, encoding: 'base32', token: code })
+  if (!ok) throw new HTTPException(400, { message: 'Please enter valid verification code!' })
+  user.totpSecret = secret
   await user.save()
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
+  // 201 Created: the TOTP credential now exists. No body -- the client refetches state.
+  return c.body(null, 201)
+}
+
+/** Disable TOTP: clear the stored secret. */
+async function disableTotp(c: Context<Env>) {
+  const user = await User.findOne({ _id: { $eq: c.get('user').id } })
+  if (!user) throw new HTTPException(404, { message: 'User not found!' })
+  user.totpSecret = null
+  await user.save()
+  return ack(c)
 }
 
 /** Best-effort teardown of every record + provider resource owned by `userid`, then the user itself. */
@@ -272,14 +273,17 @@ async function deleteAllAccountData(userid: string) {
 
 export const login = factory.createHandlers(jsonBody(loginBody), authenticate)
 export const register = factory.createHandlers(jsonBody(registerBody), createUser)
-export const otpVerify = factory.createHandlers(jsonBody(otpVerifyBody), verifyOtp)
+export const totpVerify = factory.createHandlers(jsonBody(totpVerifyBody), verifyTotp)
 export const signupEnabled = factory.createHandlers(readSignupOption)
 export const getVersion = factory.createHandlers(readVersion)
 export const getUpdateAvailable = factory.createHandlers(readUpdateAvailable)
 export const getDirectoryName = factory.createHandlers(queryParams(directoryNameQuery), matchDirectoryName)
+
 export const updateUsername = factory.createHandlers(auth, jsonBody(updateUsernameBody), changeUsername)
 export const updatePassword = factory.createHandlers(auth, jsonBody(updatePasswordBody), changePassword)
 export const passwordVerify = factory.createHandlers(auth, jsonBody(passwordBody), verifyPassword)
 export const deleteAccount = factory.createHandlers(auth, jsonBody(passwordBody), removeAccount)
 export const getCurrentUser = factory.createHandlers(auth, readUser)
-export const saveMfa = factory.createHandlers(auth, jsonBody(saveMfaBody), saveMfaSetting)
+export const totpQr = factory.createHandlers(auth, mintTotpQr)
+export const totpEnable = factory.createHandlers(auth, jsonBody(enableTotpBody), enableTotp)
+export const totpDisable = factory.createHandlers(auth, disableTotp)

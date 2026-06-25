@@ -40,9 +40,13 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { publicKeyCredentialToJSON } from '../../../helper.ts'
 import { notifySuccess, notifyError } from '@/notify.ts'
+import { client, request } from '@/core/rpc.client.ts'
+import type { InferResponseType } from 'hono/client'
+import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { decode as cborDecode } from 'cbor-x/decode'
+
+type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, SuccessStatusCode>['data']
 
 // ---------------------------------------------------------------------------
 // Local WebAuthn helpers (only used by this component)
@@ -97,25 +101,18 @@ const parseAuthData = (buffer: Uint8Array) => {
   return { rpIdHash, flagsBuf, flags, counter, counterBuf, aaguid, credID, COSEPublicKey }
 }
 
-/** Convert challenge + user.id from base64url strings to Uint8Arrays in-place. */
-const preformatMakeCredReq = (req: any): any => {
-  req.challenge = Uint8Array.fromBase64(req.challenge, { alphabet: 'base64url' })
-  req.user.id   = Uint8Array.fromBase64(req.user.id, { alphabet: 'base64url' })
-  return req
-}
-
 export default defineComponent({
   data () {
     return {
       title: '',
-      keys: [] as any[]
+      keys: [] as HardwareKeyList
     }
   },
   mounted () {
-    this.getHardwarekey()
+    this.getHardwareKey()
   },
   methods: {
-    async deleteKey (id: any) {
+    async deleteKey (id: string) {
       const result = await this.$swal.fire({
         title: 'Are you sure?',
         text: "Hardware key will be deleted. You will have to set it up again!",
@@ -126,79 +123,57 @@ export default defineComponent({
         confirmButtonText: 'Yes, remove it!'
       })
       if (!result.isConfirmed) return
-      try {
-        const respose = await this.$del(`hardwarekey/${id}`)
-        if (respose) {
-          notifySuccess('Your key has been deleted.', 'Deleted!')
-          this.getHardwarekey()
-        }
-      } catch { /* ignore */ }
+      await request(client.api.hardwarekey[':id'].$delete({ param: { id } }))
+      notifySuccess('Your key has been deleted.', 'Deleted!')
+      this.getHardwareKey()
     },
-    getHardwarekey () {
-      this.$get('hardwarekey')
-        .then((respose) => {
-          if (respose) {
-            this.keys = respose.data
-          }
-        })
-        .catch(() => {})
+    async getHardwareKey () {
+      const res = await request(client.api.hardwarekey.$get())
+      this.keys = res.data
     },
     async register () {
       if (this.title.trim() === '') {
         notifyError('Please enter title')
         return
       }
-      let serverResponse
+      await request(client.api.hardwarekey.registration.begin.$post({ json: { title: this.title.trim() } }))
+
+      const res = await request(client.api.hardwarekey.registration.challenge.$post({ json: {} }))
+      const optionsJSON: PublicKeyCredentialCreationOptionsJSON = {
+        ...res.data.publicKey,
+        // Exclude already-registered authenticators so the same key can't enroll twice.
+        excludeCredentials: res.data.hardwareKeys.flatMap((k) =>
+          k.credentialId ? [{ id: k.credentialId, type: 'public-key' }] : []
+        ),
+      }
+      const creationOptions = PublicKeyCredential.parseCreationOptionsFromJSON(optionsJSON)
+
+      let credential: PublicKeyCredential | null
       try {
-        serverResponse = await this.$post('hardwarekey/registration/begin', { title: this.title.trim() })
-      } catch { /* ignore */ }
-      if (!serverResponse) return
-      if (serverResponse.status !== 'startFIDOEnrolment') {
-        notifyError('Error registering user!')
+        credential = await navigator.credentials.create({ publicKey: creationOptions }) as PublicKeyCredential | null
+      } catch (error) {
+        notifyError(String(error), 'Key Error!')
+        return
+      }
+      if (!credential) {
+        notifyError('No credential was created', 'Key Error!')
         return
       }
 
-      try {
-        const respnse = await this.$post('hardwarekey/registration/challenge', {})
-        const hardwarekey = respnse.hardwarekey
-        let makeCredChallenge = respnse.publicKey
-        let newCredentialInfo: any
-        try {
-          console.log(makeCredChallenge)
-          makeCredChallenge = preformatMakeCredReq(makeCredChallenge)
-          const excludeCredentials: any[] = []
-          for (const key of hardwarekey) {
-            console.log(key)
-            excludeCredentials.push({
-              id: Uint8Array.fromBase64(key.credentials[0], { alphabet: 'base64url' }),
-              type: 'public-key'
-            })
-          }
-          makeCredChallenge.excludeCredentials = excludeCredentials
-          newCredentialInfo = await navigator.credentials.create({ 'publicKey': makeCredChallenge })
-          console.log(newCredentialInfo)
-        } catch (error) {
-          notifyError((error as Error).message, 'Key!')
-        }
-
-        // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
-        const attestationObject = cborDecode(new Uint8Array(newCredentialInfo.response.attestationObject))
-        const authData = parseAuthData(attestationObject.authData)
-        const aaguid = bufToHex(authData.aaguid!)
-        newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo)
-        try {
-          const verifyResponse = await this.$post('hardwarekey/registration/verify', { id: newCredentialInfo.id, aaguid })
-          if (verifyResponse.status !== 'ok') {
-            throw new Error('Error registering user! Server returned: ' + verifyResponse.errorMessage)
-          } else {
-            notifySuccess('Your key added successfully.', 'Key!')
-            this.getHardwarekey()
-            this.title = ''
-          }
-        } catch (e) {
-          console.error(e)
-        }
-      } catch { /* ignore */ }
+      // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
+      const attestation = credential.response as AuthenticatorAttestationResponse
+      const attestationObject = cborDecode(new Uint8Array(attestation.attestationObject))
+      const authData = parseAuthData(attestationObject.authData)
+      if (!authData.aaguid) {
+        notifyError('Could not read the authenticator AAGUID', 'Key Error!')
+        return
+      }
+      const aaguid = bufToHex(authData.aaguid)
+      // `credential.id` is already the base64url credential id the server stores.
+      await request(client.api.hardwarekey.registration.verify.$post({ json: { id: credential.id, aaguid } }))
+      notifySuccess('Your key added successfully.', 'Key!')
+      this.getHardwareKey()
+      this.title = ''
     },
   }
 })

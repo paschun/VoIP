@@ -9,11 +9,11 @@
               <div class="col-auto">
               <div>
                     <input
-                      @change="mfaStatusChange"
+                      @change="totpStatusChange"
                       id="checkbox"
                       type="checkbox"
                       class="switch-checkbox"
-                      v-model="mfaStatus"
+                      v-model="totpEnabled"
                       />
                       <label for="checkbox" class="switch-label switch-label-mode">
                       <span>
@@ -24,13 +24,13 @@
                       </span>
                       <div
                           class="switch-toggle"
-                          :class="{ 'switch-toggle-checked': mfaStatus }"
+                          :class="{ 'switch-toggle-checked': totpEnabled }"
                       ></div>
                       </label>
                 </div>
               </div>
               <div class="col-auto">
-            Status: <span v-if="realMfs">Active</span><span v-else>Inactive</span>
+            Status: <span v-if="realTotp">Active</span><span v-else>Inactive</span>
               </div>
             </div>
           </div>
@@ -62,27 +62,27 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { notifyError } from '@/notify.ts'
+import { client, request } from '@/core/rpc.client.ts'
 import HardwareKey from './HardwareKey.vue'
 export default defineComponent({
 name: 'MfaSetting',
 components: { HardwareKey },
 data () {
   return {
-    mfaStatus: false,
-    realMfs: false,
-    qr: null as any,
+    totpEnabled: false,
+    realTotp: false, // reflects totp value on server
+    qr: '',
     verification_code: '',
     secret: ''
   }
 },
 mounted () {
-  this.getMfaStatus()
+  this.getTotpStatus()
 },
 methods: {
-  mfaStatusChange () {
-    const status = this.mfaStatus ? 'true' : 'false'
-    if (!this.mfaStatus) {
-      this.$swal.fire({
+  async totpStatusChange () {
+    if (!this.totpEnabled) {
+      const result = await this.$swal.fire({
         title: 'Are you sure?',
         text: 'Software token will be deleted. You will have to reconfigure it!',
         icon: 'warning',
@@ -90,47 +90,32 @@ methods: {
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Yes, remove it!'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.commonMfa({ status, qr: 'true' })
-          this.qr = false
-        } else {
-          this.mfaStatus = true
-        }
       })
-    } else {
-      this.commonMfa({ status, qr: 'true' })
+      if (!result.isConfirmed) {
+        this.totpEnabled = true
+        return
+      }
+      this.qr = ''
+      await request(client.api.auth.totp.$delete())
+      this.getTotpStatus()
+      return
     }
+    const res = await request(client.api.auth.totp.qr.$post())
+    this.qr = res.data.image
+    this.secret = res.data.secret
   },
-  commonMfa (data: { status: string; qr: string }) {
-    // todo: this data type should be defined in shared api contract
-    this.$post('auth/mfa', data)
-      .then((response) => {
-        if (response) {
-          if (data.status === 'true') {
-            this.qr = response.image
-            this.secret = response.secret
-          } else {
-            this.getMfaStatus()
-          }
-        }
-      })
-      .catch(() => {})
-  },
-  verifyStatusCode () {
+  async verifyStatusCode () {
     if (this.verification_code === '') {
       notifyError('Please enter verification code')
       return
     }
-    this.$post('auth/mfa', { status: 'true', qr: 'false', code: this.verification_code })
-      .then((response) => {
-        if (response) {
-          this.qr = null
-          this.verification_code = ''
-          this.getMfaStatus()
-        }
-      })
-      .catch(() => {})
+    // Pass the secret back: the server never persisted it at the QR step, so it stores it only once this code verifies.
+    // If verification fails this will get a http 400 response and throw
+    await request(client.api.auth.totp.$post({ json: { secret: this.secret, code: this.verification_code } }))
+    this.qr = ''
+    this.verification_code = ''
+    this.secret = ''
+    this.getTotpStatus()
   },
   copySecret () {
     try {
@@ -141,17 +126,15 @@ methods: {
       console.error('Failed to copy!', err)
     }
   },
-  getMfaStatus () {
-    this.$get('auth/me')
-      .then((response) => {
-        const enabled = response?.data?.mfa === 'true'
-        this.realMfs = enabled
-        this.mfaStatus = enabled
-      })
-      .catch(() => {
-        this.realMfs = false
-        this.mfaStatus = false
-      })
+  async getTotpStatus () {
+    try {
+      const enabled = (await request(client.api.auth.me.$get())).data.totp
+      this.realTotp = enabled
+      this.totpEnabled = enabled
+    } catch {
+      this.realTotp = false
+      this.totpEnabled = false
+    }
   }
 }
 })

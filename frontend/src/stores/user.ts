@@ -13,7 +13,7 @@ type UserData = InferResponseType<typeof client.api.auth.username.$patch, Succes
 export const useUserStore = defineStore('user', () => {
   const userData = useLocalStorage<UserData | null>('user-data', null, { serializer: StorageSerializers.object })
 
-  // todo: activeUser
+  // todo: activeUser? but its only used in Login.vue so maybe not
 
   const isLoggedIn = computed(() => token.value.length > 0)
 

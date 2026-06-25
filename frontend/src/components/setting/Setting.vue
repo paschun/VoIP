@@ -52,7 +52,7 @@ import AccountSetting from './account/AccountSetting.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
 import { notifyError } from '@/notify.ts'
-import type { VersionResponse } from '@shared/api-contracts.ts'
+import { client, request } from '@/core/rpc.client.ts'
 
 export default defineComponent({
 name: 'SettingPanel',
@@ -61,7 +61,7 @@ data () {
   return {
     activeMenu: 'setting',
     versionOption: 'v0',
-    checkpasswordMenu: '',
+    checkPasswordMenu: '',
     check_password: ''
   }
 },
@@ -73,26 +73,21 @@ methods: {
     this.activeMenu = menu
   },
   async getVersion() {
-    const res = await this.$get<VersionResponse>("auth/version")
-    if (res) this.versionOption = res.data
+    const res = await request(client.api.auth.version.$get())
+    this.versionOption = res.data
   },
   passwordEnable (menu: string) {
-    this.checkpasswordMenu = menu
+    this.checkPasswordMenu = menu
     this.enableMenu('password')
   },
-  checkPassword () {
+  async checkPassword () {
     if (this.check_password === '') {
       notifyError('please enter password')
       return
     }
-    this.$post('auth/password/verify', { password: this.check_password })
-      .then((response) => {
-        if (response) {
-          this.check_password = ''
-          this.enableMenu(this.checkpasswordMenu)
-        }
-      })
-      .catch(() => {})
+    await request(client.api.auth.password.verify.$post({ json: { password: this.check_password } }))
+    this.check_password = ''
+    this.enableMenu(this.checkPasswordMenu)
   }
 }
 })
