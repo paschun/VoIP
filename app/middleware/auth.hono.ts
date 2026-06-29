@@ -4,6 +4,9 @@ import type { AuthUser } from '../factory.ts'
 import type { ApiError } from '../../shared/api-contracts.ts'
 import { jwtSecret } from '../helper/common.helper.ts'
 
+// todo: look at https://hono.dev/docs/middleware/builtin/bearer-auth
+// https://hono.dev/docs/middleware/builtin/jwt
+
 // Verifies the JWT in the `token` header (jose), stashes the payload as `c.set('user', …)` for downstream handlers,
 // and short-circuits with a 401 carrying the shared `ApiError` shape (`{ message }`) -- the frontend's `handleError`
 // reads `data.message` (it still falls back to the legacy `data.error`). Returning a Response from middleware (instead

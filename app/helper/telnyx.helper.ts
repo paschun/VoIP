@@ -5,7 +5,6 @@ import { combineURLs } from './common.helper.ts'
 import { WEBHOOKS } from './webhook-paths.ts'
 import { env } from '../../config/env.ts'
 import { ProviderError } from '../provider-error.ts'
-import type { HttpMethod } from '../../shared/api-contracts.ts'
 
 /**
  * Telnyx provisioning/teardown helpers. Error policy is split by intent, and the functions below are grouped into the
@@ -30,7 +29,9 @@ const telnyxHeaders = (apiKey: string) => ({
 })
 
 /**
- * Thin Telnyx REST caller for endpoints the SDK doesn't cover.
+ * Telnyx's REST API does support a real partial PATCH. The SDK doesn't surface that.
+ * Specifically the partial texml-application PATCH updates (`updateTexmlApp`, `texmlAppFallback`)
+ * `texmlApplications.update` is a PUT-style full replace, so whatever isn't sent gets cleared. (`friendly_name`,`voice_url`)
  *
  * @param op calling helper's name, used only to label the server-side error log
  * @param method HTTP verb
@@ -40,7 +41,7 @@ const telnyxHeaders = (apiKey: string) => ({
  * @returns the parsed JSON response, or `null` for an empty body
  * @throws ProviderError on a transport failure or non-2xx response, so onError can surface a 502
  */
-const requestCurl = async (op: string, method: HttpMethod, url: string, headers: Record<string, string>, data?: unknown) => {
+const requestCurl = async (op: string, method: 'PATCH', url: string, headers: Record<string, string>, data?: unknown) => {
     let response: Response;
     try {
         const init: RequestInit = { method, headers };
@@ -57,15 +58,18 @@ const requestCurl = async (op: string, method: HttpMethod, url: string, headers:
 // === Setup / GET / fallback helpers: THROW ProviderError on failure (onError renders 502). See file header. ===
 
 const createTexmlApp = async (apiKey: string) => {
-    const url = `https://api.telnyx.com/v2/texml_applications`;
-    const data = {
-        friendly_name: moment().format(timestampFormat),
-        voice_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxVoice.full),
-        voice_method: "post",
-        status_callback: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
-        status_callback_method: "post",
-    };
-    return requestCurl('createTexmlApp', 'POST', url, telnyxHeaders(apiKey), data);
+    try {
+        const texmlApp = await new Telnyx({ apiKey }).texmlApplications.create({
+            friendly_name: moment().format(timestampFormat),
+            voice_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxVoice.full),
+            voice_method: 'post',
+            status_callback: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
+            status_callback_method: 'post',
+        });
+        return texmlApp
+    } catch (error) {
+        throw new ProviderError('telnyx', 'createTexmlApp', { cause: error });
+    }
 }
 
 const updateTexmlApp = async (apiKey: string, twimlid: string) => {
@@ -154,18 +158,30 @@ const sipAppFallback = async (params: { apiKey: string; uuid: string; url: strin
     }
 }
 
-const messageProfileGet = (params: { setting: string; apiKey: string }) =>
-    requestCurl('messageProfileGet', 'GET', `https://api.telnyx.com/v2/messaging_profiles/${params.setting}`, telnyxHeaders(params.apiKey));
+const messageProfileGet = async (params: { setting: string; apiKey: string }) => {
+    try {
+        const msgProfile = await new Telnyx({ apiKey: params.apiKey }).messagingProfiles.retrieve(params.setting);
+        return msgProfile
+    } catch (error) {
+        throw new ProviderError('telnyx', 'messageProfileGet', { cause: error });
+    }
+}
 
-const getNumberData = (params: { number_sid: string; apiKey: string }) =>
-    requestCurl('getNumberData', 'GET', `https://api.telnyx.com/v2/phone_numbers/${params.number_sid}`, telnyxHeaders(params.apiKey));
+const getNumberData = async (params: { number_sid: string; apiKey: string }) => {
+    try {
+        const numberData = await new Telnyx({ apiKey: params.apiKey }).phoneNumbers.retrieve(params.number_sid);
+        return numberData
+    } catch (error) {
+        throw new ProviderError('telnyx', 'getNumberData', { cause: error });
+    }
+}
 
 // === Teardown helpers: SWALLOW + log, return false. Best-effort cleanup during deletion. See file header. ===
 
 const deleteTexmlApp = async (apiKey: string, twimlid: string) => {
-    const url = `https://api.telnyx.com/v2/texml_applications/${twimlid}`;
     try {
-        return await requestCurl('deleteTexmlApp', 'DELETE', url, telnyxHeaders(apiKey));
+        await new Telnyx({ apiKey }).texmlApplications.delete(twimlid);
+        return true;
     } catch (error) {
         console.error('deleteTexmlApp teardown failed', error);
         return false;

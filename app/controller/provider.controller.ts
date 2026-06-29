@@ -14,6 +14,7 @@ import {
   webhookFallbackBody, type WebhookFallbackRequest,
   numberLookupBody, type NumberLookupRequest,
 } from '../../shared/contracts/provider.ts'
+import { ack } from '../util/respond.hono.ts'
 
 // Load the caller's own Setting by id or 404. User-scoped so a user can't read/alter another's provider config by
 // guessing the id (IDOR). The Setting is only a credential source here; nothing in Mongo is modified -- every write
@@ -30,7 +31,9 @@ async function getTwilioWebhookConfig(c: ParamCtx<SettingIdParam>) {
   const app = await twilioHelper.twimlGet({
     sid: setting.twilio_sid ?? '', token: setting.twilio_token ?? '', twimlsid: setting.twiml_app ?? '',
   })
-  return c.json({ data: app } satisfies Ok<unknown>, 200)
+  // pick only the fields the client uses
+  const { voiceUrl, voiceFallbackUrl } = app
+  return c.json({ data: { voiceUrl, voiceFallbackUrl } } satisfies Ok, 200)
 }
 
 async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
@@ -49,8 +52,8 @@ async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
     voice_url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioIncoming.full),
     sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
   })
-  const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+
+  return ack(c)
 }
 
 async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
@@ -59,7 +62,12 @@ async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
   const messageProfile = await telnyxHelper.messageProfileGet({
     apiKey: setting.api_key ?? '', setting: setting.setting ?? '',
   })
-  return c.json({ data: messageProfile } satisfies Ok<unknown>, 200)
+  // pick only the fields the client uses
+  const result = {
+    webhook_failover_url: messageProfile.data?.webhook_failover_url,
+    webhook_url: messageProfile.data?.webhook_url,
+  }
+  return c.json({ data: result } satisfies Ok, 200)
 }
 
 async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
@@ -79,18 +87,29 @@ async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
     apiKey: setting.api_key ?? '', uuid: setting.sip_id ?? '',
     url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
   })
-  const data = setting.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+
+  return ack(c)
+}
+
+// Both providers are normalized to this one shape so the client reads it without narrowing a union: every key exists in
+// both branches (a Telnyx `connection_id`, or a Twilio `voiceApplicationSid`/`voiceUrl`). A populated field means a call
+// webhook -- i.e. call routing -- already exists. `satisfies` on each branch forces them to stay identical.
+interface NumberLookupResult {
+  connection_id: string | null
+  voiceApplicationSid: string | null
+  voiceUrl: string | null
 }
 
 async function lookupNumber(c: JsonCtx<NumberLookupRequest>) {
   const body = c.req.valid('json')
   if (body.type === 'telnyx') {
-    const numberData = await telnyxHelper.getNumberData({ number_sid: body.sid, apiKey: body.api_key })
-    return c.json({ data: numberData } satisfies Ok<unknown>, 200)
+    const lookup = await telnyxHelper.getNumberData({ number_sid: body.sid, apiKey: body.api_key })
+    const data = { connection_id: lookup.data?.connection_id ?? null, voiceApplicationSid: null, voiceUrl: null } satisfies NumberLookupResult
+    return c.json({ data } satisfies Ok<NumberLookupResult>, 200)
   }
-  const numberData = await twilioHelper.numberGet({ sid: body.twilio_sid, token: body.twilio_token, numbersid: body.sid })
-  return c.json({ data: numberData } satisfies Ok<unknown>, 200)
+  const number = await twilioHelper.numberGet({ sid: body.twilio_sid, token: body.twilio_token, numbersid: body.sid })
+  const data = { connection_id: null, voiceApplicationSid: number.voiceApplicationSid ?? null, voiceUrl: number.voiceUrl ?? null } satisfies NumberLookupResult
+  return c.json({ data } satisfies Ok<NumberLookupResult>, 200)
 }
 
 export const twilioWebhookGet = factory.createHandlers(auth, pathParams(settingIdParam), getTwilioWebhookConfig)

@@ -11,7 +11,7 @@ import type { WireDoc } from '../wire.ts'
 export const mediaSchema = new Schema({
   media: { type: String, required: true },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-})
+}, { strict: 'throw', strictQuery: 'throw' })
 
 /** Full JSON shape of a Media document as the frontend receives it */
 export type MediaDoc = WireDoc<typeof mediaSchema>

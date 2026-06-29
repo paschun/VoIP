@@ -5,6 +5,8 @@ import { env } from '../config/env.ts'
 
 let io: Server | undefined
 
+// is it possible to replace with https://hono.dev/docs/helpers/websocket ??
+
 // maybe todo:
 // 1) authenticate the handshake (validate the access token via socket.handshake.auth.token in io.use(...) middleware, same jose verify as auth.hono.ts)
 // 2) authorize joins so a user can only join their own user/profile channel.

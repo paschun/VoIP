@@ -1,7 +1,7 @@
 import { test, expect, afterAll, afterEach, beforeAll, describe } from 'vitest'
 import mongoose from 'mongoose'
 import Setting from '../app/model/setting.model.ts'
-import Message from '../app/model/message.model.ts'
+import { TextMessage } from '../app/model/message.model.ts'
 import { clearDb, connectMemoryDb, disconnectMemoryDb } from './helpers/mongo.ts'
 import { profilesWithUnread, profileWithUnread } from '../app/controller/profile.controller.ts'
 
@@ -39,10 +39,12 @@ describe('toObject handles virtuals', () => {
     const work = await Setting.create({ user: userObjId, profile: 'Work', type: 'twilio' })
     profileObjId = work._id
     const home = await Setting.create({ user: userObjId, profile: 'Home', type: 'telnyx' })
-    await Message.create({ setting: work._id, user: userObjId, isview: 'false' })
-    await Message.create({ setting: work._id, user: userObjId, isview: 'false' })
-    await Message.create({ setting: home._id, user: userObjId, isview: 'false' })
-    await Message.create({ setting: work._id, user: userObjId, isview: 'true' }) // read -> excluded by the populate match
+    const seed = (setting: mongoose.Types.ObjectId, isview: boolean) =>
+      TextMessage.create({ sid: 'sid', number: '+10000000000', telnyx_number: '+19999999999', type: 'receive', setting, user: userObjId, isview })
+    await seed(work._id, false)
+    await seed(work._id, false)
+    await seed(home._id, false)
+    await seed(work._id, true) // read -> excluded by the populate match
   })
 
   afterAll(async () => {

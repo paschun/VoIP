@@ -151,8 +151,8 @@
             <span
               class="badge message_count bg-success"
               :id="item._id"
-              v-if="(item.isview ?? 0) > 0"
-              >{{ item.isview }}</span
+              v-if="item.unread > 0"
+              >{{ item.unread }}</span
             >
           </div>
         </div>
@@ -252,7 +252,7 @@
                 <div class="form-group">
                   <custom-autocomplete-select
                     v-model="r$.$value.number"
-                    :options="tNumbers"
+                    :options="telnyxNumbers"
                     labelProp="phone_number"
                     valueProp="phone_number"
                   ></custom-autocomplete-select>
@@ -389,9 +389,6 @@
 
 <script lang="ts">
 /**
- * Still on the legacy `this.$get/$post/$del` API plugin (core/api.plugin.ts), so these calls are untyped -- unlike the
- * components migrated to the typed RPC client.
- *
  * this component contains the telnyx/twilio modal when you click settings->profile settings
  *
  * TODO: this modal does two jobs and guesses intent from `profile === ""`. Split into two single-purpose flows:
@@ -416,8 +413,15 @@ import Setting from "@/components/setting/Setting.vue";
 import { EventBus } from "@/event-bus.ts";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
 import { formatTimestamp } from "@/helper.ts";
-import type { Conversation } from "@shared/api-contracts.ts";
+import { client, request } from "@/core/rpc.client.ts";
+import type { InferResponseType } from "hono/client";
+import type { SuccessStatusCode } from "hono/utils/http-status";
 import { appDirectory } from "@/router/helpers.ts";
+
+/** A conversation inbox row, inferred from the conversations route. */
+type ConversationRowClient = InferResponseType<typeof client.api.setting.conversations.$get, SuccessStatusCode>["data"][number];
+/** A contact, inferred from the contact list route. */
+type ContactRecord = InferResponseType<typeof client.api.contact.$get, SuccessStatusCode>["data"][number];
 
 function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;
@@ -433,19 +437,14 @@ interface ProviderSettingForm {
   twilio_token: string;
   twilio_number: string;
 }
+/** The provider-numbers response payload, discriminated by `type`. */
+type ProviderNumbers = InferResponseType<typeof client.api.setting["provider-numbers"]["$post"], SuccessStatusCode>["data"];
 /** A purchasable Telnyx number from the provider-numbers lookup (`id` is the lookup's sid). */
-interface TelnyxNumber {
-  id: string;
-  phone_number: string;
-}
+type TelnyxNumber = Extract<ProviderNumbers, { type: "telnyx" }>["numbers"][number];
 /** A purchasable Twilio number from the provider-numbers lookup. */
-interface TwilioNumber {
-  sid: string;
-  phoneNumber: string;
-}
+type TwilioNumber = Extract<ProviderNumbers, { type: "twilio" }>["numbers"][number];
 /** The form values plus server-side identifiers, POSTed to number-lookup / setting creation. */
 interface ProviderSettingPayload extends ProviderSettingForm {
-  user: string | undefined;
   setting: string;
   sid: string;
   override?: string;
@@ -500,13 +499,13 @@ export default defineComponent({
     return {
       query: "",
       isLoading: false, // todo: fixme
-      contacts: [] as any[],
+      contacts: [] as ContactRecord[],
       activeChat: "",
       messageListLoader: true,
-      numbers: [] as Conversation[],
-      search_numbers: [] as Conversation[],
+      numbers: [] as ConversationRowClient[],
+      search_numbers: [] as ConversationRowClient[],
       activeProfile: null as any, // todo: replace with profileStore
-      tNumbers: [] as TelnyxNumber[],
+      telnyxNumbers: [] as TelnyxNumber[],
       twilioNumbers: [] as TwilioNumber[],
       activeItem: null as any,
       options: [
@@ -558,32 +557,16 @@ export default defineComponent({
         search.test(item.message ?? "")
       );
     },
-    onaddContact() {
-      // todo: type this api response
-      this.$get("contact")
-        .then(data => {
-          if (data) {
-            this.contacts = data.data;
-            this.$emit("onaddContact", data.data);
-          }
-        })
-        .catch(e => {
-          console.error(e);
-        });
+    async onaddContact() {
+      const { data } = await request(client.api.contact.$get());
+      this.contacts = data;
+      this.$emit("onaddContact", data);
     },
     getValidString,
-    getOneProfile() {
-      if (this.activeProfile?._id !== undefined) {
-        this.$get(`profile/${this.activeProfile._id}`)
-          .then(response => {
-            if (response) {
-              this.activeProfile = response.data;
-            }
-          })
-          .catch(e => {
-            console.error(e);
-          });
-      }
+    async getOneProfile() {
+      if (this.activeProfile?._id === undefined) return;
+      const { data } = await request(client.api.profile[":id"].$get({ param: { id: this.activeProfile._id } }));
+      this.activeProfile = data;
     },
     refreshProfile() {
       this.childComponent?.getAllProfiles();
@@ -609,20 +592,13 @@ export default defineComponent({
       this.userStore.logout();
       window.location.href = `/${appDirectory(this.$route)}/`;
     },
-    getNumberList() {
+    async getNumberList() {
       this.numbers = [];
       this.messageListLoader = true;
-      this.$get("setting/conversations?profile=" + this.activeProfile._id)
-        .then(response => {
-          if (response) {
-            this.numbers = response;
-            this.messageListLoader = false;
-            this.searchContact();
-          }
-        })
-        .catch(e => {
-          console.error(e);
-        });
+      const { data } = await request(client.api.setting.conversations.$get({ query: { profile: this.activeProfile._id } }));
+      this.numbers = data;
+      this.messageListLoader = false;
+      this.searchContact();
     },
     hideShowDeleteIcon(response: any) {
       if (response.type === "telnyx" && response.api_key) {
@@ -633,19 +609,19 @@ export default defineComponent({
         this.showDelete = false;
       }
     },
-    getSetting() {
-      this.$get("setting/profiles/" + this.activeProfile._id)
-        .then(response => {
-          if (response?.data) {
-            this.form = response.data;
-            this.hideShowDeleteIcon(response.data);
-            this.form.twilio_number = response.data.number;
-            this.getNumbers(response.data.type);
-          }
-        })
-        .catch(e => {
-          console.error(e);
-        });
+    async getSetting() {
+      const { data } = await request(client.api.setting.profiles[":id"].$get({ param: { id: this.activeProfile._id } }));
+      this.form = {
+        type: data.type,
+        profile: data.profile ?? "",
+        api_key: data.api_key ?? "",
+        number: data.number ?? "",
+        twilio_sid: data.twilio_sid ?? "",
+        twilio_token: data.twilio_token ?? "",
+        twilio_number: data.number ?? ""
+      };
+      this.hideShowDeleteIcon(data);
+      this.getNumbers(data.type);
     },
     async deleteProfile() {
       const result = await this.$swal.fire({
@@ -662,24 +638,18 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return;
 
-      try {
-        const response = await this.$del(`profile/${this.activeProfile._id}`);
-        if (response.data) {
-          notifySuccess("Profile deleted successfully!");
-          this.r$.$reset({ toOriginalState: true }); // reset to empty
-          this.tNumbers = [];
-          this.twilioNumbers = [];
-          this.activeProfile = response.data;
-          localStorage.removeItem("activeProfile");
-          this.profileSettingModal?.hide();
-          this.childComponent?.getAllProfiles();
-          setTimeout(() => {
-            this.childComponent?.activeFirstProfile();
-          }, 2000);
-        }
-      } catch (e) {
-        console.error(e);
-      }
+      const { data } = await request(client.api.profile[":id"].$delete({ param: { id: this.activeProfile._id } }));
+      notifySuccess("Profile deleted successfully!");
+      this.r$.$reset({ toOriginalState: true }); // reset to empty
+      this.telnyxNumbers = [];
+      this.twilioNumbers = [];
+      this.activeProfile = data;
+      localStorage.removeItem("activeProfile");
+      this.profileSettingModal?.hide();
+      this.childComponent?.getAllProfiles();
+      setTimeout(() => {
+        this.childComponent?.activeFirstProfile();
+      }, 2000);
     },
     async deleteApiKey() {
       const result = await this.$swal.fire({
@@ -696,58 +666,44 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return;
 
-      try {
-        const response = await this.$del("setting/profiles/" + this.activeProfile._id + "/provider");
-        notifySuccess("Key deleted successfully!");
-        // Clear only the provider fields, keeping `profile`: the profile still exists (just its provider config is
-        // gone) and the modal stays open, so its name must remain visible. A full reset would blank it.
-        this.form = { ...this.form, api_key: "", number: "", twilio_sid: "", twilio_token: "", twilio_number: "" };
-        this.tNumbers = [];
-        this.twilioNumbers = [];
-        this.activeProfile = response.data;
-        this.hideShowDeleteIcon(response.data);
-        this.childComponent?.getAllProfiles();
-      } catch (e) {
-        console.error(e);
-      }
+      const { data } = await request(client.api.setting.profiles[":id"].provider.$delete({ param: { id: this.activeProfile._id } }));
+      notifySuccess("Key deleted successfully!");
+      // Clear only the provider fields, keeping `profile`: the profile still exists (just its provider config is
+      // gone) and the modal stays open, so its name must remain visible. A full reset would blank it.
+      this.form = { ...this.form, api_key: "", number: "", twilio_sid: "", twilio_token: "", twilio_number: "" };
+      this.telnyxNumbers = [];
+      this.twilioNumbers = [];
+      this.activeProfile = data;
+      this.hideShowDeleteIcon(data);
+      this.childComponent?.getAllProfiles();
     },
-    getNumbers(type: 'telnyx' | 'twilio') {
-      const providerSettings = this.r$.$value;
-      providerSettings.type = type;
+    async getNumbers(type: 'telnyx' | 'twilio') {
+      const v = this.r$.$value;
       if (type === "telnyx") {
-        this.tNumbers = [];
+        this.telnyxNumbers = [];
+        const { data } = await request(client.api.setting["provider-numbers"].$post({ json: { type: "telnyx", api_key: v.api_key } }));
+        if (data.type !== "telnyx") throw new Error('backend returned wrong number type')
+        this.telnyxNumbers = data.numbers;
       } else {
         this.twilioNumbers = [];
+        const { data } = await request(client.api.setting["provider-numbers"].$post({ json: { type: "twilio", twilio_sid: v.twilio_sid, twilio_token: v.twilio_token } }));
+        if (data.type !== "twilio") throw new Error('backend returned wrong number type')
+        this.twilioNumbers = data.numbers;
       }
-      this.$post("setting/provider-numbers", providerSettings)
-        .then(response => {
-          if (response) {
-            if (type === "telnyx") {
-              this.tNumbers = response.data.data;
-            } else {
-              this.twilioNumbers = response.data;
-            }
-          }
-        })
-        .catch(e => {
-          console.error(e);
-        });
     },
     async saveProviderSetting() {
-      // $validate marks all fields dirty (surfacing errors) and returns whether the form passes its rules.
+      // dont use validated `data` because it would be weaker-typed here
+      // its conditionally-required provider fields are MaybeOutput<string>, not string.
       const { valid } = await this.r$.$validate();
       if (!valid) return;
-      // r$.$value is reactive and the awaits below give the user a window to edit the form; snapshot the flat
-      // string values so the payload reflects exactly what was validated. (`data` would be weaker-typed here:
-      // its conditionally-required provider fields are MaybeOutput<string>, not string.)
+      // r$.$value is reactive and the awaits below give the user a window to edit the form, so grab a snapshot
       const providerSettings = { ...this.r$.$value };
       const sid = providerSettings.type === "telnyx"
-        ? (this.tNumbers.find(n => n.phone_number === providerSettings.number)?.id ?? "")
+        ? (this.telnyxNumbers.find(n => n.phone_number === providerSettings.number)?.id ?? "")
         : (this.twilioNumbers.find(n => n.phoneNumber === providerSettings.twilio_number)?.sid ?? "");
       const providerSettingPayload: ProviderSettingPayload = {
         api_key: providerSettings.api_key,
         number: providerSettings.number,
-        user: this.userStore.userData?._id,
         sid,
         type: providerSettings.type,
         twilio_sid: providerSettings.twilio_sid,
@@ -757,86 +713,51 @@ export default defineComponent({
         profile: providerSettings.profile
       };
       this.isLoading = true;
+      let isCall = false;
       try {
-        const response = await this.$post("provider/number-lookup", providerSettingPayload);
-        let isCall = false;
-        if (response) {
-          if (
-            providerSettings.type === "telnyx" &&
-            response.data.data.connection_id !== undefined &&
-            response.data.data.connection_id &&
-            response.data.data.connection_id !== ""
-          ) {
-            isCall = true;
-          }
-
-          if (providerSettings.type === "twilio") {
-            let appSidavilable = false;
-            if (
-              response.data.voiceApplicationSid !== undefined &&
-              response.data.voiceApplicationSid &&
-              response.data.voiceApplicationSid !== ""
-            ) {
-              isCall = true;
-              appSidavilable = true;
-            }
-            if (!appSidavilable) {
-              if (
-                response.data.voiceUrl !== undefined &&
-                response.data.voiceUrl &&
-                response.data.voiceUrl !== ""
-              ) {
-                isCall = true;
-              }
-            }
-          }
-          if (isCall) {
-            // runs after the `finally` block which sets `isLoading = false`
-            this.$swal
-              .fire({
-                icon: "warning",
-                title: "Call Setting",
-                text: "The call setting is already available. Do you want to override the call setting?",
-                showDenyButton: true,
-                confirmButtonText: "Yes, override it",
-                denyButtonText: `No, Keep old`
-              })
-              .then(result => {
-                let updateCallSetting = false;
-                if (result.isConfirmed) {
-                  updateCallSetting = true;
-                  providerSettingPayload.override = "true";
-                } else if (result.isDenied) {
-                  updateCallSetting = true;
-                  providerSettingPayload.override = "false";
-                }
-                if (updateCallSetting) this.createProviderSetting(providerSettingPayload);
-              });
-          } else {
-            providerSettingPayload.override = "true";
-            await this.createProviderSetting(providerSettingPayload);
-          }
+        // number-lookup returns the provider's number record (typed loosely server-side)
+        // a configured call webhook means call routing already exists, so we prompt before overriding it.
+        if (providerSettings.type === "telnyx") {
+          const { data } = await request(client.api.provider["number-lookup"].$post({
+            json: { type: "telnyx", api_key: providerSettingPayload.api_key, number: providerSettingPayload.number, sid }
+          }));
+          isCall = !!data.connection_id;
+        } else {
+          const { data } = await request(client.api.provider["number-lookup"].$post({
+            json: { type: "twilio", twilio_sid: providerSettingPayload.twilio_sid, twilio_token: providerSettingPayload.twilio_token, twilio_number: providerSettingPayload.twilio_number, sid }
+          }));
+          isCall = !!data.voiceApplicationSid || !!data.voiceUrl;
         }
-      } catch (e) {
-        console.error(e);
       } finally {
         this.isLoading = false;
       }
+      // Prompt outside the loader block (matching the old fire-and-forget swal that ran after `finally`).
+      if (isCall) {
+        const result = await this.$swal.fire({
+          icon: "warning",
+          title: "Call Setting",
+          text: "The call setting is already available. Do you want to override the call setting?",
+          showDenyButton: true,
+          confirmButtonText: "Yes, override it",
+          denyButtonText: `No, Keep old`
+        });
+        if (!result.isConfirmed && !result.isDenied) return;
+        providerSettingPayload.override = result.isConfirmed ? "true" : "false";
+      } else {
+        providerSettingPayload.override = "true";
+      }
+      await this.createProviderSetting(providerSettingPayload);
     },
     async createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
       this.isLoading = true;
       try {
-        const response = await this.$post("setting/profiles", providerSettingPayload);
-        if (response) {
-          this.profileSettingModal?.hide();
-          this.activeProfile = response.data;
-          this.hideShowDeleteIcon(response.data);
-          this.childComponent?.getAllProfiles();
-          this.profileStore.setActiveProfile(response.data);
-          this.r$.$reset(); // just-saved values are the new baseline
-        }
-      } catch (e) {
-        console.error(e);
+        const { data } = await request(client.api.setting.profiles.$post({ json: providerSettingPayload }));
+        this.profileSettingModal?.hide();
+        this.activeProfile = data;
+        this.hideShowDeleteIcon(data);
+        this.childComponent?.getAllProfiles();
+        this.profileStore.setActiveProfile(data);
+        this.r$.$reset(); // just-saved values are the new baseline
       } finally {
         this.isLoading = false;
       }

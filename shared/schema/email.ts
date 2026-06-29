@@ -22,7 +22,7 @@ export const emailSchema = new Schema({
   //  which causes MongoDB to build & enforces the unique index, limits one Email doc per user.
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   created_at: { type: Date, default: Date.now },
-})
+}, { strict: 'throw', strictQuery: 'throw' })
 // console.dir(emailSchema.toJSONSchema(), { depth: 5 })
 
 /** Full JSON shape of an Email document as the frontend receives it (ObjectId/Date already stringified, `__v` present). */

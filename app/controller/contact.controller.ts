@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import Contact from '../model/contact.model.ts'
-import Message from '../model/message.model.ts'
+import { Message } from '../model/message.model.ts'
 import { factory } from '../factory.ts'
 import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
@@ -18,8 +18,8 @@ import {
 const MAX_CONTACTS = 500
 
 async function getContacts(c: Context<Env>) {
-  // collation locale 'en' makes the first_name sort case-insensitive and locale-aware (so 'bob' and 'Bob' order
-  // together); without it Mongo sorts by raw bytes (all uppercase before lowercase).
+  // collation locale 'en' makes the first_name sort case-insensitive and locale-aware (so 'bob' and 'Bob' order together)
+  // without it Mongo sorts by raw bytes (all uppercase before lowercase).
   // sort `1` == ascending
   const contacts = await Contact.find({ user: { $eq: c.get('user').id } }).collation({ locale: 'en' }).sort({ first_name: 1 })
   const data = contacts.map((d) => d.toObject({ flattenObjectIds: true }))

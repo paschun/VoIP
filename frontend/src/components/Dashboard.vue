@@ -90,12 +90,12 @@
             <i-bi-telephone aria-hidden="true" style="font-size: 2em" />
           </span>
           &nbsp;&nbsp;&nbsp;
-          <span style="cursor: pointer" @click="deletechat()" title="Delete">
+          <span style="cursor: pointer" @click="deleteChat()" title="Delete">
             <i-bi-trash aria-hidden="true" style="font-size: 2em" />
           </span>
         </div>
       </div>
-      <div :class="!activeChat || modelMms ? 'd-none' : ''">
+      <div :class="(!activeChat || modelMms) ? 'd-none' : ''">
         <div
           id="drop-area"
           style="z-index: 1"
@@ -122,7 +122,6 @@
               accept="image/*"
               @change="onFilesPick"
             />
-            <!-- <label class="button" for="fileElem">Select some files</label> -->
           </form>
           <div class="row" id="gallery">
             <div class="col-lg-4" v-for="image in uploadedImages" :key="image">
@@ -175,22 +174,7 @@
                   }"
                 ></div>
                 <div class="content">
-                  <span
-                    v-if="
-                      message.media &&
-                      JSON.parse(message.media) &&
-                      JSON.parse(message.media).length > 0
-                    "
-                  >
-                    <span
-                      v-for="image in JSON.parse(message.media)"
-                      :key="image"
-                    >
-                      <a @click="showImage(image)" href="javascript:void(0)">
-                        <img :src="image" alt="Image" />
-                      </a>
-                    </span>
-                  </span>
+                  <!-- Narrow the discriminated union: the call branch has `duration`, the text branch has `media`/`message`. -->
                   <span v-if="message.datatype === 'call'">
                     <span v-if="message.type === 'send'">
                       <i-bi-telephone-outbound-fill
@@ -202,7 +186,25 @@
                     >
                     Call( {{ getMMSS(message.duration ?? 0) }} )
                   </span>
-                  <span v-else> {{ message.message }} </span>
+                  <template v-else>
+                    <span
+                      v-if="
+                        message.media &&
+                        JSON.parse(message.media) &&
+                        JSON.parse(message.media).length > 0
+                      "
+                    >
+                      <span
+                        v-for="image in JSON.parse(message.media)"
+                        :key="image"
+                      >
+                        <a @click="showImage(image)" href="javascript:void(0)">
+                          <img :src="image" alt="Image" />
+                        </a>
+                      </span>
+                    </span>
+                    <span> {{ message.message }} </span>
+                  </template>
                 </div>
                 <div class="time">
                   {{ formatTimestamp(message.created_at) }}
@@ -346,14 +348,17 @@ import type { BModal, BOffcanvas } from "bootstrap-vue-next";
 import { useProfileStore } from "@/stores/profile.ts";
 import { useUserStore } from "@/stores/user.ts";
 import { EventBus } from "@/event-bus.ts";
-import { combineURLs, contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
-import type { Message } from '@shared/api-contracts.ts';
+import { contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
 import { notifyError, notifyInfo } from '@/notify.ts';
-import type { client } from '@/core/rpc.client.ts'
+import { client, request } from '@/core/rpc.client.ts'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 
 type UploadResponseSuccess = InferResponseType<typeof client.api.media.uploads.$post, SuccessStatusCode>
+/** The full hc `ClientResponse` the upload route returns -- carries status/format params so `request()` infers the body. */
+type UploadResponse = Awaited<ReturnType<typeof client.api.media.uploads.$post>>
+/** One entry in a conversation thread, inferred from the messages route. */
+type ChatMessage = InferResponseType<typeof client.api.setting.conversations.messages.$post, SuccessStatusCode>['data'][number]
 
 function preventDefaults(e: Event) {
   e.preventDefault();
@@ -432,7 +437,7 @@ export default defineComponent({
       dropArea: null as any,
       progressBar: null as any,
       uploadProgress: [] as number[], // numbers from 0 to 100
-      uploadedImages: [] as any[],
+      uploadedImages: [] as string[],
       activeChatData: false,
       activeProfile: null as any,
       // activeChat is a synthesized conversation object from the listConversations aggregate (GET setting/conversations),
@@ -441,7 +446,7 @@ export default defineComponent({
       tags: [] as any[],
       chatListLoader: false,
       submitted2: false,
-      messages: [] as Message[],
+      messages: [] as ChatMessage[],
       messageBody: "",
       socket: null as any,
       baseurl: "",
@@ -577,7 +582,8 @@ export default defineComponent({
       this.handleFiles(target.files, modelFile);
     },
     handleFiles(fileList: FileList, modelFile = false) {
-      const files = Object.freeze([...fileList]) // turn fileList into a normal array so we can .map/.forEach on it
+      // turn fileList into a normal array so we can .map/.forEach on it, but try to keep it readonly like FileList intended
+      const files = Object.freeze([...fileList])
       if (modelFile) {
         this.modelMms = true;
         this.modelFileValue = files.map(f => f.name).join()
@@ -585,10 +591,12 @@ export default defineComponent({
         this.modelMms = false;
       }
       this.initializeProgress(files.length);
-      // todo: get path with hono RPC $path() or $url() - client.api...$url()
-      files.forEach((f, i) => this.uploadFile<UploadResponseSuccess>(combineURLs(this.baseurl, '/api/media/uploads'), f, (e: ProgressEvent<XMLHttpRequestEventTarget>) => {
-        this.updateProgress(i, e.lengthComputable ? (e.loaded * 100) / e.total : 100) // fallback to 100%
-      }).then(res => this.uploadedImages.push(res.data.media)))
+      const prog = (i: number) => (loaded: number, total: number) => { this.updateProgress(i, total > 0 ? (loaded * 100) / total : 100) } // fallback to 100% 
+      // forEach does not await and ignores its callback, promises will be queued (not awaited) and this function returned immediately
+      files.forEach(async (f, i) => {
+        const res = await this.uploadFile(f, prog(i))
+        this.uploadedImages.push(res.data.media)
+      })
     },
     removeFromPreview(image: any) {
       this.uploadedImages = this.uploadedImages.filter((img) => img !== image);
@@ -596,39 +604,32 @@ export default defineComponent({
         document.getElementById("drop-area")!.style.display = "none";
       }
     },
-    uploadFile<T>(url: string, file: File, onProgress: (e: ProgressEvent<XMLHttpRequestEventTarget>) => void): Promise<T> {
+    async uploadFile(file: File, onProgress: (loaded: number, total: number) => void): Promise<UploadResponseSuccess> {
       // todo: this can be extracted out of the view layer
-      const { promise, resolve, reject } = Promise.withResolvers<T>()
-      const xhr = new XMLHttpRequest();
-      xhr.responseType = 'json'; // browser parses the body for you
-      // once you set a non-default responseType, accessing xhr.responseText throws an InvalidStateError
-
-      const formData = new FormData();
-
-      xhr.open("POST", url, true);
-      xhr.setRequestHeader("token", this.userStore.token); // set-header must be after .open()
-
-      xhr.upload.addEventListener("progress", onProgress);
-      
-      xhr.addEventListener('load', () => {
-        // With `xhr.responseType = 'json'`, If the server returns a body that isn't valid JSON (an HTML error page, an empty body, etc.),
-        // the browser doesn't throw - it just sets xhr.response to null
-        if (xhr.response === null) {
-          reject(new Error('Media upload: Expected JSON response but got an unparseable body'));
-        } else if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(xhr.response as T); // not a string, already a parsed object because of `xhr.responseType = 'json'`
-        } else {
-          reject(new Error(xhr.response.message));
+      // fetch has no upload-progress event, so we stream the file body and count bytes as they pass through a
+      // TransformStream. A streamed request body needs `duplex: 'half'` and request-stream support (Chromium only --
+      // Safari/Firefox don't stream uploads), so this is intentionally not cross-browser.
+      // `$url()` gives the route's absolute URL from the client's origin (see test/rpc-url.test.ts)
+      // We hit it directly because hc's `$post` buffers a FormData body with no way to observe progress.
+      // The server derives the stored file type from the `Content-Type` header (no client filename trusted).
+      const total = file.size;
+      let loaded = 0;
+      const progress = new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+          loaded += chunk.byteLength;
+          onProgress(loaded, total);
+          controller.enqueue(chunk);
         }
       });
-      
-      xhr.addEventListener('error', () => reject(new Error('Network error on media upload'))); // ProgressEvent
-
-      // todo: FormData only needed to send extra fields alongside the file. can remove FormData and just send(file)
-      formData.append("file", file); 
-      xhr.send(formData);
-      
-      return promise
+      const init: RequestInit & { duplex: 'half' } = {
+        method: 'POST',
+        headers: { token: this.userStore.token, 'Content-Type': file.type },
+        body: file.stream().pipeThrough(progress),
+        duplex: 'half'
+      };
+      // Route the manual Response through `request()` so failures hit the same central toast/parse path as every hc
+      // call (parseResponse runs on a plain fetch Response too); the cast supplies the inferred success-body type.
+      return request(fetch(client.api.media.uploads.$url(), init) as unknown as Promise<UploadResponse>);
     },
     highlight() {
       document.getElementById("drop-area")!.style.display = "block";
@@ -672,7 +673,7 @@ export default defineComponent({
         }
       }
     },
-    async deletechat() {
+    async deleteChat() {
       const result = await this.$swal.fire({
         icon: "info",
         title: "Do you want to delete this chat?",
@@ -687,13 +688,11 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return;
 
-      try {
-        await this.$del("setting/conversations/" + encodeURIComponent(this.activeChat._id));
-        if (this.activeChatData) this.showChat(this.activeChat);
-        this.numberList?.getNumberList();
-      } catch (e) {
-        console.error(e);
-      }
+      await request(client.api.setting.conversations[':number'].$delete({
+        param: { number: this.activeChat._id },
+      }));
+      if (this.activeChatData) this.showChat(this.activeChat);
+      this.numberList?.getNumberList();
     },
     sendSms() {
       this.isLoading = true;
@@ -710,36 +709,29 @@ export default defineComponent({
       this.uploadedImages = [];
       document.getElementById("drop-area")!.style.display = "none";
     },
-    commonSendMessage(numbers: any, message: any) {
-      const messageData = {
-        user: this.userStore.userData?._id,
-        numbers,
-        message,
-        profile: this.activeProfile,
-        media: this.uploadedImages,
-      };
-      this.$post("setting/messages", messageData)
-        .then((response) => {
-          if (response) {
-            this.messageBody = "";
-            this.r$.$value.sms.numbers = "";
-            this.r$.$value.sms.message = "";
-            this.uploadedImages = [];
-            this.modelFileValue = "";
-            document.getElementById("drop-area")!.style.display = "none";
-            this.tags = [];
-            this.numberList?.getNumberList();
-            if (this.activeChatData) {
-              this.showChat(this.activeChat);
-            }
-            this.composeMsgModal?.hide();
-            if (this.vw < 576) {
-              this.mobileSidebar?.hide();
-            }
-          }
-          this.isLoading = false;
-        })
-        .catch((e) => console.error(e));
+    async commonSendMessage(numbers: string[], message: string) {
+      try {
+        await request(client.api.setting.messages.$post({
+          json: { numbers, message, media: this.uploadedImages, profile: { _id: this.activeProfile._id } },
+        }));
+        this.messageBody = "";
+        this.r$.$value.sms.numbers = "";
+        this.r$.$value.sms.message = "";
+        this.uploadedImages = [];
+        this.modelFileValue = "";
+        document.getElementById("drop-area")!.style.display = "none";
+        this.tags = [];
+        this.numberList?.getNumberList();
+        if (this.activeChatData) {
+          this.showChat(this.activeChat);
+        }
+        this.composeMsgModal?.hide();
+        if (this.vw < 576) {
+          this.mobileSidebar?.hide();
+        }
+      } finally {
+        this.isLoading = false;
+      }
     },
     firstChatShow(activechat: any) {
       this.chatListLoader = true;
@@ -754,28 +746,23 @@ export default defineComponent({
         this.mobileSidebar?.hide();
       }
     },
-    showChat(activechat: any) {
+    async showChat(activechat: any) {
+      // todo: type activechat so payload / validator types can be strict
       this.activeChat = activechat;
       this.activeChatData = true;
       const { telnyx_number, _id } = activechat;
-      this.$post("setting/conversations/messages", {
-        number: { telnyx_number, _id },
-        profile: this.activeProfile._id,
-      })
-        .then((response) => {
-          if (response) {
-            this.messages = response;
-            setTimeout(() => {
-              const scroll = document.getElementById("chat-container")!;
-              scroll.scrollTop = scroll.scrollHeight;
-              scroll.animate({ scrollTop: scroll.scrollHeight });
-              this.chatListLoader = false;
-            }, 1000);
-            this.numberList?.refreshProfile();
-            this.numberList?.getOneProfile();
-          }
-        })
-        .catch((e) => console.error(e));
+      const { data } = await request(client.api.setting.conversations.messages.$post({
+        json: { number: { telnyx_number, _id }, profile: this.activeProfile._id },
+      }));
+      this.messages = data;
+      setTimeout(() => {
+        const scroll = document.getElementById("chat-container")!;
+        scroll.scrollTop = scroll.scrollHeight;
+        scroll.animate({ scrollTop: scroll.scrollHeight });
+        this.chatListLoader = false;
+      }, 1000);
+      this.numberList?.refreshProfile();
+      this.numberList?.getOneProfile();
     },
     async handleSubmit2() {
       this.submitted2 = true;

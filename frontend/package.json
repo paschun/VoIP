@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "lint": "eslint --cache",
     "oxlint": "oxlint",
-    "typecheck": "vue-tsc --build"
+    "typecheck": "vue-tsc --build",
+    "test": "vitest"
   },
   "dependencies": {
     "@floating-ui/vue": "^1.1.11",
@@ -46,12 +47,14 @@
     "@types/pulltorefreshjs": "^0.1.7",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/eslint-config-typescript": "^14.7.0",
+    "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
     "browserslist": "^4.24.0",
     "browserslist-to-esbuild": "^2.1.1",
     "eslint": "^10.0.0",
     "eslint-plugin-vue": "^10.0.0",
     "globals": "^17.6.0",
+    "happy-dom": "^20.10.6",
     "jiti": "^2.7.0",
     "lightningcss": "^1.30.0",
     "mongoose": "^9.7.0",
@@ -64,6 +67,7 @@
     "unplugin-vue-components": "^32.1.0",
     "vite": "^8.0.8",
     "vite-plugin-vue-devtools": "^8.1.2",
+    "vitest": "^4.1.9",
     "vue-tsc": "^3.3.3"
   },
   "engines": {

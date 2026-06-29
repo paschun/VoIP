@@ -10,8 +10,7 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
 import Setting from '../model/setting.model.ts'
-import User from '../model/user.model.ts'
-import Message from '../model/message.model.ts'
+import { Message, TextMessage, type MessageDoc, type CommonFields } from '../model/message.model.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
 import { combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
@@ -32,7 +31,7 @@ import {
   createSettingBody, type CreateSettingRequest,
   profileIdParam, type ProfileIdParam,
   smsTypeParam, type SmsTypeParam,
-  getNumberBody, type GetNumberRequest,
+  getNumberBody, type GetNumberRequest, type GetNumberResponse,
   sendSmsBody, type SendSmsRequest,
   conversationsQuery, type ConversationsQuery,
   messageListBody, type MessageListRequest,
@@ -163,9 +162,6 @@ async function resetProviderConfig(c: ParamCtx<ProfileIdParam>) {
 async function saveProviderConfig(c: JsonCtx<CreateSettingRequest>) {
   const userId = c.get('user').id
   const body = c.req.valid('json')
-  if (!(await User.findOne({ _id: { $eq: userId } }))) {
-    throw new HTTPException(404, { message: 'Something is wrong!' })
-  }
   return body.type === 'telnyx' ? saveTelnyxConfig(c, userId, body) : saveTwilioConfig(c, userId, body)
 }
 
@@ -310,10 +306,12 @@ async function listProviderNumbers(c: JsonCtx<GetNumberRequest>) {
   const body = c.req.valid('json')
   if (body.type === 'telnyx') {
     const phoneNumber = await new Telnyx({ apiKey: body.api_key }).phoneNumbers.list()
-    return c.json({ data: { data: phoneNumber.data } } satisfies Ok<{ data: unknown[] }>, 200)
+    const numbers = (phoneNumber.data ?? []).map((n) => ({ id: n.id, phone_number: n.phone_number }))
+    return c.json({ data: { type: 'telnyx', numbers } } satisfies GetNumberResponse, 200)
   }
-  const numbers = await twilio(body.twilio_sid, body.twilio_token).incomingPhoneNumbers.list()
-  return c.json({ data: numbers } satisfies Ok<unknown[]>, 200)
+  const list = await twilio(body.twilio_sid, body.twilio_token).incomingPhoneNumbers.list()
+  const numbers = list.map((n) => ({ sid: n.sid, phoneNumber: n.phoneNumber }))
+  return c.json({ data: { type: 'twilio', numbers } } satisfies GetNumberResponse, 200)
 }
 
 /** Normalize a dialed number: strip formatting, then prefix +1 for a bare 10-digit US number. */
@@ -380,7 +378,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
       telnyx_number: setting.number,
       type: 'send',
       status: 'sent',
-      isview: 'true',
+      isview: true,
       message,
       setting: setting._id,
     }
@@ -390,7 +388,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
     messageRecords.push(record)
   }
 
-  const messages = await Message.create(messageRecords)
+  const messages = await TextMessage.create(messageRecords)
   return c.json({ data: messages } satisfies Ok<unknown[]>, 200)
 }
 
@@ -438,7 +436,7 @@ async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
         telnyx_number: toNumber,
         type: 'receive',
         status: 'received',
-        isview: 'false',
+        isview: false,
         message: messageText,
         setting: setting._id,
         media: JSON.stringify(media),
@@ -455,7 +453,7 @@ async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
         contact,
         type: 'receive',
         status: 'received',
-        isview: false, // todo: message model has this as stringbool
+        isview: false,
         settings: setting,
       })
 
@@ -470,7 +468,7 @@ async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
           })
         }
       }
-      await Message.create(record)
+      await TextMessage.create(record)
       if (setting.type === 'twilio') void deleteTwilioMessageLater(setting, sid)
     }
   } catch (error) {
@@ -564,38 +562,51 @@ function emptyTwiml(c: Context<Env>) {
   return c.body(response.toString())
 }
 
-/** Conversation list for a profile: latest message per other-party number, with unread counts. Returns a bare array. */
-async function aggregateConversations(c: QueryCtx<ConversationsQuery>) {
-  const user = new mongoose.Types.ObjectId(c.get('user').id)
-  const setting = new mongoose.Types.ObjectId(c.req.valid('query').profile)
-  // Collapse this profile's messages into one row per conversation (per other-party number):
-  //   $match  -- only the caller's messages on this profile.
-  //   $sort _id:-1 -- newest first, so the following $first picks each conversation's latest message.
-  //   $group by $number -- one row per other-party number. `_id` becomes that number string (this is why the chat is
-  //     keyed on `number._id` elsewhere); $first grabs the latest message's fields; `isview` $sums unread (isview
-  //     'false') messages into a badge count.
-  // Then populate the contact ref and sort newest-conversation-first in JS (the group output isn't ordered).
-  const conversations = await Message.aggregate([
-    { $match: { user, setting } },
-    { $sort: { _id: -1 } },
+
+/** A collapsed conversation row: the latest message per other-party number, with that conversation's unread count. */
+export type ConversationRow = Pick<CommonFields, 'type' | 'telnyx_number' | 'created_at'> & {
+  _id: string // the other party's number (the $group key), not an ObjectId
+  message: string | null // exclude `undefined`, $group sets to null if it dne
+  contact: { first_name: string; last_name: string } | null // subset of contact that the inbox renders
+  message_type: MessageDoc['datatype'] // $first of the discriminator key ('message' | 'call')
+  unread: number // count of unread messages in the conversation
+}
+
+/** Conversation list for a profile: latest message per other-party number, with unread counts, newest-first. */
+export async function conversationsForProfile(userId: string, profileId: string): Promise<ConversationRow[]> {
+  const user = new mongoose.Types.ObjectId(userId)
+  const setting = new mongoose.Types.ObjectId(profileId)
+
+  // Collapse this profile's messages into one row per conversation.
+  // $group does NOT preserve input order, so the pre-group $sort only exists to make $first pick each conversation's latest message
+  // a second $sort after $group is what actually orders the returned rows newest-first.
+  const conversations = await Message.aggregate<ConversationRow>([
+    { $match: { user, setting } }, // match the messages that have same `user` and `setting` ids
+    { $sort: { created_at: -1 } }, // newest first (descending), so the following $first picks each conversation's latest message
     {
-      $group: {
-        _id: '$number',
-        message: { $first: '$message' },
-        id: { $first: '$_id' },
+      $group: { // $group combines multiple documents with the same group key into a single document
+        _id: '$number', // `number` field (other-party number) (a string, not actually a number) becomes the group key
+        message: { $first: '$message' }, // $first grabs the latest message's fields
         created_at: { $first: '$created_at' },
         contact: { $first: '$contact' },
-        message_type: { $first: '$datatype' },
-        type: { $first: '$type' },
+        message_type: { $first: '$datatype' }, // `datatype` field
+        type: { $first: '$type' }, // `type` field
         telnyx_number: { $first: '$telnyx_number' },
-        isview: { $sum: { $cond: [{ $eq: ['$isview', 'false'] }, 1, 0] } },
+        unread: { $sum: { $cond: [{ $eq: ['$isview', false] }, 1, 0] } }, // sums unread
       },
     },
+    { $sort: { created_at: -1 } }, // order the grouped conversation rows newest-first
   ])
-  await Contact.populate(conversations, { path: 'contact' })
-  // todo: maybe sort in mongoose?
-  conversations.sort((a, b) => b.created_at - a.created_at)
-  return c.json(conversations)
+  // `contact` is populated to the subset that the inbox renders
+  // without lean, `contact` is replaced with a hydrated Contact Document
+  // mongodb includes `_id` by default, so must explicitly exclude it: https://mongoosejs.com/docs/api/query.html#Query.prototype.select()
+  await Contact.populate(conversations, { path: 'contact', select: 'first_name last_name -_id', options: { lean: true } })
+  return conversations
+}
+
+async function aggregateConversations(c: QueryCtx<ConversationsQuery>) {
+  const data = await conversationsForProfile(c.get('user').id, c.req.valid('query').profile)
+  return c.json({ data } satisfies Ok<ConversationRow[]>, 200)
 }
 
 /** Delete a whole conversation (every message to/from the other party's number) for the caller. */
@@ -604,10 +615,10 @@ async function removeConversation(c: ParamCtx<ConversationParam>) {
     user: { $eq: c.get('user').id },
     number: { $eq: c.req.valid('param').number },
   })
-  return c.json({ data: messages } satisfies Ok<unknown>, 200)
+  return c.json({ data: messages } satisfies Ok, 200)
 }
 
-/** Messages in a conversation; marks the unread ones read first. Returns a bare array. */
+/** Messages in a conversation; marks the unread ones read first. */
 async function listMessages(c: JsonCtx<MessageListRequest>) {
   const { number, profile } = c.req.valid('json')
   const filter = {
@@ -616,9 +627,17 @@ async function listMessages(c: JsonCtx<MessageListRequest>) {
     number: { $eq: number._id },
     setting: { $eq: profile },
   }
-  await Message.updateMany({ ...filter, isview: { $eq: 'false' } }, { isview: 'true' })
-  const messages = await Message.find(filter)
-  return c.json(messages)
+  await Message.updateMany({ ...filter, isview: { $eq: false } }, { isview: true })
+  // MessageDoc generic is just for this file.
+  // shape each row by its `datatype` so calls carry only `duration` and texts only `message`/`media`.
+  // Frontend narrows on `datatype`.
+  const common = (m: MessageDoc) => ({ id: m._id, type: m.type, created_at: m.created_at })
+  const data = (await Message.find(filter).lean<MessageDoc[]>()).map((m) =>
+    m.datatype === 'call'
+      ? { datatype: m.datatype, ...common(m), duration: m.duration }
+      : { datatype: m.datatype, ...common(m), message: m.message, media: m.media },
+  )
+  return c.json({ data } satisfies Ok, 200)
 }
 
 export const createProfile = factory.createHandlers(auth, jsonBody(createSettingBody), saveProviderConfig)

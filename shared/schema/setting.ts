@@ -11,10 +11,10 @@ export const settingSchema = new Schema({
   sid: String,
   twilio_sid: String,
   twilio_token: String,
-  profile: String, // display name
+  profile: { type: String, required: true }, // display name
   emailnotification: { type: String, enum: ['false', 'true'], default: 'false' },
   type: { type: String, enum: ['telnyx', 'twilio'], default: 'telnyx' },
-  user: { type: Schema.Types.ObjectId, ref: 'User' }, // user that owns this profile
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // user that owns this profile
   app_key: { type: String, default: null },
   app_secret: { type: String, default: null },
   twiml_app: { type: String, default: null },
@@ -34,6 +34,8 @@ export const settingSchema = new Schema({
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
   id: false, // mongoose by default creates an `id` virtual which is `_id` stringified.
+  strict: 'throw',
+  strictQuery: 'throw',
 })
 
 /**

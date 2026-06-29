@@ -3,7 +3,7 @@
  * file that uses them.
  */
 import type { SelectOptionData } from 'vue3-select-component'
-import type { Contact, Conversation, Message } from '@shared/api-contracts.ts'
+import type { Contact } from '@shared/api-contracts.ts'
 
 /**
  * `JSON.parse` a value that may be absent — e.g. `localStorage.getItem(...)` or
@@ -16,19 +16,13 @@ export const parseJSON = (value: string | null | undefined): any =>
   value === null || value === undefined ? null : JSON.parse(value)
 
 /**
- * Format a `created_at` timestamp for display.
+ * Format a `created_at` timestamp for display (an inbox row or a thread entry).
  *
- * Both call sites (a Conversation inbox row + a Message thread entry) drive this.
- * Their `created_at` shapes are identical today, but the union documents that and
- * keeps tracking either contract if one diverges — hence the duplicate-constituent
- * disable below.
- *
- * @param value     The `created_at` timestamp
- * @param longMonth `true` → "December", `false` → "Dec".
+ * @param value     The `created_at` ISO timestamp.
+ * @param longMonth `true` -> "December", `false` -> "Dec".
  * @returns The formatted "Month D, YYYY h:mm AM" string, or `''` if unparseable.
  */
-// eslint-disable-next-line @typescript-eslint/no-duplicate-type-constituents
-export const formatTimestamp = (value: Conversation['created_at'] | Message['created_at'], longMonth = true): string => {
+export const formatTimestamp = (value: string, longMonth = true): string => {
   if (!value) return ''
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return ''

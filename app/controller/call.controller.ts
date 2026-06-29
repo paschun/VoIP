@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import { Types } from 'mongoose'
 import twilio from 'twilio'
 import Setting from '../model/setting.model.ts'
-import Call from '../model/message.model.ts'
+import { Call } from '../model/message.model.ts'
 import Contact from '../model/contact.model.ts'
 import { getIO } from '../socket.ts'
 import { normalizeNumber } from '../helper/common.helper.ts'
@@ -28,7 +28,7 @@ import {
 
 const xmlResponse = (c: Context<Env>, xml: string) => c.body(xml, 200, { 'Content-Type': 'text/xml' })
 
-const emptyTwiml = '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n</Response>'
+const emptyTwiml = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
 
 /**
  * Persist a call-log entry, linking a known contact if one matches the other party. Each caller builds its provider
@@ -50,12 +50,11 @@ async function recordCall(opts: {
   await Call.create({
     sid: opts.sid,
     user,
-    datatype: 'call',
     type: opts.direction,
     number: opts.number,
     telnyx_number: opts.providerNumber,
     setting: opts.setting,
-    isview: opts.direction === 'send' ? 'true' : 'false',
+    isview: opts.direction === 'send',
     ...(contact ? { contact: contact._id } : {}),
   })
 }
@@ -186,11 +185,11 @@ async function dialTelnyxSip(c: FormCtx<TwilioInboundWebhook>) {
     const setting = await Setting.findOne({ number: { $eq: body.To ?? '' } })
     if (setting && setting.sip_username) {
       callXml = `<?xml version="1.0" encoding="UTF-8"?>
-                <Response>
-                <Dial>
-                    <Sip>sip:${setting.sip_username}@sip.telnyx.com</Sip>
-                </Dial>
-                </Response>`
+                 <Response>
+                   <Dial>
+                     <Sip>sip:${setting.sip_username}@sip.telnyx.com</Sip>
+                   </Dial>
+                 </Response>`
       await recordCall({
         sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'receive',
         number: body.From ?? '', providerNumber: body.To ?? '',
@@ -214,6 +213,7 @@ async function recordTelnyxStatus(c: Context<Env>) {
       if (parsed.success) await applyTelnyxEvent(parsed.data.data)
       else console.error('Unhandled Telnyx webhook payload', parsed.error)
     } else {
+      // TeXML status callbacks arrive as Twilio-shaped form posts
       const parsed = twilioStatusWebhook.safeParse(await c.req.parseBody())
       if (parsed.success) await applyStatus(parsed.data)
       else console.error('Unhandled Telnyx TeXML status payload', parsed.error)

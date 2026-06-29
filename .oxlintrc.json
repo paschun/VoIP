@@ -13,7 +13,7 @@
     "no-shadow": "error",
     // "typescript/no-explicit-any": "warn",
     // "typescript/no-non-null-assertion": "warn",
-    // "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ]
+    "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ],
     // "import/no-cycle": "error",
     "no-redeclare": "error",
     "no-param-reassign": "error",

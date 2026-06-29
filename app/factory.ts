@@ -34,5 +34,8 @@ export type FormCtx<T> = Context<Env, string, { in: { form: T }; out: { form: T 
 /** Context for a handler guarded by `queryParams(schema)` (`?number=`): `c.req.valid('query')` is `T`. */
 export type QueryCtx<T> = Context<Env, string, { in: { query: T }; out: { query: T } }>
 
+/** Context for a handler guarded by `headerParams(schema)` (e.g. an upload's `content-type`): `c.req.valid('header')` is `T`. */
+export type HeaderCtx<T> = Context<Env, string, { in: { header: T }; out: { header: T } }>
+
 /** Context for a handler guarded by both `pathParams` and `jsonBody` (e.g. `PUT /:id`): `valid('param')` and `valid('json')`. */
 export type ParamJsonCtx<P, J> = Context<Env, string, { in: { param: P; json: J }; out: { param: P; json: J } }>

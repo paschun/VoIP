@@ -9,7 +9,7 @@ const userSchema = new Schema({
         type: String,
         default: null,
     },
-})
+}, { strict: 'throw', strictQuery: 'throw' })
 const User = model('User', userSchema)
 
 export default User

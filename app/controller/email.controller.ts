@@ -47,16 +47,15 @@ async function upsertEmail(c: JsonCtx<EmailCreateRequest>) {
       pgpPublicKey: body.pgpPublicKey,
       pgpEncryptEnabled: body.pgpEncryptEnabled,
     },
-    // `new` returns modified document rather than the original
-    { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true },
+    // `returnDocument: 'after'` returns modified document rather than the original
+    { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, runValidators: true },
   )
   const data = email.toObject({ flattenObjectIds: true })
   return c.json({ data } satisfies Ok, 200)
 }
 
 async function getEmailSettings(c: Context<Env>) {
-  // no request payload to validate — GET with no query/params; identity comes from `auth`'s `c.get('user')`.
-  // No try/catch: an unexpected failure throws and `app.onError` logs it once as a 500.
+  // EmailSetting.vue calls this on mount and interprets null as "no settings exist yet"
   const emailSettings = await Email.findOne({ user: c.get('user').id })
   const data = emailSettings ? emailSettings.toObject({ flattenObjectIds: true }) : null
   return c.json({ data } satisfies Ok, 200)

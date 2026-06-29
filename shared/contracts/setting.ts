@@ -36,6 +36,12 @@ export const getNumberBody = z.discriminatedUnion('type', [
 ])
 export type GetNumberRequest = z.infer<typeof getNumberBody>
 
+/** Provider number listing, discriminated by `type` so the client narrows each branch's element shape. */
+export type ProviderNumbers =
+  | { type: 'telnyx'; numbers: { id: string; phone_number: string }[] }
+  | { type: 'twilio'; numbers: { sid: string; phoneNumber: string }[] }
+export type GetNumberResponse = Ok<ProviderNumbers>
+
 export const sendSmsBody = z.object({
   numbers: z.array(z.string()).min(1),
   profile: z.object({ _id: z.string() }),

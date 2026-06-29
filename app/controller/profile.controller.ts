@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import twilio from 'twilio'
 import Telnyx from 'telnyx'
 import Setting from '../model/setting.model.ts'
-import Message from '../model/message.model.ts'
+import { Message } from '../model/message.model.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
 import { factory } from '../factory.ts'
@@ -31,16 +31,16 @@ async function createProfile(c: JsonCtx<CreateProfileRequest>) {
 export const profileWithUnread = (userId: string, profileId: string, onFail?: () => NativeError) => (
   Setting.findOne({ user: { $eq: userId }, _id: { $eq: profileId } }) // type: Document
     // mongoose types have trouble inferring type when populating virtual, so add it as generic param in populate
-    .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: 'false' } }) // unread only
-    .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: 'false' } })
+    .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: false } }) // unread only
+    .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: false } })
     // https://github.com/Automattic/mongoose/blob/9.7.1/lib/query.js#L4669
     .orFail(onFail)
 )
 
 export const profilesWithUnread = (userId: string) => (
   Setting.find({ user: { $eq: userId } }) // type: Document[]
-    .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: 'false' } }) // type: PopulateDocumentResult<Document>
-    .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: 'false' } })
+    .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: false } }) // type: PopulateDocumentResult<Document>
+    .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: false } })
 )
 
 async function getProfile(c: ParamCtx<ProfileIdParam>) {

@@ -15,7 +15,7 @@ const hardwareKeySchema = new Schema({
         required: true,
     },
     created_at: { type: Date, default: Date.now },
-})
+}, { strict: 'throw', strictQuery: 'throw' })
 const HardwareKey = model('HardwareKey', hardwareKeySchema)
 
 export default HardwareKey

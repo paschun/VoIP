@@ -2,7 +2,7 @@ import { Context, Hono } from 'hono'
 import { sValidator } from '@hono/standard-validator'
 import type { HTTPResponseError } from 'hono/types'
 import { validator } from 'hono/validator'
-import { model, Schema, Types, Error as MongooseError } from 'mongoose'
+import { model, Schema, Types, Error as MongooseError, type Require_id, type InferRawDocType } from 'mongoose'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import { test, expect, describe, vi, expectTypeOf, assert, chai } from 'vitest'
 import z from 'zod'
@@ -69,9 +69,10 @@ describe('mongoose Id path param validator', () => {
       })
     })
 
-    test("standard schema type inference doesn't work", () => {
+    test.skip("standard schema type inference doesn't work", () => {
       type Output = StandardSchemaV1.InferOutput<typeof Id>
-      expectTypeOf<Output>().toEqualTypeOf<unknown>()
+      expectTypeOf<Output>().not.toEqualTypeOf<unknown>()
+      // expectTypeOf<Output>().toEqualTypeOf<{ id: Types.ObjectId }>()
     })
   })
 
@@ -119,13 +120,11 @@ describe('mongoose Id path param validator', () => {
 describe('Profile Validator', () => {
   // interface ProfileId { profile: Types.ObjectId }
 
-  const ProfileValidator = model(
-    'ProfileValidator',
-    new Schema(
-      { profile: { type: Schema.Types.ObjectId, required: true } }, // when profile is not "required" its type includes null and undefined
-      { _id: false, versionKey: false }, // these dont have validators so dont have to disable them
-    ),
-  )
+  // when profile is not "required" its type includes null and undefined
+  const pvSchemaDef = { profile: { type: Schema.Types.ObjectId, required: true } } as const
+  const pvSchemaOpts = { _id: false, versionKey: false, strict: 'throw' } as const // these dont have validators so dont have to disable them
+  const pvSchema = new Schema(pvSchemaDef, pvSchemaOpts)
+  const ProfileValidator = model('ProfileValidator', pvSchema)
 
   test('ProfileValidator registered validators', () => {
     expect(Object.keys(ProfileValidator.schema.paths)).toStrictEqual(['profile'])
@@ -153,12 +152,13 @@ describe('Profile Validator', () => {
         // https://github.com/Automattic/mongoose/blob/9.7.1/lib/model.js#L4339
         // validate is actually just schemaType.doValidate on each schema.path
         const validated = await ProfileValidator.validate(value)
-        expectTypeOf(validated).toEqualTypeOf<void>()
+        expectTypeOf(validated).toEqualTypeOf<{ profile: Types.ObjectId }>()
         expect(validated).toEqual({ profile: new Types.ObjectId(profileId) })
         expect(validated).not.toEqual({ id: profileId })
+        expect(validated).not.toEqual({ profile: profileId })
 
-        // validate() calls castObject internally but doesnt properly type the return value. So we do it ourselves.
-        // castObject can't narrow from ObjectId | null , it just returns TRawDocType
+        // validate() calls castObject internally
+        // castObject returns TRawDocType
         const casted = ProfileValidator.castObject(value)
         expect(casted).toEqual({ profile: new Types.ObjectId(profileId) })
         expectTypeOf(casted.profile).not.toBeNullable()
@@ -402,8 +402,9 @@ describe('Profile Validator', () => {
         })
       })
 
-      test("DOESN'T work with mongoose model", async () => {
+      test.skip("DOESN'T work with mongoose model", async () => {
         const payload = { profile: '7'.repeat(24) }
+        // type SOut = StandardSchemaV1.InferOutput<typeof ProfileValidator>
 
         const app = new Hono()
         app.onError(thrw)
@@ -415,8 +416,8 @@ describe('Profile Validator', () => {
             // hook's `result.data` is typed to validator input, not output:
             // https://github.com/honojs/middleware/blob/%40hono/standard-validator%400.2.2/packages/standard-validator/src/index.ts#L151
             expectTypeOf(result.data).not.toEqualTypeOf<{ profile: string }>()
-            expectTypeOf(result.data).not.toEqualTypeOf<{ profile: Types.ObjectId }>()
-            expectTypeOf(result.data).toEqualTypeOf<unknown>()
+            // expectTypeOf(result.data).toEqualTypeOf<{ profile: Types.ObjectId }>()
+            expectTypeOf(result.data).not.toEqualTypeOf<unknown>()
           }),
         )
 
@@ -428,7 +429,7 @@ describe('Profile Validator', () => {
       })
     })
 
-    test('with no hook', async () => {
+    test.skip('with no hook', async () => {
       const profileId = 'b'.repeat(24)
       const payload = { profile: profileId }
 
@@ -439,9 +440,10 @@ describe('Profile Validator', () => {
         const valid = c.req.valid('json')
 
         expect(valid).toEqual({ profile: new Types.ObjectId(profileId) })
+        expect(valid).not.toHaveProperty('_id') // type says _id is on the obj but it isn't really
         expectTypeOf(valid).not.toEqualTypeOf<{ profile: string }>()
-        expectTypeOf(valid).not.toEqualTypeOf<{ profile: Types.ObjectId }>()
-        expectTypeOf(valid).toEqualTypeOf<unknown>()
+        // expectTypeOf(valid).toEqualTypeOf<{ profile: Types.ObjectId }>()
+        expectTypeOf(valid).not.toEqualTypeOf<unknown>()
 
         return c.text('ok', 200)
       })

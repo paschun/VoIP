@@ -40,3 +40,5 @@ export const pathParams = <S extends StandardSchemaV1>(schema: S) => sValidator(
 export const pathParams404 = <S extends StandardSchemaV1>(schema: S) => sValidator('param', schema, makeHook(404))
 /** Query-string validation (`?number=`): binds `c.req.valid('query')` to the schema's output type. */
 export const queryParams = <S extends StandardSchemaV1>(schema: S) => sValidator('query', schema, hook422)
+/** Request-header validation (e.g. an upload's `Content-Type`): binds `c.req.valid('header')` to the schema's output type. */
+export const headerParams = <S extends StandardSchemaV1>(schema: S) => sValidator('header', schema, hook422)

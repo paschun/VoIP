@@ -6,7 +6,7 @@ import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts
 import { signToken } from '../app/helper/common.helper.ts'
 import { profileRoutes } from '../app/routes/profile.route.ts'
 import Setting from '../app/model/setting.model.ts'
-import Message from '../app/model/message.model.ts'
+import { TextMessage } from '../app/model/message.model.ts'
 
 // End-to-end tests of the only two routes that use the count virtuals (`getProfiles`/`getProfile`): they `.populate()`
 // `messageCount`/`totalCount`, so this is where we prove (a) the virtuals serialize as the numbers our `SettingDoc`
@@ -23,14 +23,18 @@ beforeAll(async () => {
 afterAll(disconnectMemoryDb)
 afterEach(clearDb)
 
+/** Seed one message for a profile (the count virtuals only care about setting/user/isview; the rest are just required). */
+const seedMessage = (setting: mongoose.Types.ObjectId, isview: boolean) =>
+  TextMessage.create({ sid: 'sid', number: '+10000000000', telnyx_number: '+19999999999', type: 'receive', setting, user: userId, isview })
+
 describe('GET /api/profile -- list with populated count virtuals', () => {
   test('messageCount = this profile\'s unread; totalCount = the user\'s unread (read msgs excluded)', async () => {
     const mine = await Setting.create({ user: userId, profile: 'Work', type: 'twilio' })
     const other = await Setting.create({ user: userId, profile: 'Side', type: 'telnyx' })
-    await Message.create({ setting: mine._id, user: userId, isview: 'false' })
-    await Message.create({ setting: mine._id, user: userId, isview: 'false' })
-    await Message.create({ setting: other._id, user: userId, isview: 'false' })
-    await Message.create({ setting: mine._id, user: userId, isview: 'true' }) // read -> excluded by the populate match
+    await seedMessage(mine._id, false)
+    await seedMessage(mine._id, false)
+    await seedMessage(other._id, false)
+    await seedMessage(mine._id, true) // read -> excluded by the populate match
 
     const res = await client.index.$get({}, auth)
     expect(res.status).toBe(200)
@@ -64,7 +68,7 @@ describe('GET /api/profile -- list with populated count virtuals', () => {
 describe('GET /api/profile/:id -- single profile detail', () => {
   test('returns the populated count for one owned profile', async () => {
     const mine = await Setting.create({ user: userId, profile: 'Work', type: 'twilio' })
-    await Message.create({ setting: mine._id, user: userId, isview: 'false' })
+    await seedMessage(mine._id, false)
 
     const res = await client[':id'].$get({ param: { id: mine._id.toString() } }, auth)
     expect(res.status).toBe(200)
