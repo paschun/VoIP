@@ -37,6 +37,7 @@ import {
   messageListBody, type MessageListRequest,
   conversationParam, type ConversationParam,
 } from '../../shared/contracts/setting.ts'
+import User from '../model/user.model.ts'
 
 // todo: check this against email model
 interface SendEmailSetting {
@@ -162,6 +163,7 @@ async function resetProviderConfig(c: ParamCtx<ProfileIdParam>) {
 async function saveProviderConfig(c: JsonCtx<CreateSettingRequest>) {
   const userId = c.get('user').id
   const body = c.req.valid('json')
+  if (!(await User.findOne({ _id: { $eq: userId } }))) throw new HTTPException(404, { message: 'User not found!' })
   return body.type === 'telnyx' ? saveTelnyxConfig(c, userId, body) : saveTwilioConfig(c, userId, body)
 }
 

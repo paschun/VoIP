@@ -1,8 +1,6 @@
 <template>
   <fallback-url-setting
-    resource="provider/twilio/webhook"
-    main-path="data.voiceUrl"
-    fallback-path="data.voiceFallbackUrl"
+    provider="twilio"
     main-label="Request URL"
     fallback-label="Fallback URL"
     fallback-placeholder="Enter Fallback Url"

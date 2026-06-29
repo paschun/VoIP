@@ -127,14 +127,9 @@ methods: {
     }
   },
   async getTotpStatus () {
-    try {
-      const enabled = (await request(client.api.auth.me.$get())).data.totp
-      this.realTotp = enabled
-      this.totpEnabled = enabled
-    } catch {
-      this.realTotp = false
-      this.totpEnabled = false
-    }
+    const enabled = (await request(client.api.auth.me.$get())).data.totp
+    this.realTotp = enabled
+    this.totpEnabled = enabled
   }
 }
 })

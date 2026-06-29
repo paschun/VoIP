@@ -36,6 +36,7 @@ import ChangeUsername from './ChangeUsername.vue'
 import ChangePassword from './ChangePassword.vue'
 import CallSetting from '../CallSetting.vue'
 import SettingsSection from '../SettingsSection.vue'
+import { client, request } from '@/core/rpc.client.ts'
 
 export default defineComponent({
   components: { ChangeUsername, ChangePassword, CallSetting, SettingsSection },
@@ -63,13 +64,19 @@ export default defineComponent({
         showCancelButton: true,
         confirmButtonText: 'Submit',
         showLoaderOnConfirm: true,
-        preConfirm: (login) => {
-          return this.$del('auth/account', { password: login })
-            .catch(() => false)
+        preConfirm: async (login) => {
+          try {
+            await request(client.api.auth.account.$delete({ json: { password: login } }))
+            return true
+          } catch {
+            return false
+          }
         },
         allowOutsideClick: () => !this.$swal.isLoading()
       })
-      if (!result.isConfirmed) return
+      // request() already toasted on failure; preConfirm returns false then, so gate on the value (a failed delete must
+      // not fall through to the success swal + logout).
+      if (!result.value) return
       await this.$swal.fire({
         icon: 'success',
         title: 'Account Delete',

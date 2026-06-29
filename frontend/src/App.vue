@@ -21,12 +21,8 @@ export default defineComponent({
   },
   methods: {
     async getVersion () {
-      try {
-        const res = await request(client.api.auth.version['update-available'].$get())
-        this.old_version = res.data
-      } catch {
-        this.old_version = false
-      }
+      const res = await request(client.api.auth.version['update-available'].$get())
+      this.old_version = res.data
     }
   }
 })

@@ -5,24 +5,20 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { appDirectory } from '@/router/helpers.ts'
+import { client, request } from '@/core/rpc.client.ts'
 
 export default defineComponent({
   mounted () {
     this.checkDirectoryName()
   },
   methods: {
-    checkDirectoryName () {
-      this.$get('auth/directory-name?name=' + encodeURIComponent(appDirectory(this.$route)))
-        .then((response) => {
-          console.log('CheckDir', response)
-          const status = response?.data?.status
-          if (status === 'nodir' || status === 'no-name') {
-            this.$router.push({ name: 'dashboard', params: { appdirectory: 'voip' } })
-          } else if (status === 'false') {
-            this.$router.push({ name: 'error' })
-          }
-        })
-        .catch((e) => console.error(e))
+    async checkDirectoryName () {
+      const { data } = await request(client.api.auth['directory-name'].$get({ query: { name: appDirectory(this.$route) } }))
+      if (data.status === 'nodir' || data.status === 'no-name') {
+        this.$router.push({ name: 'dashboard', params: { appdirectory: 'voip' } })
+      } else if (data.status === 'false') {
+        this.$router.push({ name: 'error' })
+      }
     }
   }
 })

@@ -1,6 +1,6 @@
 <template>
   <div class="py-1 px-2">
-    <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
+    <form @submit.prevent="saveFallbackUrl" class="ml-2 mr-2">
       <div class="form-group mt-2">
         <label>{{ mainLabel }}</label>
         <input class="form-control main-url-control" v-model="mainUrl" readonly />
@@ -26,13 +26,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref, type PropType } from 'vue'
 import { useRegle } from '@regle/core'
 import { notifySuccess } from '@/notify.ts'
 import { required, withMessage, httpUrl } from '@regle/rules'
-
-/** Read a property out of an object using a dotted path (e.g. "data.data.webhook_url"). */
-const pickPath = (obj: any, path: string): any => path.split('.').reduce((acc, k) => acc?.[k], obj)
+import { client, request } from '@/core/rpc.client.ts'
 
 /** Strip everything but `${protocol}//${hostname}` from a URL string. */
 const toOrigin = (str: string): string => {
@@ -44,27 +42,24 @@ const toOrigin = (str: string): string => {
  * Shared "webhook URL + fallback URL" settings form, used by the Telnyx
  * SIP/TeXML/Message and Twilio TwiML settings panels.
  *
- * TODO: rename this component (and the `resource` framing). The backend group is no longer "fallback" -- it is
- * `/api/provider` and this form reads/patches the provider webhook config. A name like `ProviderWebhookSetting`
- * would match; the file lives under `setting/call/` and is referenced by TwimlSetting.vue / MessageSetting.vue.
+ * TODO: rename this component. The backend group is no longer "fallback" -- it is `/api/provider` and this form
+ * reads/patches the provider webhook config. A name like `ProviderWebhookSetting` would match; the file lives under
+ * `setting/call/` and is referenced by TwimlSetting.vue / MessageSetting.vue.
  */
 export default defineComponent({
   name: 'FallbackUrlSetting',
   setup (props) {
-    const { r$ } = useRegle('', {
+    const fallbackUrl = ref('')
+    const { r$ } = useRegle(fallbackUrl, {
       required: withMessage(required, () => props.requiredMessage), // default: This field is required
       // keyed `validUrl`, not `url`, so it doesn't collide with Regle's built-in `url` rule name
       validUrl: withMessage(httpUrl, () => props.invalidMessage) // default: The value is not a valid http URL address
     })
-    return { r$ }
+    return { r$, fallbackUrl }
   },
   props: {
-    /** Resource base path; GET `${resource}/${settingId}` loads current values, PUT `${resource}/${settingId}` saves. */
-    resource: { type: String, required: true },
-    /** Dotted path to the read-only "main" URL in the GET response. */
-    mainPath: { type: String, required: true },
-    /** Dotted path to the editable fallback URL in the GET response. */
-    fallbackPath: { type: String, required: true },
+    /** Which provider's webhook config to read/patch (selects the typed RPC route). */
+    provider: { type: String as PropType<'twilio' | 'telnyx'>, required: true },
     /** When true, GET response URLs are stripped to `${protocol}//${hostname}`. */
     normalizeHost: { type: Boolean, default: false },
     /** When true, the user-entered fallback URL is stripped to `${protocol}//${hostname}` before submit. */
@@ -80,41 +75,47 @@ export default defineComponent({
   data () {
     return {
       mainUrl: '',
-      setting: null as any
+      setting: null as string | null
     }
   },
   mounted () {
     this.getCallSetting()
   },
   methods: {
-    getCallSetting () {
+    async getCallSetting () {
       const profileLocal = localStorage.getItem('activeProfile')
       if (!profileLocal) return
       this.setting = JSON.parse(profileLocal)?._id
+      if (!this.setting) return
 
-      this.$get(`${this.resource}/${this.setting}`)
-        .then((response) => {
-          const main = pickPath(response, this.mainPath)
-          const fallback = pickPath(response, this.fallbackPath)
-          const normalize = (v: any) => this.normalizeHost && v ? toOrigin(v) : v
-          this.mainUrl = normalize(main) ?? ''
-          if (fallback) this.r$.$value = normalize(fallback)
-        })
-        .catch((e) => console.error(e))
+      const normalize = (v: string | null | undefined) => (this.normalizeHost && v ? toOrigin(v) : v)
+      let main: string | null | undefined
+      let fallback: string | null | undefined
+      if (this.provider === 'twilio') {
+        const { data } = await request(client.api.provider.twilio.webhook[':settingId'].$get({ param: { settingId: this.setting } }))
+        main = data.voiceUrl
+        fallback = data.voiceFallbackUrl
+      } else {
+        const { data } = await request(client.api.provider.telnyx.webhook[':settingId'].$get({ param: { settingId: this.setting } }))
+        main = data.webhook_url
+        fallback = data.webhook_failover_url
+      }
+      this.mainUrl = normalize(main) ?? ''
+      if (fallback) this.fallbackUrl = normalize(fallback) ?? ''
     },
-    async handleSubmit () {
+    async saveFallbackUrl () {
       const { valid, data } = await this.r$.$validate()
-      if (!valid) return
+      if (!valid || !this.setting) return
 
       const submitUrl = this.normalizeSubmit ? toOrigin(data) : data
-      try {
-        const response = await this.$patch(`${this.resource}/${this.setting}`, { fallbackUrl: submitUrl })
-        if (!response) return
-        notifySuccess(this.successMessage)
-        this.getCallSetting()
-      } catch (e) {
-        console.error(e)
+      const param = { settingId: this.setting }
+      if (this.provider === 'twilio') {
+        await request(client.api.provider.twilio.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
+      } else {
+        await request(client.api.provider.telnyx.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
       }
+      notifySuccess(this.successMessage)
+      this.getCallSetting()
     }
   }
 })
