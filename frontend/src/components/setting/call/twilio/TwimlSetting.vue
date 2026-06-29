@@ -1,5 +1,5 @@
 <template>
-  <fallback-url-setting
+  <provider-webhook-setting
     provider="twilio"
     main-label="Request URL"
     fallback-label="Fallback URL"
@@ -13,6 +13,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import FallbackUrlSetting from '../FallbackUrlSetting.vue'
-export default defineComponent({ components: { FallbackUrlSetting } })
+import ProviderWebhookSetting from '../ProviderWebhookSetting.vue'
+export default defineComponent({ components: { ProviderWebhookSetting } })
 </script>
