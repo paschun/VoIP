@@ -349,7 +349,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
           from: setting.number ?? '',
           to: toNumber,
           statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.sms.smsStatus.full.twilio),
-          ...(media.length > 0 ? { mediaUrl: media } : {}),
+          ...(media.length ? { mediaUrl: media } : {}),
         })
         sid = sent.sid
       } catch (e) {
@@ -362,7 +362,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
           to: toNumber,
           text: message,
           webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.smsStatus.full.telnyx),
-          ...(media.length > 0 ? { media_urls: media } : {}),
+          ...(media.length ? { media_urls: media } : {}),
         })
         sid = sent.data?.id
       } catch (e) {
@@ -384,7 +384,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
     }
     const contactId = await findContactId(userId, toNumber)
     if (contactId) record.contact = contactId
-    if (media.length > 0) record.media = JSON.stringify(media)
+    if (media.length) record.media = media
     messageRecords.push(record)
   }
 
@@ -439,7 +439,7 @@ async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
         isview: false,
         message: messageText,
         setting: setting._id,
-        media: JSON.stringify(media),
+        media,
       }
       const contact = await Contact.findOne({ user: { $eq: setting.user?.toString() ?? '' }, number: { $eq: fromNumber } })
       if (contact) record.contact = contact._id
@@ -631,7 +631,7 @@ async function listMessages(c: JsonCtx<MessageListRequest>) {
   // MessageDoc generic is just for this file.
   // shape each row by its `datatype` so calls carry only `duration` and texts only `message`/`media`.
   // Frontend narrows on `datatype`.
-  const common = (m: MessageDoc) => ({ id: m._id, type: m.type, created_at: m.created_at })
+  const common = (m: MessageDoc) => ({ _id: m._id, type: m.type, created_at: m.created_at })
   const data = (await Message.find(filter).lean<MessageDoc[]>()).map((m) =>
     m.datatype === 'call'
       ? { datatype: m.datatype, ...common(m), duration: m.duration }

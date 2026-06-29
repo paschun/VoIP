@@ -56,7 +56,7 @@ export const messageSchema = new Schema({
 // Discriminators inherit the base schema's options, so `strict`/`strictQuery: 'throw'` already to these two as well
 export const textMessageSchema = new Schema({
     message: String, // used for texts. a media-only MMS has empty text
-    media: String, // '["https://example.com/uploads/20260601/cf55....png"]', JSON array of MMS media URLs
+    media: [String], // MMS media URLs, e.g. ['https://example.com/uploads/20260601/cf55....png']
 })
 
 export const callSchema = new Schema({
@@ -64,7 +64,7 @@ export const callSchema = new Schema({
 })
 
 export const Message = model('Message', messageSchema)
-/** SMS/MMS text entries (`datatype: 'message'`): a text body plus an optional JSON array of MMS media URLs. */
+/** SMS/MMS text entries (`datatype: 'message'`): a text body plus an optional array of MMS media URLs. */
 export const TextMessage = Message.discriminator('TextMessage', textMessageSchema, 'message')
 /** Call-log entries (`datatype: 'call'`): a call duration in seconds instead of a message body. */
 export const Call = Message.discriminator('Call', callSchema, 'call')

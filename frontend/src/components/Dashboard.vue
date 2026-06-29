@@ -187,21 +187,10 @@
                     Call( {{ getMMSS(message.duration ?? 0) }} )
                   </span>
                   <template v-else>
-                    <span
-                      v-if="
-                        message.media &&
-                        JSON.parse(message.media) &&
-                        JSON.parse(message.media).length > 0
-                      "
-                    >
-                      <span
-                        v-for="image in JSON.parse(message.media)"
-                        :key="image"
-                      >
-                        <a @click="showImage(image)" href="javascript:void(0)">
-                          <img :src="image" alt="Image" />
-                        </a>
-                      </span>
+                    <span v-for="image in message.media" :key="image">
+                      <a @click="showImage(image)" href="javascript:void(0)">
+                        <img :src="image" alt="Image" />
+                      </a>
                     </span>
                     <span> {{ message.message }} </span>
                   </template>

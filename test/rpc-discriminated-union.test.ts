@@ -57,7 +57,7 @@ describe('listMessages surfaces a discriminated union over RPC', () => {
 
   test('the real route returns rows the client narrows on datatype (runtime + types)', async () => {
     const common = { user: userId, number: '+15555555555', telnyx_number: '+19990000000', setting: profileId }
-    await TextMessage.create({ ...common, sid: 't1', type: 'receive', isview: false, message: 'hello', media: JSON.stringify(['https://x/a.png']) })
+    await TextMessage.create({ ...common, sid: 't1', type: 'receive', isview: false, message: 'hello', media: ['https://x/a.png'] })
     await Call.create({ ...common, sid: 'c1', type: 'send', isview: true, duration: 42 })
 
     const res = await client.conversations.messages.$post(
@@ -83,6 +83,6 @@ describe('listMessages surfaces a discriminated union over RPC', () => {
     expectTypeOf(textRow).not.toHaveProperty('duration')
     expectTypeOf(textRow).toHaveProperty('message')
     expect(textRow.message).toBe('hello')
-    expect(textRow.media).toBe(JSON.stringify(['https://x/a.png']))
+    expect(textRow.media).toEqual(['https://x/a.png'])
   })
 })
