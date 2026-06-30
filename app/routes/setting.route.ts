@@ -3,14 +3,11 @@ import type { Env } from '../factory.ts'
 import * as setting from '../controller/setting.controller.ts'
 import { WEBHOOKS } from '../helper/webhook-paths.ts'
 
-// Routes for `/api/setting`: profile/provider config, SMS sending + conversation history, and the public inbound-SMS/
+// Routes for `/api/setting`: provider-number lookup, SMS sending + conversation history, and the public inbound-SMS/
 // status webhooks. Auth is applied per-handler in the controller (the webhooks + provider-number lookup are public).
 // The inbound-SMS/status webhook `route`s come from `WEBHOOKS.sms` (the source the provider URLs derive from); each is a
 // single `/:type` route whose handler validates `:type` (unknown provider -> 404). They're fixed, NOT REST-renamed.
 export const settingRoutes = new Hono<Env>()
-  .post('/profiles', ...setting.createProfile)
-  .get('/profiles/:id', ...setting.getProfile)
-  .delete('/profiles/:id/provider', ...setting.disconnectProvider)
   .post('/provider-numbers', ...setting.listNumbers)
   .post('/messages', ...setting.sendMessage)
   .get('/conversations', ...setting.listConversations)

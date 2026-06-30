@@ -5,4 +5,6 @@ import type { Context } from 'hono'
  * reply (Twilio/Telnyx status callbacks, Telnyx event webhooks), and actions with nothing to return (e.g. a password
  * change). The instruction-fetch legs (TwiML/TeXML voice, inbound-SMS reply) return a real body, so they don't use this.
  */
+export const ok = (c: Context) => c.body(null, 200)
+export const created = (c: Context) => c.body(null, 201)
 export const ack = (c: Context) => c.body(null, 204)

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Ok } from '../api-contracts.ts'
+import { profileIdParam, type ProfileIdParam } from './profile.ts'
 
 // --- requests ---
 
@@ -21,9 +22,8 @@ export const createSettingBody = z.object({
 })
 export type CreateSettingRequest = z.infer<typeof createSettingBody>
 
-/** A profile (Setting) id in the path -- shared by `GET /profiles/:id` and `DELETE /profiles/:id/provider`. */
-export const profileIdParam = z.object({ id: z.string().min(1) })
-export type ProfileIdParam = z.infer<typeof profileIdParam>
+// `profileIdParam` (`GET /profiles/:id`, `DELETE /profiles/:id/provider`) is shared with the profile routes.
+export { profileIdParam, type ProfileIdParam }
 
 /** The `:type` provider segment on the SMS webhook routes (`/receive-sms/:type`, `/sms-status/:type`). */
 export const smsTypeParam = z.object({ type: z.enum(['telnyx', 'twilio']) })

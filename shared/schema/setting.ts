@@ -1,18 +1,21 @@
 import { Schema } from 'mongoose'
 import type { WireDoc } from '../wire.ts'
 
+// todo: confusing field naming -- a Setting doc *is* a "profile", yet also has its own `profile` (the display name)
+// and `setting` string fields. Rename for clarity (needs a schema migration).
+
 /**
  * A user's messaging/calling profile (Twilio or Telnyx). Many docs per user; `profile` is the display name.
  */
 export const settingSchema = new Schema({
   api_key: String,
   number: String,
-  setting: String,
+  setting: String, // the Telnyx messaging-profile id?
   sid: String,
   twilio_sid: String,
   twilio_token: String,
   profile: { type: String, required: true }, // display name
-  emailnotification: { type: String, enum: ['false', 'true'], default: 'false' },
+  emailnotification: { type: Boolean, default: false },
   type: { type: String, enum: ['telnyx', 'twilio'], default: 'telnyx' },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // user that owns this profile
   app_key: { type: String, default: null },

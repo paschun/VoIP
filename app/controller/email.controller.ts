@@ -7,6 +7,7 @@ import { factory } from '../factory.ts'
 import type { Env, JsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody } from '../validate.ts'
+import { ack } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import { emailCreateBody, type EmailCreateRequest, emailSaveSettingBody, type EmailSaveSettingRequest } from '../../shared/contracts/email.ts'
 
@@ -15,9 +16,7 @@ const assertValidPgpKey = (keyString: string) => readKey({ armoredKey: keyString
 
 // ── Handlers (signatures visible) ───────────────────────────────────────────────────────────────────────────────
 
-// Route is `POST /create`, but this is semantically an idempotent upsert (a PUT): there is exactly one Email doc per
-// user (the `user` field is `unique`), so we find-or-create in a single write keyed by `user` rather than branching on
-// whether the doc already exists. (The verb/URL stay `POST /create` for wire-compat with the existing frontend.)
+// there is exactly one Email doc per user (the `user` field is `unique`) so we find-or-create in a single write keyed by `user` 
 async function upsertEmail(c: JsonCtx<EmailCreateRequest>) {
   const body = c.req.valid('json')
   if (body.pgpEncryptEnabled) {
@@ -34,7 +33,7 @@ async function upsertEmail(c: JsonCtx<EmailCreateRequest>) {
   // full field set, so required coverage holds); `setDefaultsOnInsert` applies schema defaults (e.g. `created_at`) on
   // insert. A retrieve-then-`.save()` would validate equivalently here (this model has no hooks/cross-field/custom
   // validators), but costs an extra `findOne`, so we use the atomic form.
-  const email = await Email.findOneAndUpdate(
+  await Email.findOneAndUpdate(
     { user: c.get('user').id },
     {
       email: body.email,
@@ -47,11 +46,10 @@ async function upsertEmail(c: JsonCtx<EmailCreateRequest>) {
       pgpPublicKey: body.pgpPublicKey,
       pgpEncryptEnabled: body.pgpEncryptEnabled,
     },
-    // `returnDocument: 'after'` returns modified document rather than the original
     { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, runValidators: true },
   )
-  const data = email.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+  // The client keeps the values it just sent, so there's nothing to return.
+  return ack(c)
 }
 
 async function getEmailSettings(c: Context<Env>) {
@@ -68,8 +66,7 @@ async function saveEmailNotification(c: JsonCtx<EmailSaveSettingRequest>) {
   if (!setting) throw new HTTPException(400, { message: `Profile ${setting_id} not found!` })
   setting.emailnotification = status
   await setting.save()
-  // todo: is `null` here needed?
-  return c.json({ data: null } satisfies Ok<null>, 200)
+  return ack(c)
 }
 
 // ── Route handler chains (middleware + validation + handler), spread into the Hono group in email.route.ts ──────────

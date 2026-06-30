@@ -1,17 +1,9 @@
 import { z } from 'zod'
-import type { Ok } from '../api-contracts.ts'
-import type { SettingDoc } from '../schema/setting.ts'
 
-// `/token` issues a provider access token for the caller's chosen profile (setting).
+// `/token` issues a provider access token for the caller's chosen profile (setting). The 200 body (a Twilio JWT, or the
+// Telnyx Setting carrying SIP creds) is RPC-inferred at the call site, not hand-typed here.
 export const getTokenBody = z.object({ setting_id: z.string().min(1) })
 export type GetTokenRequest = z.infer<typeof getTokenBody>
-
-// Twilio gets a JWT access token; Telnyx gets the Setting itself (the frontend builds its WebRTC client from the SIP
-// credentials on it).
-export type CallTokenData =
-  | { type: 'twilio'; token: string }
-  | { type: string; setting: SettingDoc }
-export type CallTokenResponse = Ok<CallTokenData>
 
 // Provider webhook payloads. These are unauthenticated provider callbacks, and a webhook must never reject a provider
 // with 422, so `.partial()` makes every field optional in one shot -- validation here exists only to TYPE the handful

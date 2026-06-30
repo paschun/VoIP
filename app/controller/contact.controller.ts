@@ -14,6 +14,7 @@ import {
   contactLookupQuery, type ContactLookupQuery,
   contactIdParam, type ContactIdParam,
 } from '../../shared/contracts/contact.ts'
+import { ack, created } from '../util/respond.hono.ts'
 
 const MAX_CONTACTS = 500
 
@@ -45,15 +46,13 @@ async function createContact(c: JsonCtx<ContactRequest>) {
   }
   const saved = await Contact.create({ user, number, first_name: body.first_name, last_name: body.last_name ?? '', note: body.note ?? '' })
   await Message.updateMany({ user: { $eq: user }, number: { $eq: number } }, { contact: saved._id })
-  const data = saved.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+  return created(c)
 }
 
 async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
   const user = c.get('user').id
   // track `count` to see if we go over max
   let count = await Contact.countDocuments({ user: { $eq: user } })
-  let created = 0
   for (const item of c.req.valid('json').contacts) {
     if (count >= MAX_CONTACTS) break
     const number = normalizeNumber(item.number)
@@ -61,10 +60,8 @@ async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
     if (exists) continue
     await Contact.create({ user, number, first_name: item.first_name ?? '', last_name: item.last_name ?? '', note: item.note ?? '' })
     count++
-    created++
   }
-  // TODO: `data: created` isnt used on the client at all. maybe we can omit it.
-  return c.json({ data: { created } } satisfies Ok<{ created: number }>, 200)
+  return created(c)
 }
 
 async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
@@ -78,8 +75,7 @@ async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
   contact.number = normalizeNumber(body.number)
   contact.note = body.note ?? ''
   await contact.save()
-  const data = contact.toObject({ flattenObjectIds: true })
-  return c.json({ data } satisfies Ok, 200)
+  return ack(c)
 }
 
 async function deleteContact(c: ParamCtx<ContactIdParam>) {
@@ -87,12 +83,12 @@ async function deleteContact(c: ParamCtx<ContactIdParam>) {
   // Scope by user so a user can only delete their own contacts.
   const result = await Contact.deleteOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
   if (result.deletedCount === 0) throw new HTTPException(404, { message: 'Contact not found!' })
-  return c.json({ data: null } satisfies Ok<null>, 200)
+  return ack(c)
 }
 
 async function deleteAllContacts(c: Context<Env>) {
   await Contact.deleteMany({ user: { $eq: c.get('user').id } })
-  return c.json({ data: null } satisfies Ok<null>, 200)
+  return ack(c)
 }
 
 export const getAll = factory.createHandlers(auth, getContacts)

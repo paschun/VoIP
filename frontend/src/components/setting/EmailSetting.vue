@@ -55,9 +55,10 @@
               </b-form-checkbox>
             </div>
             <div class="form-group">
-                <!-- Disable until valid AND changed: $invalid checks validity, $anyEdited checks change-since-load.
-                     $correct is unfit -- it conflates valid with merely-dirty (load marks it dirty), so it would both
-                     allow re-saving unchanged data and block a valid form the user hasn't touched. -->
+                <!-- Disable until valid AND actually changed: $invalid checks validity, $anyEdited checks change vs the
+                     post-load baseline ($reset re-baselines on load). $correct is unfit -- it keys off $dirty (any
+                     interaction), not $edited, so it would enable Save after an edit-and-revert (re-saving unchanged
+                     data), and its "not empty" clause is murky for the optional fields. -->
                 <button class="btn btn-success mt-2" type="submit" :disabled="r$.$invalid || !r$.$anyEdited">Save</button>
             </div>
         </form>
@@ -66,8 +67,6 @@
           <div class="form-group mt-2">
             <b-form-checkbox v-for="profile in profileStore.profiles" :key="profile._id"
               :name="'checkbox-' + profile._id"
-              :value="strTrue"
-              :unchecked-value="strFalse"
               :model-value="profile.emailnotification"
               @update:model-value="profileUpdate($event, profile._id)"
             >
@@ -80,42 +79,41 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
+import type { CheckboxValue } from 'bootstrap-vue-next'
 import { useRegle } from '@regle/core'
 import { required, email, requiredIf, withMessage } from '@regle/rules'
 import { useProfileStore } from '@/stores/profile.ts'
+import { client, request } from '@/core/rpc.client.ts'
 import { notifySuccess } from '@/notify.ts'
-import type { StringBoolean } from '@shared/api-contracts.ts'
+import type { EmailCreateRequest } from '@shared/contracts/email.ts'
 import type { EmailDoc } from '@shared/schema/email.ts'
-import type { EmailSettingsResponse, SaveEmailSettingsResponse, SaveEmailSettingResponse } from '@shared/contracts/email.ts'
-
-/** The editable subset of the Email document the form lets the user change (a frontend concern, not a wire contract). */
-type EmailFields = Pick<EmailDoc,
-  'email' | 'sender_email' | 'password' | 'to_email' | 'host' | 'port' | 'secure' | 'pgpEncryptEnabled' | 'pgpPublicKey'>
 
 /**
- * Form/binding shape, derived from `EmailFields` so it tracks the schema. `-?` makes every field present (v-model needs
- * it) and `NonNullable` strips `| null | undefined`, so `email?: string | null` becomes `email: string`.
+ * Build a full form from a (partial or absent) saved document -- reused for init, load, and reset. The form is exactly
+ * the create-request body (`EmailCreateRequest`), so it feeds straight into the `$put`. A present doc has every field
+ * non-null thanks to the tightened schema, so only `pgpPublicKey` (the one nullable field) needs a `?? ''` fallback;
+ * absent data short-circuits to a blank form.
  */
-type EmailForm = { [K in keyof EmailFields]-?: NonNullable<EmailFields[K]> }
-
-/** Build a full, non-null form from a (partial or absent) saved document -- reused for init, load, and reset. */
-const toEmailForm = (data?: EmailDoc | null): EmailForm => ({
-  email: data?.email ?? '',
-  sender_email: data?.sender_email ?? '',
-  password: data?.password ?? '',
-  to_email: data?.to_email ?? '',
-  host: data?.host ?? '',
-  port: data?.port ?? '',
-  secure: data?.secure ?? false,
-  pgpEncryptEnabled: data?.pgpEncryptEnabled ?? false,
-  pgpPublicKey: data?.pgpPublicKey ?? '',
-})
+const toEmailForm = (data?: EmailDoc | null): EmailCreateRequest => {
+  if (!data) {
+    return { email: '', sender_email: '', password: '', to_email: '', host: '', port: '',
+             secure: false, pgpEncryptEnabled: false, pgpPublicKey: '' }
+  }
+  return {
+    email: data.email,
+    sender_email: data.sender_email,
+    password: data.password,
+    to_email: data.to_email,
+    host: data.host,
+    port: data.port,
+    secure: data.secure,
+    pgpEncryptEnabled: data.pgpEncryptEnabled,
+    pgpPublicKey: data.pgpPublicKey ?? '',
+  }
+}
 
 export default defineComponent({
   setup () {
-    // BVN checkbox values are this contract's `'true' | 'false'`, not a JS boolean; its prop types can't be constrained.
-    const strTrue: StringBoolean = 'true'
-    const strFalse: StringBoolean = 'false'
     const formState = ref(toEmailForm())
     const { r$ } = useRegle(formState, {
       email: { required: withMessage(required, 'Email Is Required') },
@@ -128,7 +126,7 @@ export default defineComponent({
       // no key), so submit blocks client-side instead of relying on the backend 400.
       pgpPublicKey: { required: withMessage(requiredIf(() => formState.value.pgpEncryptEnabled), 'Public PGP Key Required') }
     })
-    return { r$, formState, strTrue, strFalse, profileStore: useProfileStore() }
+    return { r$, formState, profileStore: useProfileStore() }
   },
   data (): { showProfile: boolean } {
     return {
@@ -140,49 +138,26 @@ export default defineComponent({
   },
   methods: {
     async saveEmailSetting () {
-      const { valid, data } = await this.r$.$validate()
+      const { valid } = await this.r$.$validate()
       if (!valid) return
-      try {
-        const response = await this.$put<SaveEmailSettingsResponse>('email/setting', data)
-        if (response) {
-          notifySuccess('Setting saved successfully', 'Email Setting')
-          this.getEmailSetting()
-        }
-      } catch (e) {
-        console.error(e)
-      }
+      // Send the full form (every field present) rather than $validate's output, which marks rule-less fields optional.
+      await request(client.api.email.setting.$put({ json: this.formState }))
+      this.r$.$reset()
+      notifySuccess('Setting saved successfully', 'Email Setting')
+      this.showProfile = true
     },
-    getEmailSetting () {
-      this.$get<EmailSettingsResponse>('email/setting')
-        .then((response) => {
-          if (response && response.data) {
-            this.formState = toEmailForm(response.data)
-            this.showProfile = true
-            void this.profileStore.loadProfiles()
-          } else {
-            this.formState = toEmailForm()
-          }
-          // Re-baseline the loaded values as the form's initial state so Save stays disabled until the user actually
-          // changes something ($anyEdited compares against this baseline, not the blank original).
-          this.r$.$reset()
-        })
-        .catch((e) => {
-          console.error(e)
-        })
+    async getEmailSetting () {
+      const { data } = await request(client.api.email.setting.$get())
+      this.formState = toEmailForm(data)
+      this.r$.$reset() // Re-baseline the loaded values as the form's initial state.
+      if (data) this.showProfile = true
     },
-    profileUpdate (status: unknown, id: string) {
-      // `$event` from the BVN checkbox is a wide union (CheckboxValue); narrow to the StringBoolean the API expects.
-      const value: StringBoolean = status === 'true' ? 'true' : 'false'
-      this.$patch<SaveEmailSettingResponse>('email/notification', { setting_id: id, status: value })
-        .then((response) => {
-          // API plugin potentially sets response to `false`
-          if (response) {
-            void this.profileStore.loadProfiles()
-          }
-        })
-        .catch((e) => {
-          console.error(e)
-        })
+    async profileUpdate (value: CheckboxValue | undefined, id: string) {
+      // CheckboxValue is a wide union
+      await request(client.api.email.notification.$patch({ json: { setting_id: id, status: value === true } }))
+      // The checkbox is controlled by the store value, so refresh it -- otherwise it snaps back to the pre-toggle state.
+      // @update:model-value handler is fire-and-forget, not waiting for this promise so no need to await this
+      void this.profileStore.loadProfiles()
     }
   }
 })

@@ -4,7 +4,6 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import VueSweetalert2 from 'vue-sweetalert2'
-import ApiPlugin from '@/core/api.plugin.ts'
 
 // Global styles (order matters)
 import 'bootstrap/dist/css/bootstrap.css'
@@ -33,6 +32,5 @@ app.use(pinia)
 app.use(router)
 app.use(createBootstrap())
 app.use(VueSweetalert2)
-app.use(ApiPlugin)
 
 app.mount('#app')

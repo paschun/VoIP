@@ -1,7 +1,6 @@
 import Swal from 'sweetalert2'
 import router from '@/router/index.ts'
 import { useUserStore } from '@/stores/user.ts'
-import type { ApiError } from '@/core/services/api.service.ts'
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status'
 
 /**
@@ -22,9 +21,8 @@ const swalError = ({ title, text }: { title?: string | number, text?: string }) 
 })
 
 /**
- * Central reaction to a failed API call, keyed on the HTTP status and the server `{ message }`. Returns `false` so the
- * legacy `$post`/`$get` wrappers (via {@link handleError}) resolve falsy; `request` (rpc.client) calls it for the side
- * effects and returns an `ApiResult` failure arm instead. Always notifies (no opt-out yet).
+ * Central reaction to a failed API call, keyed on the HTTP status and the server `{ message }`. `request`
+ * (rpc.client) calls it for the side effects before re-throwing. Always notifies (no opt-out yet).
  *
  * TODO: notification is mixed here with removing cookies/navigating. Separate those concerns.
  */
@@ -54,13 +52,4 @@ export async function notifyApiError(status?: ApiErrorStatus, message?: string):
   } else {
     void swalError({ title: status, text: message })
   } 
-}
-
-/**
- * Legacy adapter for the `api.*` throw path: unpacks the thrown `ApiError` (status + `{ message }` body) into
- * {@link notifyApiError}, so `$post`/`$get` keep their `T | false` contract. New code should prefer `request`.
- */
-export const handleError = async (err: ApiError): Promise<false> => {
-  await notifyApiError(err.status as ApiErrorStatus | undefined, err.data?.message ?? err.data?.error)
-  return false
 }

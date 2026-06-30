@@ -4,7 +4,6 @@
     <call-view
       :contacts="contacts"
       ref="callView"
-      v-if="activeCallTab"
     ></call-view>
     <loading-spinner :show="isLoading" />
     <theme-button id-hide="true"></theme-button>
@@ -444,7 +443,6 @@ export default defineComponent({
       modelMms: false,
       modelFileValue: "",
       zoomImage: "",
-      activeCallTab: false,
     };
   },
   computed: {
@@ -453,16 +451,10 @@ export default defineComponent({
     },
   },
   watch: {
-    // Active profile changed (selection or settings update): reset the open chat
-    // and re-mount the call tab. Was the `changeProfile`/`changeProfile2` events.
+    // Active profile changed (selection or settings update): unselect any open message thread. CallView re-inits its
+    // own SDK via its `activeProfileId` watcher, so no remount hack here. Was the `changeProfile`/`changeProfile2` events.
     "profileStore.activeProfile"() {
-      // unselect any active message thread
       this.activeChat = null;
-      // forces Vue to destroy and recreate <call-view> so the calling SDK re-initializes against the newly-selected profile
-      this.activeCallTab = false;
-      setTimeout(() => {
-        this.activeCallTab = true;
-      }, 1500);
     },
   },
   created() {
@@ -499,7 +491,7 @@ export default defineComponent({
       if (this.activeChatData) {
         this.showChat(this.activeChat);
       } else {
-        this.numberList?.getOneProfile();
+        void this.profileStore.refreshActiveProfile();
         this.numberList?.refreshProfile();
       }
       this.numberList?.getNumberList();
@@ -751,7 +743,7 @@ export default defineComponent({
         this.chatListLoader = false;
       }, 1000);
       this.numberList?.refreshProfile();
-      this.numberList?.getOneProfile();
+      void this.profileStore.refreshActiveProfile();
     },
     async handleSubmit2() {
       this.submitted2 = true;

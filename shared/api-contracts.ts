@@ -33,7 +33,7 @@ export interface ApiError {
 export type ApiResult<T> = (Ok<T> & { ok: true }) | (ApiError & { ok: false; status?: number })
 
 /**
- * Some Mongoose models persist booleans as the string enum `'true' | 'false'` (e.g. `Setting.emailnotification`). Type
+ * Some Mongoose models persist booleans as the string enum `'true' | 'false'` (e.g. `User.mfa`). Type
  * them as this so the frontend can compare/bind against the literal strings.
  */
 export type StringBoolean = 'true' | 'false'

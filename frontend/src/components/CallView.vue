@@ -1,7 +1,7 @@
 <template>
     <div>
         <b-button id="incomingCallModel" v-b-modal.modal-tall style="display:none">Launch demo modal</b-button>
-        <b-modal ref="modalTall" class="test-modal" id="modal-tall" no-footer>
+        <b-modal ref="modalTall" id="modal-tall" no-footer>
           <template #header="{ close }">
             <!-- Emulate built in modal header close button action -->
             <b-button v-bind:class="{ 'd-none': connection }" size="sm" variant="outline-danger" @click="close()">
@@ -14,7 +14,7 @@
                     <div v-if="!connection">
                       <v-select class="mb-2" v-model="selectedContact" @option-selected="contactChangeEvent" :options="contactSelectOptions"></v-select>
                       <b-form-group id="input-group-1" style="margin-bottom: 0;">
-                        <b-form-input class="chat-input" id="dailer_number" v-model="number" type="number" required style="" ></b-form-input>
+                        <b-form-input class="chat-input" v-model="phoneNumber" type="number" required style="" ></b-form-input>
                       </b-form-group>
                     </div>
                     <div v-else>
@@ -25,13 +25,13 @@
                                     <span class='multiCallData_name'>{{name}}</span>
                                 </div>
                                 <div class="d-flex justify-content-center" style="width:100%">
-                                <span class='multiCallData_name'> {{number}}</span>
+                                <span class='multiCallData_name'> {{phoneNumber}}</span>
                                 </div>
                                 <div class="d-flex justify-content-center" style="width:100%">
                                 <span class='timerContainer font-weight-bold mx-auto float-right mt-2' style='font-size: 45px;color:#4d64bc'><span class='multiCallData_minute' id='data.call.sid'>{{mm}}</span>:<span class='multiCallData_second' id=' data.call.sid'>{{ss}}</span></span>
                                 </div>
                             </div>
-                            <div class='p-1 mt-1'><button @click="callHangup()" class='btn btn-danger multiCallData_hangup w-100' data-id=' number + "' data-sid='data.call.sid+"' data-type='callType+"' style='width: 100%;font-size: 30px;'>Hangup</button>
+                            <div class='p-1 mt-1'><button @click="disconnected()" class='btn btn-danger multiCallData_hangup w-100' data-id=' number + "' data-sid='data.call.sid+"' data-type='callType+"' style='width: 100%;font-size: 30px;'>Hangup</button>
                             </div>
                         </div>
                         </div>
@@ -39,19 +39,19 @@
                     <div>
                       <div class="d-flex justify-content-between mt-4">
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(1)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(1)">
                             <p class="number font-weight-bolder mb-0">1</p>
                             <p class="alpha hide"></p>
                           </a>
                         </div>
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(2)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(2)">
                             <p class="number font-weight-bolder mb-0">2</p>
                             <p class="alpha">abc</p>
                           </a>
                         </div>
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(3)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(3)">
                             <p class="number font-weight-bolder">3</p>
                             <p class="alpha">def</p>
                           </a>
@@ -60,19 +60,19 @@
 
                       <div class="d-flex justify-content-between">
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(4)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(4)">
                             <p class="number font-weight-bolder">4</p>
                             <p class="alpha">ghi</p>
                           </a>
                         </div>
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(5)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(5)">
                             <p class="number font-weight-bolder">5</p>
                             <p class="alpha">jkl</p>
                           </a>
                         </div>
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(6)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(6)">
                             <p class="number font-weight-bolder">6</p>
                             <p class="alpha">mno</p>
                           </a>
@@ -80,19 +80,19 @@
                       </div>
                       <div class="d-flex justify-content-between">
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(7)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(7)">
                             <p class="number font-weight-bolder">7</p>
                             <p class="alpha">pqrs</p>
                           </a>
                         </div>
                           <div>
-                            <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(8)">
+                            <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(8)">
                               <p class="number font-weight-bolder">8</p>
                               <p class="alpha">tuv</p>
                             </a>
                           </div>
                           <div>
-                            <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(9)">
+                            <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(9)">
                               <p class="number font-weight-bolder">9</p>
                               <p class="alpha">wxyz</p>
                             </a>
@@ -102,16 +102,16 @@
                       <div class="d-flex justify-content-between">
                         <div>
                           <a class="btn btn-light-primary dialer-btn2">
-                              <p class="number font-weight-bolder" @click="clickDailer('*')">*</p>
+                              <p class="number font-weight-bolder" @click="clickDialer('*')">*</p>
                           </a>
                         </div>
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer(0)">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer(0)">
                               <p class="number font-weight-bolder">0</p>
                           </a>
                         </div>
                         <div>
-                          <a class="btn btn-light-primary dialer-btn2" @click="clickDailer('#')">
+                          <a class="btn btn-light-primary dialer-btn2" @click="clickDialer('#')">
                               <p class="number font-weight-bolder">#</p>
                           </a>
                         </div>
@@ -140,7 +140,7 @@
                             {{name}}
                         </p>
                         <p class="font-weight-bold" style="font-size: 30px;color: #787878;">
-                            {{number}}
+                            {{phoneNumber}}
                         </p>
                     </div>
                     <h4 class="mb-4">Incoming call</h4>
@@ -161,42 +161,51 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, useTemplateRef } from 'vue'
 import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
-import { Device, type Call as TwilioCall } from '@twilio/voice-sdk'
+import { Device as TwilioDevice, type Call as TwilioCall } from '@twilio/voice-sdk'
 import { Select, type SelectOptionData } from 'vue3-select-component'
-import { contactsToOptions, parseJSON } from '@/helper.ts'
-import type { CallTokenData, CallTokenResponse } from '@shared/contracts/call.ts'
+import type { BModal } from 'bootstrap-vue-next'
+import type { InferResponseType } from 'hono/client'
+import type { SuccessStatusCode } from 'hono/utils/http-status'
+import { contactsToOptions } from '@/helper.ts'
+import { client, request } from '@/core/rpc.client.ts'
+import { useProfileStore } from '@/stores/profile.ts'
+
+/** Provider call token: a Twilio JWT, or (Telnyx) the Setting carrying SIP creds. Inferred from `POST /api/call/token`. */
+type CallTokenData = InferResponseType<typeof client.api.call.token.$post, SuccessStatusCode>['data']
 
 export default defineComponent({
   props: ['contacts'],
   components: { 'v-select': Select },
+  setup () {
+    const modalTall = useTemplateRef<InstanceType<typeof BModal>>('modalTall')
+    return { profileStore: useProfileStore(), modalTall }
+  },
   data (): {
-    number: any
-    connection: any
+    phoneNumber: string
+    connection: TwilioCall | TelnyxCall | null
     name: string
-    mm: string | number
-    ss: string | number
+    mm: string
+    ss: string
     incoming: boolean
     callType: string
-    newCall: TelnyxCall | null
-    device: Device | null
-    client: TelnyxRTC | null
-    userDuration: any
+    twilioDevice: TwilioDevice | null
+    telnyxRtcClient: TelnyxRTC | null
+    userDurationIntervalId: number
     selectedContact: string
   } {
     return {
-      number: null,
+      phoneNumber: '',
       connection: null,
       name: '',
       mm: '00',
       ss: '00',
       incoming: false,
       callType: '',
-      newCall: null,
-      device: null,
-      client: null,
-      userDuration: null,
+      twilioDevice: null,
+      telnyxRtcClient: null,
+      userDurationIntervalId: -1,
       selectedContact: ''
     }
   },
@@ -205,35 +214,34 @@ export default defineComponent({
     this.deviceSetup(tokenData)
   },
   methods: {
-    deviceSetup (tokenData: CallTokenData | false) {
+    deviceSetup (tokenData: CallTokenData | undefined) {
       if (tokenData) {
         // `CallTokenData` is a union keyed on which payload arrived: Twilio sends a `token`, Telnyx sends the `setting`.
         if ('token' in tokenData) {
           this.callType = 'twilio'
-          const device = new Device(tokenData.token)
+          const device = new TwilioDevice(tokenData.token)
           device.on('registered', () => console.log('Connected'))
           device.on('error', (error: Error) => {
-            console.error('error')
-            console.error(error)
+            console.error('twilio device error', error)
           })
           device.on('incoming', (call: TwilioCall) => {
-            ;(this.$refs['modalTall'] as any).show()
+            this.modalTall?.show()
             this.connection = call
-            this.number = call.parameters.From
+            this.phoneNumber = call.parameters.From ?? ''
             this.incoming = true
             this.bindCallEvents(call)
           })
           device.register()
-          this.device = device
+          this.twilioDevice = device
         } else if ('setting' in tokenData && tokenData.setting.sip_username && tokenData.setting.sip_password) {
           this.callType = 'telnyx'
-          const client = new TelnyxRTC({
+          const rtc = new TelnyxRTC({
             login: tokenData.setting.sip_username,
             password: tokenData.setting.sip_password
           })
-          client.connect()
-          client.remoteElement = 'remoteMedia'
-          client
+          rtc.connect()
+          rtc.remoteElement = 'remoteMedia'
+          rtc
             .on('telnyx.ready', () => console.log('ready to call'))
             .on('telnyx.error', () => console.error('error'))
             .on('telnyx.notification', (notification) => {
@@ -242,8 +250,8 @@ export default defineComponent({
                 this.connection = call
                 switch (call.state) {
                   case 'ringing':
-                    ;(this.$refs['modalTall'] as any).show()
-                    this.number = call.options.remoteCallerNumber
+                    this.modalTall?.show()
+                    this.phoneNumber = call.options.remoteCallerNumber ?? ''
                     this.incoming = true
                     break
                   case 'active':
@@ -265,74 +273,49 @@ export default defineComponent({
                 }
               }
             })
-          this.client = client
+          this.telnyxRtcClient = rtc
         }
       }
     },
-    getToken (): Promise<CallTokenData | false> {
-      return new Promise<CallTokenData | false>(resolve => {
-        const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
-        if (profileLocal) {
-          this.$post<CallTokenResponse>('call/token', { setting_id: profileLocal._id })
-            .then((response) => {
-              resolve(response ? response.data : false)
-            })
-            .catch((e) => {
-              console.error(e)
-              resolve(false)
-            })
-        }
-      })
+    async getToken (): Promise<CallTokenData | undefined> {
+      const settingId = this.profileStore.activeProfileId
+      if (!settingId) return
+      const { data } = await request(client.api.call.token.$post({ json: { setting_id: settingId } }))
+      return data
     },
-    getContact () {
-      this.$get(`contact/lookup?number=${encodeURIComponent(this.number)}`)
-        .then((response) => {
-          if (response?.data) {
-            this.name = response.data.first_name + ' ' + response.data.last_name
-          }
-        })
-        .catch((e) => {
-          console.error(e)
-        })
-    },
-    getSetting () {
-      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
-      if (profileLocal) {
-        this.$get('setting/profiles/' + profileLocal._id)
-          .then(async (response) => {
-            if (response.data) {
-              localStorage.setItem('activeProfile', JSON.stringify(response.data))
-              this.distroyDevice()
-              this.distroyDeviceTelnyx()
-              const tokenData = await this.getToken()
-              this.deviceSetup(tokenData)
-            }
-          })
-          .catch((e) => {
-            console.error(e)
-          })
+    async getContact () {
+      if (!this.phoneNumber) return
+      const { data } = await request(client.api.contact.lookup.$get({ query: { number: this.phoneNumber } }))
+      if (data) {
+        this.name = data.first_name + ' ' + data.last_name
       }
     },
-    async makeCall (number: any) {
-      this.number = number
-      const n = number.replace(/\D/g, '')
-      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
+    /** Tear down the active SDK client and re-init it against the current profile. Fires when the selection changes. */
+    async reinitDevice () {
+      this.destroyTwilioDevice()
+      this.destroyTelnyxDevice()
+      const tokenData = await this.getToken()
+      this.deviceSetup(tokenData)
+    },
+    async makeCall (phoneNumber: string) {
+      this.phoneNumber = phoneNumber
+      const n = phoneNumber.replace(/\D/g, '')
+      const callerNumber = this.profileStore.activeProfile?.number ?? ''
       if (this.callType === 'twilio') {
-        const call = await this.device?.connect({
-          params: { number: n, twilio_number: profileLocal.number }
+        const call = await this.twilioDevice?.connect({
+          params: { number: n, twilio_number: callerNumber }
         })
         if (call) {
           this.connection = call
           this.bindCallEvents(call)
         }
-      } else if (this.client) {
-        // todo: is there any point to storing newCall on `this`?
-        this.newCall = this.client.newCall({
+      } else if (this.telnyxRtcClient) {
+        this.connection = this.telnyxRtcClient.newCall({
           destinationNumber: n,
-          callerNumber: profileLocal.number
+          callerNumber
         })
       }
-      ;(this.$refs['modalTall'] as any).show()
+      this.modalTall?.show()
     },
     bindCallEvents (call: TwilioCall) {
       call.on('accept', () => {
@@ -342,125 +325,111 @@ export default defineComponent({
       })
       call.on('disconnect', () => {
         console.log('Awaiting incoming call...')
-        this.dissconnected()
+        this.disconnected()
       })
       call.on('cancel', () => {
-        this.dissconnected()
+        this.disconnected()
       })
       call.on('reject', () => {
-        this.dissconnected()
+        this.disconnected()
       })
       call.on('error', (error: Error) => {
-        console.error('call error')
-        console.error(error)
+        console.error('call error', console.error(error))
       })
     },
     acceptCall () {
-      if (this.callType === 'twilio') {
-        this.connection.accept()
-      } else {
-        this.connection.answer()
+      if (this.connection) {
+        if ('accept' in this.connection) this.connection.accept()
+        else this.connection.answer()
       }
       this.incoming = false
     },
     rejectedCall () {
       if (this.callType === 'twilio') {
-        this.connection?.reject()
-        this.device?.disconnectAll()
+        if (this.connection && 'reject' in this.connection) this.connection.reject()
+        this.twilioDevice?.disconnectAll()
       } else {
-        this.dissconnected()
+        this.disconnected()
       }
       this.connection = null
       this.incoming = false
     },
     async toggleCall () {
-      const n = this.number.replace(/\D/g, '')
-      const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
+      const n = this.phoneNumber.replace(/\D/g, '')
+      const callerNumber = this.profileStore.activeProfile?.number ?? ''
       if (this.callType === 'twilio') {
-        const call = await this.device?.connect({
-          params: { number: n, twilio_number: profileLocal.number }
+        const call = await this.twilioDevice?.connect({
+          params: { number: n, twilio_number: callerNumber }
         })
         if (call) {
           this.connection = call
           this.bindCallEvents(call)
         }
-      } else if (this.client) {
-        this.newCall = this.client.newCall({
+      } else if (this.telnyxRtcClient) {
+        this.telnyxRtcClient.newCall({
           destinationNumber: n,
-          callerNumber: profileLocal.number
+          callerNumber
         })
       }
     },
     startTimer () {
       let value = 0
-      this.userDuration = setInterval(() => {
+      this.userDurationIntervalId = window.setInterval(() => {
         const m = Math.trunc(value / 60)
         const s = value % 60
-        this.mm = m < 10 ? '0' + m : m
-        this.ss = s < 10 ? '0' + s : s
+        this.mm = String(m).padStart(2, '0')
+        this.ss = String(s).padStart(2, '0')
         value++
       }, 1000)
     },
     stopTimer () {
       this.mm = '00'
       this.ss = '00'
-      clearInterval(this.userDuration)
+      window.clearInterval(this.userDurationIntervalId)
     },
-    dissconnected () {
+    disconnected () {
       this.stopTimer()
       if (this.callType === 'twilio') {
-        this.device?.disconnectAll()
-      } else {
+        this.twilioDevice?.disconnectAll()
+      } else if (this.connection && 'hangup' in this.connection) {
         this.connection.hangup()
       }
       this.name = ''
       this.incoming = false
       this.connection = null
     },
-    callHangup () {
-      this.dissconnected()
-    },
-    clickDailer (number: any) {
+    clickDialer (key: 0|1|2|3|4|5|6|7|8|9|'*'|'#') {
       if (this.connection) {
-        console.log(number)
-        if (this.callType === 'twilio') {
-          this.connection.sendDigits(number.toString())
-        } else {
-          this.connection.dtmf(number.toString())
-        }
+        if ('sendDigits' in this.connection) this.connection.sendDigits(key.toString())
+        else this.connection.dtmf(key.toString())
       } else {
-        if (this.number) {
-          const num1 = this.number
-          this.number = num1.toString() + number.toString()
-        } else {
-          this.number = number
-        }
+        this.phoneNumber += key.toString()
       }
     },
     removeNumber () {
-      this.number = this.number.slice(0, -1)
+      if (this.phoneNumber) this.phoneNumber = this.phoneNumber.slice(0, -1)
     },
     contactChangeEvent (option: SelectOptionData<string>) {
-      this.number = option.value.replace('+', '')
+      this.phoneNumber = option.value.replace('+', '')
       this.selectedContact = ''
     },
-    distroyDevice () {
+    destroyTwilioDevice () {
       try {
-        if (this.device) {
-          this.device.destroy()
-          this.device = null
-        }
-      } catch (error) {
-        console.error(error)
+        this.twilioDevice?.destroy()
+      } finally {
+        this.twilioDevice = null
       }
     },
-    distroyDeviceTelnyx () {
-      try {
-        this.client?.disconnect()
-      } catch (e) {
-        console.error(e)
-      }
+    destroyTelnyxDevice () {
+      this.telnyxRtcClient?.disconnect().catch((e) => console.error(e))
     },
+  },
+  watch: {
+    // Re-init the calling SDK when the selected profile changes. Gated on the id so a detail refresh (unread counts)
+    // of the same profile doesn't needlessly tear down and rebuild the device. Replaces Dashboard's remount hack.
+    'profileStore.activeProfileId' () {
+      this.reinitDevice()
+    }
   },
   computed: {
     contactSelectOptions (): SelectOptionData<string>[] {
@@ -468,14 +437,12 @@ export default defineComponent({
     }
   },
   beforeUnmount() {
-    const profileLocal = parseJSON(localStorage.getItem('activeProfile'))
-    if (profileLocal) {
-      if (profileLocal.type === 'telnyx') {
-        this.distroyDeviceTelnyx()
-      }
-      if (profileLocal.type === 'twilio') {
-        this.distroyDevice()
-      }
+    const profileType = this.profileStore.activeProfileType
+    if (profileType === 'telnyx') {
+      this.destroyTelnyxDevice()
+    }
+    if (profileType === 'twilio') {
+      this.destroyTwilioDevice()
     }
   }
 })

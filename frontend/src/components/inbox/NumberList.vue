@@ -39,13 +39,13 @@
             <template #button-content>
               <div class="d-flex flex-row align-items-center bd-highlight">
                 <div
-                  v-if="activeProfile"
+                  v-if="profileStore.activeProfile"
                   class="d-flex flex-column bd-highlight"
                 >
-                  <div class="profileName">{{ activeProfile.profile }}</div>
-                  <div class="profileNum">{{ activeProfile.number }}</div>
+                  <div class="profileName">{{ profileStore.activeProfile.profile }}</div>
+                  <div class="profileNum">{{ profileStore.activeProfile.number }}</div>
                   <span
-                    v-if="activeProfile.totalCount > 0"
+                    v-if="activeTotalCount > 0"
                     class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
                     ><span class="visually-hidden">unread messages</span></span
                   >
@@ -394,7 +394,7 @@
  * TODO: this modal does two jobs and guesses intent from `profile === ""`. Split into two single-purpose flows:
  *   1. createProfile(name):     form = { profile: required }          -> POST profile; make it active
  *   2. configureProvider():     variant on `type`, provider fields required (active profile assumed, name
- *                               shown read-only)                       -> POST setting/profiles
+ *                               shown read-only)                       -> POST profile/provider
  * Then neither form needs requiredIf/`configuringProvider`; step 1 can reuse ProfileView's create flow.
  */
 import { defineComponent, ref, useTemplateRef } from "vue";
@@ -504,7 +504,6 @@ export default defineComponent({
       messageListLoader: true,
       numbers: [] as ConversationRowClient[],
       search_numbers: [] as ConversationRowClient[],
-      activeProfile: null as any, // todo: replace with profileStore
       telnyxNumbers: [] as TelnyxNumber[],
       twilioNumbers: [] as TwilioNumber[],
       activeItem: null as any,
@@ -515,9 +514,18 @@ export default defineComponent({
       showDelete: false
     };
   },
+  computed: {
+    // `totalCount` is a populated virtual present only on the detail (getOne/list) variant, not the create/delete one.
+    activeTotalCount(): number {
+      const p = this.profileStore.activeProfile;
+      return p && "totalCount" in p ? (p.totalCount ?? 0) : 0;
+    }
+  },
   watch: {
-    "profileStore.activeProfile"() {
-      this.getOneProfile();
+    // Re-fetch detail (unread counts) only when the *selection* changes; gating on the id avoids a refetch loop,
+    // since refreshActiveProfile reassigns activeProfile to a same-id object.
+    "profileStore.activeProfileId"() {
+      void this.profileStore.refreshActiveProfile();
     }
   },
   mounted() {
@@ -545,7 +553,7 @@ export default defineComponent({
     formatTimestamp,
     pullRefreshFunction() {
       this.getNumberList();
-      this.getOneProfile();
+      void this.profileStore.refreshActiveProfile();
       this.refreshProfile();
     },
     searchContact() {
@@ -563,16 +571,11 @@ export default defineComponent({
       this.$emit("onaddContact", data);
     },
     getValidString,
-    async getOneProfile() {
-      if (this.activeProfile?._id === undefined) return;
-      const { data } = await request(client.api.profile[":id"].$get({ param: { id: this.activeProfile._id } }));
-      this.activeProfile = data;
-    },
     refreshProfile() {
       this.childComponent?.getAllProfiles();
     },
     onClickChild(value: any) {
-      this.activeProfile = value;
+      // ProfileView already set the active profile in the store before emitting; just react to it here.
       this.getNumberList();
       value.refresh = true;
       this.$emit("activeChat", value);
@@ -595,7 +598,7 @@ export default defineComponent({
     async getNumberList() {
       this.numbers = [];
       this.messageListLoader = true;
-      const { data } = await request(client.api.setting.conversations.$get({ query: { profile: this.activeProfile._id } }));
+      const { data } = await request(client.api.setting.conversations.$get({ query: { profile: this.profileStore.activeProfileId } }));
       this.numbers = data;
       this.messageListLoader = false;
       this.searchContact();
@@ -610,7 +613,7 @@ export default defineComponent({
       }
     },
     async getSetting() {
-      const { data } = await request(client.api.setting.profiles[":id"].$get({ param: { id: this.activeProfile._id } }));
+      const { data } = await request(client.api.profile[":id"].$get({ param: { id: this.profileStore.activeProfileId } }));
       this.form = {
         type: data.type,
         profile: data.profile ?? "",
@@ -638,15 +641,13 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return;
 
-      const { data } = await request(client.api.profile[":id"].$delete({ param: { id: this.activeProfile._id } }));
+      // Deletes, clears the selection, and reloads the profile list.
+      await this.profileStore.deleteActiveProfile();
       notifySuccess("Profile deleted successfully!");
       this.r$.$reset({ toOriginalState: true }); // reset to empty
       this.telnyxNumbers = [];
       this.twilioNumbers = [];
-      this.activeProfile = data;
-      localStorage.removeItem("activeProfile");
       this.profileSettingModal?.hide();
-      this.childComponent?.getAllProfiles();
       setTimeout(() => {
         this.childComponent?.activeFirstProfile();
       }, 2000);
@@ -666,14 +667,14 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return;
 
-      const { data } = await request(client.api.setting.profiles[":id"].provider.$delete({ param: { id: this.activeProfile._id } }));
+      const { data } = await request(client.api.profile[":id"].provider.$delete({ param: { id: this.profileStore.activeProfileId } }));
       notifySuccess("Key deleted successfully!");
       // Clear only the provider fields, keeping `profile`: the profile still exists (just its provider config is
       // gone) and the modal stays open, so its name must remain visible. A full reset would blank it.
       this.form = { ...this.form, api_key: "", number: "", twilio_sid: "", twilio_token: "", twilio_number: "" };
       this.telnyxNumbers = [];
       this.twilioNumbers = [];
-      this.activeProfile = data;
+      this.profileStore.setActiveProfile(data);
       this.hideShowDeleteIcon(data);
       this.childComponent?.getAllProfiles();
     },
@@ -709,7 +710,7 @@ export default defineComponent({
         twilio_sid: providerSettings.twilio_sid,
         twilio_token: providerSettings.twilio_token,
         twilio_number: providerSettings.twilio_number,
-        setting: this.activeProfile._id,
+        setting: this.profileStore.activeProfileId,
         profile: providerSettings.profile
       };
       this.isLoading = true;
@@ -751,9 +752,8 @@ export default defineComponent({
     async createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
       this.isLoading = true;
       try {
-        const { data } = await request(client.api.setting.profiles.$post({ json: providerSettingPayload }));
+        const { data } = await request(client.api.profile.provider.$post({ json: providerSettingPayload }));
         this.profileSettingModal?.hide();
-        this.activeProfile = data;
         this.hideShowDeleteIcon(data);
         this.childComponent?.getAllProfiles();
         this.profileStore.setActiveProfile(data);

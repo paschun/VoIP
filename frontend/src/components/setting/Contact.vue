@@ -70,7 +70,7 @@
           <div class="card-body">
             <b-tabs content-class="mt-3">
               <b-tab title="Add Contact" active>
-                <form @submit.prevent="handleSubmit">
+                <form @submit.prevent="saveContact">
                   <div class=" form-group m-auto mb-2">
                     <label>First Name</label>
                     <input class="form-control" type="text" placeholder="First Name" v-model="r$.$value.first_name" :class="{ 'is-invalid': r$.first_name.$error }"  />
@@ -111,7 +111,7 @@
                   <input type="file" id="model_file_input2" class="form-control chat-input" accept=".csv" @change="onSelect">
                 </div>
                 <div class="d-flex justify-content-start bd-highlight">
-                  <div class="bd-highlight"><button type="button" @click="handleSubmit2()" class="btn btn-primary float-right">Save</button></div>
+                  <div class="bd-highlight"><button type="button" @click="importContactsCsv()" class="btn btn-primary float-right">Save</button></div>
                 </div>
               </b-tab>
             </b-tabs>
@@ -123,18 +123,23 @@
 <script lang="ts">
 import { defineComponent, ref, useTemplateRef, type PropType } from 'vue'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
-import type { Contact } from '@shared/api-contracts.ts'
+import { client, request } from '@/core/rpc.client.ts'
 import { useRegle } from '@regle/core'
 import { required, regex, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
+import type { InferResponseType } from 'hono/client'
+import type { SuccessStatusCode } from 'hono/utils/http-status'
 import Papa from 'papaparse'
 import { EventBus } from '@/event-bus.ts'
 
-type TContact = Omit<Contact, '_id'>
+/** A saved contact, inferred from the contact-list route. */
+type ContactRecord = InferResponseType<typeof client.api.contact.$get, SuccessStatusCode>['data'][number]
+/** The editable, server-agnostic subset (CSV columns + the create/update form), derived from {@link ContactRecord}. */
+type ContactDraft = Pick<ContactRecord, 'first_name' | 'last_name' | 'number' | 'note'>
 
 const phonenumber = regex(/^\+?[-0-9() ]{5,17}$/)
 
-function convertToCsv (rows: TContact[], headerList: (keyof TContact)[]): string {
+function convertToCsv (rows: ContactDraft[], headerList: (keyof ContactDraft)[]): string {
   const header = headerList.join(',')
   const body = rows.map(
     (row) => 
@@ -143,7 +148,7 @@ function convertToCsv (rows: TContact[], headerList: (keyof TContact)[]): string
   return header + '\r\n' + body + '\r\n'
 }
 
-function downloadFile (rows: TContact[], filename = 'data') {
+function downloadFile (rows: ContactDraft[], filename = 'data') {
   const csvData = convertToCsv(rows, ['first_name', 'last_name', 'number', 'note'])
   const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -165,7 +170,7 @@ const sampleContacts = [
     'number': '12300XXXXX',
     'note': 'notes go here'
   }
-] satisfies TContact[]
+] satisfies ContactDraft[]
 
 export default defineComponent({
   name: 'ContactList',
@@ -179,15 +184,15 @@ export default defineComponent({
     return { r$, formState, contactModal }
   },
   props: {
-    contacts: { type: Array as PropType<Contact[]>, default: () => [] as Contact[] }
+    contacts: { type: Array as PropType<ContactRecord[]>, default: () => [] as ContactRecord[] }
   },
   data () {
     return {
       modelFileValue: '',
       editId: '',
-      search_contacts: [] as Contact[],
+      search_contacts: [] as ContactRecord[],
       query: '',
-      csvUploadArray2: [] as TContact[]
+      parsedCsvContacts: [] as ContactDraft[]
     }
   },
   mounted () {
@@ -211,10 +216,10 @@ export default defineComponent({
       if (!target?.files) return
       const fileToRead = target.files[0]
       this.modelFileValue = fileToRead.name
-      this.csvUploadArray2 = await this.readFile(fileToRead)
+      this.parsedCsvContacts = await this.parseCsvContacts(fileToRead)
     },
 
-    async readFile (file: File): Promise<TContact[]> {
+    async parseCsvContacts (file: File): Promise<ContactDraft[]> {
       const fileText = await file.text()
 
       const { data: csvdata, errors } = Papa.parse<string[]>(fileText, { header: false })
@@ -236,34 +241,27 @@ export default defineComponent({
       this.emptyContact()
       this.contactModal?.show()
     },
-    async handleSubmit () {
+    async saveContact () {
       const { valid, data } = await this.r$.$validate()
       if (!valid) return
 
-      try {
-        const response = this.editId
-          ? await this.$put(`contact/${this.editId}`, data)
-          : await this.$post('contact', data)
-        if (response) {
-          this.contactModal?.hide()
-          this.$emit('onaddContact', true)
-          EventBus.$emit('contactAdded', data.number)
-          this.emptyContact()
-        }
-      } catch (e) {
-        console.error(e)
+      if (this.editId) {
+        await request(client.api.contact[':id'].$put({ param: { id: this.editId }, json: data }))
+      } else {
+        await request(client.api.contact.$post({ json: data }))
       }
+      this.contactModal?.hide()
+      this.$emit('onaddContact', true)
+      EventBus.$emit('contactAdded', data.number)
+      this.emptyContact()
     },
 
-    handleSubmit2 () {
-      if (this.csvUploadArray2.length > 0) {
-        this.$post('contact/bulk', { contacts: this.csvUploadArray2 })
-          .then(() => {
-            this.contactModal?.hide()
-            this.$emit('onaddContact', true)
-            this.modelFileValue = ''
-          })
-          .catch((e) => console.error(e))
+    async importContactsCsv () {
+      if (this.parsedCsvContacts.length > 0) {
+        await request(client.api.contact.bulk.$post({ json: { contacts: this.parsedCsvContacts } }))
+        this.contactModal?.hide()
+        this.$emit('onaddContact', true)
+        this.modelFileValue = ''
       } else {
         void notifyError('Please upload valid file!')
       }
@@ -280,16 +278,12 @@ export default defineComponent({
       if (result.isDenied) { notifyInfo('contact not deleted'); return }
       if (!result.isConfirmed) return
 
-      try {
-        await this.$del(`contact/${id}`)
-        notifySuccess('Contact Deleted successfully!')
-        this.$emit('onaddContact', true)
-        EventBus.$emit('contactAdded', 'delete')
-      } catch (e) {
-        console.error(e)
-      }
+      await request(client.api.contact[':id'].$delete({ param: { id } }))
+      notifySuccess('Contact Deleted successfully!')
+      this.$emit('onaddContact', true)
+      EventBus.$emit('contactAdded', 'delete')
     },
-    updateContact (contact: Contact) {
+    updateContact (contact: ContactRecord) {
       this.editId = contact._id
       this.formState = {
         first_name: contact.first_name,
@@ -311,17 +305,13 @@ export default defineComponent({
       if (result.isDenied) { notifyInfo('contacts not deleted'); return }
       if (!result.isConfirmed) return
 
-      try {
-        await this.$del('contact')
-        notifySuccess('All contacts deleted successfully')
-        this.$emit('onaddContact', true)
-      } catch (e) {
-        console.error(e)
-      }
+      await request(client.api.contact.$delete())
+      notifySuccess('All contacts deleted successfully')
+      this.$emit('onaddContact', true)
     },
     searchContact () {
       const search = new RegExp(this.query, 'i')
-      this.search_contacts = this.contacts.filter((item: Contact) =>
+      this.search_contacts = this.contacts.filter((item: ContactRecord) =>
         search.test(item.first_name) ||
         search.test(item.last_name) ||
         search.test(item.number)

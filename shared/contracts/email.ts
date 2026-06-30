@@ -1,18 +1,5 @@
 import * as z from 'zod'
-import type { Ok, StringBoolean } from '../api-contracts.ts'
 import { emailSchema, type EmailDoc } from '../schema/email.ts'
-
-// Success bodies only (`Ok<T>`): errors aren't part of the contract — they're thrown as `HTTPException` and arrive at
-// the client as a swallowed response, never a resolved value (see `error-handling-plan.md`).
-
-/** Response of `email/setting-get` — the full saved document, or `null` when the user has none yet. */
-export type EmailSettingsResponse = Ok<EmailDoc | null>
-
-/** Response of `email/create` — the saved document. */
-export type SaveEmailSettingsResponse = Ok<EmailDoc>
-
-/** Response of `email/save/setting` — toggling a profile's email-notification flag (no payload). */
-export type SaveEmailSettingResponse = Ok<null>
 
 /**
  * Request body of `email/create`: the editable subset of an Email document (the persisted doc minus the server-managed
@@ -49,12 +36,11 @@ export const emailCreateBody = (z.fromJSONSchema(emailSchema.toJSONSchema()) as 
 /**
  * Request body of `email/save/setting` — flips one profile's email-notification flag. Hand-written (it spans `Setting`,
  * not the Email model, so there's nothing to derive): `setting_id` is the target `Setting._id`, and `status` is the
- * `StringBoolean` that `Setting.emailnotification` stores (enum `'true' | 'false'`). The old handler did `c.req.json()`
- * untyped and let a bad `status` fail Mongoose enum validation (→ 400); validating here rejects it up front (→ 422).
+ * boolean that `Setting.emailnotification` stores.
  */
  // TODO: derive zod validator (id, status/emailnotification) from Setting schema
 export const emailSaveSettingBody = z.object({
   setting_id: z.string().min(1),
-  status: z.enum(['true', 'false']),
-}) satisfies z.ZodType<{ setting_id: string; status: StringBoolean }>
+  status: z.boolean(),
+}) satisfies z.ZodType<{ setting_id: string; status: boolean }>
 export type EmailSaveSettingRequest = z.infer<typeof emailSaveSettingBody>
