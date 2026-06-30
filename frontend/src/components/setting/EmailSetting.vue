@@ -141,20 +141,20 @@ export default defineComponent({
       const { valid } = await this.r$.$validate()
       if (!valid) return
       // Send the full form (every field present) rather than $validate's output, which marks rule-less fields optional.
-      await request(client.api.email.setting.$put({ json: this.formState }))
+      await request(client.api.email.$put({ json: this.formState }))
       this.r$.$reset()
       notifySuccess('Setting saved successfully', 'Email Setting')
       this.showProfile = true
     },
     async getEmailSetting () {
-      const { data } = await request(client.api.email.setting.$get())
+      const { data } = await request(client.api.email.$get())
       this.formState = toEmailForm(data)
       this.r$.$reset() // Re-baseline the loaded values as the form's initial state.
       if (data) this.showProfile = true
     },
     async profileUpdate (value: CheckboxValue | undefined, id: string) {
       // CheckboxValue is a wide union
-      await request(client.api.email.notification.$patch({ json: { setting_id: id, status: value === true } }))
+      await request(client.api.setting[':id'].notification.$patch({ param: { id }, json: { status: value === true } }))
       // The checkbox is controlled by the store value, so refresh it -- otherwise it snaps back to the pre-toggle state.
       // @update:model-value handler is fire-and-forget, not waiting for this promise so no need to await this
       void this.profileStore.loadProfiles()

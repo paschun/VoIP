@@ -2,14 +2,13 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { readKey } from 'openpgp'
 import Email from '../model/email.model.ts'
-import Setting from '../model/setting.model.ts'
 import { factory } from '../factory.ts'
 import type { Env, JsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody } from '../validate.ts'
 import { ack } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
-import { emailCreateBody, type EmailCreateRequest, emailSaveSettingBody, type EmailSaveSettingRequest } from '../../shared/contracts/email.ts'
+import { emailCreateBody, type EmailCreateRequest } from '../../shared/contracts/email.ts'
 
 // throws if invalid
 const assertValidPgpKey = (keyString: string) => readKey({ armoredKey: keyString })
@@ -59,18 +58,7 @@ async function getEmailSettings(c: Context<Env>) {
   return c.json({ data } satisfies Ok, 200)
 }
 
-async function saveEmailNotification(c: JsonCtx<EmailSaveSettingRequest>) {
-  const { setting_id, status } = c.req.valid('json')
-  // $eq is "NoSQL-injection-hardened", defends against attacker-provided `{ "$gt": "" }`
-  const setting = await Setting.findOne({ _id: { $eq: setting_id } })
-  if (!setting) throw new HTTPException(400, { message: `Profile ${setting_id} not found!` })
-  setting.emailnotification = status
-  await setting.save()
-  return ack(c)
-}
-
 // ── Route handler chains (middleware + validation + handler), spread into the Hono group in email.route.ts ──────────
 
 export const create = factory.createHandlers(auth, jsonBody(emailCreateBody), upsertEmail)
 export const getEmail = factory.createHandlers(auth, getEmailSettings)
-export const saveSetting = factory.createHandlers(auth, jsonBody(emailSaveSettingBody), saveEmailNotification)

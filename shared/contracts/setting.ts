@@ -22,8 +22,14 @@ export const createSettingBody = z.object({
 })
 export type CreateSettingRequest = z.infer<typeof createSettingBody>
 
-// `profileIdParam` (`GET /profiles/:id`, `DELETE /profiles/:id/provider`) is shared with the profile routes.
+// `profileIdParam` (`GET /profiles/:id`, `DELETE /profiles/:id/provider`) is shared with the profile routes, and also
+// types the `:id` (a `Setting._id`) on `PATCH /setting/:id/notification`.
 export { profileIdParam, type ProfileIdParam }
+
+/** Body of `PATCH /setting/:id/notification` (`:id` = `Setting._id`): the boolean stored on `Setting.emailnotification`. */
+// TODO: derive zod validator (status/emailnotification) from Setting schema
+export const notificationBody = z.object({ status: z.boolean() })
+export type NotificationRequest = z.infer<typeof notificationBody>
 
 /** The `:type` provider segment on the SMS webhook routes (`/receive-sms/:type`, `/sms-status/:type`). */
 export const smsTypeParam = z.object({ type: z.enum(['telnyx', 'twilio']) })

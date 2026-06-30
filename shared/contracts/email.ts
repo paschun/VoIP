@@ -32,15 +32,3 @@ export const emailCreateBody = (z.fromJSONSchema(emailSchema.toJSONSchema()) as 
     // key), so override it. (`secure`/`pgpEncryptEnabled` are `required` in the schema, so the derivation requires them.)
     pgpPublicKey: z.string(),
   }) as unknown as z.ZodType<EmailCreateRequest>
-
-/**
- * Request body of `email/save/setting` — flips one profile's email-notification flag. Hand-written (it spans `Setting`,
- * not the Email model, so there's nothing to derive): `setting_id` is the target `Setting._id`, and `status` is the
- * boolean that `Setting.emailnotification` stores.
- */
- // TODO: derive zod validator (id, status/emailnotification) from Setting schema
-export const emailSaveSettingBody = z.object({
-  setting_id: z.string().min(1),
-  status: z.boolean(),
-}) satisfies z.ZodType<{ setting_id: string; status: boolean }>
-export type EmailSaveSettingRequest = z.infer<typeof emailSaveSettingBody>

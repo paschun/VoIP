@@ -13,5 +13,6 @@ export const settingRoutes = new Hono<Env>()
   .get('/conversations', ...setting.listConversations)
   .post('/conversations/messages', ...setting.getConversationMessages)
   .delete('/conversations/:number', ...setting.deleteConversation)
+  .patch('/:id/notification', ...setting.saveNotification) // Flips `emailnotification` 
   .post(WEBHOOKS.sms.receiveSms.route, ...setting.receiveSms)
   .post(WEBHOOKS.sms.smsStatus.route, ...setting.smsStatus)

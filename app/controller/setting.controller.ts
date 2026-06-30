@@ -23,7 +23,7 @@ import { factory } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
 import { jsonBody, pathParams, pathParams404, queryParams } from '../validate.ts'
 import { ack } from '../util/respond.hono.ts'
-import type { Env, JsonCtx, ParamCtx, QueryCtx } from '../factory.ts'
+import type { Env, JsonCtx, ParamCtx, ParamJsonCtx, QueryCtx } from '../factory.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
   smsTypeParam, type SmsTypeParam,
@@ -32,6 +32,8 @@ import {
   conversationsQuery, type ConversationsQuery,
   messageListBody, type MessageListRequest,
   conversationParam, type ConversationParam,
+  notificationBody, type NotificationRequest,
+  profileIdParam, type ProfileIdParam,
 } from '../../shared/contracts/setting.ts'
 
 // todo: check this against email model
@@ -437,7 +439,20 @@ async function listMessages(c: JsonCtx<MessageListRequest>) {
   return c.json({ data } satisfies Ok, 200)
 }
 
+/** Flip one profile's email-notification flag (`:id` = `Setting._id`, `status` = the boolean to store). */
+async function saveEmailNotification(c: ParamJsonCtx<ProfileIdParam, NotificationRequest>) {
+  const { id } = c.req.valid('param')
+  const { status } = c.req.valid('json')
+  // $eq is "NoSQL-injection-hardened", defends against attacker-provided `{ "$gt": "" }`
+  const setting = await Setting.findOne({ _id: { $eq: id } })
+  if (!setting) throw new HTTPException(404, { message: `Profile ${id} not found!` })
+  setting.emailnotification = status
+  await setting.save()
+  return ack(c)
+}
+
 export const listNumbers = factory.createHandlers(jsonBody(getNumberBody), listProviderNumbers)
+export const saveNotification = factory.createHandlers(auth, pathParams(profileIdParam), jsonBody(notificationBody), saveEmailNotification)
 export const receiveSms = factory.createHandlers(pathParams404(smsTypeParam), handleReceiveSms)
 export const smsStatus = factory.createHandlers(pathParams404(smsTypeParam), handleSmsStatus)
 export const sendMessage = factory.createHandlers(auth, jsonBody(sendSmsBody), handleSendSms)
