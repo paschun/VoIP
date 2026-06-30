@@ -38,14 +38,6 @@ export default defineConfigWithVueTs(
       '@typescript-eslint/no-non-null-assertion': 'warn', // `foo!`
       // Flags every `as` cast (assertionStyle 'never' disallows all assertions).
       '@typescript-eslint/consistent-type-assertions': ['warn', { assertionStyle: 'never' }],
-      // The type-aware `no-unsafe-*` family stays off for now — it fires on every
-      // read off an `any`, which is noise until the boundaries above are typed.
-      // Re-enable in the final strict pass.
-      // '@typescript-eslint/no-unsafe-argument': 'off',
-      // '@typescript-eslint/no-unsafe-assignment': 'off',
-      // '@typescript-eslint/no-unsafe-call': 'off',
-      // '@typescript-eslint/no-unsafe-member-access': 'off',
-      // '@typescript-eslint/no-unsafe-return': 'off',
 
       eqeqeq: ['error', 'always'],
       // Steer the global `isNaN`/`isFinite` to `Number.isNaN`/`Number.isFinite`, which don't coerce their argument.

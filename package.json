@@ -8,7 +8,7 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "nodemon -x 'node --env-file=.env' app.ts",
+    "dev": "node --env-file=.env app.ts",
     "build": "npm run build -w frontend",
     "start": "NODE_ENV=production node --env-file=.env app.ts",
     "test": "vitest run",
@@ -41,7 +41,6 @@
     "@types/qrcode": "^1.5.6",
     "@types/speakeasy": "^2.0.10",
     "mongodb-memory-server-core": "^11.2.0",
-    "nodemon": "^3.1.14",
     "oxfmt": "<1",
     "oxlint": "^1.68.0",
     "oxlint-tsgolint": "^0.23.0",

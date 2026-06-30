@@ -171,16 +171,16 @@ import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { contactsToOptions } from '@/helper.ts'
 import { client, request } from '@/core/rpc.client.ts'
 import { useProfileStore } from '@/stores/profile.ts'
+import { useContactStore } from '@/stores/contact.ts'
 
 /** Provider call token: a Twilio JWT, or (Telnyx) the Setting carrying SIP creds. Inferred from `POST /api/call/token`. */
 type CallTokenData = InferResponseType<typeof client.api.call.token.$post, SuccessStatusCode>['data']
 
 export default defineComponent({
-  props: ['contacts'],
   components: { 'v-select': Select },
   setup () {
     const modalTall = useTemplateRef<InstanceType<typeof BModal>>('modalTall')
-    return { profileStore: useProfileStore(), modalTall }
+    return { profileStore: useProfileStore(), contactStore: useContactStore(), modalTall }
   },
   data (): {
     phoneNumber: string
@@ -285,7 +285,7 @@ export default defineComponent({
     },
     async getContact () {
       if (!this.phoneNumber) return
-      const { data } = await request(client.api.contact.lookup.$get({ query: { number: this.phoneNumber } }))
+      const data = await this.contactStore.lookupContact(this.phoneNumber)
       if (data) {
         this.name = data.first_name + ' ' + data.last_name
       }
@@ -433,7 +433,7 @@ export default defineComponent({
   },
   computed: {
     contactSelectOptions (): SelectOptionData<string>[] {
-      return contactsToOptions(this.contacts ?? [])
+      return contactsToOptions(this.contactStore.contacts)
     }
   },
   beforeUnmount() {

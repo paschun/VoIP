@@ -121,16 +121,16 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, useTemplateRef, type PropType } from 'vue'
+import { defineComponent, ref, useTemplateRef } from 'vue'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
-import { client, request } from '@/core/rpc.client.ts'
+import { client } from '@/core/rpc.client.ts'
 import { useRegle } from '@regle/core'
 import { required, regex, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import Papa from 'papaparse'
-import { EventBus } from '@/event-bus.ts'
+import { useContactStore } from '@/stores/contact.ts'
 
 /** A saved contact, inferred from the contact-list route. */
 type ContactRecord = InferResponseType<typeof client.api.contact.$get, SuccessStatusCode>['data'][number]
@@ -181,10 +181,7 @@ export default defineComponent({
       number: { required: withMessage(required, 'Number is required'), phonenumber: withMessage(phonenumber, 'Please enter valid number. ') }
     })
     const contactModal = useTemplateRef<InstanceType<typeof BModal>>('contactModal')
-    return { r$, formState, contactModal }
-  },
-  props: {
-    contacts: { type: Array as PropType<ContactRecord[]>, default: () => [] as ContactRecord[] }
+    return { r$, formState, contactModal, contactStore: useContactStore() }
   },
   data () {
     return {
@@ -195,17 +192,16 @@ export default defineComponent({
       parsedCsvContacts: [] as ContactDraft[]
     }
   },
-  mounted () {
-    EventBus.$on('addContact', (number: string) => {
+  methods: {
+    /** Open the modal prefilled with a number -- the Dashboard chat-header "add to contacts" entry, relayed via NumberList. */
+    openWith (number: string) {
       this.editId = ''
       this.emptyContact()
       this.contactModal?.show()
       this.formState.number = number
-    })
-  },
-  methods: {
+    },
     exportContact () {
-      downloadFile(this.contacts, 'contacts')
+      downloadFile(this.contactStore.contacts, 'contacts')
     },
     emptyContact () {
       this.formState = { first_name: '', last_name: '', number: '', note: '' }
@@ -245,22 +241,15 @@ export default defineComponent({
       const { valid, data } = await this.r$.$validate()
       if (!valid) return
 
-      if (this.editId) {
-        await request(client.api.contact[':id'].$put({ param: { id: this.editId }, json: data }))
-      } else {
-        await request(client.api.contact.$post({ json: data }))
-      }
+      await this.contactStore.saveContact(data, this.editId || undefined)
       this.contactModal?.hide()
-      this.$emit('onaddContact', true)
-      EventBus.$emit('contactAdded', data.number)
       this.emptyContact()
     },
 
     async importContactsCsv () {
       if (this.parsedCsvContacts.length > 0) {
-        await request(client.api.contact.bulk.$post({ json: { contacts: this.parsedCsvContacts } }))
+        await this.contactStore.importContacts(this.parsedCsvContacts)
         this.contactModal?.hide()
-        this.$emit('onaddContact', true)
         this.modelFileValue = ''
       } else {
         void notifyError('Please upload valid file!')
@@ -278,10 +267,8 @@ export default defineComponent({
       if (result.isDenied) { notifyInfo('contact not deleted'); return }
       if (!result.isConfirmed) return
 
-      await request(client.api.contact[':id'].$delete({ param: { id } }))
+      await this.contactStore.deleteContact(id)
       notifySuccess('Contact Deleted successfully!')
-      this.$emit('onaddContact', true)
-      EventBus.$emit('contactAdded', 'delete')
     },
     updateContact (contact: ContactRecord) {
       this.editId = contact._id
@@ -305,13 +292,12 @@ export default defineComponent({
       if (result.isDenied) { notifyInfo('contacts not deleted'); return }
       if (!result.isConfirmed) return
 
-      await request(client.api.contact.$delete())
+      await this.contactStore.deleteAllContacts()
       notifySuccess('All contacts deleted successfully')
-      this.$emit('onaddContact', true)
     },
     searchContact () {
       const search = new RegExp(this.query, 'i')
-      this.search_contacts = this.contacts.filter((item: ContactRecord) =>
+      this.search_contacts = this.contactStore.contacts.filter((item: ContactRecord) =>
         search.test(item.first_name) ||
         search.test(item.last_name) ||
         search.test(item.number)
@@ -319,7 +305,7 @@ export default defineComponent({
     }
   },
   watch: {
-    contacts() {
+    'contactStore.contacts'() {
       this.searchContact()
     }
   }

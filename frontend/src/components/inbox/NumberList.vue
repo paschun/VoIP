@@ -9,10 +9,7 @@
           <div class="d-flex flex-row bd-highlight">
             <setting></setting>
             <div class="bd-highlight">
-              <contact
-                :contacts="contacts"
-                @onaddContact="onaddContact"
-              ></contact>
+              <contact ref="contactComponent"></contact>
             </div>
             <div class="bd-highlight">
               <i-bi-telephone
@@ -25,7 +22,7 @@
             </div>
             <div class="bd-highlight">
               <i-bi-pencil-square
-                v-b-modal.modal-2
+                @click="composeModal?.open()"
                 aria-hidden="true"
                 class="m-2"
                 title="Compose"
@@ -64,10 +61,7 @@
               </div>
             </template>
             <b-dropdown-divider></b-dropdown-divider>
-            <profile-view
-              ref="childComponent"
-              @clicked="onClickChild"
-            />
+            <profile-view ref="profileView" />
             <b-dropdown-item-button @click="logout()">
               <i-bi-power aria-hidden="true" />
               Logout
@@ -83,7 +77,6 @@
           type="text"
           class="input-search"
           v-model="query"
-          @keyup="searchContact()"
           placeholder="Search"
         />
       </div>
@@ -112,13 +105,14 @@
           <div class="text"></div>
         </div>
       </div>
+      <template v-if="!messageListLoader">
       <div
-        v-for="item in search_numbers"
+        v-for="item in searchNumbers"
         :key="item._id"
         class="contact"
         :id="`phone${item._id}`"
-        v-on:click="firstChatShow(item)"
-        v-bind:class="{ activeChat: activeChat == item._id }"
+        v-on:click="selectConversation(item)"
+        v-bind:class="{ activeChat: conversationStore.activeRemoteNumber == item._id }"
       >
         <i-bi-person-bounding-box
           aria-hidden="true"
@@ -157,7 +151,9 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
+    <compose-message-modal ref="composeModal" @sent="$emit('messageSent')" />
     <!-- todo: extract this modal into its own component? -->
     <b-modal ref="profileSettingModal" id="profile-setting-modal" size="lg" title="Settings" hide-footer>
       <theme-button id-hide="false" />
@@ -410,18 +406,15 @@ import { required, requiredIf, literal, withMessage } from "@regle/rules";
 import { notifySuccess, notifyInfo } from "@/notify.ts";
 import PullToRefresh from "pulltorefreshjs";
 import Setting from "@/components/setting/Setting.vue";
-import { EventBus } from "@/event-bus.ts";
+import ComposeMessageModal from "@/components/ComposeMessageModal.vue";
+import { useContactStore } from "@/stores/contact.ts";
+import { useConversationStore, type Conversation } from "@/stores/conversation.ts";
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
 import { formatTimestamp } from "@/helper.ts";
 import { client, request } from "@/core/rpc.client.ts";
 import type { InferResponseType } from "hono/client";
 import type { SuccessStatusCode } from "hono/utils/http-status";
 import { appDirectory } from "@/router/helpers.ts";
-
-/** A conversation inbox row, inferred from the conversations route. */
-type ConversationRowClient = InferResponseType<typeof client.api.setting.conversations.$get, SuccessStatusCode>["data"][number];
-/** A contact, inferred from the contact list route. */
-type ContactRecord = InferResponseType<typeof client.api.contact.$get, SuccessStatusCode>["data"][number];
 
 function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;
@@ -451,14 +444,15 @@ interface ProviderSettingPayload extends ProviderSettingForm {
 }
 
 export default defineComponent({
-  emits: ["onaddContact", "activeChat", "clicked"],
+  emits: ["conversationSelected", "messageSent"],
   components: {
     ProfileView,
     LoadingSpinner,
     ThemeButton,
     Contact,
     Setting,
-    CustomAutocompleteSelect
+    CustomAutocompleteSelect,
+    ComposeMessageModal
   },
   setup() {
     const form = ref<ProviderSettingForm>({
@@ -491,22 +485,19 @@ export default defineComponent({
         ...provider.value
       };
     });
-    const childComponent = useTemplateRef<InstanceType<typeof ProfileView>>("childComponent");
+    const profileView = useTemplateRef<InstanceType<typeof ProfileView>>("profileView");
     const profileSettingModal = useTemplateRef<InstanceType<typeof BModal>>("profileSettingModal");
-    return { r$, form, profileStore: useProfileStore(), userStore: useUserStore(), childComponent, profileSettingModal };
+    const contactComponent = useTemplateRef<InstanceType<typeof Contact>>("contactComponent");
+    const composeModal = useTemplateRef<InstanceType<typeof ComposeMessageModal>>("composeModal");
+    return { r$, form, profileStore: useProfileStore(), userStore: useUserStore(), contactStore: useContactStore(), conversationStore: useConversationStore(), profileView, profileSettingModal, contactComponent, composeModal };
   },
   data() {
     return {
       query: "",
       isLoading: false, // todo: fixme
-      contacts: [] as ContactRecord[],
-      activeChat: "",
       messageListLoader: true,
-      numbers: [] as ConversationRowClient[],
-      search_numbers: [] as ConversationRowClient[],
       telnyxNumbers: [] as TelnyxNumber[],
       twilioNumbers: [] as TwilioNumber[],
-      activeItem: null as any,
       options: [
         { text: "Telnyx", value: "telnyx" },
         { text: "Twilio", value: "twilio" }
@@ -515,6 +506,16 @@ export default defineComponent({
     };
   },
   computed: {
+    // Inbox rows filtered by the search box. Derives from the store list so it tracks loads/socket refreshes.
+    searchNumbers(): typeof this.conversationStore.conversations {
+      const search = new RegExp(this.query, "i");
+      return this.conversationStore.conversations.filter(item =>
+        search.test(item._id) ||
+        search.test(item.contact?.first_name ?? "") ||
+        search.test(item.contact?.last_name ?? "") ||
+        search.test(item.message ?? "")
+      );
+    },
     // `totalCount` is a populated virtual present only on the detail (getOne/list) variant, not the create/delete one.
     activeTotalCount(): number {
       const p = this.profileStore.activeProfile;
@@ -522,31 +523,26 @@ export default defineComponent({
     }
   },
   watch: {
-    // Re-fetch detail (unread counts) only when the *selection* changes; gating on the id avoids a refetch loop,
-    // since refreshActiveProfile reassigns activeProfile to a same-id object.
-    "profileStore.activeProfileId"() {
-      void this.profileStore.refreshActiveProfile();
+    // Selection changed: rebuild the inbox + settings form for the new profile and pull its detail (unread counts).
+    // Gating on the id (not activeProfile) avoids a refetch loop, since refreshActiveProfile reassigns a same-id
+    // object. immediate so a profile persisted in localStorage loads on mount -- its id doesn't "change".
+    "profileStore.activeProfileId": {
+      immediate: true,
+      handler() {
+        this.getNumberList();
+        this.getSetting();
+        void this.profileStore.refreshActiveProfile();
+      }
     }
   },
   mounted() {
-    this.onaddContact();
+    void this.contactStore.loadContacts();
     PullToRefresh.init({
       mainElement: ".contact-list",
       triggerElement: ".contact-list",
       onRefresh: () => this.pullRefreshFunction(),
       distThreshold: 120,
       distMax: 140
-    });
-    EventBus.$on("contactAdded", (number: any) => {
-      this.getNumberList();
-      setTimeout(() => {
-        if (number === "delete" || this.activeItem._id === number) {
-          const numberClass = document.getElementsByClassName(`activeChat`);
-          if (numberClass.length > 0) {
-            (numberClass[0] as HTMLElement).click();
-          }
-        }
-      }, 1500);
     });
   },
   methods: {
@@ -556,52 +552,28 @@ export default defineComponent({
       void this.profileStore.refreshActiveProfile();
       this.refreshProfile();
     },
-    searchContact() {
-      const search = new RegExp(this.query, "i");
-      this.search_numbers = this.numbers.filter(item =>
-        search.test(item._id) ||
-        search.test(item.contact?.first_name ?? "") ||
-        search.test(item.contact?.last_name ?? "") ||
-        search.test(item.message ?? "")
-      );
-    },
-    async onaddContact() {
-      const { data } = await request(client.api.contact.$get());
-      this.contacts = data;
-      this.$emit("onaddContact", data);
+    /** Open the add-contact modal prefilled with a number -- relays the Dashboard chat-header entry down to Contact. */
+    openAddContact(phoneNumber: string) {
+      this.contactComponent?.openWith(phoneNumber);
     },
     getValidString,
     refreshProfile() {
-      this.childComponent?.getAllProfiles();
+      this.profileView?.getAllProfiles();
     },
-    onClickChild(value: any) {
-      // ProfileView already set the active profile in the store before emitting; just react to it here.
-      this.getNumberList();
-      value.refresh = true;
-      this.$emit("activeChat", value);
-      this.getSetting();
-    },
-    firstChatShow(id: any) {
-      const element = document.getElementById(id.id);
-      if (element) {
-        element.style.display = "none";
-      }
-      this.activeChat = id._id;
-      this.activeItem = id;
-      localStorage.setItem("activenumber", JSON.stringify(id));
-      this.$emit("clicked", id);
+    selectConversation(item: Conversation) {
+      this.$emit("conversationSelected", item);
     },
     logout() {
       this.userStore.logout();
       window.location.href = `/${appDirectory(this.$route)}/`;
     },
     async getNumberList() {
-      this.numbers = [];
       this.messageListLoader = true;
-      const { data } = await request(client.api.setting.conversations.$get({ query: { profile: this.profileStore.activeProfileId } }));
-      this.numbers = data;
-      this.messageListLoader = false;
-      this.searchContact();
+      try {
+        await this.conversationStore.loadConversations();
+      } finally {
+        this.messageListLoader = false;
+      }
     },
     hideShowDeleteIcon(response: any) {
       if (response.type === "telnyx" && response.api_key) {
@@ -612,19 +584,20 @@ export default defineComponent({
         this.showDelete = false;
       }
     },
-    async getSetting() {
-      const { data } = await request(client.api.profile[":id"].$get({ param: { id: this.profileStore.activeProfileId } }));
+    getSetting() {
+      const profile = this.profileStore.activeProfile;
+      if (!profile) return;
       this.form = {
-        type: data.type,
-        profile: data.profile ?? "",
-        api_key: data.api_key ?? "",
-        number: data.number ?? "",
-        twilio_sid: data.twilio_sid ?? "",
-        twilio_token: data.twilio_token ?? "",
-        twilio_number: data.number ?? ""
+        type: profile.type,
+        profile: profile.profile ?? "",
+        api_key: profile.api_key ?? "",
+        number: profile.number ?? "",
+        twilio_sid: profile.twilio_sid ?? "",
+        twilio_token: profile.twilio_token ?? "",
+        twilio_number: profile.number ?? ""
       };
-      this.hideShowDeleteIcon(data);
-      this.getNumbers(data.type);
+      this.hideShowDeleteIcon(profile);
+      this.getNumbers(profile.type);
     },
     async deleteProfile() {
       const result = await this.$swal.fire({
@@ -649,7 +622,7 @@ export default defineComponent({
       this.twilioNumbers = [];
       this.profileSettingModal?.hide();
       setTimeout(() => {
-        this.childComponent?.activeFirstProfile();
+        this.profileView?.activeFirstProfile();
       }, 2000);
     },
     async deleteApiKey() {
@@ -676,7 +649,7 @@ export default defineComponent({
       this.twilioNumbers = [];
       this.profileStore.setActiveProfile(data);
       this.hideShowDeleteIcon(data);
-      this.childComponent?.getAllProfiles();
+      this.profileView?.getAllProfiles();
     },
     async getNumbers(type: 'telnyx' | 'twilio') {
       const v = this.r$.$value;
@@ -755,7 +728,7 @@ export default defineComponent({
         const { data } = await request(client.api.profile.provider.$post({ json: providerSettingPayload }));
         this.profileSettingModal?.hide();
         this.hideShowDeleteIcon(data);
-        this.childComponent?.getAllProfiles();
+        this.profileView?.getAllProfiles();
         this.profileStore.setActiveProfile(data);
         this.r$.$reset(); // just-saved values are the new baseline
       } finally {

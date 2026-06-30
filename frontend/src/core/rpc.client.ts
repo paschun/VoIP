@@ -1,6 +1,6 @@
 import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
-import { notifyApiError } from '@/core/services/handle-error.ts'
+import { notifyApiError } from '@/core/handle-error.ts'
 import type { AppType } from '../../../app.ts'
 import { authToken } from '@/core/auth-token.ts'
 

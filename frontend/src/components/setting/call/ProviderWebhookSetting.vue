@@ -31,6 +31,7 @@ import { useRegle } from '@regle/core'
 import { notifySuccess } from '@/notify.ts'
 import { required, withMessage, httpUrl } from '@regle/rules'
 import { client, request } from '@/core/rpc.client.ts'
+import { useProfileStore } from '@/stores/profile.ts'
 
 /** Strip everything but `${protocol}//${hostname}` from a URL string. */
 const toOrigin = (str: string): string => {
@@ -51,7 +52,7 @@ export default defineComponent({
       // keyed `validUrl`, not `url`, so it doesn't collide with Regle's built-in `url` rule name
       validUrl: withMessage(httpUrl, () => props.invalidMessage) // default: The value is not a valid http URL address
     })
-    return { r$, fallbackUrl }
+    return { r$, fallbackUrl, profileStore: useProfileStore() }
   },
   props: {
     /** Which provider's webhook config to read/patch (selects the typed RPC route). */
@@ -70,29 +71,32 @@ export default defineComponent({
   },
   data () {
     return {
-      mainUrl: '',
-      setting: null as string | null
+      mainUrl: ''
     }
   },
   mounted () {
     this.getCallSetting()
   },
+  watch: {
+    // Re-fetch when the selected profile changes while this panel stays mounted, so the URLs don't go stale.
+    'profileStore.activeProfileId' () {
+      this.getCallSetting()
+    }
+  },
   methods: {
     async getCallSetting () {
-      const profileLocal = localStorage.getItem('activeProfile')
-      if (!profileLocal) return
-      this.setting = JSON.parse(profileLocal)?._id
-      if (!this.setting) return
+      const settingId = this.profileStore.activeProfileId
+      if (!settingId) return
 
       const normalize = (v: string | null | undefined) => (this.normalizeHost && v ? toOrigin(v) : v)
       let main: string | null | undefined
       let fallback: string | null | undefined
       if (this.provider === 'twilio') {
-        const { data } = await request(client.api.provider.twilio.webhook[':settingId'].$get({ param: { settingId: this.setting } }))
+        const { data } = await request(client.api.provider.twilio.webhook[':settingId'].$get({ param: { settingId } }))
         main = data.voiceUrl
         fallback = data.voiceFallbackUrl
       } else {
-        const { data } = await request(client.api.provider.telnyx.webhook[':settingId'].$get({ param: { settingId: this.setting } }))
+        const { data } = await request(client.api.provider.telnyx.webhook[':settingId'].$get({ param: { settingId } }))
         main = data.webhook_url
         fallback = data.webhook_failover_url
       }
@@ -101,10 +105,11 @@ export default defineComponent({
     },
     async saveFallbackUrl () {
       const { valid, data } = await this.r$.$validate()
-      if (!valid || !this.setting) return
+      const settingId = this.profileStore.activeProfileId
+      if (!valid || !settingId) return
 
       const submitUrl = this.normalizeSubmit ? toOrigin(data) : data
-      const param = { settingId: this.setting }
+      const param = { settingId }
       if (this.provider === 'twilio') {
         await request(client.api.provider.twilio.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
       } else {

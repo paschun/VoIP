@@ -20,9 +20,8 @@ type Profile = InferResponseType<typeof client.api.profile.$post, SuccessStatusC
  */
 type ProfileWithUnread = InferResponseType<typeof client.api.profile[':id']['$get'], SuccessStatusCode>['data']
 
-// The currently-selected profile, shared across the app and persisted to localStorage. Replaces the old
-// changeProfile/changeProfile2/getOneProfile EventBus signals: selection is now reactive state and interested
-// components `watch` it.
+// The currently-selected profile, shared across the app and persisted to localStorage. Selection is reactive state;
+// interested components `watch` it.
 //
 // Two flavours of "change" to watch, depending on intent:
 //   - activeProfileId   -> the *selection* changed (different profile). Gate side effects (refetch lists, re-init the
@@ -37,6 +36,7 @@ export const useProfileStore = defineStore('profile', () => {
   const profiles = ref<ProfileWithUnread[]>([])
   const profileIsLoading = ref(false) // used in ProfileView
 
+  // these are refs inside here, but on the outside they are unwrapped by store proxy. use `storeToRefs` to get refs on the outside.
   const activeProfileId = computed(() => activeProfile.value?._id ?? '')
   const activeProfileType = computed(() => activeProfile.value?.type ?? '')
   const hasActiveProfile = computed(() => activeProfile.value !== null)

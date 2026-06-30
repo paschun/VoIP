@@ -2,7 +2,6 @@
   <div id="wrapbody" class="wrap">
     <check-dir />
     <call-view
-      :contacts="contacts"
       ref="callView"
     ></call-view>
     <loading-spinner :show="isLoading" />
@@ -28,18 +27,16 @@
         </div>
         <number-list
           ref="numberList"
-          @onaddContact="onaddContact"
-          @activeChat="activeProfileView"
-          @clicked="onClickChild"
+          @conversationSelected="firstChatShow"
+          @messageSent="onMessageSent"
         />
       </template>
     </b-offcanvas>
     <section class="col-auto col-md-4 d-none d-sm-block">
       <number-list
         ref="numberList"
-        @onaddContact="onaddContact"
-        @activeChat="activeProfileView"
-        @clicked="onClickChild"
+        @conversationSelected="firstChatShow"
+        @messageSent="onMessageSent"
         v-if="vw >= 576"
       />
     </section>
@@ -57,24 +54,24 @@
           style="font-size: 2em"
         />
         <div class="chat-name">
-          <h1 class="font-name" v-if="activeChat">
+          <h1 class="font-name" v-if="conversationStore.activeConversation">
             <div
               class="d-flex align-items-start align-self-center"
-              v-if="activeChat.contact"
+              v-if="conversationStore.activeConversation.contact"
             >
               <div class="mt-2 ml-4">
-                {{ activeChat.contact.first_name }}
-                {{ activeChat.contact.last_name }}
+                {{ conversationStore.activeConversation.contact.first_name }}
+                {{ conversationStore.activeConversation.contact.last_name }}
               </div>
             </div>
             <div class="d-flex align-items-start align-self-center">
-              <div class="mt-2 ml-4">{{ activeChat._id }}</div>
+              <div class="mt-2 ml-4">{{ conversationStore.activeRemoteNumber }}</div>
               &nbsp;&nbsp;&nbsp;
               <span
                 style="cursor: copy"
                 title="Add Contact"
-                @click="addContact(activeChat._id)"
-                v-if="!activeChat.contact"
+                @click="addContact(conversationStore.activeRemoteNumber)"
+                v-if="!conversationStore.activeConversation.contact"
               >
                 <i-bi-plus-circle
                   aria-hidden="true"
@@ -84,7 +81,7 @@
             </div>
           </h1>
         </div>
-        <div class="d-flex m-auto" v-if="activeChat">
+        <div class="d-flex m-auto" v-if="conversationStore.hasActiveConversation">
           <span style="cursor: pointer" @click="makeCall()" title="Delete">
             <i-bi-telephone aria-hidden="true" style="font-size: 2em" />
           </span>
@@ -94,7 +91,7 @@
           </span>
         </div>
       </div>
-      <div :class="(!activeChat || modelMms) ? 'd-none' : ''">
+      <div :class="!conversationStore.activeConversation ? 'd-none' : ''">
         <div
           id="drop-area"
           style="z-index: 1"
@@ -157,8 +154,8 @@
           id="chat-container"
           v-bind:class="{ opacitynone: chatListLoader }"
         >
-          <div v-if="activeChatData">
-            <div v-for="message in messages" :key="message._id">
+          <div v-if="conversationStore.hasActiveConversation">
+            <div v-for="message in conversationStore.messages" :key="message._id">
               <div
                 class="chat-bubble"
                 v-bind:class="{
@@ -205,7 +202,7 @@
       </div>
       <div class="row wrap-container">
         <div class="col-md-12 wrap-container2">
-          <div class="wrap-message" v-if="activeChatData">
+          <div class="wrap-message" v-if="conversationStore.hasActiveConversation">
             <div class="message pl-2">
               <input
                 type="text"
@@ -231,82 +228,6 @@
         </div>
       </div>
     </section>
-    <!-- modal -->
-    <b-modal
-      ref="composeMsgModal"
-      id="modal-2"
-      size="lg"
-      title="Compose Message"
-      no-footer
-    >
-      <span class="small text-secondary"
-        >Input (+) and country code followed by the 10 digit phone number. If no
-        country code is provided (+1) is assumed. Multiple numbers will be sent
-        as Bulk SMS (individual sms's to recipients).
-        <span class="small text-center"
-          >[Telnyx does not support group texting]</span
-        ></span
-      >
-      <form @submit.prevent="handleSubmit2" class="ml-2 mr-2">
-        <v-select
-          class="mt-4"
-          v-model="selectedContact"
-          @option-selected="contactChangeEvent"
-          :options="contactSelectOptions"
-        ></v-select>
-        <div class="form-group mt-4">
-          <vue-tags-input
-            class="form-control chat-input"
-            v-model="r$.$value.sms.numbers"
-            :tags="tags"
-            placeholder="Enter phone number"
-            @tags-changed="onTagsChanged"
-          />
-          <div v-if="tags.length <= 0" class="invalid-feedback">
-            <span>Numbers are required</span>
-          </div>
-        </div>
-        <div class="form-group mb-2 mt-4">
-          <textarea
-            rows="8"
-            class="form-control chat-input"
-            v-model="r$.$value.sms.message"
-            placeholder="Type Message here"
-            :class="{ 'is-invalid': submitted2 && r$.sms.message.$error }"
-          >
-          </textarea>
-          <div
-            v-if="submitted2 && r$.sms.message.$error"
-            class="invalid-feedback"
-          >
-            <span v-for="error of r$.$errors.sms.message" :key="error">{{ error }}</span>
-          </div>
-        </div>
-        <!-- send images over MMS -->
-        <label class="input-group mb-3" for="model_file_input" style="cursor: pointer">
-          <span class="input-group-text paperClip chat-input">
-            <i-bi-paperclip/>
-          </span>
-          <span class="form-control chat-input" :class="{ 'text-secondary': !modelFileValue }">{{ modelFileValue || 'Choose file' }}</span>
-        </label>
-        <div class="form-group mb-2 mt-4 d-none">
-          <input
-            type="file"
-            id="model_file_input"
-            class="form-control chat-input"
-            multiple
-            accept="image/*"
-            @change="onFilesPick($event, true)"
-          />
-        </div>
-
-        <div class="d-grid d-md-flex">
-          <button class="btn btn-primary" type="submit" id="login-button">
-            Send Message
-          </button>
-        </div>
-      </form>
-    </b-modal>
     <div id="hidden" @click="hiddenImage()">
       <div
         class="d-flex justify-content-center align-items-center"
@@ -322,31 +243,19 @@
 <script lang="ts">
 /** Main messaging view: conversation list (NumberList), the chat thread, the compose SMS/MMS modal, and the call tab. */
 import { defineComponent, useTemplateRef } from "vue";
-import { useRegle } from "@regle/core";
-import { required, withMessage } from "@regle/rules";
-import VueTagsInput from '@sipec/vue3-tags-input'
-import { Select, type SelectOptionData } from 'vue3-select-component'
-import { io } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
 import NumberList from "./inbox/NumberList.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
 import CheckDir from "@/components/CheckDir.vue";
-import type { BModal, BOffcanvas } from "bootstrap-vue-next";
+import type { BOffcanvas } from "bootstrap-vue-next";
 import { useProfileStore } from "@/stores/profile.ts";
 import { useUserStore } from "@/stores/user.ts";
-import { EventBus } from "@/event-bus.ts";
-import { contactsToOptions, parseJSON, formatTimestamp } from '@/helper.ts';
+import { useConversationStore, type Conversation } from "@/stores/conversation.ts";
+import { formatTimestamp } from '@/helper.ts';
+import { uploadMedia } from '@/core/services/media.ts';
 import { notifyError, notifyInfo } from '@/notify.ts';
-import { client, request } from '@/core/rpc.client.ts'
-import type { InferResponseType } from 'hono/client'
-import type { SuccessStatusCode } from 'hono/utils/http-status'
-
-type UploadResponseSuccess = InferResponseType<typeof client.api.media.uploads.$post, SuccessStatusCode>
-/** The full hc `ClientResponse` the upload route returns -- carries status/format params so `request()` infers the body. */
-type UploadResponse = Awaited<ReturnType<typeof client.api.media.uploads.$post>>
-/** One entry in a conversation thread, inferred from the messages route. */
-type ChatMessage = InferResponseType<typeof client.api.setting.conversations.messages.$post, SuccessStatusCode>['data'][number]
 
 function preventDefaults(e: Event) {
   e.preventDefault();
@@ -387,75 +296,38 @@ export default defineComponent({
   components: {
     NumberList,
     LoadingSpinner,
-    VueTagsInput,
     ThemeButton,
     CallView,
     CheckDir,
-    'v-select': Select,
   },
   setup() {
-    const { r$ } = useRegle(
-      { sms: { numbers: "", message: "" } },
-      {
-        sms: {
-          numbers: { required },
-          message: { required: withMessage(required, "Message is required") },
-        },
-      }
-    );
     const callView = useTemplateRef<InstanceType<typeof CallView>>("callView");
     const numberList = useTemplateRef<InstanceType<typeof NumberList>>("numberList");
     const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>("mobileSidebar");
-    const composeMsgModal = useTemplateRef<InstanceType<typeof BModal>>("composeMsgModal");
     return {
-      r$,
       profileStore: useProfileStore(),
       userStore: useUserStore(),
+      conversationStore: useConversationStore(),
       callView,
       numberList,
-      mobileSidebar,
-      composeMsgModal
+      mobileSidebar
     };
   },
   data() {
     return {
       isLoading: false,
-      contacts: [] as any[],
-      selectedContact: "",
       dropArea: null as any,
-      progressBar: null as any,
+      progressBar: null as any, // progressBar is always `display: none`
       uploadProgress: [] as number[], // numbers from 0 to 100
       uploadedImages: [] as string[],
-      activeChatData: false,
-      activeProfile: null as any,
-      // activeChat is a synthesized conversation object from the listConversations aggregate (GET setting/conversations),
-      // which runs over the SMS Message model (app/model/message.model.ts)
-      activeChat: "" as any,
-      tags: [] as any[],
       chatListLoader: false,
-      submitted2: false,
-      messages: [] as ChatMessage[],
       messageBody: "",
-      socket: null as any,
+      socket: null as Socket | null,
       baseurl: "",
       vw: 0,
       vh: 0,
-      modelMms: false,
-      modelFileValue: "",
       zoomImage: "",
     };
-  },
-  computed: {
-    contactSelectOptions(): SelectOptionData<string>[] {
-      return contactsToOptions(this.contacts);
-    },
-  },
-  watch: {
-    // Active profile changed (selection or settings update): unselect any open message thread. CallView re-inits its
-    // own SDK via its `activeProfileId` watcher, so no remount hack here. Was the `changeProfile`/`changeProfile2` events.
-    "profileStore.activeProfile"() {
-      this.activeChat = null;
-    },
   },
   created() {
     window.addEventListener("resize", this.updateVw, { passive: true });
@@ -464,11 +336,6 @@ export default defineComponent({
     window.removeEventListener("resize", this.updateVw);
   },
   mounted() {
-    EventBus.$on("contactAdded", (number: any) => {
-      if (this.activeChat._id === number) {
-        this.showChat(this.activeChat);
-      }
-    });
     if (!this.userStore.isLoggedIn) {
       this.$router.push({ name: 'home' });
     }
@@ -479,22 +346,20 @@ export default defineComponent({
     }
     const socket = io(this.baseurl, { transports: ["websocket"] });
     this.socket = socket;
-    this.socket.on("new_message", () => {
-      this.numberList?.getNumberList();
-      if (this.activeChatData) {
-        this.showChat(this.activeChat);
-      }
+    socket.on("new_message", () => {
+      void this.conversationStore.loadConversations();
+      void this.conversationStore.refreshMessages();
     });
-    this.socket.emit("join_profile_channel", this.userStore.userData?._id.toString());
+    socket.emit("join_profile_channel", this.userStore.userData?._id.toString());
 
-    this.socket.on("user_message", (data: any) => {
-      if (this.activeChatData) {
-        this.showChat(this.activeChat);
+    socket.on("user_message", (data: { number: string; message: string }) => {
+      if (this.conversationStore.hasActiveConversation) {
+        void this.conversationStore.refreshMessages();
       } else {
         void this.profileStore.refreshActiveProfile();
         this.numberList?.refreshProfile();
       }
-      this.numberList?.getNumberList();
+      void this.conversationStore.loadConversations();
       this.notifyMe(data.number, data.message);
     });
     this.dropArea = document.getElementById("drop-area1");
@@ -512,29 +377,25 @@ export default defineComponent({
   },
   methods: {
     formatTimestamp,
-    addContact(number: any) {
-      EventBus.$emit("addContact", number);
+    addContact(phoneNumber: string) {
+      this.numberList?.openAddContact(phoneNumber);
     },
-    onTagsChanged(newTags: any[]) {
-      this.tags = newTags;
-    },
-    makeCall() {
-      if (this.activeChat) {
-        this.callView?.makeCall(this.activeChat._id);
+    /** A compose-modal send may have created the first thread for a number; on mobile drop the sidebar to reveal it. */
+    onMessageSent() {
+      if (this.vw < 576) {
+        this.mobileSidebar?.hide();
       }
     },
-    contactChangeEvent(option: SelectOptionData<string>) {
-      this.tags.push({ text: option.value, tiClasses: ["ti-valid"] });
-      this.selectedContact = "";
-    },
-    onaddContact(data: any) {
-      this.contacts = data;
+    makeCall() {
+      if (!this.conversationStore.hasActiveConversation) {
+        this.callView?.makeCall(this.conversationStore.activeRemoteNumber);
+      }
     },
     hiddenImage() {
       this.zoomImage = "";
       document.getElementById("hidden")!.style.display = "none";
     },
-    showImage(image: any) {
+    showImage(image: string) {
       this.zoomImage = image;
       document.getElementById("hidden")!.style.display = "block";
     },
@@ -552,65 +413,32 @@ export default defineComponent({
     handleDrop(e: DragEvent) {
       const dt = e.dataTransfer;
       if (!dt) throw new Error('DataTransfer should never be null when dispatched by browser')
-      this.handleFiles(dt.files);
+      this.uploadFiles(dt.files);
     },
-    onFilesPick(e: Event, modelFile = false) {
+    onFilesPick(e: Event) {
       // todo: consider using v-model instead of change events: https://vuejs.org/guide/essentials/forms.html
       const target = e.target as HTMLInputElement
       // target.files will always be non-null, there is no way for to unselect files in a way that fires a change event.
       // even if in code, we set `target.value = null`, it will not fire a change event
       if (!target.files) return
-      this.handleFiles(target.files, modelFile);
+      this.uploadFiles(target.files);
     },
-    handleFiles(fileList: FileList, modelFile = false) {
+    uploadFiles(fileList: FileList) {
       // turn fileList into a normal array so we can .map/.forEach on it, but try to keep it readonly like FileList intended
       const files = Object.freeze([...fileList])
-      if (modelFile) {
-        this.modelMms = true;
-        this.modelFileValue = files.map(f => f.name).join()
-      } else {
-        this.modelMms = false;
-      }
       this.initializeProgress(files.length);
-      const prog = (i: number) => (loaded: number, total: number) => { this.updateProgress(i, total > 0 ? (loaded * 100) / total : 100) } // fallback to 100% 
+      const prog = (i: number) => (loaded: number, total: number) => { this.updateProgress(i, total > 0 ? (loaded * 100) / total : 100) } // fallback to 100%
       // forEach does not await and ignores its callback, promises will be queued (not awaited) and this function returned immediately
       files.forEach(async (f, i) => {
-        const res = await this.uploadFile(f, prog(i))
+        const res = await uploadMedia(f, this.userStore.token, prog(i))
         this.uploadedImages.push(res.data.media)
       })
     },
-    removeFromPreview(image: any) {
+    removeFromPreview(image: string) {
       this.uploadedImages = this.uploadedImages.filter((img) => img !== image);
       if (this.uploadedImages.length <= 0) {
         document.getElementById("drop-area")!.style.display = "none";
       }
-    },
-    async uploadFile(file: File, onProgress: (loaded: number, total: number) => void): Promise<UploadResponseSuccess> {
-      // todo: this can be extracted out of the view layer
-      // fetch has no upload-progress event, so we stream the file body and count bytes as they pass through a
-      // TransformStream. A streamed request body needs `duplex: 'half'` and request-stream support (Chromium only --
-      // Safari/Firefox don't stream uploads), so this is intentionally not cross-browser.
-      // `$url()` gives the route's absolute URL from the client's origin (see test/rpc-url.test.ts)
-      // We hit it directly because hc's `$post` buffers a FormData body with no way to observe progress.
-      // The server derives the stored file type from the `Content-Type` header (no client filename trusted).
-      const total = file.size;
-      let loaded = 0;
-      const progress = new TransformStream<Uint8Array, Uint8Array>({
-        transform(chunk, controller) {
-          loaded += chunk.byteLength;
-          onProgress(loaded, total);
-          controller.enqueue(chunk);
-        }
-      });
-      const init: RequestInit & { duplex: 'half' } = {
-        method: 'POST',
-        headers: { token: this.userStore.token, 'Content-Type': file.type },
-        body: file.stream().pipeThrough(progress),
-        duplex: 'half'
-      };
-      // Route the manual Response through `request()` so failures hit the same central toast/parse path as every hc
-      // call (parseResponse runs on a plain fetch Response too); the cast supplies the inferred success-body type.
-      return request(fetch(client.api.media.uploads.$url(), init) as unknown as Promise<UploadResponse>);
     },
     highlight() {
       document.getElementById("drop-area")!.style.display = "block";
@@ -619,16 +447,7 @@ export default defineComponent({
     unhighlight() {
       this.dropArea.classList.remove("highlight");
     },
-    activeProfileView(profile: any) {
-      if (profile.refresh) {
-        this.messages = [];
-      }
-      this.activeProfile = profile;
-    },
-    onClickChild(value: any) {
-      this.firstChatShow(value);
-    },
-    async notifyMe(user: any, message: any) {
+    async notifyMe(user: string, message: string) {
       const msgIcon = new URL('@/assets/img/icon.png', import.meta.url).href;
       if (!("Notification" in window)) {
         alert("This browser does not support desktop notification");
@@ -669,44 +488,24 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return;
 
-      await request(client.api.setting.conversations[':number'].$delete({
-        param: { number: this.activeChat._id },
-      }));
-      if (this.activeChatData) this.showChat(this.activeChat);
-      this.numberList?.getNumberList();
+      await this.conversationStore.deleteActiveConversation();
     },
-    sendSms() {
-      this.isLoading = true;
+    async sendSms() {
       if (this.messageBody.trim() === "" && this.uploadedImages.length === 0) {
         notifyError("Message or file required", "Oops...");
-        this.isLoading = false;
         return;
       }
-      const activechat = parseJSON(localStorage.getItem("activenumber"));
-      const numbers = [activechat._id];
-      this.commonSendMessage(numbers, this.messageBody);
-    },
-    hideImageDrag() {
-      this.uploadedImages = [];
-      document.getElementById("drop-area")!.style.display = "none";
-    },
-    async commonSendMessage(numbers: string[], message: string) {
+      if (!this.conversationStore.hasActiveConversation) return;
+      this.isLoading = true;
       try {
-        await request(client.api.setting.messages.$post({
-          json: { numbers, message, media: this.uploadedImages, profile: { _id: this.activeProfile._id } },
-        }));
+        await this.conversationStore.sendMessage({
+          numbers: [this.conversationStore.activeRemoteNumber],
+          message: this.messageBody,
+          media: this.uploadedImages,
+        });
         this.messageBody = "";
-        this.r$.$value.sms.numbers = "";
-        this.r$.$value.sms.message = "";
         this.uploadedImages = [];
-        this.modelFileValue = "";
         document.getElementById("drop-area")!.style.display = "none";
-        this.tags = [];
-        this.numberList?.getNumberList();
-        if (this.activeChatData) {
-          this.showChat(this.activeChat);
-        }
-        this.composeMsgModal?.hide();
         if (this.vw < 576) {
           this.mobileSidebar?.hide();
         }
@@ -714,55 +513,35 @@ export default defineComponent({
         this.isLoading = false;
       }
     },
-    firstChatShow(activechat: any) {
-      this.chatListLoader = true;
-      const element = document.getElementById(activechat._id);
-      if (element) {
-        element.remove();
-      }
-      this.showChat(activechat);
-      document.getElementById("drop-area")!.style.display = "none";
+    hideImageDrag() {
       this.uploadedImages = [];
+      document.getElementById("drop-area")!.style.display = "none";
+    },
+    async firstChatShow(conversation: Conversation) {
+      this.chatListLoader = true;
+      try {
+        await this.conversationStore.openConversation(conversation);
+        // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the
+        // thread isn't rendered yet, so chat-container's scrollHeight is stale and we'd land mid-thread.
+        await this.$nextTick();
+        this.scrollChatToBottom();
+      } finally {
+        this.chatListLoader = false;
+      }
+      this.resetComposer();
+      this.numberList?.refreshProfile();
       if (this.vw < 576) {
         this.mobileSidebar?.hide();
       }
     },
-    async showChat(activechat: any) {
-      // todo: type activechat so payload / validator types can be strict
-      this.activeChat = activechat;
-      this.activeChatData = true;
-      const { telnyx_number, _id } = activechat;
-      const { data } = await request(client.api.setting.conversations.messages.$post({
-        json: { number: { telnyx_number, _id }, profile: this.activeProfile._id },
-      }));
-      this.messages = data;
-      setTimeout(() => {
-        const scroll = document.getElementById("chat-container")!;
-        scroll.scrollTop = scroll.scrollHeight;
-        scroll.animate({ scrollTop: scroll.scrollHeight });
-        this.chatListLoader = false;
-      }, 1000);
-      this.numberList?.refreshProfile();
-      void this.profileStore.refreshActiveProfile();
+    scrollChatToBottom() {
+      const scroll = document.getElementById("chat-container");
+      if (!scroll) return;
+      scroll.scrollTop = scroll.scrollHeight;
     },
-    async handleSubmit2() {
-      this.submitted2 = true;
-      // todo: validation in this is odd
-      await this.r$.$validate();
-
-      this.isLoading = true;
-      if (this.tags.length <= 0) {
-        notifyError("please enter number!", "Oops...");
-        return;
-      }
-      const numbers = this.tags.map(({ text }) => text)
-
-      if (!this.r$.sms.message.$error || this.uploadedImages.length > 0) {
-        this.commonSendMessage(numbers, this.r$.$value.sms.message);
-      } else {
-        notifyError("Message or file required!", "Oops...");
-        this.isLoading = false;
-      }
+    resetComposer() {
+      document.getElementById("drop-area")!.style.display = "none";
+      this.uploadedImages = [];
     },
     updateVw() {
       this.vw = getVw();
@@ -828,13 +607,6 @@ p {
 }
 #fileElem {
   display: none;
-}
-.paperClip {
-  border-radius: 0% !important;
-  border-top-left-radius: 5px !important;
-  border-bottom-left-radius: 5px !important;
-  padding: 0.5rem 0.75rem !important;
-  border-right: 1px solid black;
 }
 #hidden {
   z-index: 9999;

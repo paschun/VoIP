@@ -59,7 +59,6 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default defineComponent({
   components: { LoadingSpinner },
-  emits: ['clicked'],
   setup () {
     const { r$ } = useRegle('', {
       required: withMessage(required, 'Profile is required') // default: This field is required
@@ -74,14 +73,11 @@ export default defineComponent({
   methods: {
     changeProfile (profile: any) {
       this.profileStore.setActiveProfile(profile)
-      this.$emit('clicked', profile)
     },
     activeFirstProfile () {
       const profiles = this.profileStore.profiles
       if (profiles.length > 0) {
         this.changeProfile(profiles[0])
-      } else {
-        this.$emit('clicked', null)
       }
     },
     /**
@@ -101,9 +97,8 @@ export default defineComponent({
       const { valid, data } = await this.r$.$validate()
       if (!valid) return
       try {
-        const created = await this.profileStore.createProfile(data) // loading state will also be `true` for subsequent loadProfiles
+        await this.profileStore.createProfile(data) // loading state will also be `true` for subsequent loadProfiles
         notifySuccess('Profile added successfully!')
-        this.$emit('clicked', created)
         this.addProfileModal?.hide() // ?. covers the null before mount
         this.r$.$reset({ toState: '' })
       } catch (err) {
