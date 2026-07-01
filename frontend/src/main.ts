@@ -12,7 +12,7 @@ import 'sweetalert2/dist/sweetalert2.min.css'
 import 'vue3-select-component/styles.css'
 import '@/assets/css/main.css'
 
-import router from './router/index.ts'
+import router from './router/routes.ts'
 import App from './App.vue'
 
 const app = createApp(App)

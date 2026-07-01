@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2'
-import router from '@/router/index.ts'
+import router from '@/router/routes.ts'
 import { useUserStore } from '@/stores/user.ts'
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status'
 
