@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
-import type { Env } from '../core/factory.ts'
 import * as hardwarekey from '../controller/hardwarekey.controller.ts'
+import type { Env } from '../core/factory.ts'
 
 // Routes for `/api/hardwarekey` -- the WebAuthn enrollment + login ceremony plus key management.
 //

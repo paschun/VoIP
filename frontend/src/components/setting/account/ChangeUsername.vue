@@ -1,17 +1,17 @@
 <template>
-    <div class="p-1">
-        <form @submit.prevent="changeUsername" class="ml-2 mr-2">
-           <div class="form-group mt-2">
-                <input class="form-control" v-model="r$.$value" placeholder="Enter Username" :class="{ 'is-invalid': r$.$error }" />
-                <div v-if="r$.$error" class="invalid-feedback">
-                    <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
-                </div>
-            </div>
-            <div class="form-group">
-                <button class="btn btn-success mt-2" type="submit" :disabled="!r$.$correct">Change</button>
-            </div>
-        </form>
-    </div>
+  <div class="p-1">
+    <form @submit.prevent="changeUsername" class="ml-2 mr-2">
+      <div class="form-group mt-2">
+        <input class="form-control" v-model="r$.$value" placeholder="Enter Username" :class="{ 'is-invalid': r$.$error }" />
+        <div v-if="r$.$error" class="invalid-feedback">
+          <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <button class="btn btn-success mt-2" type="submit" :disabled="!r$.$correct">Change</button>
+      </div>
+    </form>
+  </div>
 </template>
 
 <script lang="ts">
@@ -23,7 +23,7 @@ import { notifySuccess } from '@/notify.ts'
 import { useUserStore } from '@/stores/user.ts'
 
 export default defineComponent({
-  setup () {
+  setup() {
     const userStore = useUserStore()
     // A standalone ref is the whole single-field form; the username is snapshotted from the store (one-time copy, not a
     // live binding).
@@ -32,7 +32,7 @@ export default defineComponent({
     return { r$, userStore }
   },
   methods: {
-    async changeUsername () {
+    async changeUsername() {
       const { valid, data } = await this.r$.$validate()
       if (!valid) return
       try {
@@ -45,7 +45,7 @@ export default defineComponent({
       }
       this.r$.$reset({ toState: data })
       notifySuccess('Username updated successfully')
-    }
-  }
+    },
+  },
 })
 </script>

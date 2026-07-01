@@ -1,18 +1,10 @@
 <template>
   <div v-if="idHide === 'false'">
-    <input
-      @change="toggleTheme"
-      id="checkbox"
-      type="checkbox"
-      class="switch-checkbox"
-    />
+    <input @change="toggleTheme" id="checkbox" type="checkbox" class="switch-checkbox" />
     <label for="checkbox" class="switch-label switch-label-mode">
       <span>🌙</span>
       <span>☀️</span>
-      <div
-        class="switch-toggle"
-        :class="{ 'switch-toggle-checked': userTheme === 'dark-theme' }"
-      ></div>
+      <div class="switch-toggle" :class="{ 'switch-toggle-checked': userTheme === 'dark-theme' }"></div>
     </label>
   </div>
 </template>
@@ -20,34 +12,34 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 
-function getMediaPreference (): string {
+function getMediaPreference(): string {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
 }
 
 export default defineComponent({
   props: ['idHide'],
-  mounted () {
+  mounted() {
     this.setTheme(localStorage.getItem('user-theme') ?? getMediaPreference())
   },
 
-  data () {
+  data() {
     return {
-      userTheme: 'light-theme'
+      userTheme: 'light-theme',
     }
   },
 
   methods: {
-    toggleTheme () {
+    toggleTheme() {
       const activeTheme = localStorage.getItem('user-theme')
       this.setTheme(activeTheme === 'light-theme' ? 'dark-theme' : 'light-theme')
     },
 
-    setTheme (theme: string) {
+    setTheme(theme: string) {
       localStorage.setItem('user-theme', theme)
       this.userTheme = theme
       document.documentElement.className = theme
-    }
-  }
+    },
+  },
 })
 </script>
 
@@ -82,7 +74,9 @@ export default defineComponent({
   height: calc(var(--element-size) * 0.4);
   width: calc(var(--element-size) * 0.4);
   transform: translateX(0);
-  transition: transform 0.3s ease, background-color 0.5s ease;
+  transition:
+    transform 0.3s ease,
+    background-color 0.5s ease;
 }
 
 .switch-toggle-checked {

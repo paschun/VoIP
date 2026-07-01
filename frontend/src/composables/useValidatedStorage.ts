@@ -8,11 +8,7 @@ import type { z } from 'zod'
  * JSON falls back to `defaults` rather than throwing, so a corrupted value can
  * never crash startup.
  */
-export function useValidatedStorage<T> (
-  key: string,
-  schema: z.ZodType<T>,
-  defaults: T
-): RemovableRef<T> {
+export function useValidatedStorage<T>(key: string, schema: z.ZodType<T>, defaults: T): RemovableRef<T> {
   return useStorage<T>(key, defaults, localStorage, {
     serializer: {
       read: (raw): T => {
@@ -23,7 +19,7 @@ export function useValidatedStorage<T> (
           return defaults
         }
       },
-      write: (value): string => JSON.stringify(value)
-    }
+      write: (value): string => JSON.stringify(value),
+    },
   })
 }

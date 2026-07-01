@@ -22,7 +22,10 @@ const callHook = <S extends string>(route: S) => ({ route, full: `/api/call${rou
  * `:type` is validated in the route handler as either 'telnyx' | 'twilio'
  */
 const smsHook = <S extends string>(base: S) =>
-  ({ route: `${base}/:type`, full: { twilio: `/api/setting${base}/twilio`, telnyx: `/api/setting${base}/telnyx` } }) as const
+  ({
+    route: `${base}/:type`,
+    full: { twilio: `/api/setting${base}/twilio`, telnyx: `/api/setting${base}/telnyx` },
+  }) as const
 
 export const WEBHOOKS = {
   call: {

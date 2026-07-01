@@ -1,12 +1,17 @@
 import { describe, test, expect, expectTypeOf, assert, beforeAll, afterAll, afterEach } from 'vitest'
 import mongoose, { type InferSchemaType, type Types } from 'mongoose'
-
-import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 import {
-  Message, TextMessage, Call,
-  type messageSchema, type textMessageSchema, type callSchema,
-  type MessageDoc, type CallDoc, type TextMessageDoc,
+  Message,
+  TextMessage,
+  Call,
+  type messageSchema,
+  type textMessageSchema,
+  type callSchema,
+  type MessageDoc,
+  type CallDoc,
+  type TextMessageDoc,
 } from '../app/model/message.model.ts'
+import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 
 // Type-only locks (validated by `tsc`; no-ops at runtime) for the Message/Call discriminator typing. These guard the
 // exact mistake of mis-handling `datatype` in the composed doc types: `InferSchemaType` reads the schema DEFINITION,
@@ -83,7 +88,7 @@ describe('the discriminatorKey IS stored on the actual record (runtime)', () => 
     assert(call)
     expect(text.datatype).toBe('message')
     expect(call.datatype).toBe('call')
-    expectTypeOf(text).toHaveProperty('datatype') // union type has discriminator property 
+    expectTypeOf(text).toHaveProperty('datatype') // union type has discriminator property
     expectTypeOf(text.datatype).toEqualTypeOf<'message' | 'call'>()
     expectTypeOf(call.datatype).toEqualTypeOf<'message' | 'call'>()
 

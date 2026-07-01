@@ -1,40 +1,47 @@
-import fs from 'node:fs'
 import crypto from 'node:crypto'
-import Telnyx from 'telnyx'
-import { format } from 'date-fns'
-import mongoose from 'mongoose'
-import twilio from 'twilio'
-import nodemailer, { type SendMailOptions } from 'nodemailer'
-import { createMessage, encrypt, readKey } from 'openpgp'
+import fs from 'node:fs'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-
-import Setting from '../model/setting.model.ts'
-import { Message, TextMessage, type MessageDoc, type CommonFields } from '../model/message.model.ts'
-import Contact from '../model/contact.model.ts'
-import Email from '../model/email.model.ts'
-import { combineURLs, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
-import { WEBHOOKS } from '../helper/webhook-paths.ts'
-import { getIO } from '../core/socket.ts'
-import { env } from '../core/env.ts'
-import { ProviderError } from '../core/error.ts'
-
-import { factory } from '../core/factory.ts'
-import { auth } from '../middleware/auth.ts'
-import { jsonBody, pathParams, pathParams404, queryParams } from '../middleware/validate.ts'
-import { ack } from '../helper/respond.helper.ts'
-import type { Env, JsonCtx, ParamCtx, ParamJsonCtx, QueryCtx } from '../core/factory.ts'
+import mongoose from 'mongoose'
+import { format } from 'date-fns'
+import nodemailer, { type SendMailOptions } from 'nodemailer'
+import { createMessage, encrypt, readKey } from 'openpgp'
+import Telnyx from 'telnyx'
+import twilio from 'twilio'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
-  smsTypeParam, type SmsTypeParam,
-  getNumberBody, type GetNumberRequest, type GetNumberResponse,
-  sendSmsBody, type SendSmsRequest,
-  conversationsQuery, type ConversationsQuery,
-  messageListBody, type MessageListRequest,
-  conversationParam, type ConversationParam,
-  notificationBody, type NotificationRequest,
-  profileIdParam, type ProfileIdParam,
+  smsTypeParam,
+  type SmsTypeParam,
+  getNumberBody,
+  type GetNumberRequest,
+  type GetNumberResponse,
+  sendSmsBody,
+  type SendSmsRequest,
+  conversationsQuery,
+  type ConversationsQuery,
+  messageListBody,
+  type MessageListRequest,
+  conversationParam,
+  type ConversationParam,
+  notificationBody,
+  type NotificationRequest,
+  profileIdParam,
+  type ProfileIdParam,
 } from '../../shared/contracts/setting.ts'
+import { env } from '../core/env.ts'
+import { ProviderError } from '../core/error.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx, ParamCtx, ParamJsonCtx, QueryCtx } from '../core/factory.ts'
+import { getIO } from '../core/socket.ts'
+import { combineURLs, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
+import { ack } from '../helper/respond.helper.ts'
+import { WEBHOOKS } from '../helper/webhook-paths.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody, pathParams, pathParams404, queryParams } from '../middleware/validate.ts'
+import Contact from '../model/contact.model.ts'
+import Email from '../model/email.model.ts'
+import { Message, TextMessage, type MessageDoc, type CommonFields } from '../model/message.model.ts'
+import Setting from '../model/setting.model.ts'
 
 // todo: check this against email model
 interface SendEmailSetting {
@@ -56,7 +63,10 @@ async function pgpEncrypt(text: string, armoredKey: string): Promise<string> {
 }
 
 /** Send an SMTP (optionally PGP-encrypted) email notification. Best-effort: resolves false instead of rejecting. */
-async function sendEmail(setting: SendEmailSetting, email: { subject: string; text: string; html: string }): Promise<boolean> {
+async function sendEmail(
+  setting: SendEmailSetting,
+  email: { subject: string; text: string; html: string },
+): Promise<boolean> {
   try {
     // todo: dont cast to number, ideally handled in validation
     const transporter = nodemailer.createTransport({
@@ -203,26 +213,27 @@ async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
 
     if (type === 'twilio') {
       // todo: parse with zod
-      const form = await c.req.parseBody() as Record<string, string>
+      const form = (await c.req.parseBody()) as Record<string, string>
       messageText = form.Body ?? ''
       toNumber = form.To ?? ''
       fromNumber = form.From ?? ''
       sid = form.SmsSid ?? ''
       const numMedia = Number(form.NumMedia ?? 0)
       media = await saveMedia(
-        Array.from({ length: numMedia }, (_, i) => ({ url: form[`MediaUrl${i}`] ?? '', contentType: form[`MediaContentType${i}`] ?? '' })),
+        Array.from({ length: numMedia }, (_, i) => ({
+          url: form[`MediaUrl${i}`] ?? '',
+          contentType: form[`MediaContentType${i}`] ?? '',
+        })),
       )
     } else {
       // telnyx branch
       // todo: parse with zod
-      const payload = (await c.req.json() as any).data.payload
+      const payload = ((await c.req.json()) as any).data.payload
       toNumber = payload.to[0].phone_number
       fromNumber = payload.from.phone_number
       sid = payload.id
       messageText = payload.text
-      media = await saveMedia(
-        (payload.media ?? []).map((m: any) => ({ url: m.url, contentType: m.content_type })),
-      )
+      media = await saveMedia((payload.media ?? []).map((m: any) => ({ url: m.url, contentType: m.content_type })))
     }
 
     const setting = await Setting.findOne({ number: { $eq: toNumber } })
@@ -240,21 +251,26 @@ async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
         setting: setting._id,
         media,
       }
-      const contact = await Contact.findOne({ user: { $eq: setting.user?.toString() ?? '' }, number: { $eq: fromNumber } })
+      const contact = await Contact.findOne({
+        user: { $eq: setting.user?.toString() ?? '' },
+        number: { $eq: fromNumber },
+      })
       if (contact) record.contact = contact._id
 
       // todo: type socketIO messages
-      getIO().to(setting.user?.toString() ?? '').emit('user_message', {
-        message: messageText,
-        number: fromNumber,
-        telnyx_number: toNumber,
-        toUser: setting.user,
-        contact,
-        type: 'receive',
-        status: 'received',
-        isview: false,
-        settings: setting,
-      })
+      getIO()
+        .to(setting.user?.toString() ?? '')
+        .emit('user_message', {
+          message: messageText,
+          number: fromNumber,
+          telnyx_number: toNumber,
+          toUser: setting.user,
+          contact,
+          type: 'receive',
+          status: 'received',
+          isview: false,
+          settings: setting,
+        })
 
       if (setting.emailnotification) {
         const emailSetting = await Email.findOne({ user: { $eq: setting.user?.toString() ?? '' } })
@@ -307,7 +323,9 @@ function deleteTwilioMessageLater(setting: { twilio_sid?: string | null; twilio_
       for (let i = 0; i < 5; i++) {
         try {
           if (await client.messages(sid).remove()) return resolve(true)
-        } catch { /* retry */ }
+        } catch {
+          /* retry */
+        }
       }
       resolve(false)
     }, 5000)
@@ -321,7 +339,7 @@ async function handleSmsStatus(c: ParamCtx<SmsTypeParam>) {
     let status: string
     let sid: string
     if (type === 'twilio') {
-      const form = await c.req.parseBody() as Record<string, string>
+      const form = (await c.req.parseBody()) as Record<string, string>
       status = form.MessageStatus ?? ''
       sid = form.MessageSid ?? ''
       if (['delivered', 'undelivered', 'failed'].includes(status)) {
@@ -332,13 +350,15 @@ async function handleSmsStatus(c: ParamCtx<SmsTypeParam>) {
           for (let i = 0; i < 5; i++) {
             try {
               if (await client.messages(sid).remove()) break
-            } catch { /* retry */ }
+            } catch {
+              /* retry */
+            }
           }
         }
       }
     } else {
       // todo: dont cast
-      const payload = (await c.req.json() as any).data.payload
+      const payload = ((await c.req.json()) as any).data.payload
       status = payload.to[0].status
       sid = payload.id
     }
@@ -361,7 +381,6 @@ function emptyTwiml(c: Context<Env>) {
   return c.body(response.toString())
 }
 
-
 /** A collapsed conversation row: the latest message per other-party number, with that conversation's unread count. */
 export type ConversationRow = Pick<CommonFields, 'type' | 'telnyx_number' | 'created_at'> & {
   _id: string // the other party's number (the $group key), not an ObjectId
@@ -383,7 +402,8 @@ export async function conversationsForProfile(userId: string, profileId: string)
     { $match: { user, setting } }, // match the messages that have same `user` and `setting` ids
     { $sort: { created_at: -1 } }, // newest first (descending), so the following $first picks each conversation's latest message
     {
-      $group: { // $group combines multiple documents with the same group key into a single document
+      $group: {
+        // $group combines multiple documents with the same group key into a single document
         _id: '$number', // `number` field (other-party number) (a string, not actually a number) becomes the group key
         message: { $first: '$message' }, // $first grabs the latest message's fields
         created_at: { $first: '$created_at' },
@@ -399,7 +419,11 @@ export async function conversationsForProfile(userId: string, profileId: string)
   // `contact` is populated to the subset that the inbox renders
   // without lean, `contact` is replaced with a hydrated Contact Document
   // mongodb includes `_id` by default, so must explicitly exclude it: https://mongoosejs.com/docs/api/query.html#Query.prototype.select()
-  await Contact.populate(conversations, { path: 'contact', select: 'first_name last_name -_id', options: { lean: true } })
+  await Contact.populate(conversations, {
+    path: 'contact',
+    select: 'first_name last_name -_id',
+    options: { lean: true },
+  })
   return conversations
 }
 
@@ -452,7 +476,12 @@ async function saveEmailNotification(c: ParamJsonCtx<ProfileIdParam, Notificatio
 }
 
 export const listNumbers = factory.createHandlers(jsonBody(getNumberBody), listProviderNumbers)
-export const saveNotification = factory.createHandlers(auth, pathParams(profileIdParam), jsonBody(notificationBody), saveEmailNotification)
+export const saveNotification = factory.createHandlers(
+  auth,
+  pathParams(profileIdParam),
+  jsonBody(notificationBody),
+  saveEmailNotification,
+)
 export const receiveSms = factory.createHandlers(pathParams404(smsTypeParam), handleReceiveSms)
 export const smsStatus = factory.createHandlers(pathParams404(smsTypeParam), handleSmsStatus)
 export const sendMessage = factory.createHandlers(auth, jsonBody(sendSmsBody), handleSendSms)

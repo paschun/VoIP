@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
-import type { Env } from '../core/factory.ts'
 import * as contact from '../controller/contact.controller.ts'
+import type { Env } from '../core/factory.ts'
 
 // Routes for `/api/contact`.
 export const contactRoutes = new Hono<Env>()

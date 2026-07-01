@@ -14,11 +14,13 @@ export type LoginKeyRequest = z.infer<typeof loginKeyBody>
 
 /** `POST /registration/challenge` body: optional WebAuthn knobs (the client usually sends `{}`). */
 export const registrationChallengeBody = z.object({
-  options: z.object({
-    attestation: z.string().optional(),
-    rpId: z.string().optional(),
-    uv: z.boolean().optional(),
-  }).optional(),
+  options: z
+    .object({
+      attestation: z.string().optional(),
+      rpId: z.string().optional(),
+      uv: z.boolean().optional(),
+    })
+    .optional(),
 })
 export type RegistrationChallengeRequest = z.infer<typeof registrationChallengeBody>
 

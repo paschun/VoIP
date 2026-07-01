@@ -1,7 +1,7 @@
 import { jwtVerify } from 'jose'
+import type { ApiError } from '../../shared/api-contracts.ts'
 import { factory } from '../core/factory.ts'
 import type { AuthUser } from '../core/factory.ts'
-import type { ApiError } from '../../shared/api-contracts.ts'
 import { jwtSecret } from '../helper/common.helper.ts'
 
 // todo: look at https://hono.dev/docs/middleware/builtin/bearer-auth

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
-import type { Env } from '../core/factory.ts'
 import * as setting from '../controller/setting.controller.ts'
+import type { Env } from '../core/factory.ts'
 import { WEBHOOKS } from '../helper/webhook-paths.ts'
 
 // Routes for `/api/setting`: provider-number lookup, SMS sending + conversation history, and the public inbound-SMS/
@@ -13,6 +13,6 @@ export const settingRoutes = new Hono<Env>()
   .get('/conversations', ...setting.listConversations)
   .post('/conversations/messages', ...setting.getConversationMessages)
   .delete('/conversations/:number', ...setting.deleteConversation)
-  .patch('/:id/notification', ...setting.saveNotification) // Flips `emailnotification` 
+  .patch('/:id/notification', ...setting.saveNotification) // Flips `emailnotification`
   .post(WEBHOOKS.sms.receiveSms.route, ...setting.receiveSms)
   .post(WEBHOOKS.sms.smsStatus.route, ...setting.smsStatus)

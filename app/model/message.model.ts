@@ -8,16 +8,32 @@ import { Schema, model, type InferSchemaType, type Types } from 'mongoose'
  * best-effort webhook handlers would then silently drop the update. Extend this union if a provider introduces a value.
  */
 const MESSAGE_STATUSES = [
-    // Texts we send/receive ourselves
-    'sent', 'received',
-    // Twilio message delivery (MessageStatus): https://www.twilio.com/docs/messaging/api/message-resource#message-status-values
-    'queued', 'sending', 'delivered', 'undelivered', 'failed', 'receiving', 'accepted', 'scheduled', 'read', 'canceled',
-    // Telnyx message delivery (payload.to[].status): https://developers.telnyx.com/docs/messaging/messages/message-status
-    'sending_failed', 'delivery_failed', 'delivery_unconfirmed',
-    // Call lifecycle (Twilio CallStatus / Telnyx TeXML status callbacks): https://www.twilio.com/docs/voice/api/call-resource#call-status-values
-    'ringing', 'in-progress', 'completed', 'busy', 'no-answer',
+  // Texts we send/receive ourselves
+  'sent',
+  'received',
+  // Twilio message delivery (MessageStatus): https://www.twilio.com/docs/messaging/api/message-resource#message-status-values
+  'queued',
+  'sending',
+  'delivered',
+  'undelivered',
+  'failed',
+  'receiving',
+  'accepted',
+  'scheduled',
+  'read',
+  'canceled',
+  // Telnyx message delivery (payload.to[].status): https://developers.telnyx.com/docs/messaging/messages/message-status
+  'sending_failed',
+  'delivery_failed',
+  'delivery_unconfirmed',
+  // Call lifecycle (Twilio CallStatus / Telnyx TeXML status callbacks): https://www.twilio.com/docs/voice/api/call-resource#call-status-values
+  'ringing',
+  'in-progress',
+  'completed',
+  'busy',
+  'no-answer',
 ] as const
-type MessageStatus = typeof MESSAGE_STATUSES[number]
+type MessageStatus = (typeof MESSAGE_STATUSES)[number]
 
 // Twilio ships these as named types; Telnyx has no alias but the inline union is reachable via indexed access on the
 // exported namespace (in telnyx/resources/messages/messages.d.ts)
@@ -30,7 +46,8 @@ type MessageStatus = typeof MESSAGE_STATUSES[number]
 // discriminators below stamp it ('message' / 'call') and each adds the fields unique to its kind. Reads go through the
 // base `Message` model -- a query on it scans the whole `messages` collection and hydrates each doc as its
 // discriminator type -- while writes go through `TextMessage` / `Call` so the right `datatype` + field set is enforced.
-export const messageSchema = new Schema({
+export const messageSchema = new Schema(
+  {
     sid: { type: String, required: true },
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // user that this message belongs to
     number: { type: String, required: true }, // the other party's number
@@ -38,29 +55,31 @@ export const messageSchema = new Schema({
     // no separate twilio field). Rename to provider-neutral `provider_number`. Needs a data migration, so left as-is.
     telnyx_number: { type: String, required: true },
     type: {
-        type: String,
-        enum: ['send', 'receive'],
-        required: true,
+      type: String,
+      enum: ['send', 'receive'],
+      required: true,
     },
     isview: { type: Boolean, required: true }, // read flag: false = unread, true = read
     status: { type: String, default: null }, // provider state from webhook, see MessageStatus above
     contact: { type: Schema.Types.ObjectId, ref: 'Contact' },
     setting: { type: Schema.Types.ObjectId, ref: 'Setting', required: true }, // profile this message belongs to
     created_at: { type: Date, default: Date.now },
-}, {
+  },
+  {
     discriminatorKey: 'datatype',
     strict: 'throw',
     strictQuery: 'throw',
-})
+  },
+)
 
 // Discriminators inherit the base schema's options, so `strict`/`strictQuery: 'throw'` already to these two as well
 export const textMessageSchema = new Schema({
-    message: String, // used for texts. a media-only MMS has empty text
-    media: [String], // MMS media URLs, e.g. ['https://example.com/uploads/20260601/cf55....png']
+  message: String, // used for texts. a media-only MMS has empty text
+  media: [String], // MMS media URLs, e.g. ['https://example.com/uploads/20260601/cf55....png']
 })
 
 export const callSchema = new Schema({
-    duration: { type: Number, default: null }, // in seconds. set on call.hangup, null until then
+  duration: { type: Number, default: null }, // in seconds. set on call.hangup, null until then
 })
 
 export const Message = model('Message', messageSchema)

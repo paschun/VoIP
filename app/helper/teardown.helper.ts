@@ -1,8 +1,8 @@
 import Telnyx from 'telnyx'
 import twilio from 'twilio'
+import type Setting from '../model/setting.model.ts'
 import * as telnyxHelper from './telnyx.helper.ts'
 import * as twilioHelper from './twilio.helper.ts'
-import type Setting from '../model/setting.model.ts'
 
 type SettingDocument = InstanceType<typeof Setting>
 
@@ -20,37 +20,53 @@ export async function teardownProvider(setting: SettingDocument): Promise<void> 
     if (!apiKey) return
     const client = new Telnyx({ apiKey })
     if (setting.sid) {
-      try { await client.phoneNumbers.update(setting.sid, { connection_id: '' }) } catch { /* ignore */ }
+      try {
+        await client.phoneNumbers.update(setting.sid, { connection_id: '' })
+      } catch {}
     }
     if (setting.sip_id) {
-      try { await telnyxHelper.deleteSIPApp(apiKey, setting.sip_id) } catch { /* ignore */ }
+      try {
+        await telnyxHelper.deleteSIPApp(apiKey, setting.sip_id)
+      } catch {}
       if (setting.telnyx_outbound) {
-        try { await telnyxHelper.deleteOutboundVoice(apiKey, setting.telnyx_outbound) } catch { /* ignore */ }
+        try {
+          await telnyxHelper.deleteOutboundVoice(apiKey, setting.telnyx_outbound)
+        } catch {}
       }
     }
     if (setting.telnyx_twiml) {
-      try { await telnyxHelper.deleteTexmlApp(apiKey, setting.telnyx_twiml) } catch { /* ignore */ }
+      try {
+        await telnyxHelper.deleteTexmlApp(apiKey, setting.telnyx_twiml)
+      } catch {}
     }
     if (setting.sid) {
-      try { await client.phoneNumbers.messaging.update(setting.sid, { messaging_profile_id: '' }) } catch { /* ignore */ }
+      try {
+        await client.phoneNumbers.messaging.update(setting.sid, { messaging_profile_id: '' })
+      } catch {}
     }
     if (setting.setting) {
-      try { await client.messagingProfiles.delete(setting.setting) } catch { /* ignore */ }
+      try {
+        await client.messagingProfiles.delete(setting.setting)
+      } catch {}
     }
   } else {
     const { twilio_sid: twilioSid, twilio_token: twilioToken } = setting
     if (!twilioSid || !twilioToken) return
     if (setting.app_key) {
-      try { await twilioHelper.removeAPIKey(twilioSid, twilioToken, setting.app_key) } catch { /* ignore */ }
+      try {
+        await twilioHelper.removeAPIKey(twilioSid, twilioToken, setting.app_key)
+      } catch {}
     }
     if (setting.twiml_app) {
-      try { await twilioHelper.deleteTwiml(twilioSid, twilioToken, setting.twiml_app) } catch { /* ignore */ }
+      try {
+        await twilioHelper.deleteTwiml(twilioSid, twilioToken, setting.twiml_app)
+      } catch {}
     }
     if (setting.sid) {
       const client = twilio(twilioSid, twilioToken)
       try {
         await client.incomingPhoneNumbers(setting.sid).update({ smsUrl: '', voiceUrl: '', statusCallback: '' })
-      } catch { /* ignore */ }
+      } catch {}
     }
   }
 }

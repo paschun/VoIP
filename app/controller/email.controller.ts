@@ -1,21 +1,21 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { readKey } from 'openpgp'
-import Email from '../model/email.model.ts'
-import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx } from '../core/factory.ts'
-import { auth } from '../middleware/auth.ts'
-import { jsonBody } from '../middleware/validate.ts'
-import { ack } from '../helper/respond.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import { emailCreateBody, type EmailCreateRequest } from '../../shared/contracts/email.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx } from '../core/factory.ts'
+import { ack } from '../helper/respond.helper.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody } from '../middleware/validate.ts'
+import Email from '../model/email.model.ts'
 
 // throws if invalid
 const assertValidPgpKey = (keyString: string) => readKey({ armoredKey: keyString })
 
 // ── Handlers (signatures visible) ───────────────────────────────────────────────────────────────────────────────
 
-// there is exactly one Email doc per user (the `user` field is `unique`) so we find-or-create in a single write keyed by `user` 
+// there is exactly one Email doc per user (the `user` field is `unique`) so we find-or-create in a single write keyed by `user`
 async function upsertEmail(c: JsonCtx<EmailCreateRequest>) {
   const body = c.req.valid('json')
   if (body.pgpEncryptEnabled) {

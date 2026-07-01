@@ -1,7 +1,7 @@
 import { describe, test, expect, expectTypeOf, assert } from 'vitest'
 import { Hono } from 'hono'
-import { testClient } from 'hono/testing'
 import type { InferResponseType } from 'hono/client'
+import { testClient } from 'hono/testing'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { Types } from 'mongoose'
 

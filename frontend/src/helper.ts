@@ -12,8 +12,7 @@ import type { Contact } from '@shared/api-contracts.ts'
  * instead of the awkward `?? 'null'` dance. Throws on malformed JSON, like
  * `JSON.parse` itself.
  */
-export const parseJSON = (value: string | null | undefined): any =>
-  value === null || value === undefined ? null : JSON.parse(value)
+export const parseJSON = (value: string | null | undefined): any => (value === null || value === undefined ? null : JSON.parse(value))
 
 /**
  * Format a `created_at` timestamp for display (an inbox row or a thread entry).
@@ -32,7 +31,7 @@ export const formatTimestamp = (value: string, longMonth = true): string => {
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
   }).format(d)
 }
 
@@ -41,6 +40,4 @@ export const contactsToOptions = (contacts: Contact[]): SelectOptionData<string>
   contacts.map((c) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
 
 /** Join URL fragments with exactly one `/` between them. */
-export const combineURLs = (...urls: string[]): string => urls.reduce(
-  (acc, part) => acc.replace(/\/+$/, '') + '/' + part.replace(/^\/+/, '')
-)
+export const combineURLs = (...urls: string[]): string => urls.reduce((acc, part) => acc.replace(/\/+$/, '') + '/' + part.replace(/^\/+/, ''))

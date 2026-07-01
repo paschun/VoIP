@@ -2,7 +2,7 @@ import { shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
 import Cookies from 'js-cookie'
 
-function decode (raw: string) {
+function decode(raw: string) {
   try {
     const parsed = JSON.parse(raw)
     // keep number-like strings that don't round-trip (precision loss / overflow) as strings
@@ -19,7 +19,7 @@ const encode = (value: unknown): string => (typeof value === 'string' ? value : 
  * Reactive `Ref` over a js-cookie value: strings are stored as-is, everything else JSON-encoded, so it interops with
  * bare-string cookies (the auth token) and object cookies alike. In-app reactive only -- share one ref via a store.
  */
-export function useCookie<T = string> (key: string, options?: Cookies.CookieAttributes): Ref<T | null> {
+export function useCookie<T = string>(key: string, options?: Cookies.CookieAttributes): Ref<T | null> {
   const read = (): T | null => {
     const raw = Cookies.get(key)
     return raw === undefined ? null : decode(raw)

@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <span v-if="old_version" class="update_ribbon"><a href="https://github.com/paschun/VoIP" target="_blank" rel="noopener noreferrer">update</a></span>
-    <router-view/>
+    <router-view />
   </div>
 </template>
 
@@ -11,19 +11,19 @@ import { client, request } from '@/core/rpc.client.ts'
 
 export default defineComponent({
   name: 'App',
-  data () {
+  data() {
     return {
-      old_version: false
+      old_version: false,
     }
   },
-  mounted () {
+  mounted() {
     this.getVersion()
   },
   methods: {
-    async getVersion () {
+    async getVersion() {
       const res = await request(client.api.auth.version['update-available'].$get())
       this.old_version = res.data
-    }
-  }
+    },
+  },
 })
 </script>

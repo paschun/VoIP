@@ -16,15 +16,26 @@ import { emailSchema, type EmailDoc } from '../schema/email.ts'
  * validatorjs `required`, an empty string is no longer rejected server-side (the form still validates client-side).
  * This module gains a runtime (zod + the schema) but the frontend only ever `import type`s from it, so it's erased there.
  */
-export type EmailCreateRequest =
-  & Pick<EmailDoc, 'email' | 'password' | 'to_email' | 'host' | 'port' | 'sender_email' | 'secure' | 'pgpEncryptEnabled'>
+export type EmailCreateRequest = Pick<
+  EmailDoc,
+  'email' | 'password' | 'to_email' | 'host' | 'port' | 'sender_email' | 'secure' | 'pgpEncryptEnabled'
+> &
   // The model can only express `pgpPublicKey` as an optional nullable String (Mongoose marks any non-`required` String
   // nullable), but on the wire the request always carries a plain `string` — '' means "no key". Override it here.
-  & { pgpPublicKey: string }
+  { pgpPublicKey: string }
 
 export const emailCreateBody = (z.fromJSONSchema(emailSchema.toJSONSchema()) as z.ZodObject<z.ZodRawShape>)
-  .pick({ email: true, password: true, to_email: true, host: true, port: true, sender_email: true,
-          secure: true, pgpPublicKey: true, pgpEncryptEnabled: true })
+  .pick({
+    email: true,
+    password: true,
+    to_email: true,
+    host: true,
+    port: true,
+    sender_email: true,
+    secure: true,
+    pgpPublicKey: true,
+    pgpEncryptEnabled: true,
+  })
   .extend({
     to_email: z.email(),
     sender_email: z.email(),

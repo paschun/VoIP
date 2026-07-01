@@ -11,12 +11,12 @@ export const TIMESTAMP_FORMAT = 'yyyyMMddHHmm'
  * The first segment keeps any leading slash and the last keeps any trailing slash.
  */
 const combineURLs = (...urls: string[]): string => {
-    if (urls.length === 0) return '';
-    return urls.reduce((base, segment) => {
-        const left = base.replace(/\/+$/, '');     // strip any trailing slash(es) from the accumulated left side
-        const right = segment.replace(/^\/+/, ''); // strip any leading slash(es) from the next segment
-        return `${left}/${right}`;                 // rejoin with exactly one slash at the seam
-    });
+  if (urls.length === 0) return ''
+  return urls.reduce((base, segment) => {
+    const left = base.replace(/\/+$/, '') // strip any trailing slash(es) from the accumulated left side
+    const right = segment.replace(/^\/+/, '') // strip any leading slash(es) from the next segment
+    return `${left}/${right}` // rejoin with exactly one slash at the seam
+  })
 }
 
 /**
@@ -25,10 +25,10 @@ const combineURLs = (...urls: string[]): string => {
  * TODO: could normalizeNumber be in zod?
  */
 const normalizeNumber = (raw: string): string => {
-    const digits = raw.trim().replace('+', '')
-    if (digits.length > 10) return `+${digits}`
-    if (digits.length === 10) return `+1${digits}`
-    return digits
+  const digits = raw.trim().replace('+', '')
+  if (digits.length > 10) return `+${digits}`
+  if (digits.length === 10) return `+1${digits}`
+  return digits
 }
 
 /** HS256 algo expects a key size of >= 256 Bits == 32 chars.
@@ -38,7 +38,7 @@ const normalizeNumber = (raw: string): string => {
 const jwtSecret = new TextEncoder().encode(env.COOKIE_KEY)
 
 /** Sign a JWT. Only `id` matters to the profile/hardwarekey controllers.
- * 
+ *
  * https://github.com/panva/jose/blob/HEAD/docs/jwt/sign/classes/SignJWT.md
  * HS256 requires a 256-bit (32-byte) secret (symmetric encryption)
  * 3 parts (b64 encoded) : header.payload.signature
@@ -46,10 +46,7 @@ const jwtSecret = new TextEncoder().encode(env.COOKIE_KEY)
  * decoded payload:{ "id": "6322cb0813d8a71034f6efcc", "name": "example", "exp": 1782625311 }
  * signature: MAC of the encoded JOSE Header and encoded JWS Payload with the HMAC SHA-256 algorithm and base64url encoding the HMAC value
  */
-const signToken = (id: string, name: string): Promise<string> => (
+const signToken = (id: string, name: string): Promise<string> =>
   new SignJWT({ id, name }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime('30d').sign(jwtSecret)
-)
 
-export {
-    combineURLs, normalizeNumber, signToken, jwtSecret
-}
+export { combineURLs, normalizeNumber, signToken, jwtSecret }

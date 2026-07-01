@@ -3,15 +3,18 @@
   "semi": false,
   "singleQuote": true,
   "printWidth": 120,
+  "bracketSameLine": false,
   "sortImports": {
     "newlinesBetween": false,
     "customGroups": [
+      { "groupName": "vitest", "elementNamePattern": ["vitest"] },
       { "groupName": "hono", "elementNamePattern": ["hono"] },
       { "groupName": "hono-subpath", "elementNamePattern": ["hono/**", "@hono/**"] },
       { "groupName": "mongoose", "elementNamePattern": ["mongoose", "mongoose/**"] }
     ],
     "groups": [
       "builtin",
+      "vitest",
       "hono",
       "hono-subpath",
       "mongoose",

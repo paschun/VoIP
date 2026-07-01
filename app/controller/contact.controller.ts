@@ -1,20 +1,24 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import Contact from '../model/contact.model.ts'
-import { Message } from '../model/message.model.ts'
-import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../core/factory.ts'
-import { auth } from '../middleware/auth.ts'
-import { jsonBody, pathParams, queryParams } from '../middleware/validate.ts'
-import { normalizeNumber } from '../helper/common.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
-  contactBody, type ContactRequest,
-  contactBulkBody, type ContactBulkRequest,
-  contactLookupQuery, type ContactLookupQuery,
-  contactIdParam, type ContactIdParam,
+  contactBody,
+  type ContactRequest,
+  contactBulkBody,
+  type ContactBulkRequest,
+  contactLookupQuery,
+  type ContactLookupQuery,
+  contactIdParam,
+  type ContactIdParam,
 } from '../../shared/contracts/contact.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../core/factory.ts'
+import { normalizeNumber } from '../helper/common.helper.ts'
 import { ack, created } from '../helper/respond.helper.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody, pathParams, queryParams } from '../middleware/validate.ts'
+import Contact from '../model/contact.model.ts'
+import { Message } from '../model/message.model.ts'
 
 const MAX_CONTACTS = 500
 
@@ -22,7 +26,9 @@ async function getContacts(c: Context<Env>) {
   // collation locale 'en' makes the first_name sort case-insensitive and locale-aware (so 'bob' and 'Bob' order together)
   // without it Mongo sorts by raw bytes (all uppercase before lowercase).
   // sort `1` == ascending
-  const contacts = await Contact.find({ user: { $eq: c.get('user').id } }).collation({ locale: 'en' }).sort({ first_name: 1 })
+  const contacts = await Contact.find({ user: { $eq: c.get('user').id } })
+    .collation({ locale: 'en' })
+    .sort({ first_name: 1 })
   const data = contacts.map((d) => d.toObject({ flattenObjectIds: true }))
   return c.json({ data } satisfies Ok, 200)
 }
@@ -41,10 +47,16 @@ async function createContact(c: JsonCtx<ContactRequest>) {
   const number = normalizeNumber(body.number)
   const exists = await Contact.findOne({ user: { $eq: user }, number: { $eq: number } })
   if (exists) throw new HTTPException(409, { message: 'Number already exists!' })
-  if (await Contact.countDocuments({ user: { $eq: user } }) >= MAX_CONTACTS) {
+  if ((await Contact.countDocuments({ user: { $eq: user } })) >= MAX_CONTACTS) {
     throw new HTTPException(422, { message: 'Cannot have more than 500 contacts!' })
   }
-  const saved = await Contact.create({ user, number, first_name: body.first_name, last_name: body.last_name ?? '', note: body.note ?? '' })
+  const saved = await Contact.create({
+    user,
+    number,
+    first_name: body.first_name,
+    last_name: body.last_name ?? '',
+    note: body.note ?? '',
+  })
   await Message.updateMany({ user: { $eq: user }, number: { $eq: number } }, { contact: saved._id })
   return created(c)
 }
@@ -58,7 +70,13 @@ async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
     const number = normalizeNumber(item.number)
     const exists = await Contact.findOne({ user: { $eq: user }, number: { $eq: number } })
     if (exists) continue
-    await Contact.create({ user, number, first_name: item.first_name ?? '', last_name: item.last_name ?? '', note: item.note ?? '' })
+    await Contact.create({
+      user,
+      number,
+      first_name: item.first_name ?? '',
+      last_name: item.last_name ?? '',
+      note: item.note ?? '',
+    })
     count++
   }
   return created(c)

@@ -1,7 +1,7 @@
 <template>
   <div>
     <loading-spinner :show="profileStore.profileIsLoading" />
-    <div v-for="profile in profileStore.profiles" :key="profile._id" >
+    <div v-for="profile in profileStore.profiles" :key="profile._id">
       <b-dropdown-item-button @click="changeProfile(profile)">
         <div class="d-flex flex-row">
           <div>
@@ -10,12 +10,14 @@
                 {{ profile.profile }}
               </div>
               <div>
-                <span v-if="profile.number && profile.number !== ''" class="profileNum">({{profile.number}})</span>
+                <span v-if="profile.number && profile.number !== ''" class="profileNum">({{ profile.number }})</span>
               </div>
             </div>
           </div>
           <div>
-            <span v-if="(profile.messageCount ?? 0) > 0" class="start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"><span class="visually-hidden">unread messages</span></span>
+            <span v-if="(profile.messageCount ?? 0) > 0" class="start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
+              ><span class="visually-hidden">unread messages</span></span
+            >
           </div>
         </div>
       </b-dropdown-item-button>
@@ -23,7 +25,7 @@
     </div>
     <b-dropdown-item-button v-b-modal.add-profile>
       <i-bi-person-plus-fill aria-hidden="true" />
-        Add New Profile
+      Add New Profile
     </b-dropdown-item-button>
     <b-dropdown-divider></b-dropdown-divider>
     <b-modal ref="add-profile" id="add-profile" size="lg" title="Add Profile" no-footer>
@@ -49,32 +51,32 @@
  * $post here): loadProfiles -> profile/getdata, createProfile -> profile/create.
  */
 import { defineComponent, useTemplateRef } from 'vue'
-import type { BModal } from 'bootstrap-vue-next'
 import { useRegle } from '@regle/core'
-import { DetailedError } from 'hono/client'
 import { required, withMessage } from '@regle/rules'
+import type { BModal } from 'bootstrap-vue-next'
+import { DetailedError } from 'hono/client'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { notifySuccess } from '@/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default defineComponent({
   components: { LoadingSpinner },
-  setup () {
+  setup() {
     const { r$ } = useRegle('', {
-      required: withMessage(required, 'Profile is required') // default: This field is required
+      required: withMessage(required, 'Profile is required'), // default: This field is required
     })
     // type inference on useTemplateRef works with composition API `<script setup> + Volar`
     const addProfileModal = useTemplateRef<InstanceType<typeof BModal>>('add-profile')
     return { r$, profileStore: useProfileStore(), addProfileModal }
   },
-  mounted () {
+  mounted() {
     this.initSelection()
   },
   methods: {
-    changeProfile (profile: any) {
+    changeProfile(profile: any) {
       this.profileStore.setActiveProfile(profile)
     },
-    activeFirstProfile () {
+    activeFirstProfile() {
       const profiles = this.profileStore.profiles
       if (profiles.length > 0) {
         this.changeProfile(profiles[0])
@@ -84,16 +86,16 @@ export default defineComponent({
      * Load the list and select once (stored profile, else the first), firing the profile-changed watchers. Used on
      * mount + after create/delete.
      */
-    async initSelection () {
+    async initSelection() {
       const list = await this.profileStore.loadProfiles()
       const selected = this.profileStore.resolveActiveProfile(list)
       if (selected) this.changeProfile(selected)
     },
     /** List/badge refresh only (no re-selection) for pull-to-refresh / new message. */
-    getAllProfiles () {
+    getAllProfiles() {
       void this.profileStore.loadProfiles()
     },
-    async addProfile () {
+    async addProfile() {
       const { valid, data } = await this.r$.$validate()
       if (!valid) return
       try {
@@ -108,7 +110,7 @@ export default defineComponent({
         }
         throw err
       }
-    }
-  }
+    },
+  },
 })
 </script>

@@ -20,8 +20,8 @@ import { defineComponent } from 'vue'
 export default defineComponent({
   name: 'LoadingSpinner',
   props: {
-    show: { type: Boolean, default: false }
-  }
+    show: { type: Boolean, default: false },
+  },
 })
 </script>
 
@@ -55,8 +55,12 @@ export default defineComponent({
   animation: spCircRot 0.6s infinite linear;
 }
 @keyframes spCircRot {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(359deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
 }
 
 /* Fade the overlay in/out, inspired by Vue's Teleport modal example. */

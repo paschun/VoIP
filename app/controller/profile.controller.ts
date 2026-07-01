@@ -2,25 +2,27 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import Telnyx from 'telnyx'
 import twilio from 'twilio'
-import Setting from '../model/setting.model.ts'
-import { Message } from '../model/message.model.ts'
-import User from '../model/user.model.ts'
-import * as telnyxHelper from '../helper/telnyx.helper.ts'
-import * as twilioHelper from '../helper/twilio.helper.ts'
-import { teardownProvider } from '../helper/teardown.helper.ts'
-import { combineURLs } from '../helper/common.helper.ts'
-import { WEBHOOKS } from '../helper/webhook-paths.ts'
+import type { Ok } from '../../shared/api-contracts.ts'
+import {
+  profileCreateBody,
+  type CreateProfileRequest,
+  profileIdParam,
+  type ProfileIdParam,
+} from '../../shared/contracts/profile.ts'
+import { createSettingBody, type CreateSettingRequest } from '../../shared/contracts/setting.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx, ParamCtx } from '../core/factory.ts'
+import { combineURLs } from '../helper/common.helper.ts'
+import { teardownProvider } from '../helper/teardown.helper.ts'
+import * as telnyxHelper from '../helper/telnyx.helper.ts'
+import * as twilioHelper from '../helper/twilio.helper.ts'
+import { WEBHOOKS } from '../helper/webhook-paths.ts'
 import { auth } from '../middleware/auth.ts'
 import { jsonBody, pathParams } from '../middleware/validate.ts'
-import type { Ok } from '../../shared/api-contracts.ts'
-import {
-  profileCreateBody, type CreateProfileRequest,
-  profileIdParam, type ProfileIdParam,
-} from '../../shared/contracts/profile.ts'
-import { createSettingBody, type CreateSettingRequest } from '../../shared/contracts/setting.ts'
+import { Message } from '../model/message.model.ts'
+import Setting from '../model/setting.model.ts'
+import User from '../model/user.model.ts'
 
 async function createProfile(c: JsonCtx<CreateProfileRequest>) {
   const { profile } = c.req.valid('json')
@@ -32,24 +34,26 @@ async function createProfile(c: JsonCtx<CreateProfileRequest>) {
   return c.json({ data } satisfies Ok, 201)
 }
 
-export const profileWithUnread = (userId: string, profileId: string, onFail?: () => NativeError) => (
+export const profileWithUnread = (userId: string, profileId: string, onFail?: () => NativeError) =>
   Setting.findOne({ user: { $eq: userId }, _id: { $eq: profileId } }) // type: Document
     // mongoose types have trouble inferring type when populating virtual, so add it as generic param in populate
     .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: false } }) // unread only
     .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: false } })
     // https://github.com/Automattic/mongoose/blob/9.7.1/lib/query.js#L4669
     .orFail(onFail)
-)
 
-export const profilesWithUnread = (userId: string) => (
+export const profilesWithUnread = (userId: string) =>
   Setting.find({ user: { $eq: userId } }) // type: Document[]
     .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: false } }) // type: PopulateDocumentResult<Document>
     .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: false } })
-)
 
 async function getProfile(c: ParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
-  const profile = await profileWithUnread(c.get('user').id, id, () => new HTTPException(404, { message: 'Profile not found!' }))
+  const profile = await profileWithUnread(
+    c.get('user').id,
+    id,
+    () => new HTTPException(404, { message: 'Profile not found!' }),
+  )
   const data = profile.toObject({ flattenObjectIds: true })
   return c.json({ data } satisfies Ok, 200)
 }
@@ -63,8 +67,9 @@ async function getProfiles(c: Context<Env>) {
 async function removeProfile(c: ParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
   // Scope by user so one user can't delete another's profile by guessing its id (IDOR); a non-owned id 404s.
-  const setting = await Setting.findOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })
-    .orFail(() => new HTTPException(404, { message: 'Profile not found!' }))
+  const setting = await Setting.findOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } }).orFail(
+    () => new HTTPException(404, { message: 'Profile not found!' }),
+  )
 
   await Message.deleteMany({ setting: setting._id })
   await teardownProvider(setting)
@@ -218,7 +223,13 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
     await setting.save()
   } else {
     setting = await Setting.create({
-      number: twilio_number, sid, twilio_sid, twilio_token, user: userId, type: 'twilio', profile: body.profile,
+      number: twilio_number,
+      sid,
+      twilio_sid,
+      twilio_token,
+      user: userId,
+      type: 'twilio',
+      profile: body.profile,
     })
   }
 

@@ -2,5 +2,25 @@
   "$schema": "../node_modules/oxfmt/configuration_schema.json",
   "semi": false,
   "singleQuote": true,
+  "printWidth": 160,
+  "bracketSameLine": false,
+  "htmlWhitespaceSensitivity": "css",
+  "sortImports": {
+    "newlinesBetween": false,
+    "customGroups": [
+      { "groupName": "vitest", "elementNamePattern": ["vitest"] },
+      { "groupName": "vue", "elementNamePattern": ["vue*"] },
+    ],
+    "groups": [
+      "builtin",
+      "vitest",
+      "vue",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "style",
+      "unknown"
+    ]
+  },
   "ignorePatterns": []
 }

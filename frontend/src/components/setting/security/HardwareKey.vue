@@ -1,50 +1,50 @@
 <template>
-    <div>
-        <h6 class="border-bottom mx-1 pb-1">Hardware Key</h6>
-        <div class="card m-1"  v-for="key in keys" :key="key._id">
-            <div class="card-body">
-              <div class="d-flex justify-content-between">
-                <div class="pr-1 mr-2">
-                  <i-bi-key /><span class="mr-2"> {{key.title}} </span>
-                </div>
-                <div class="pl-1 ml-2">
-                  <a href="javascript:void(0);" class="text-danger" @click="deleteKey(key._id)">
-                    <i-bi-trash />
-                  </a>
-                </div>
-              </div>
-            </div>
+  <div>
+    <h6 class="border-bottom mx-1 pb-1">Hardware Key</h6>
+    <div class="card m-1" v-for="key in keys" :key="key._id">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div class="pr-1 mr-2">
+            <i-bi-key /><span class="mr-2"> {{ key.title }} </span>
+          </div>
+          <div class="pl-1 ml-2">
+            <a href="javascript:void(0);" class="text-danger" @click="deleteKey(key._id)">
+              <i-bi-trash />
+            </a>
+          </div>
         </div>
-        <div class="card m-1">
-            <div class="card-body">
-              <div class="row align-items-center">
-                <div class="col-auto">
-                  <div class="col-auto">
-                    <div class="d-flex justify-content-between">
-                      <div class="p-2">
-                        <input type="text" class="form-control" v-model="title">
-                      </div>
-                      <div class="p-2">
-                        <button class="btn btn-success" @click="register()">
-                          <i-bi-plus />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
+      </div>
     </div>
+    <div class="card m-1">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto">
+            <div class="col-auto">
+              <div class="d-flex justify-content-between">
+                <div class="p-2">
+                  <input type="text" class="form-control" v-model="title" />
+                </div>
+                <div class="p-2">
+                  <button class="btn btn-success" @click="register()">
+                    <i-bi-plus />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { notifySuccess, notifyError } from '@/notify.ts'
-import { client, request } from '@/core/rpc.client.ts'
+import { decode as cborDecode } from 'cbor-x/decode'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
-import { decode as cborDecode } from 'cbor-x/decode'
+import { client, request } from '@/core/rpc.client.ts'
+import { notifySuccess, notifyError } from '@/notify.ts'
 
 type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, SuccessStatusCode>['data']
 
@@ -55,9 +55,9 @@ type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, Suc
 const getEndian = (): 'little' | 'big' => {
   const buf = new ArrayBuffer(2)
   const u8 = new Uint8Array(buf)
-  u8[0] = 0xAA
-  u8[1] = 0xBB
-  return new Uint16Array(buf)[0] === 0xBBAA ? 'little' : 'big'
+  u8[0] = 0xaa
+  u8[1] = 0xbb
+  return new Uint16Array(buf)[0] === 0xbbaa ? 'little' : 'big'
 }
 
 const readBE16 = (buffer: Uint8Array): number => {
@@ -72,66 +72,71 @@ const readBE32 = (buffer: Uint8Array): number => {
   return new Uint32Array(buffer.buffer)[0]
 }
 
-const bufToHex = (buffer: Uint8Array): string =>
-  Array.prototype.map.call(new Uint8Array(buffer), (x: number) => x.toString(16).padStart(2, '0')).join('')
+const bufToHex = (buffer: Uint8Array): string => Array.prototype.map.call(new Uint8Array(buffer), (x: number) => x.toString(16).padStart(2, '0')).join('')
 
 /** Parse a WebAuthn authData buffer. https://gist.github.com/herrjemand/dbeb2c2b76362052e5268224660b6fbc */
 const parseAuthData = (buffer: Uint8Array) => {
-  const rpIdHash  = buffer.slice(0, 32);  buffer = buffer.slice(32)
-  const flagsBuf  = buffer.slice(0, 1);   buffer = buffer.slice(1)
-  const flagsInt  = flagsBuf[0]
+  const rpIdHash = buffer.slice(0, 32)
+  buffer = buffer.slice(32)
+  const flagsBuf = buffer.slice(0, 1)
+  buffer = buffer.slice(1)
+  const flagsInt = flagsBuf[0]
   const flags = {
     up: !!(flagsInt & 0x01),
     uv: !!(flagsInt & 0x04),
     at: !!(flagsInt & 0x40),
     ed: !!(flagsInt & 0x80),
-    flagsInt
+    flagsInt,
   }
-  const counterBuf = buffer.slice(0, 4);  buffer = buffer.slice(4)
+  const counterBuf = buffer.slice(0, 4)
+  buffer = buffer.slice(4)
   const counter = readBE32(counterBuf)
 
   let aaguid, credID, COSEPublicKey
   if (flags.at) {
-    aaguid          = buffer.slice(0, 16);         buffer = buffer.slice(16)
-    const lenBuf    = buffer.slice(0, 2);          buffer = buffer.slice(2)
+    aaguid = buffer.slice(0, 16)
+    buffer = buffer.slice(16)
+    const lenBuf = buffer.slice(0, 2)
+    buffer = buffer.slice(2)
     const credIDLen = readBE16(lenBuf)
-    credID          = buffer.slice(0, credIDLen);  buffer = buffer.slice(credIDLen)
-    COSEPublicKey   = buffer
+    credID = buffer.slice(0, credIDLen)
+    buffer = buffer.slice(credIDLen)
+    COSEPublicKey = buffer
   }
   return { rpIdHash, flagsBuf, flags, counter, counterBuf, aaguid, credID, COSEPublicKey }
 }
 
 export default defineComponent({
-  data () {
+  data() {
     return {
       title: '',
-      keys: [] as HardwareKeyList
+      keys: [] as HardwareKeyList,
     }
   },
-  mounted () {
+  mounted() {
     this.getHardwareKey()
   },
   methods: {
-    async deleteKey (id: string) {
+    async deleteKey(id: string) {
       const result = await this.$swal.fire({
         title: 'Are you sure?',
-        text: "Hardware key will be deleted. You will have to set it up again!",
+        text: 'Hardware key will be deleted. You will have to set it up again!',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, remove it!'
+        confirmButtonText: 'Yes, remove it!',
       })
       if (!result.isConfirmed) return
       await request(client.api.hardwarekey[':id'].$delete({ param: { id } }))
       notifySuccess('Your key has been deleted.', 'Deleted!')
       this.getHardwareKey()
     },
-    async getHardwareKey () {
+    async getHardwareKey() {
       const res = await request(client.api.hardwarekey.$get())
       this.keys = res.data
     },
-    async register () {
+    async register() {
       if (this.title.trim() === '') {
         notifyError('Please enter title')
         return
@@ -142,15 +147,13 @@ export default defineComponent({
       const optionsJSON: PublicKeyCredentialCreationOptionsJSON = {
         ...res.data.publicKey,
         // Exclude already-registered authenticators so the same key can't enroll twice.
-        excludeCredentials: res.data.hardwareKeys.flatMap((k) =>
-          k.credentialId ? [{ id: k.credentialId, type: 'public-key' }] : []
-        ),
+        excludeCredentials: res.data.hardwareKeys.flatMap((k) => (k.credentialId ? [{ id: k.credentialId, type: 'public-key' }] : [])),
       }
       const creationOptions = PublicKeyCredential.parseCreationOptionsFromJSON(optionsJSON)
 
       let credential: PublicKeyCredential | null
       try {
-        credential = await navigator.credentials.create({ publicKey: creationOptions }) as PublicKeyCredential | null
+        credential = (await navigator.credentials.create({ publicKey: creationOptions })) as PublicKeyCredential | null
       } catch (error) {
         notifyError(String(error), 'Key Error!')
         return
@@ -175,6 +178,6 @@ export default defineComponent({
       this.getHardwareKey()
       this.title = ''
     },
-  }
+  },
 })
 </script>

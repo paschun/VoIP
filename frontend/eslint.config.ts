@@ -1,6 +1,6 @@
-import { globalIgnores } from 'eslint/config'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import pluginVue from 'eslint-plugin-vue'
+import { globalIgnores } from 'eslint/config'
 import globals from 'globals'
 
 export default defineConfigWithVueTs(
@@ -41,12 +41,13 @@ export default defineConfigWithVueTs(
 
       eqeqeq: ['error', 'always'],
       // Steer the global `isNaN`/`isFinite` to `Number.isNaN`/`Number.isFinite`, which don't coerce their argument.
-      'no-restricted-globals': ['error',
+      'no-restricted-globals': [
+        'error',
         { name: 'isNaN', message: 'Use Number.isNaN instead.' },
         { name: 'isFinite', message: 'Use Number.isFinite instead.' },
       ],
       '@typescript-eslint/no-shadow': 'error',
-      "@typescript-eslint/prefer-optional-chain": "error" // also in stylisticTypeChecked
+      '@typescript-eslint/prefer-optional-chain': 'error', // also in stylisticTypeChecked
 
       // Biome has useImportExtensions: https://biomejs.dev/linter/rules/use-import-extensions/
     },

@@ -1,5 +1,5 @@
-import { factory } from '../core/factory.ts'
 import { env } from '../core/env.ts'
+import { factory } from '../core/factory.ts'
 
 // Security-through-obscurity gate for the SPA entry. The app is reachable only under a configured secret path segment
 // (`APPDIRECTORY`); requests off it get a bare 404 (branded error page) so the login page can't be discovered. This is

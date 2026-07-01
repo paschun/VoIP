@@ -14,10 +14,18 @@ export type WebhookFallbackRequest = z.infer<typeof webhookFallbackBody>
 // different credential fields, hence the discriminated union on `type`. (twilio_number is required for parity with the
 // original even though only the sid/token/sid are used downstream.)
 export const numberLookupBody = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('telnyx'), api_key: z.string().min(1), number: z.string().min(1), sid: z.string().min(1) }),
+  z.object({
+    type: z.literal('telnyx'),
+    api_key: z.string().min(1),
+    number: z.string().min(1),
+    sid: z.string().min(1),
+  }),
   z.object({
     type: z.literal('twilio'),
-    twilio_sid: z.string().min(1), twilio_token: z.string().min(1), twilio_number: z.string().min(1), sid: z.string().min(1),
+    twilio_sid: z.string().min(1),
+    twilio_token: z.string().min(1),
+    twilio_number: z.string().min(1),
+    sid: z.string().min(1),
   }),
 ])
 export type NumberLookupRequest = z.infer<typeof numberLookupBody>

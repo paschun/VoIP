@@ -1,551 +1,563 @@
 @font-face {
-    font-family: 'Skia';
-    font-style: normal;
-    font-weight: normal;
-    src: url('../fonts/skia.woff') format('woff');
-  }
+  font-family: 'Skia';
+  font-style: normal;
+  font-weight: normal;
+  src: url('../fonts/skia.woff') format('woff');
+}
 
 :root {
-    --background-color-primary: #ffffff;
-    --background-color-secondary: rgb(246, 246, 246);
-    --background-color-info: #dcd4cc;
-    --accent-color: #cacaca;
-    --text-primary-color: #222;
-    --element-size: 4rem;
-    --buttun-color: #73a839;
-    --chat-you: rgb(233,233,233);
-    --chat-me: rgb(50, 105, 230);
-    --theme-orange: #ff5821;
-    --chat-background: white;
-    --contact-list: rgb(246, 246, 246);
-    --contact-highlighted: rgb(222, 222, 222);
-    --contact-hover: rgb(233, 233, 233);
-    --background-image-opacity: 0.8;
-    --text-button: #1c282f;
-
-  }
-  :root.dark-theme {
-    --background-color-primary: rgb(18, 18, 18);
-    --background-color-secondary: rgb(46, 46, 46);
-    --background-color-info: #0b1419;
-    --accent-color: #3f3f3f;
-    --text-primary-color: #ddd;
-    --buttun-color: #1c282f;
-    --chat-you: rgb(59,59,59);
-    --chat-me: rgb(50, 105, 230);
-    --chat-background: rgb(18, 18, 18);
-    --contact-list: rgb(46, 46, 46);
-    --contact-highlighted: rgb(74, 74, 74);
-    --contact-hover: rgb(59, 59, 59);
-    --background-image-opacity: 0.4;
-    --text-button: #cacaca;
-  }
-  body{
-      background: var(--background-color-secondary);
-      color: var(--text-primary-color);
-  }
-  section {
-    background-color: var(--background-color-primary);
-  }
-  .switch-label-mode{
-    height: 38px !important;
-      width: 80px !important;
-      /* top:5px !important ; */
-      right: 0 !important;
-      float: right !important;
-  }
+  --background-color-primary: #ffffff;
+  --background-color-secondary: rgb(246, 246, 246);
+  --background-color-info: #dcd4cc;
+  --accent-color: #cacaca;
+  --text-primary-color: #222;
+  --element-size: 4rem;
+  --buttun-color: #73a839;
+  --chat-you: rgb(233, 233, 233);
+  --chat-me: rgb(50, 105, 230);
+  --theme-orange: #ff5821;
+  --chat-background: white;
+  --contact-list: rgb(246, 246, 246);
+  --contact-highlighted: rgb(222, 222, 222);
+  --contact-hover: rgb(233, 233, 233);
+  --background-image-opacity: 0.8;
+  --text-button: #1c282f;
+}
+:root.dark-theme {
+  --background-color-primary: rgb(18, 18, 18);
+  --background-color-secondary: rgb(46, 46, 46);
+  --background-color-info: #0b1419;
+  --accent-color: #3f3f3f;
+  --text-primary-color: #ddd;
+  --buttun-color: #1c282f;
+  --chat-you: rgb(59, 59, 59);
+  --chat-me: rgb(50, 105, 230);
+  --chat-background: rgb(18, 18, 18);
+  --contact-list: rgb(46, 46, 46);
+  --contact-highlighted: rgb(74, 74, 74);
+  --contact-hover: rgb(59, 59, 59);
+  --background-image-opacity: 0.4;
+  --text-button: #cacaca;
+}
+body {
+  background: var(--background-color-secondary);
+  color: var(--text-primary-color);
+}
+section {
+  background-color: var(--background-color-primary);
+}
+.switch-label-mode {
+  height: 38px !important;
+  width: 80px !important;
+  /* top:5px !important ; */
+  right: 0 !important;
+  float: right !important;
+}
 .login-box {
-    background: var(--background-color-primary);
-    width: 50%;
-    max-width: 400px;
-    margin: auto;
-    margin-top: 50px;
-    padding-top: 10px;
-    padding-bottom: 30px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-    transition: 0.5s;
-    border-radius: 10px;
+  background: var(--background-color-primary);
+  width: 50%;
+  max-width: 400px;
+  margin: auto;
+  margin-top: 50px;
+  padding-top: 10px;
+  padding-bottom: 30px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+  transition: 0.5s;
+  border-radius: 10px;
+}
+
+@media only screen and (max-width: 768px) {
+  .login-box {
+    width: 75%;
   }
-  
-  @media only screen and (max-width: 768px) {
-    .login-box {
-      width: 75%;
-    }
-    .col {
-        width: 100%;
-    }
+  .col {
+    width: 100%;
   }
-  
-  .login-box h1 {
-    text-align: center;
-    transition: 0.5s;
-    font-family: "Skia", sans-serif;
-  }
-  .vue-tags-input{
-    border: none !important; 
-    background-color: var(--background-color-secondary) !important;
-    color: var(--text-primary-color) !important;
-    border-radius: 10px !important;
-    /* padding: 10px; */
-    font-size: 14px !important;
-    transition: 0.5s !important;
-    display: inline-flex !important;
-    max-width: 100% !important;
-  }
-  .ti-new-tag-input-wrapper input{
-    background-color: var(--background-color-secondary) !important;
-    color: var(--text-primary-color) !important;
-    min-width: 120px !important;
-  }
-  .ti-input, .ti-tags{
-    border: none !important; 
-    background-color: var(--background-color-secondary) !important;
-    color: var(--text-primary-color) !important;
-    border-radius: 10px !important;
-    /* padding: 10px; */
-    font-size: 14px !important;
-    transition: 0.5s !important;
-    display: inline-flex !important;
-    max-width: 100% !important;
-  }
-  .chat-input {
-    border: none;
-    background-color: var(--background-color-secondary);
-    color: var(--text-primary-color);
-    border-radius: 10px;
-    font-size: 14px;
-    transition: 0.5s;
-    display: inline-flex;
-  }
-  .form-control:disabled, .form-control[readonly] {
-    background-color: var(--background-color-secondary) !important;
-    opacity: 1;
+}
+
+.login-box h1 {
+  text-align: center;
+  transition: 0.5s;
+  font-family: 'Skia', sans-serif;
+}
+.vue-tags-input {
+  border: none !important;
+  background-color: var(--background-color-secondary) !important;
+  color: var(--text-primary-color) !important;
+  border-radius: 10px !important;
+  /* padding: 10px; */
+  font-size: 14px !important;
+  transition: 0.5s !important;
+  display: inline-flex !important;
+  max-width: 100% !important;
+}
+.ti-new-tag-input-wrapper input {
+  background-color: var(--background-color-secondary) !important;
+  color: var(--text-primary-color) !important;
+  min-width: 120px !important;
+}
+.ti-input,
+.ti-tags {
+  border: none !important;
+  background-color: var(--background-color-secondary) !important;
+  color: var(--text-primary-color) !important;
+  border-radius: 10px !important;
+  /* padding: 10px; */
+  font-size: 14px !important;
+  transition: 0.5s !important;
+  display: inline-flex !important;
+  max-width: 100% !important;
+}
+.chat-input {
+  border: none;
+  background-color: var(--background-color-secondary);
+  color: var(--text-primary-color);
+  border-radius: 10px;
+  font-size: 14px;
+  transition: 0.5s;
+  display: inline-flex;
+}
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: var(--background-color-secondary) !important;
+  opacity: 1;
 }
 .form-control:focus {
-    box-shadow: none !important;
-    border-color: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
 }
-  .chat-input:focus{
-    outline: none;
-    background-color: var(--background-color-secondary);
-    color: var(--text-primary-color);
-  }
-  
-  /* Rounded primary submit button, shared by Login, ComposeMessageModal, and NumberList. */
-  .submit-btn {
-    border: none;
-    border-radius: 10px;
-    padding: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    transition: 0.5s;
-  }
+.chat-input:focus {
+  outline: none;
+  background-color: var(--background-color-secondary);
+  color: var(--text-primary-color);
+}
+
+/* Rounded primary submit button, shared by Login, ComposeMessageModal, and NumberList. */
+.submit-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  transition: 0.5s;
+}
 
 * {
-    font-family: 'Roboto', sans-serif;
-    margin: 0px;
-    padding: 0px;
-    box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+  margin: 0px;
+  padding: 0px;
+  box-sizing: border-box;
 }
 
 /* ------ FONTS ------ */
 .font-name {
-    font-size: 1em;
-    font-weight: inherit;
-    padding-bottom: 0px;
-    line-height: 0.5rem;
+  font-size: 1em;
+  font-weight: inherit;
+  padding-bottom: 0px;
+  line-height: 0.5rem;
 }
 
 .font-preview {
-    font-size: 0.8em;
-    line-height: 1.2rem;
-    font-weight: inherit;
+  font-size: 0.8em;
+  line-height: 1.2rem;
+  font-weight: inherit;
 }
 
 /* ------ LEFT SIDE ------ */
 
 .profile {
-    width: 100%;
-    height: 60px;
-    background: var(--background-color-secondary);
-    border-right: 1px solid #444444;
-    display: flex;
-    justify-content: end;
-    padding-left: 20px;
+  width: 100%;
+  height: 60px;
+  background: var(--background-color-secondary);
+  border-right: 1px solid #444444;
+  display: flex;
+  justify-content: end;
+  padding-left: 20px;
 }
 
 .profile img {
-    width: 40px;
-    height: 40px;
-    margin: 10px;
-    border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  margin: 10px;
+  border-radius: 50%;
 }
 
 .icons {
-    color: white;
-    display: flex;
+  color: white;
+  display: flex;
 }
 
 .wrap-search {
-    width: 100%;
-    height: 45px;
-    background: var(--background-color-primary);
-    display: flex;
+  width: 100%;
+  height: 45px;
+  background: var(--background-color-primary);
+  display: flex;
 }
 
 .search {
-    width: calc(100% - 20px);
-    height: 30px;
-    background-color: var(--background-color-secondary);
-    margin: auto;
-    border-radius: 15px;
-    display: flex;
+  width: calc(100% - 20px);
+  height: 30px;
+  background-color: var(--background-color-secondary);
+  margin: auto;
+  border-radius: 15px;
+  display: flex;
 }
 
 .search i {
-    width: 60px;
+  width: 60px;
 }
 
 /* Icon color/centering for the left-side search bar and the chat composer (`.wrap-message` lives in Dashboard.vue). */
-.search i, .wrap-message i {
-    color: #aaaaaa;
-    text-align: center;
+.search i,
+.wrap-message i {
+  color: #aaaaaa;
+  text-align: center;
 }
 
 .input-search {
-    width: 100%;
-    border: none;
-    background-color: var(--background-color-secondary);
-    color: var(--text-primary-color);
-    border-radius: unset; /* fixes Chromium cursor size on message search bar */
+  width: 100%;
+  border: none;
+  background-color: var(--background-color-secondary);
+  color: var(--text-primary-color);
+  border-radius: unset; /* fixes Chromium cursor size on message search bar */
 }
 
 .input-search:focus {
-    outline: none;
+  outline: none;
 }
 .contact-list {
-    background-color: var(--contact-list);
-    width: 100%;
-    height: calc(100vh - 105px);
-    overflow-y: auto;
+  background-color: var(--contact-list);
+  width: 100%;
+  height: calc(100vh - 105px);
+  overflow-y: auto;
 }
 
 .contact {
-    height: 70px;
-    background-color: var(--contact-highlighted);
-    display: flex;
+  height: 70px;
+  background-color: var(--contact-highlighted);
+  display: flex;
 }
 
 .contact img {
-    width: 50px;
-    height: 50px;
-    margin: 10px;
-    border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  margin: 10px;
+  border-radius: 50%;
 }
 
 .contact:hover {
-    background-color: var(--contact-hover);
+  background-color: var(--contact-hover);
 }
-.activeChat{
-    background-color: var(--contact-highlighted);
-    border-right: 3px solid var(--theme-orange);
+.activeChat {
+  background-color: var(--contact-highlighted);
+  border-right: 3px solid var(--theme-orange);
 }
 .contact-preview {
-    width: 100%;
-    height: 70px;
-    border-bottom: 1px solid #444444;
-    display: flex;
-    overflow: hidden;
+  width: 100%;
+  height: 70px;
+  border-bottom: 1px solid #444444;
+  display: flex;
+  overflow: hidden;
 }
 
 .contact-text {
-    height: 40px;
-    margin: auto 0;
+  height: 40px;
+  margin: auto 0;
 }
 
 /* ------ RIGHT SIDE ------ */
 
 .chat {
-    background-color: var(--chat-background);
-    width: 100%;
-    padding: 0px 10%;
-    padding-top: 7px;
-    overflow-y: auto;
+  background-color: var(--chat-background);
+  width: 100%;
+  padding: 0px 10%;
+  padding-top: 7px;
+  overflow-y: auto;
 }
 
 /* ------ CHAT ------ */
 .you {
-    background: var(--chat-you);
-    margin: 0px auto 10px 0px;
-    text-align: left;
-    width: max-content;
+  background: var(--chat-you);
+  margin: 0px auto 10px 0px;
+  text-align: left;
+  width: max-content;
 }
 
 .me {
-    background: var(--chat-me);
-    margin: 0px 0px 10px auto;
-    text-align: right;
-    width: max-content;
-    color: whitesmoke;
+  background: var(--chat-me);
+  margin: 0px 0px 10px auto;
+  text-align: right;
+  width: max-content;
+  color: whitesmoke;
 }
 
 .content {
-    margin: 0.5em 0;
-    line-height: 120%;
-    font-size: 0.9em;
-    overflow-wrap: break-word;
+  margin: 0.5em 0;
+  line-height: 120%;
+  font-size: 0.9em;
+  overflow-wrap: break-word;
 }
 
 .content img {
-    width: 100%;
-    border-radius: 7px;
+  width: 100%;
+  border-radius: 7px;
 }
 
 .time {
-    font-size: 0.6em;
-    text-align: right;
-    font-style: italic;
+  font-size: 0.6em;
+  text-align: right;
+  font-style: italic;
 }
 
 .message {
-    width: 100%;
-    background: var(--background-color-primary);
-    margin: 5px;
-    border:none;
-    border-radius: 25px;
-    display: flex;
+  width: 100%;
+  background: var(--background-color-primary);
+  margin: 5px;
+  border: none;
+  border-radius: 25px;
+  display: flex;
 }
 
 /* ------ SCROLLBAR ------ */
 
-body::-webkit-scrollbar, .contact-list::-webkit-scrollbar, .chat::-webkit-scrollbar {
-    width: 0.4em;
-    height: 0.4em;
+body::-webkit-scrollbar,
+.contact-list::-webkit-scrollbar,
+.chat::-webkit-scrollbar {
+  width: 0.4em;
+  height: 0.4em;
 }
 
-body::-webkit-scrollbar-thumb, .contact-list::-webkit-scrollbar-thumb, .chat::-webkit-scrollbar-thumb {
-    background-color: rgba(0,0,0,0.2);
+body::-webkit-scrollbar-thumb,
+.contact-list::-webkit-scrollbar-thumb,
+.chat::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
-.dropDown, .dropDown > button, .dropDown > .dropdown-menu, .dropdown-item {
-    background-color: var(--background-color-secondary) !important;
-    border-color: var(--background-color-secondary) !important;
-    color: var(--text-primary-color) !important;
+.dropDown,
+.dropDown > button,
+.dropDown > .dropdown-menu,
+.dropdown-item {
+  background-color: var(--background-color-secondary) !important;
+  border-color: var(--background-color-secondary) !important;
+  color: var(--text-primary-color) !important;
 }
 a {
-    text-decoration: none !important;
+  text-decoration: none !important;
 }
-.modal-content{
-    background-color: var(--background-color-primary);
+.modal-content {
+  background-color: var(--background-color-primary);
 }
-.close{
-    padding: 1rem;
-    margin: -1rem -1rem -1rem auto;
-    background-color: transparent;
-    border: 0;
-    color: var(--text-primary-color);
+.close {
+  padding: 1rem;
+  margin: -1rem -1rem -1rem auto;
+  background-color: transparent;
+  border: 0;
+  color: var(--text-primary-color);
 }
 
 .card-body {
-    flex: 1 1 auto;
-    min-height: 1px;
-    padding: 1.25rem;
-    background-color: var(--accent-color);
+  flex: 1 1 auto;
+  min-height: 1px;
+  padding: 1.25rem;
+  background-color: var(--accent-color);
 }
 .card {
-    overflow: hidden;
-    background-color: var(--background-color-secondary);
+  overflow: hidden;
+  background-color: var(--background-color-secondary);
 }
 
 .badge {
-    border-radius: 0.5rem;
+  border-radius: 0.5rem;
 }
 
-.box, .box-placeholder {
-    display: inline-block;
-    background-color: var(--contact-list);
-    margin: 30px;
-    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, .1);
-    max-width: 300px;
-    vertical-align: top;
-    /* width: 100%; */
-  }
-  .box hr, .box-placeholder hr {
-    margin: 0;
-    border-color: #f3f3f3;
-  }
-  .box {
-    display: none;
-  }
-  .box .category {
-    display: block;
-    margin-bottom: 10px;
-  }
-  .box img {
-    max-width: 100%;
-  }
-  .box-placeholder {
-    font-size: 0;
-    line-height: 0;
-  }
-  .box-placeholder .text {
-    display: inline-block;
-    background-color: #444;
-    height: 12px;
-    border-radius: 100px;
-    margin: 5px 0;
-    min-width: 100px;
+.box,
+.box-placeholder {
+  display: inline-block;
+  background-color: var(--contact-list);
+  margin: 30px;
+  box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  vertical-align: top;
+  /* width: 100%; */
+}
+.box hr,
+.box-placeholder hr {
+  margin: 0;
+  border-color: #f3f3f3;
+}
+.box {
+  display: none;
+}
+.box .category {
+  display: block;
+  margin-bottom: 10px;
+}
+.box img {
+  max-width: 100%;
+}
+.box-placeholder {
+  font-size: 0;
+  line-height: 0;
+}
+.box-placeholder .text {
+  display: inline-block;
+  background-color: #444;
+  height: 12px;
+  border-radius: 100px;
+  margin: 5px 0;
+  min-width: 100px;
+  opacity: 0.1;
+  animation: fading 1.5s infinite;
+}
+.box-placeholder .text:first-child {
+  margin-top: 0;
+}
+.box-placeholder .text:last-child {
+  margin-bottom: 0;
+}
+.box-placeholder .text.link {
+  background-color: var(--blue);
+  opacity: 0.4;
+}
+.box-placeholder .text.line {
+  width: 100%;
+}
+.box-placeholder .text.category {
+  width: 100px;
+  margin-bottom: 10px;
+}
+.box-placeholder h4.text {
+  height: 20px;
+  margin: 3px 0;
+  opacity: 0.2;
+}
+.box-placeholder .image {
+  background-color: #f9f9f9;
+}
+@keyframes fading {
+  0% {
     opacity: 0.1;
-    animation: fading 1.5s infinite;
   }
-  .box-placeholder .text:first-child {
-    margin-top: 0;
-  }
-  .box-placeholder .text:last-child {
-    margin-bottom: 0;
-  }
-  .box-placeholder .text.link {
-    background-color: var(--blue);
-    opacity: 0.4;
-  }
-  .box-placeholder .text.line {
-    width: 100%;
-  }
-  .box-placeholder .text.category {
-    width: 100px;
-    margin-bottom: 10px;
-  }
-  .box-placeholder h4.text {
-    height: 20px;
-    margin: 3px 0;
+  50% {
     opacity: 0.2;
   }
-  .box-placeholder .image {
-    background-color: #f9f9f9;
+  100% {
+    opacity: 0.1;
   }
-  @keyframes fading {
-    0% {
-      opacity: 0.1;
-    }
-    50% {
-      opacity: 0.2;
-    }
-    100% {
-      opacity: 0.1;
-    }
-  }
+}
 /* remove outline from chevron arrow when clicked */
 .bi {
-    outline: none;
+  outline: none;
 }
 .input-group-text {
-    border: none;
-    background-color: var(--accent-color);
-    color: var(--background-color-primary);
+  border: none;
+  background-color: var(--accent-color);
+  color: var(--background-color-primary);
 }
 .version {
-    font-size: 0.8em;
-    margin-top: 1.5rem;
-    text-align: center;
-    color: var(--accent-color);
+  font-size: 0.8em;
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--accent-color);
 }
-.dropDown .dropdown-toggle::after{
-    display: none !important;
+.dropDown .dropdown-toggle::after {
+  display: none !important;
 }
-.dropDown .btn{
-    padding: 0 0.75rem !important;
-    font-size: 15px !important;
+.dropDown .btn {
+  padding: 0 0.75rem !important;
+  font-size: 15px !important;
 }
 .profileNum {
-    font-size: 12px;
-    color: var(--theme-orange);
+  font-size: 12px;
+  color: var(--theme-orange);
 }
 .dropdown-item {
-    line-height: 18px!important;
+  line-height: 18px !important;
 }
-.dropdown-item > div > div > div > div, .profileName {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-width: 250px;
+.dropdown-item > div > div > div > div,
+.profileName {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 250px;
 }
 .profileName {
-    max-width: 100px;
+  max-width: 100px;
 }
 .dropdown-item:hover {
-    background-color: var(--contact-hover)!important;
+  background-color: var(--contact-hover) !important;
 }
 .dropdown-menu {
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
-    max-height: 100vh;
-    overflow-y: auto;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 .list-group-item {
-    color: var(--text-primary-color) !important;
-    background-color: transparent !important;
+  color: var(--text-primary-color) !important;
+  background-color: transparent !important;
 }
 
 .dialer-btn2 {
-    color: rgb(var(--text-button));
-    margin: 1rem;
+  color: rgb(var(--text-button));
+  margin: 1rem;
 }
-.dialer-btn2:hover{
-    color: rgb(var(--text-button)); 
+.dialer-btn2:hover {
+  color: rgb(var(--text-button));
 }
-.dialer-btn2:active{
-    color: #212529; 
+.dialer-btn2:active {
+  color: #212529;
 }
- 
-.vs__dropdown-toggle{
-    background: var(--background-color-secondary);
+
+.vs__dropdown-toggle {
+  background: var(--background-color-secondary);
 }
 .vs__dropdown-toggle input {
-    color: var(--text-primary-color);
+  color: var(--text-primary-color);
 }
-.vs__selected{
-    color: var(--text-primary-color) !important;
+.vs__selected {
+  color: var(--text-primary-color) !important;
 }
 .vs__dropdown-menu {
-    background: var(--background-color-primary);
-    color: var(--text-primary-color) !important;
-} 
+  background: var(--background-color-primary);
+  color: var(--text-primary-color) !important;
+}
 
-   .update_ribbon {
-    z-index: 99;
-    position: fixed;
-    width: auto;
-    height: 12px;
-    padding-right: 10px;
-    padding-left: 10px;
-    background: var(--theme-orange);
-    top: 0;
-    right: 160px;
-    text-align: center;
-    font-size: 8px;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: wheat !important;
-    line-height: 11px;
-    -webkit-transform: rotate(45deg);
-    transform: rotate(0deg);
-   }
-   .update_ribbon a {
-       color: inherit;
-       text-decoration: none;
-   }
-   /* .totp used in Login and Mfa */
-   .totp {
-    text-align: center;
-    font-weight: 800;
-    letter-spacing: 0.8rem;
-    width: 200px;
-    color: var(--accent-color);
-    border-radius: 5px;
-    font-size: 1.5em;
-   }
-   .clickcopy:hover {
-    border-color: var(--accent-color);
-    background: var(--contact-hover);
-  }
+.update_ribbon {
+  z-index: 99;
+  position: fixed;
+  width: auto;
+  height: 12px;
+  padding-right: 10px;
+  padding-left: 10px;
+  background: var(--theme-orange);
+  top: 0;
+  right: 160px;
+  text-align: center;
+  font-size: 8px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: wheat !important;
+  line-height: 11px;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(0deg);
+}
+.update_ribbon a {
+  color: inherit;
+  text-decoration: none;
+}
+/* .totp used in Login and Mfa */
+.totp {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.8rem;
+  width: 200px;
+  color: var(--accent-color);
+  border-radius: 5px;
+  font-size: 1.5em;
+}
+.clickcopy:hover {
+  border-color: var(--accent-color);
+  background: var(--contact-hover);
+}

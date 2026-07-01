@@ -39,4 +39,3 @@ export interface Contact {
   number: string
   note?: string
 }
-

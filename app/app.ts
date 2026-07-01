@@ -1,26 +1,26 @@
 import { readFile } from 'node:fs/promises'
+import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
+import { bodyLimit } from 'hono/body-limit'
+import type { ApplyGlobalResponse } from 'hono/client'
 import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
-import { bodyLimit } from 'hono/body-limit'
-import { serve } from '@hono/node-server'
-import { serveStatic } from '@hono/node-server/serve-static'
-import type { ApplyGlobalResponse } from 'hono/client'
 import type { ApiError } from '../shared/api-contracts.ts'
-import { env } from './core/env.ts'
+import { MAX_UPLOAD_BYTES } from './controller/media.controller.ts'
 import { connectDB } from './core/db.ts'
-import { initIO } from './core/socket.ts'
+import { env } from './core/env.ts'
 import { onError } from './core/error.ts'
 import { factory } from './core/factory.ts'
-import { rateLimit } from './middleware/rate-limit.ts'
+import { initIO } from './core/socket.ts'
 import { appDirectoryGate } from './middleware/app-directory.ts'
+import { rateLimit } from './middleware/rate-limit.ts'
 import { authRoutes } from './routes/auth.route.ts'
 import { callRoutes } from './routes/call.route.ts'
 import { contactRoutes } from './routes/contact.route.ts'
 import { emailRoutes } from './routes/email.route.ts'
 import { hardwarekeyRoutes } from './routes/hardwarekey.route.ts'
 import { mediaRoutes } from './routes/media.route.ts'
-import { MAX_UPLOAD_BYTES } from './controller/media.controller.ts'
 import { profileRoutes } from './routes/profile.route.ts'
 import { providerRoutes } from './routes/provider.route.ts'
 import { settingRoutes } from './routes/setting.route.ts'
@@ -66,25 +66,27 @@ app.use('*', async (c, next) => {
 // ws/wss for the voice socket; script-src keeps unsafe-eval/inline; style-src keeps unsafe-inline for Vue's scoped CSS.
 // COOP/CORP/Origin-Agent-Cluster are left off to preserve the exact header set this app shipped before.
 // todo: audit these
-app.use(secureHeaders({
-  crossOriginOpenerPolicy: false,
-  crossOriginResourcePolicy: false,
-  crossOriginEmbedderPolicy: false,
-  originAgentCluster: false,
-  contentSecurityPolicy: {
-    defaultSrc: ["'self'", "sdk.twilio.com", "wss:", "ws:", "eventgw.twilio.com"],
-    baseUri: ["'self'"],
-    fontSrc: ["'self'", "https:", "data:"],
-    formAction: ["'self'"],
-    frameAncestors: ["'self'"],
-    imgSrc: ["'self'", "data:"],
-    objectSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
-    scriptSrcAttr: ["'none'"],
-    styleSrc: ["'self'", "https:", "'unsafe-inline'"],
-    upgradeInsecureRequests: [],
-  },
-}))
+app.use(
+  secureHeaders({
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+    originAgentCluster: false,
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'", 'sdk.twilio.com', 'wss:', 'ws:', 'eventgw.twilio.com'],
+      baseUri: ["'self'"],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      imgSrc: ["'self'", 'data:'],
+      objectSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'none'"],
+      styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+      upgradeInsecureRequests: [],
+    },
+  }),
+)
 
 // Dev only: the Vite dev server (localhost:8080) calls the API cross-origin. In prod the API and UI are same-origin, so
 // CORS never applies and this is skipped.

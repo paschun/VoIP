@@ -1,11 +1,10 @@
 import { describe, test, expect, expectTypeOf, beforeAll, afterAll, afterEach, assert } from 'vitest'
-import mongoose from 'mongoose'
 import { testClient } from 'hono/testing'
-
-import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
+import mongoose from 'mongoose'
 import { signToken } from '../app/helper/common.helper.ts'
-import { hardwarekeyRoutes } from '../app/routes/hardwarekey.route.ts'
 import HardwareKey from '../app/model/hardwarekey.model.ts'
+import { hardwarekeyRoutes } from '../app/routes/hardwarekey.route.ts'
+import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 
 // `credentials` is a `string[]` schema field -- this proves it survives the `c.json` boundary as a plain array of
 // strings (not stringified, not mangled) on the real `GET /api/hardwarekey` route.
@@ -21,9 +20,15 @@ beforeAll(async () => {
 afterAll(disconnectMemoryDb)
 afterEach(clearDb)
 
-describe('GET /api/hardwarekey -- list the caller\'s keys', () => {
+describe("GET /api/hardwarekey -- list the caller's keys", () => {
   test('lists title + stringified id for completed keys', async () => {
-    await HardwareKey.create({ user: userId, title: 'YubiKey', userHandle: 'uh-yubikey', credentialId: 'credA', registrationComplete: true })
+    await HardwareKey.create({
+      user: userId,
+      title: 'YubiKey',
+      userHandle: 'uh-yubikey',
+      credentialId: 'credA',
+      registrationComplete: true,
+    })
 
     const res = await client.index.$get({}, auth)
     expect(res.status).toBe(200)

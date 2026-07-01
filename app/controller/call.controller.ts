@@ -2,24 +2,29 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { Types } from 'mongoose'
 import twilio from 'twilio'
-import Setting from '../model/setting.model.ts'
-import { Call } from '../model/message.model.ts'
-import Contact from '../model/contact.model.ts'
-import { getIO } from '../core/socket.ts'
-import { normalizeNumber } from '../helper/common.helper.ts'
-import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, FormCtx } from '../core/factory.ts'
-import { auth } from '../middleware/auth.ts'
-import { jsonBody, formBody } from '../middleware/validate.ts'
-import { ack } from '../helper/respond.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
-  getTokenBody, type GetTokenRequest,
-  twilioVoiceWebhook, type TwilioVoiceWebhook,
-  twilioStatusWebhook, type TwilioStatusWebhook,
-  twilioInboundWebhook, type TwilioInboundWebhook,
-  telnyxCallEvent, type TelnyxCallEvent,
+  getTokenBody,
+  type GetTokenRequest,
+  twilioVoiceWebhook,
+  type TwilioVoiceWebhook,
+  twilioStatusWebhook,
+  type TwilioStatusWebhook,
+  twilioInboundWebhook,
+  type TwilioInboundWebhook,
+  telnyxCallEvent,
+  type TelnyxCallEvent,
 } from '../../shared/contracts/call.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx, FormCtx } from '../core/factory.ts'
+import { getIO } from '../core/socket.ts'
+import { normalizeNumber } from '../helper/common.helper.ts'
+import { ack } from '../helper/respond.helper.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody, formBody } from '../middleware/validate.ts'
+import Contact from '../model/contact.model.ts'
+import { Call } from '../model/message.model.ts'
+import Setting from '../model/setting.model.ts'
 
 // The webhook handlers below are unauthenticated provider callbacks. They must always answer 2xx (a non-2xx makes the
 // provider play an error to the caller / route to the failover URL / retry). The voice + inbound handlers reply with
@@ -62,7 +67,10 @@ async function recordCall(opts: {
 /** Notify the owner of `providerNumber` (our provider number) that a call row changed, so their open clients refresh. */
 async function notifyCallOwner(providerNumber: string | null | undefined, otherNumber: string | null | undefined) {
   const setting = await Setting.findOne({ number: { $eq: providerNumber ?? '' } })
-  if (setting) getIO().to(setting.user?.toString() ?? '').emit('user_message', { message: 'call', number: otherNumber })
+  if (setting)
+    getIO()
+      .to(setting.user?.toString() ?? '')
+      .emit('user_message', { message: 'call', number: otherNumber })
 }
 
 /** Apply a Twilio-shaped status payload (Twilio status callback + Telnyx TeXML status callback) to the call log. */
@@ -88,8 +96,12 @@ async function applyTelnyxEvent(event: TelnyxCallEvent['data']) {
         const setting = await Setting.findOne({ number: { $eq: payload.from ?? '' } })
         if (setting) {
           await recordCall({
-            sid: payload.call_session_id ?? '', user: setting.user, setting: setting._id, direction: 'send',
-            number: payload.to ?? '', providerNumber: payload.from ?? '',
+            sid: payload.call_session_id ?? '',
+            user: setting.user,
+            setting: setting._id,
+            direction: 'send',
+            number: payload.to ?? '',
+            providerNumber: payload.from ?? '',
           })
         }
       }
@@ -117,7 +129,10 @@ async function issueToken(c: JsonCtx<GetTokenRequest>) {
 
   if (setting.type === 'twilio') {
     const AccessToken = twilio.jwt.AccessToken
-    const voiceGrant = new AccessToken.VoiceGrant({ outgoingApplicationSid: setting.twiml_app ?? '', incomingAllow: true })
+    const voiceGrant = new AccessToken.VoiceGrant({
+      outgoingApplicationSid: setting.twiml_app ?? '',
+      incomingAllow: true,
+    })
     const token = new AccessToken(setting.twilio_sid ?? '', setting.app_key ?? '', setting.app_secret ?? '', {
       identity: c.get('user').id,
     })
@@ -125,7 +140,10 @@ async function issueToken(c: JsonCtx<GetTokenRequest>) {
     return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok, 200)
   }
 
-  return c.json({ data: { type: setting.type ?? 'telnyx', setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok, 200)
+  return c.json(
+    { data: { type: setting.type ?? 'telnyx', setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok,
+    200,
+  )
 }
 
 /** Twilio outbound: the TwiML app's voice URL. Returns dial TwiML so Twilio bridges the call to the dialed number. */
@@ -138,8 +156,12 @@ async function dialOutbound(c: FormCtx<TwilioVoiceWebhook>) {
       const phoneNumber = normalizeNumber(body.number ?? '')
       response.dial({ callerId: body.twilio_number ?? '' }).number(phoneNumber)
       await recordCall({
-        sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'send',
-        number: phoneNumber, providerNumber: body.twilio_number ?? '',
+        sid: body.CallSid ?? '',
+        user: setting.user,
+        setting: setting._id,
+        direction: 'send',
+        number: phoneNumber,
+        providerNumber: body.twilio_number ?? '',
       })
     }
   } catch (e) {
@@ -165,10 +187,17 @@ async function dialIncoming(c: FormCtx<TwilioInboundWebhook>) {
     const body = c.req.valid('form')
     const setting = await Setting.findOne({ number: { $eq: body.To ?? '' } })
     if (setting) {
-      response.dial().client().identity(setting.user?.toString() ?? '')
+      response
+        .dial()
+        .client()
+        .identity(setting.user?.toString() ?? '')
       await recordCall({
-        sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'receive',
-        number: body.From ?? '', providerNumber: body.To ?? '',
+        sid: body.CallSid ?? '',
+        user: setting.user,
+        setting: setting._id,
+        direction: 'receive',
+        number: body.From ?? '',
+        providerNumber: body.To ?? '',
       })
     }
   } catch (e) {
@@ -191,8 +220,12 @@ async function dialTelnyxSip(c: FormCtx<TwilioInboundWebhook>) {
                    </Dial>
                  </Response>`
       await recordCall({
-        sid: body.CallSid ?? '', user: setting.user, setting: setting._id, direction: 'receive',
-        number: body.From ?? '', providerNumber: body.To ?? '',
+        sid: body.CallSid ?? '',
+        user: setting.user,
+        setting: setting._id,
+        direction: 'receive',
+        number: body.From ?? '',
+        providerNumber: body.To ?? '',
       })
     }
   } catch (e) {

@@ -1,22 +1,28 @@
+import crypto from 'node:crypto'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import crypto from 'node:crypto'
-import HardwareKey from '../model/hardwarekey.model.ts'
-import User from '../model/user.model.ts'
-import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, ParamCtx } from '../core/factory.ts'
-import { auth } from '../middleware/auth.ts'
-import { jsonBody, pathParams } from '../middleware/validate.ts'
-import { ack } from '../helper/respond.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
-  registerKeyBody, type RegisterKeyRequest,
-  verifyBody, type VerifyRequest,
-  loginKeyBody, type LoginKeyRequest,
-  registrationChallengeBody, type RegistrationChallengeRequest,
-  authVerifyBody, type AuthVerifyRequest,
-  deleteKeyParams, type DeleteKeyParams,
+  registerKeyBody,
+  type RegisterKeyRequest,
+  verifyBody,
+  type VerifyRequest,
+  loginKeyBody,
+  type LoginKeyRequest,
+  registrationChallengeBody,
+  type RegistrationChallengeRequest,
+  authVerifyBody,
+  type AuthVerifyRequest,
+  deleteKeyParams,
+  type DeleteKeyParams,
 } from '../../shared/contracts/hardwarekey.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx, ParamCtx } from '../core/factory.ts'
+import { ack } from '../helper/respond.helper.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody, pathParams } from '../middleware/validate.ts'
+import HardwareKey from '../model/hardwarekey.model.ts'
+import User from '../model/user.model.ts'
 
 // Login-ceremony state, keyed by user id (login has no JWT yet, so it can't key off an authed user). In-memory: a
 // restart drops an in-flight login, which just means the user retries -- acceptable. Registration is stateless *for
@@ -35,7 +41,7 @@ import {
 //  - at login, verify the assertion signature against them and that signCount increased (verifyAuthenticationResponse);
 //  - needs real `rpID`/`origin`/`rpName` config per environment -- a mismatch silently rejects every ceremony.
 // This re-expands the verify payloads back to the full `credential.toJSON()` (we currently send only id/userHandle).
-// 
+//
 // schema: https://simplewebauthn.dev/docs/packages/server#additional-data-structures
 // what is the difference between ._id and .credentialId in the schema? their schema calls ._id == cred_id . so what is our cred_id
 type Ceremony = { title: string; user: string; challenge?: string }
@@ -92,7 +98,10 @@ async function buildRegistrationChallenge(c: JsonCtx<RegistrationChallengeReques
     challenge: randomId(),
     rp: { name: 'Operation Privacy' },
     user: { id: keyUser.userHandle, name: userData?.name ?? '', displayName: userData?.name ?? '' },
-    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+    pubKeyCredParams: [
+      { type: 'public-key', alg: -7 },
+      { type: 'public-key', alg: -257 },
+    ],
     attestation: 'direct',
   }
 
@@ -172,7 +181,11 @@ async function getUserByUserHandle(userHandle: string | undefined, user: string)
 }
 
 export const registrationBegin = factory.createHandlers(auth, jsonBody(registerKeyBody), beginRegistration)
-export const registrationChallenge = factory.createHandlers(auth, jsonBody(registrationChallengeBody), buildRegistrationChallenge)
+export const registrationChallenge = factory.createHandlers(
+  auth,
+  jsonBody(registrationChallengeBody),
+  buildRegistrationChallenge,
+)
 export const registrationVerify = factory.createHandlers(auth, jsonBody(verifyBody), verifyRegistration)
 export const authenticationChallenge = factory.createHandlers(jsonBody(loginKeyBody), buildAuthenticationChallenge)
 export const authenticationVerify = factory.createHandlers(jsonBody(authVerifyBody), verifyAuthentication)

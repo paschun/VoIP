@@ -1,10 +1,9 @@
 import { test, expect, afterAll, afterEach, beforeAll, describe } from 'vitest'
 import mongoose from 'mongoose'
-import Setting from '../app/model/setting.model.ts'
-import { TextMessage } from '../app/model/message.model.ts'
-import { clearDb, connectMemoryDb, disconnectMemoryDb } from './helpers/mongo.ts'
 import { profilesWithUnread, profileWithUnread } from '../app/controller/profile.controller.ts'
-
+import { TextMessage } from '../app/model/message.model.ts'
+import Setting from '../app/model/setting.model.ts'
+import { clearDb, connectMemoryDb, disconnectMemoryDb } from './helpers/mongo.ts'
 
 test('toObject handles ObjectId', () => {
   const doc = new Setting()
@@ -12,13 +11,13 @@ test('toObject handles ObjectId', () => {
   const pojo = doc.toObject({ flattenObjectIds: true })
   // const datejson = pojo.created_at.toJSON()
   // const stringified = JSON.stringify(doc)
-  
+
   expect(pojo.type).toBe('telnyx')
   expect(pojo._id).toBeTypeOf('string')
   expect(pojo._id).toHaveLength(24)
   // expect(pojo.created_at)
-  
-  // const parsed = JSON.parse(stringified) 
+
+  // const parsed = JSON.parse(stringified)
   // console.log('setting.toObject', pojo)
   // console.log(typeof pojo.created_at)
   // console.log(pojo.created_at.toJSON())
@@ -27,10 +26,9 @@ test('toObject handles ObjectId', () => {
 })
 
 describe('toObject handles virtuals', () => {
-
   let userObjId: mongoose.Types.ObjectId
   let profileObjId: mongoose.Types.ObjectId
-  
+
   beforeAll(async () => {
     await connectMemoryDb()
 
@@ -40,7 +38,15 @@ describe('toObject handles virtuals', () => {
     profileObjId = work._id
     const home = await Setting.create({ user: userObjId, profile: 'Home', type: 'telnyx' })
     const seed = (setting: mongoose.Types.ObjectId, isview: boolean) =>
-      TextMessage.create({ sid: 'sid', number: '+10000000000', telnyx_number: '+19999999999', type: 'receive', setting, user: userObjId, isview })
+      TextMessage.create({
+        sid: 'sid',
+        number: '+10000000000',
+        telnyx_number: '+19999999999',
+        type: 'receive',
+        setting,
+        user: userObjId,
+        isview,
+      })
     await seed(work._id, false)
     await seed(work._id, false)
     await seed(home._id, false)

@@ -4,19 +4,12 @@
       {{ selectedOption[labelProp] }}
     </div>
     <div class="dropdown" v-if="showDropdown">
-      <input
-        v-model="searchTerm"
-        @input="filterOptions"
-        @focus="showAllOptions"
-        @blur="hideOptions"
-        @keydown="handleKeyDown"
-        ref="autocompleteInput"
-      >
+      <input v-model="searchTerm" @input="filterOptions" @focus="showAllOptions" @blur="hideOptions" @keydown="handleKeyDown" ref="autocompleteInput" />
       <ul class="form-group">
         <li
           v-for="(option, index) in filteredOptions"
           :key="option[valueProp]"
-          :class="{ 'highlighted': index === highlightedIndex }"
+          :class="{ highlighted: index === highlightedIndex }"
           @click="selectOption(option)"
         >
           {{ option[labelProp] }}
@@ -32,112 +25,110 @@ export default defineComponent({
   props: {
     options: {
       type: Array as PropType<any[]>,
-      required: true
+      required: true,
     },
     value: {
       // Optional for type-checking: vue-tsc models `v-model` as `modelValue` (Vue 3
       // semantics) even at target 2.7, so a required `value` reads as "missing".
       // The Vue 2 compiler still wires v-model to `value`/`input` at runtime.
       // In Vue 3 migration, set this to required: true if possible
-      required: false
+      required: false,
     },
     labelProp: {
       type: String,
-      default: 'label'
+      default: 'label',
     },
     valueProp: {
       type: String,
-      default: 'value'
-    }
+      default: 'value',
+    },
   },
   data() {
     return {
-      searchTerm: "",
+      searchTerm: '',
       filteredOptions: [] as any[],
       showDropdown: false,
       highlightedIndex: -1,
-    };
+    }
   },
   computed: {
     selectedOption() {
-      return this.options.find(option => option[this.valueProp] === this.value) ?? {};
+      return this.options.find((option) => option[this.valueProp] === this.value) ?? {}
     },
     selectedValue: {
       get() {
-        return this.value;
+        return this.value
       },
       set(newValue: any) {
-        this.$emit('input', newValue);
+        this.$emit('input', newValue)
       },
     },
   },
   methods: {
     filterOptions() {
-      this.showDropdown = true;
-      this.filteredOptions = this.options.filter(option =>
-        option[this.labelProp].toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
+      this.showDropdown = true
+      this.filteredOptions = this.options.filter((option) => option[this.labelProp].toLowerCase().includes(this.searchTerm.toLowerCase()))
     },
     showAllOptions() {
-      this.showDropdown = true;
-      this.filteredOptions = this.options;
+      this.showDropdown = true
+      this.filteredOptions = this.options
     },
     hideOptions() {
       setTimeout(() => {
-        this.showDropdown = false;
-      }, 2000);
+        this.showDropdown = false
+      }, 2000)
     },
     onSelectOption() {
-      this.searchTerm = '';
-      this.filterOptions();
+      this.searchTerm = ''
+      this.filterOptions()
     },
     selectOption(option: any) {
-      this.hideOptions();
+      this.hideOptions()
 
-      this.searchTerm = option[this.labelProp];
-      this.selectedValue = option[this.labelProp];
+      this.searchTerm = option[this.labelProp]
+      this.selectedValue = option[this.labelProp]
       // this.$emit("onSelectOption", option);
     },
     toggleDropdown() {
-      this.showDropdown = !this.showDropdown;
+      this.showDropdown = !this.showDropdown
       if (this.showDropdown) {
-        this.$nextTick(() => (this.$refs.autocompleteInput as HTMLInputElement).focus());
+        this.$nextTick(() => (this.$refs.autocompleteInput as HTMLInputElement).focus())
       }
     },
     handleKeyDown(event: KeyboardEvent) {
       switch (event.key) {
         case 'ArrowDown':
-          event.preventDefault();
-          this.highlightNextOption();
-          break;
+          event.preventDefault()
+          this.highlightNextOption()
+          break
         case 'ArrowUp':
-          event.preventDefault();
-          this.highlightPreviousOption();
-          break;
+          event.preventDefault()
+          this.highlightPreviousOption()
+          break
         case 'Enter':
-          event.preventDefault();
-          this.selectHighlightedOption();
-          break;
+          event.preventDefault()
+          this.selectHighlightedOption()
+          break
       }
     },
     highlightNextOption() {
       if (this.highlightedIndex < this.filteredOptions.length - 1) {
-        this.highlightedIndex++;
+        this.highlightedIndex++
       }
     },
     highlightPreviousOption() {
       if (this.highlightedIndex > 0) {
-        this.highlightedIndex--;
+        this.highlightedIndex--
       }
     },
     selectHighlightedOption() {
       if (this.highlightedIndex >= 0 && this.highlightedIndex < this.filteredOptions.length) {
-        const option = this.filteredOptions[this.highlightedIndex];
-        this.selectOption(option);
+        const option = this.filteredOptions[this.highlightedIndex]
+        this.selectOption(option)
       }
     },
   },
-});
+})
 </script>
 
 <style scoped>

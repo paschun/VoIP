@@ -7,12 +7,7 @@
       </div>
       <div class="form-group mt-2">
         <label>{{ fallbackLabel }}</label>
-        <input
-          class="form-control"
-          v-model="r$.$value"
-          :placeholder="fallbackPlaceholder"
-          :class="{ 'is-invalid': r$.$error }"
-        />
+        <input class="form-control" v-model="r$.$value" :placeholder="fallbackPlaceholder" :class="{ 'is-invalid': r$.$error }" />
         <div v-if="r$.$error" class="invalid-feedback">
           <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
         </div>
@@ -28,9 +23,9 @@
 <script lang="ts">
 import { defineComponent, ref, type PropType } from 'vue'
 import { useRegle } from '@regle/core'
-import { notifySuccess } from '@/notify.ts'
 import { required, withMessage, httpUrl } from '@regle/rules'
 import { client, request } from '@/core/rpc.client.ts'
+import { notifySuccess } from '@/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
 /** Strip everything but `${protocol}//${hostname}` from a URL string. */
@@ -45,12 +40,12 @@ const toOrigin = (str: string): string => {
  */
 export default defineComponent({
   name: 'ProviderWebhookSetting',
-  setup (props) {
+  setup(props) {
     const fallbackUrl = ref('')
     const { r$ } = useRegle(fallbackUrl, {
       required: withMessage(required, () => props.requiredMessage), // default: This field is required
       // keyed `validUrl`, not `url`, so it doesn't collide with Regle's built-in `url` rule name
-      validUrl: withMessage(httpUrl, () => props.invalidMessage) // default: The value is not a valid http URL address
+      validUrl: withMessage(httpUrl, () => props.invalidMessage), // default: The value is not a valid http URL address
     })
     return { r$, fallbackUrl, profileStore: useProfileStore() }
   },
@@ -67,24 +62,24 @@ export default defineComponent({
     fallbackLabel: { type: String, default: 'Webhook Fallback URL' },
     fallbackPlaceholder: { type: String, default: 'Enter Webhook Fallback URL' },
     requiredMessage: { type: String, default: 'Url Is Required' },
-    invalidMessage: { type: String, default: 'Please enter valid Url' }
+    invalidMessage: { type: String, default: 'Please enter valid Url' },
   },
-  data () {
+  data() {
     return {
-      mainUrl: ''
+      mainUrl: '',
     }
   },
-  mounted () {
+  mounted() {
     this.getCallSetting()
   },
   watch: {
     // Re-fetch when the selected profile changes while this panel stays mounted, so the URLs don't go stale.
-    'profileStore.activeProfileId' () {
+    'profileStore.activeProfileId'() {
       this.getCallSetting()
-    }
+    },
   },
   methods: {
-    async getCallSetting () {
+    async getCallSetting() {
       const settingId = this.profileStore.activeProfileId
       if (!settingId) return
 
@@ -103,7 +98,7 @@ export default defineComponent({
       this.mainUrl = normalize(main) ?? ''
       if (fallback) this.fallbackUrl = normalize(fallback) ?? ''
     },
-    async saveFallbackUrl () {
+    async saveFallbackUrl() {
       const { valid, data } = await this.r$.$validate()
       const settingId = this.profileStore.activeProfileId
       if (!valid || !settingId) return
@@ -117,8 +112,8 @@ export default defineComponent({
       }
       notifySuccess(this.successMessage)
       this.getCallSetting()
-    }
-  }
+    },
+  },
 })
 </script>
 

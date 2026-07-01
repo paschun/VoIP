@@ -1,8 +1,8 @@
 import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
+import { authToken } from '@/core/auth-token.ts'
 import { notifyApiError } from '@/core/handle-error.ts'
 import type { AppType } from '../../../app/app.ts'
-import { authToken } from '@/core/auth-token.ts'
 
 // Dev serves the SPA on :8080 with the API on :3000; in prod the API is same-origin. `/api` is baked into `AppType`'s
 // route tree, so the base is the origin only (e.g. `client.api.auth.login.$post`).
@@ -15,9 +15,8 @@ const origin = window.location.origin === 'http://localhost:8080' ? 'http://loca
  * the user store: keeping `client` store-independent is what lets the stores infer their types from `client`.
  */
 export const client = hc<AppType>(origin, {
-  headers: () => ({ token: authToken.value, 'Cache-Control': 'no-cache' })
+  headers: () => ({ token: authToken.value, 'Cache-Control': 'no-cache' }),
 })
-
 
 /*
 https://github.com/honojs/hono/blob/v4.12.26/src/client/utils.ts#L92
@@ -66,7 +65,7 @@ from DetailedError:
  *
  * if you need a typed failure shape, don't use {@link parseResponse}.`
  */
-export function request<T extends ClientResponse<unknown>> (req: T | Promise<T>) {
+export function request<T extends ClientResponse<unknown>>(req: T | Promise<T>) {
   return parseResponse(req).catch(async (err: unknown) => {
     console.error(err)
     if (err instanceof DetailedError) {

@@ -1,24 +1,25 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [ "eslint", "typescript", "unicorn", "oxc", "promise", "import" ],
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "promise", "import"],
   "options": {
     "typeAware": true
   },
   "rules": {
     "eqeqeq": "error",
-    "no-restricted-globals": [ "error",
+    "no-restricted-globals": [
+      "error",
       { "name": "isNaN", "message": "Use Number.isNaN instead." },
       { "name": "isFinite", "message": "Use Number.isFinite instead." }
     ],
     "no-shadow": "error",
     // "typescript/no-explicit-any": "warn",
     // "typescript/no-non-null-assertion": "warn",
-    "typescript/consistent-type-assertions": [ "warn", { "assertionStyle": "never" } ],
+    "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "never" }],
     // "import/no-cycle": "error",
     "no-redeclare": "error",
     "no-param-reassign": "error",
 
-    "no-var": "error",
+    "no-var": "error"
     // enable these and more: migrated-rules.txt
     // "typescript/prefer-optional-chain": "error"
     // "prefer-const": "error",

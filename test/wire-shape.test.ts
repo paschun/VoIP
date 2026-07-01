@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
-import type { EmailDoc } from '../shared/schema/email.ts'
 import type { ContactDoc } from '../shared/schema/contact.ts'
+import type { EmailDoc } from '../shared/schema/email.ts'
 import type { MediaDoc } from '../shared/schema/media.ts'
 import type { SettingDoc } from '../shared/schema/setting.ts'
 

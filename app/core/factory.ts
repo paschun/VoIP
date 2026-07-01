@@ -1,5 +1,5 @@
-import { createFactory } from 'hono/factory'
 import type { Context } from 'hono'
+import { createFactory } from 'hono/factory'
 
 /** The JWT payload the auth middleware (`../middleware/auth.ts`) verifies and attaches as `c.get('user')`. */
 export interface AuthUser {

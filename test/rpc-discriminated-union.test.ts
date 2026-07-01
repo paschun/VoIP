@@ -1,13 +1,12 @@
 import { describe, test, expect, expectTypeOf, assert, beforeAll, afterAll, afterEach } from 'vitest'
-import mongoose from 'mongoose'
-import { testClient } from 'hono/testing'
 import type { InferResponseType } from 'hono/client'
+import { testClient } from 'hono/testing'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
-
-import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
+import mongoose from 'mongoose'
 import { signToken } from '../app/helper/common.helper.ts'
-import { settingRoutes } from '../app/routes/setting.route.ts'
 import { TextMessage, Call } from '../app/model/message.model.ts'
+import { settingRoutes } from '../app/routes/setting.route.ts'
+import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 
 // Proves the Message/Call discriminator flows all the way to the RPC client as a DISCRIMINATED UNION: `listMessages`
 // reads the base model as `MessageDoc` and shapes each row by `datatype`, so the inferred client row is
@@ -57,7 +56,14 @@ describe('listMessages surfaces a discriminated union over RPC', () => {
 
   test('the real route returns rows the client narrows on datatype (runtime + types)', async () => {
     const common = { user: userId, number: '+15555555555', telnyx_number: '+19990000000', setting: profileId }
-    await TextMessage.create({ ...common, sid: 't1', type: 'receive', isview: false, message: 'hello', media: ['https://x/a.png'] })
+    await TextMessage.create({
+      ...common,
+      sid: 't1',
+      type: 'receive',
+      isview: false,
+      message: 'hello',
+      media: ['https://x/a.png'],
+    })
     await Call.create({ ...common, sid: 'c1', type: 'send', isview: true, duration: 42 })
 
     const res = await client.conversations.messages.$post(

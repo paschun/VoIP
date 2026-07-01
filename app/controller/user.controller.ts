@@ -2,51 +2,61 @@ import { execSync } from 'node:child_process'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import bcrypt from 'bcryptjs'
-import Speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
-
+import Speakeasy from 'speakeasy'
 import pkg from '../../package.json' with { type: 'json' }
-import User from '../model/user.model.ts'
-import HardwareKey from '../model/hardwarekey.model.ts'
-import Contact from '../model/contact.model.ts'
-import Email from '../model/email.model.ts'
-import { Message } from '../model/message.model.ts'
-import Setting from '../model/setting.model.ts'
-import * as telnyxHelper from '../helper/telnyx.helper.ts'
-import * as twilioHelper from '../helper/twilio.helper.ts'
-import { env } from '../core/env.ts'
-
-import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx } from '../core/factory.ts'
-import { auth } from '../middleware/auth.ts'
-import { jsonBody } from '../middleware/validate.ts'
-import { ack } from '../helper/respond.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
-  loginBody, type LoginRequest,
-  registerBody, type RegisterRequest,
-  totpVerifyBody, type TotpVerifyRequest,
-  updateUsernameBody, type UpdateUsernameRequest,
-  updatePasswordBody, type UpdatePasswordRequest,
-  passwordBody, type PasswordRequest,
-  enableTotpBody, type EnableTotpRequest,
-  type UserData, type TotpQrInfo,
+  loginBody,
+  type LoginRequest,
+  registerBody,
+  type RegisterRequest,
+  totpVerifyBody,
+  type TotpVerifyRequest,
+  updateUsernameBody,
+  type UpdateUsernameRequest,
+  updatePasswordBody,
+  type UpdatePasswordRequest,
+  passwordBody,
+  type PasswordRequest,
+  enableTotpBody,
+  type EnableTotpRequest,
+  type UserData,
+  type TotpQrInfo,
 } from '../../shared/contracts/auth.ts'
+import { env } from '../core/env.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx } from '../core/factory.ts'
 import { signToken } from '../helper/common.helper.ts'
+import { ack } from '../helper/respond.helper.ts'
+import * as telnyxHelper from '../helper/telnyx.helper.ts'
+import * as twilioHelper from '../helper/twilio.helper.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody } from '../middleware/validate.ts'
+import Contact from '../model/contact.model.ts'
+import Email from '../model/email.model.ts'
+import HardwareKey from '../model/hardwarekey.model.ts'
+import { Message } from '../model/message.model.ts'
+import Setting from '../model/setting.model.ts'
+import User from '../model/user.model.ts'
 
 const saltRounds = 10
 const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_page=1'
 
 /** The user fields echoed to the client (also persisted in the `userdata` cookie). */
 const userDataResponseGen = (u: {
-  _id: { toString(): string }; name?: string | null; totpSecret?: string | null
+  _id: { toString(): string }
+  name?: string | null
+  totpSecret?: string | null
 }): UserData => ({ _id: u._id.toString(), name: u.name ?? '', totp: (u.totpSecret ?? null) !== null })
 // todo: this is used in 3 routes. do they all need this info?
 
 /** Running build id: the short git commit, falling back to `package.json`'s version. */
 const currentVersion = (() => {
   try {
-    return execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname }).toString().trim()
+    return execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
+      .toString()
+      .trim()
   } catch (err) {
     console.error(err)
     return pkg.version
@@ -117,7 +127,7 @@ async function readUpdateAvailable(c: Context<Env>) {
     const response = await fetch(remoteVersionURL)
     if (response.ok) {
       // TODO: zod-validate the GitHub "commits" API schema rather than trusting the shape.
-      const commits = await response.json() as Array<{ sha: string }>
+      const commits = (await response.json()) as Array<{ sha: string }>
       const remoteVersion = commits[0]?.sha.slice(0, 7)
       updateAvailable = currentVersion !== remoteVersion
     }
@@ -245,7 +255,9 @@ async function deleteAllAccountData(userid: string) {
         if (app_key && twiml_app) await twilioHelper.deleteTwiml(twilio_sid, twilio_token, twiml_app)
         if (app_key && sid) await twilioHelper.unlinkNumber(twilio_sid, twilio_token, sid)
       }
-    } catch { /* best-effort: ignore provider failures so one bad credential can't block account deletion */ }
+    } catch {
+      /* best-effort: ignore provider failures so one bad credential can't block account deletion */
+    }
   }
   await Setting.deleteMany({ user: userid })
   await User.deleteOne({ _id: userid })

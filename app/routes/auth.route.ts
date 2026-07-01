@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
-import type { Env } from '../core/factory.ts'
 import * as user from '../controller/user.controller.ts'
+import type { Env } from '../core/factory.ts'
 
 // Routes for `/api/auth`.
 // The first block is unauthenticated (login/signup/version checks, plus the login-time TOTP check).

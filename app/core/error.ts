@@ -54,8 +54,11 @@ export function onError(err: Error, c: Context) {
     const { provider, op, status, cause } = err
     // after a thruthy check, TS narrows unknown to the "empty object type" `{}`
     // oxlint-disable-next-line typescript/no-base-to-string
-    const ifx = (x: unknown) => x ? ` - ${x.toString()}` : ''
-    return c.json({ message: `Upstream ${provider} request failed - ${op}${ifx(status)}${ifx(cause)}` } satisfies ApiError, 502)
+    const ifx = (x: unknown) => (x ? ` - ${x.toString()}` : '')
+    return c.json(
+      { message: `Upstream ${provider} request failed - ${op}${ifx(status)}${ifx(cause)}` } satisfies ApiError,
+      502,
+    )
   }
 
   return c.json({ message: err.toString() } satisfies ApiError, 500)

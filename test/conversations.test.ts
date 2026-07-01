@@ -1,14 +1,14 @@
 import { describe, test, expect, expectTypeOf, assert, beforeAll, afterAll, afterEach } from 'vitest'
-import mongoose from 'mongoose'
-import { testClient } from 'hono/testing'
 import type { InferResponseType } from 'hono/client'
+import { testClient } from 'hono/testing'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
-import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
-import { signToken } from '../app/helper/common.helper.ts'
-import { settingRoutes } from '../app/routes/setting.route.ts'
-import { TextMessage, Call } from '../app/model/message.model.ts'
-import Contact from '../app/model/contact.model.ts'
+import mongoose from 'mongoose'
 import { conversationsForProfile, type ConversationRow } from '../app/controller/setting.controller.ts'
+import { signToken } from '../app/helper/common.helper.ts'
+import Contact from '../app/model/contact.model.ts'
+import { TextMessage, Call } from '../app/model/message.model.ts'
+import { settingRoutes } from '../app/routes/setting.route.ts'
+import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 
 // Exercises the `aggregateConversations` pipeline (via the extracted `conversationsForProfile`): the $group collapse,
 // the unread $sum, the newest-first ordering (which $group does NOT preserve -- the post-group $sort does), and what
@@ -35,7 +35,13 @@ afterEach(clearDb)
 
 /** A valid text-message row for `profileId`/`userId`; override `number`/`created_at`/etc. per case. */
 const msg = (over: Record<string, unknown>) => ({
-  sid: 'sid', user: userId, telnyx_number: '+19990000000', type: 'receive' as const, isview: false, setting: profileId, ...over,
+  sid: 'sid',
+  user: userId,
+  telnyx_number: '+19990000000',
+  type: 'receive' as const,
+  isview: false,
+  setting: profileId,
+  ...over,
 })
 
 describe('conversationsForProfile', () => {
@@ -80,7 +86,13 @@ describe('conversationsForProfile', () => {
   })
 
   test('Contact.populate leaves a null grouped contact as null, and fills a set one with the selected fields', async () => {
-    const contact = await Contact.create({ user: userId, number: '+15555555555', first_name: 'Ada', last_name: 'Lovelace', note: '' })
+    const contact = await Contact.create({
+      user: userId,
+      number: '+15555555555',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      note: '',
+    })
     await TextMessage.insertMany([
       msg({ number: '+15555555555', message: 'has contact', contact: contact._id, created_at: new Date('2026-02-01') }),
       msg({ number: '+16666666666', message: 'no contact', created_at: new Date('2026-01-01') }),
@@ -89,7 +101,7 @@ describe('conversationsForProfile', () => {
     const rows = await conversationsForProfile(userId.toString(), profileId.toString())
     const withContact = rows.find((r) => r._id === '+15555555555')
     const without = rows.find((r) => r._id === '+16666666666')
-    
+
     assert(withContact)
     assert(without)
 
@@ -101,9 +113,21 @@ describe('conversationsForProfile', () => {
   })
 
   test('the full row is exactly the ConversationRow shape -- no leaked keys, contact is a POJO not a hydrated doc', async () => {
-    const contact = await Contact.create({ user: userId, number: '+15555555555', first_name: 'Ada', last_name: 'Lovelace', note: '' })
+    const contact = await Contact.create({
+      user: userId,
+      number: '+15555555555',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      note: '',
+    })
     await TextMessage.insertMany([
-      msg({ number: '+15555555555', message: 'has contact', contact: contact._id, isview: false, created_at: new Date('2026-02-01') }),
+      msg({
+        number: '+15555555555',
+        message: 'has contact',
+        contact: contact._id,
+        isview: false,
+        created_at: new Date('2026-02-01'),
+      }),
     ])
 
     const rows = await conversationsForProfile(userId.toString(), profileId.toString())
@@ -149,7 +173,13 @@ describe('GET /conversations -- RPC route (aggregateConversations)', () => {
   })
 
   test('the contact subset is exactly first_name/last_name -- no _id leaks over the wire', async () => {
-    const contact = await Contact.create({ user: userId, number: '+15555555555', first_name: 'Ada', last_name: 'Lovelace', note: '' })
+    const contact = await Contact.create({
+      user: userId,
+      number: '+15555555555',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      note: '',
+    })
     await TextMessage.insertMany([
       msg({ number: '+15555555555', message: 'has contact', contact: contact._id, created_at: new Date('2026-02-01') }),
     ])
@@ -165,9 +195,21 @@ describe('GET /conversations -- RPC route (aggregateConversations)', () => {
   })
 
   test('the full wire-serialized row is exactly the expected shape (created_at as an ISO string)', async () => {
-    const contact = await Contact.create({ user: userId, number: '+15555555555', first_name: 'Ada', last_name: 'Lovelace', note: '' })
+    const contact = await Contact.create({
+      user: userId,
+      number: '+15555555555',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      note: '',
+    })
     await TextMessage.insertMany([
-      msg({ number: '+15555555555', message: 'has contact', contact: contact._id, isview: false, created_at: new Date('2026-02-01') }),
+      msg({
+        number: '+15555555555',
+        message: 'has contact',
+        contact: contact._id,
+        isview: false,
+        created_at: new Date('2026-02-01'),
+      }),
     ])
 
     const res = await client.conversations.$get({ query: { profile: profileId.toString() } }, auth)
@@ -203,7 +245,7 @@ describe('GET /conversations -- RPC route (aggregateConversations)', () => {
     expectTypeOf(body.data[0]).toEqualTypeOf<WireRow>()
   })
 
-  test('a different user sees none of this profile\'s conversations', async () => {
+  test("a different user sees none of this profile's conversations", async () => {
     await TextMessage.create(msg({ number: '+11111111111', message: 'mine', created_at: new Date('2026-01-01') }))
     const otherAuth = { headers: { token: await signToken(new mongoose.Types.ObjectId().toString(), 'Other') } }
 

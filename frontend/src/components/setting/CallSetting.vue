@@ -17,25 +17,25 @@ import TwimlSetting from './call/twilio/TwimlSetting.vue'
 
 export default defineComponent({
   components: { MessageSetting, TwimlSetting },
-  data () {
+  data() {
     return { setting: null as Record<string, any> | null }
   },
-  setup () {
+  setup() {
     return { profileStore: useProfileStore() }
   },
   watch: {
-    'profileStore.activeProfile' () {
+    'profileStore.activeProfile'() {
       this.getCallSetting()
-    }
+    },
   },
-  mounted () {
+  mounted() {
     this.getCallSetting()
   },
   methods: {
-    getCallSetting () {
+    getCallSetting() {
       const profile = this.profileStore.activeProfile
       if (profile) this.setting = profile
-    }
-  }
+    },
+  },
 })
 </script>
