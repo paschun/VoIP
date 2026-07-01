@@ -165,27 +165,16 @@ computed: {
   }
 },
 mounted () {
-  this.fnLogin()
+  this.redirectIfLoggedIn()
   this.getSignup()
   this.getVersion()
 },
 methods: {
-  async fnLogin () {
-    const res = await request(client.api.auth['directory-name'].$get({ query: { name: appDirectory(this.$route) } }))
-    const { status, dir } = res.data
-    const loggedIn = this.userStore.isLoggedIn
-
-    // todo: this is a mess
-    if (loggedIn) {
-      if (status === 'nodir' || status === 'no-name' || status === 'true') {
-        this.$router.push({ name: 'dashboard', params: { appdirectory: dir } })
-      } else if (status === 'false') {
-        this.$router.push({ name: 'error' })
-      }
-    } else if ((status === 'nodir' || status === 'no-name') && dir === 'voip') {
-      this.$router.push({ name: 'login', params: { appdirectory: dir } })
-    } else if (status === 'false' || status === 'no-name') {
-      this.$router.push({ name: 'error' })
+  // The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
+  // itself when the user is already signed in.
+  redirectIfLoggedIn () {
+    if (this.userStore.isLoggedIn) {
+      this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
     }
   },
   async getSignup () {

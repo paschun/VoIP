@@ -32,18 +32,6 @@ export interface ApiError {
  */
 export type ApiResult<T> = (Ok<T> & { ok: true }) | (ApiError & { ok: false; status?: number })
 
-/**
- * Some Mongoose models persist booleans as the string enum `'true' | 'false'` (e.g. `User.mfa`). Type
- * them as this so the frontend can compare/bind against the literal strings.
- */
-export type StringBoolean = 'true' | 'false'
-
-export interface User {
-  _id: string
-  name: string
-  mfa?: StringBoolean
-}
-
 export interface Contact {
   _id: string
   first_name: string
@@ -52,11 +40,3 @@ export interface Contact {
   note?: string
 }
 
-export interface HardwareKey {
-  _id: string
-  title: string
-  credentials?: string[]
-}
-
-/** Response of `auth/get-version` -- the latest git short hash (or fallback). */
-export type VersionResponse = Ok<string>

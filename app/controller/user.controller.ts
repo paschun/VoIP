@@ -17,22 +17,20 @@ import * as twilioHelper from '../helper/twilio.helper.ts'
 import { env } from '../../config/env.ts'
 
 import { factory } from '../factory.ts'
-import type { Env, JsonCtx, QueryCtx } from '../factory.ts'
+import type { Env, JsonCtx } from '../factory.ts'
 import { auth } from '../middleware/auth.hono.ts'
-import { jsonBody, queryParams } from '../validate.ts'
+import { jsonBody } from '../validate.ts'
 import { ack } from '../util/respond.hono.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
   loginBody, type LoginRequest,
   registerBody, type RegisterRequest,
   totpVerifyBody, type TotpVerifyRequest,
-  directoryNameQuery, type DirectoryNameQuery,
   updateUsernameBody, type UpdateUsernameRequest,
   updatePasswordBody, type UpdatePasswordRequest,
   passwordBody, type PasswordRequest,
   enableTotpBody, type EnableTotpRequest,
   type UserData, type TotpQrInfo,
-  type CheckDirectoryName, type CheckDirectoryNameResponse,
 } from '../../shared/contracts/auth.ts'
 import { signToken } from '../helper/common.helper.ts'
 
@@ -127,24 +125,6 @@ async function readUpdateAvailable(c: Context<Env>) {
     console.error(err)
   }
   return c.json({ data: updateAvailable } satisfies Ok<boolean>, 200)
-}
-
-/** Compare the caller's app-directory against the configured `APPDIRECTORY`, reporting match/mismatch/unconfigured. */
-async function matchDirectoryName(c: QueryCtx<DirectoryNameQuery>) {
-  const dirname = c.req.valid('query').name
-  const dir = env.APPDIRECTORY
-  let result: CheckDirectoryName
-  if (dir) {
-    if (!dirname) result = { status: 'no-name', dir }
-    else result = { status: dir === dirname ? 'true' : 'false', dir }
-  } else if (dirname === 'voip') {
-    result = { status: 'nodir', dir: 'voip' }
-  } else if (dirname) {
-    result = { status: 'false', dir }
-  } else {
-    result = { status: 'no-name', dir: 'voip' }
-  }
-  return c.json({ data: result } satisfies CheckDirectoryNameResponse, 200)
 }
 
 /** Rename the caller; reject if the new username is taken by another account. */
@@ -277,7 +257,6 @@ export const totpVerify = factory.createHandlers(jsonBody(totpVerifyBody), verif
 export const signupEnabled = factory.createHandlers(readSignupOption)
 export const getVersion = factory.createHandlers(readVersion)
 export const getUpdateAvailable = factory.createHandlers(readUpdateAvailable)
-export const getDirectoryName = factory.createHandlers(queryParams(directoryNameQuery), matchDirectoryName)
 
 export const updateUsername = factory.createHandlers(auth, jsonBody(updateUsernameBody), changeUsername)
 export const updatePassword = factory.createHandlers(auth, jsonBody(updatePasswordBody), changePassword)

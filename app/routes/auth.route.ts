@@ -3,7 +3,7 @@ import type { Env } from '../factory.ts'
 import * as user from '../controller/user.controller.ts'
 
 // Routes for `/api/auth`.
-// The first block is unauthenticated (login/signup/version/directory checks, plus the login-time TOTP check).
+// The first block is unauthenticated (login/signup/version checks, plus the login-time TOTP check).
 // The second is authenticated account + TOTP enrollment management.
 export const authRoutes = new Hono<Env>()
   // unauthed routes
@@ -13,7 +13,6 @@ export const authRoutes = new Hono<Env>()
   .get('/signup-enabled', ...user.signupEnabled)
   .get('/version', ...user.getVersion)
   .get('/version/update-available', ...user.getUpdateAvailable)
-  .get('/directory-name', ...user.getDirectoryName)
   // authed routes
   .patch('/username', ...user.updateUsername)
   .put('/password', ...user.updatePassword)

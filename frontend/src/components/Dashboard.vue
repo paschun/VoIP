@@ -1,6 +1,5 @@
 <template>
   <div class="wrap">
-    <check-dir />
     <call-view
       ref="callView"
     ></call-view>
@@ -252,12 +251,13 @@ import NumberList from "./inbox/NumberList.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import ThemeButton from "@/components/ThemeButton.vue";
 import CallView from "@/components/CallView.vue";
-import CheckDir from "@/components/CheckDir.vue";
+
 import type { BOffcanvas } from "bootstrap-vue-next";
 import { useProfileStore } from "@/stores/profile.ts";
 import { useUserStore } from "@/stores/user.ts";
 import { useConversationStore, type Conversation } from "@/stores/conversation.ts";
 import { formatTimestamp } from '@/helper.ts';
+import { appDirectory } from '@/router/helpers.ts';
 import { uploadMedia } from '@/core/services/media.ts';
 import { notifyError, notifyInfo } from '@/notify.ts';
 
@@ -279,7 +279,6 @@ export default defineComponent({
     LoadingSpinner,
     ThemeButton,
     CallView,
-    CheckDir,
   },
   setup() {
     const callView = useTemplateRef<InstanceType<typeof CallView>>("callView");
@@ -323,7 +322,8 @@ export default defineComponent({
   },
   mounted() {
     if (!this.userStore.isLoggedIn) {
-      this.$router.push({ name: 'home' });
+      // Bounce to the login page inside the current directory -- never bare `/`, which the server gate 404s.
+      this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } });
     }
     const baseUrl = window.location.origin;
     if (baseUrl === "http://localhost:8080") {

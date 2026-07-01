@@ -130,10 +130,10 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
   if (setting) {
     setting.api_key = api_key
     setting.number = number
-    setting.sid = sid ?? null
+    setting.sid = sid
     setting.profile = body.profile
     setting.type = 'telnyx'
-    if (body.override === 'true') {
+    if (body.override) {
       if (setting.telnyx_twiml) {
         await telnyxHelper.updateTexmlApp(api_key, setting.telnyx_twiml)
       } else {
@@ -156,7 +156,7 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
     await setting.save()
     if (!setting.setting) provisionMessagingProfile = true
   } else {
-    setting = await Setting.create({ api_key, sid: sid ?? null, number, user: userId, profile: body.profile, type: 'telnyx' })
+    setting = await Setting.create({ api_key, sid, number, user: userId, profile: body.profile, type: 'telnyx' })
     provisionMessagingProfile = true
   }
 
@@ -178,9 +178,9 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
   }
   setting.setting = messagingProfileId
   await setting.save()
-  await client.phoneNumbers.messaging.update(sid ?? '', { messaging_profile_id: messagingProfileId })
-  if (body.override === 'true') {
-    await client.phoneNumbers.update(sid ?? '', { connection_id: setting.telnyx_twiml ?? '' })
+  await client.phoneNumbers.messaging.update(sid, { messaging_profile_id: messagingProfileId })
+  if (body.override) {
+    await client.phoneNumbers.update(sid, { connection_id: setting.telnyx_twiml ?? '' })
   }
   const data = setting.toObject({ flattenObjectIds: true })
   return c.json({ data } satisfies Ok, 200)
@@ -202,7 +202,7 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
     setting.twilio_token = twilio_token
     setting.profile = body.profile
     setting.type = 'twilio'
-    if (body.override === 'true') {
+    if (body.override) {
       if (setting.twiml_app) {
         await twilioHelper.updateTwiml(twilio_sid, twilio_token, setting.twiml_app)
       } else {
@@ -223,7 +223,7 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
   }
 
   const client = twilio(twilio_sid, twilio_token)
-  const update = body.override === 'true'
+  const update = body.override
     ? {
         smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio),
         voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioIncoming.full),

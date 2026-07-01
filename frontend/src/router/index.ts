@@ -29,11 +29,13 @@ export default createRouter({
       name: 'error',
       component: () => import('@/components/ErrorPage.vue')
     },
+    // this home route is only used in dev
     {
       path: '/',
       name: 'home',
       component: () => import('@/components/Login.vue')
     },
+    // the client routing is directory-agnostic. the first directory is treated as :appdirectory
     {
       path: '/:appdirectory',
       name: 'login',

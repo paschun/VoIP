@@ -11,14 +11,14 @@ import { profileIdParam, type ProfileIdParam } from './profile.ts'
 export const createSettingBody = z.object({
   type: z.enum(['telnyx', 'twilio']),
   profile: z.string().min(1),
-  setting: z.string().optional(),
-  override: z.string().optional(),
-  api_key: z.string().optional(),
-  number: z.string().optional(),
-  sid: z.string().optional(),
-  twilio_sid: z.string().optional(),
-  twilio_token: z.string().optional(),
-  twilio_number: z.string().optional(),
+  setting: z.string(),
+  override: z.boolean(),
+  api_key: z.string(),
+  number: z.string(),
+  sid: z.string(),
+  twilio_sid: z.string(),
+  twilio_token: z.string(),
+  twilio_number: z.string(),
 })
 export type CreateSettingRequest = z.infer<typeof createSettingBody>
 

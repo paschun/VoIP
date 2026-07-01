@@ -412,7 +412,7 @@ import { useConversationStore, type Conversation } from "@/stores/conversation.t
 import CustomAutocompleteSelect from "../CustomAutocompleteSelect.vue";
 import { formatTimestamp } from "@/helper.ts";
 import { client, request } from "@/core/rpc.client.ts";
-import type { InferResponseType } from "hono/client";
+import type { InferRequestType, InferResponseType } from "hono/client";
 import type { SuccessStatusCode } from "hono/utils/http-status";
 import { appDirectory } from "@/router/helpers.ts";
 
@@ -420,28 +420,16 @@ function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + ".." : str;
 }
 
-/** A profile's provider configuration, as edited in the settings modal. `type` discriminates which provider's fields the variant rules require. */
-interface ProviderSettingForm {
-  type: 'telnyx' | 'twilio';
-  profile: string;
-  api_key: string;
-  number: string;
-  twilio_sid: string;
-  twilio_token: string;
-  twilio_number: string;
-}
+/** The full provider-config request body, inferred from the endpoint's tightened zod schema. */
+type ProviderSettingPayload = InferRequestType<typeof client.api.profile.provider.$post>["json"];
+/** The subset edited in the settings modal (server-side identifiers are added at submit). `type` discriminates which provider's fields the variant rules require. */
+type ProviderSettingForm = Omit<ProviderSettingPayload, "setting" | "sid" | "override">;
 /** The provider-numbers response payload, discriminated by `type`. */
 type ProviderNumbers = InferResponseType<typeof client.api.setting["provider-numbers"]["$post"], SuccessStatusCode>["data"];
 /** A purchasable Telnyx number from the provider-numbers lookup (`id` is the lookup's sid). */
 type TelnyxNumber = Extract<ProviderNumbers, { type: "telnyx" }>["numbers"][number];
 /** A purchasable Twilio number from the provider-numbers lookup. */
 type TwilioNumber = Extract<ProviderNumbers, { type: "twilio" }>["numbers"][number];
-/** The form values plus server-side identifiers, POSTed to number-lookup / setting creation. */
-interface ProviderSettingPayload extends ProviderSettingForm {
-  setting: string;
-  sid: string;
-  override?: string;
-}
 
 export default defineComponent({
   emits: ["conversationSelected", "messageSent"],
@@ -684,7 +672,8 @@ export default defineComponent({
         twilio_token: providerSettings.twilio_token,
         twilio_number: providerSettings.twilio_number,
         setting: this.profileStore.activeProfileId,
-        profile: providerSettings.profile
+        profile: providerSettings.profile,
+        override: true
       };
       this.isLoading = true;
       let isCall = false;
@@ -716,9 +705,7 @@ export default defineComponent({
           denyButtonText: `No, Keep old`
         });
         if (!result.isConfirmed && !result.isDenied) return;
-        providerSettingPayload.override = result.isConfirmed ? "true" : "false";
-      } else {
-        providerSettingPayload.override = "true";
+        providerSettingPayload.override = result.isConfirmed;
       }
       await this.createProviderSetting(providerSettingPayload);
     },

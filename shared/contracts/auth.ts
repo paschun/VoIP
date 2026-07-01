@@ -11,10 +11,6 @@ export type RegisterRequest = z.infer<typeof registerBody>
 export const totpVerifyBody = z.object({ userId: z.string().min(1), code: z.string().min(1) })
 export type TotpVerifyRequest = z.infer<typeof totpVerifyBody>
 
-/** `GET /directory-name`: `name` is optional -- the handler distinguishes "no name supplied" from a mismatch. */
-export const directoryNameQuery = z.object({ name: z.string().optional() })
-export type DirectoryNameQuery = z.infer<typeof directoryNameQuery>
-
 export const updateUsernameBody = z.object({ name: z.string().min(1) })
 export type UpdateUsernameRequest = z.infer<typeof updateUsernameBody>
 
@@ -42,6 +38,3 @@ export type UserResponse = Ok<UserData>
 /** `POST /totp/qr`: the enrollment QR data-URL + base32 secret to display (and pass back on enable). Not persisted. */
 export type TotpQrInfo = { image: string; secret: string }
 export type TotpQrResponse = Ok<TotpQrInfo>
-
-export type CheckDirectoryName = { status: 'true' | 'false' | 'nodir' | 'no-name'; dir: string }
-export type CheckDirectoryNameResponse = Ok<CheckDirectoryName>

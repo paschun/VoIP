@@ -13,6 +13,7 @@ import { initIO } from './app/socket.ts'
 import { onError } from './app/error.ts'
 import { factory } from './app/factory.ts'
 import { rateLimit } from './app/middleware/rate-limit.ts'
+import { appDirectoryGate } from './app/middleware/app-directory.ts'
 import { authRoutes } from './app/routes/auth.route.ts'
 import { callRoutes } from './app/routes/call.route.ts'
 import { contactRoutes } from './app/routes/contact.route.ts'
@@ -31,6 +32,9 @@ const app = factory.createApp()
 // Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see app/error.ts).
 app.onError(onError)
 
+// Branded static error page served by the backend for the HTTPS backstop and the app-directory gate's 404s.
+const errorPage = await readFile('./app/static/error.html', 'utf8')
+
 // First middleware, applied to every request
 app.use('*', rateLimit)
 
@@ -39,7 +43,6 @@ app.use('*', rateLimit)
 // Render terminates TLS upstream, so the original client protocol is read from x-forwarded-proto; anything that arrived
 // over plain HTTP gets the static error page. In dev (HTTP, no proxy) this is skipped.
 if (env.HTTPS) {
-  const errorPage = await readFile('./error/index.html', 'utf8')
   app.use('*', async (c, next) => {
     if (c.req.header('x-forwarded-proto') !== 'https') return c.html(errorPage)
     await next()
@@ -131,6 +134,11 @@ export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
 
 // Static assets + SPA fallback
 // ----------------------------
+// Gate the SPA entry behind the configured secret directory (app/middleware/app-directory.ts). Registered after the
+// API mounts (so `/api/*` is handled first and passes through) but before the static handlers (so it wraps them);
+// it's a plain `app.use`, not part of the `routes` chain, so `AppType`/RPC inference is untouched.
+app.use('*', appDirectoryGate(errorPage))
+
 // Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
 app.use('/uploads/*', serveStatic({ root: './' }))
 app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
