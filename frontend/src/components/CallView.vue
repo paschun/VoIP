@@ -1,7 +1,7 @@
 <template>
     <div>
-        <b-button id="incomingCallModel" v-b-modal.modal-tall style="display:none">Launch demo modal</b-button>
-        <b-modal ref="modalTall" id="modal-tall" no-footer>
+        <b-button id="incomingCallModel" v-b-modal.call-modal style="display:none">Launch demo modal</b-button>
+        <b-modal ref="callModal" id="call-modal" no-footer>
           <template #header="{ close }">
             <!-- Emulate built in modal header close button action -->
             <b-button v-bind:class="{ 'd-none': connection }" size="sm" variant="outline-danger" @click="close()">
@@ -179,8 +179,8 @@ type CallTokenData = InferResponseType<typeof client.api.call.token.$post, Succe
 export default defineComponent({
   components: { 'v-select': Select },
   setup () {
-    const modalTall = useTemplateRef<InstanceType<typeof BModal>>('modalTall')
-    return { profileStore: useProfileStore(), contactStore: useContactStore(), modalTall }
+    const callModal = useTemplateRef<InstanceType<typeof BModal>>('callModal')
+    return { profileStore: useProfileStore(), contactStore: useContactStore(), callModal }
   },
   data (): {
     phoneNumber: string
@@ -225,7 +225,7 @@ export default defineComponent({
             console.error('twilio device error', error)
           })
           device.on('incoming', (call: TwilioCall) => {
-            this.modalTall?.show()
+            this.callModal?.show()
             this.connection = call
             this.phoneNumber = call.parameters.From ?? ''
             this.incoming = true
@@ -250,7 +250,7 @@ export default defineComponent({
                 this.connection = call
                 switch (call.state) {
                   case 'ringing':
-                    this.modalTall?.show()
+                    this.callModal?.show()
                     this.phoneNumber = call.options.remoteCallerNumber ?? ''
                     this.incoming = true
                     break
@@ -315,7 +315,7 @@ export default defineComponent({
           callerNumber
         })
       }
-      this.modalTall?.show()
+      this.callModal?.show()
     },
     bindCallEvents (call: TwilioCall) {
       call.on('accept', () => {
@@ -520,4 +520,20 @@ export default defineComponent({
         letter-spacing: normal;
         line-height: 50px;
     }
+</style>
+
+<!-- Full-screen call modal; BModal's .modal-dialog is teleported, so this can't be scoped. -->
+<style>
+#call-modal .modal-dialog {
+    max-width: 100%;
+    margin: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100vh;
+    display: flex;
+    position: fixed;
+    z-index: 100000;
+}
 </style>

@@ -64,7 +64,7 @@
       </div>
 
       <div class="d-grid d-md-flex">
-        <button class="btn btn-primary" type="submit" id="login-button" :disabled="!canSend">
+        <button class="btn btn-primary submit-btn" type="submit" :disabled="!canSend">
           Send Message
         </button>
       </div>

@@ -16,7 +16,7 @@
                 aria-hidden="true"
                 class="m-2"
                 title="Call"
-                v-b-modal.modal-tall
+                v-b-modal.call-modal
                 style="cursor:pointer;"
               />
             </div>
@@ -159,7 +159,7 @@
       <theme-button id-hide="false" />
       <form @submit.prevent="saveProviderSetting" class="ml-2 mr-2">
         <b-form-radio-group
-          id="btn-radios-2"
+          id="provider-type-radios"
           v-model="r$.$value.type"
           :options="options"
           button-variant="outline-primary"
@@ -374,7 +374,7 @@
           </div>
         </div>
         <div class="d-grid d-md-flex">
-          <button class="btn btn-success mt-4" type="submit" id="login-button">
+          <button class="btn btn-success mt-4 submit-btn" type="submit">
             Save
           </button>
         </div>
@@ -764,5 +764,12 @@ export default defineComponent({
 }
 .overflow-visible-card{
   overflow: visible;
+}
+</style>
+
+<!-- BModal internals are teleported, so this button-group rule can't be scoped. -->
+<style>
+#provider-type-radios > label > input {
+  margin-right: 0.6rem;
 }
 </style>

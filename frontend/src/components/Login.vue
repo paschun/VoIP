@@ -27,7 +27,7 @@
               </div>
             </div>
             <div class="d-grid">
-              <button class="btn btn-success mt-3" type="submit" id="login-button">Login</button>
+              <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
             </div>
             <div class="my-2 small" v-if="signUpOption">
               Don’t have an account yet? <router-link :to="signupRoute" class="mx-2"> Sign up</router-link>

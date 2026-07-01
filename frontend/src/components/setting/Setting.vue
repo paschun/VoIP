@@ -92,3 +92,13 @@ methods: {
 }
 })
 </script>
+
+<!-- BOffcanvas is teleported, so these rules target its rendered internals globally rather than scoped. -->
+<style>
+#sidebar-email-setting .offcanvas-header,
+#sidebar-email-setting .offcanvas-body {
+    background-color: var(--contact-list);
+    color: var(--text-primary-color);
+}
+/* offcanvas .btn-close has svg background with fill='#000' hardcoded */
+</style>
