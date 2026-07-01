@@ -1,7 +1,7 @@
 import Telnyx from 'telnyx'
-import moment from 'moment'
+import { format } from 'date-fns'
 import crypto from 'crypto'
-import { combineURLs } from './common.helper.ts'
+import { combineURLs, TIMESTAMP_FORMAT } from './common.helper.ts'
 import { WEBHOOKS } from './webhook-paths.ts'
 import { env } from '../core/env.ts'
 import { ProviderError } from '../core/error.ts'
@@ -17,9 +17,6 @@ import { ProviderError } from '../core/error.ts'
  *   during account/profile/setting deletion, where each call is independent best-effort cleanup; throwing would abort
  *   the remaining cleanup and block a legitimate delete. Callers wrap them in a try/catch that ignores the result.
  */
-
-// moment format used to build unique, human-readable resource names (down to the minute).
-const timestampFormat = 'YYYYMMDDHHmm'
 
 /** Standard Telnyx REST headers: JSON content/accept plus bearer auth. */
 const telnyxHeaders = (apiKey: string) => ({
@@ -60,7 +57,7 @@ const requestCurl = async (op: string, method: 'PATCH', url: string, headers: Re
 const createTexmlApp = async (apiKey: string) => {
     try {
         const texmlApp = await new Telnyx({ apiKey }).texmlApplications.create({
-            friendly_name: moment().format(timestampFormat),
+            friendly_name: format(new Date(), TIMESTAMP_FORMAT),
             voice_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxVoice.full),
             voice_method: 'post',
             status_callback: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
@@ -88,8 +85,8 @@ const createSIPApp = async (apiKey: string, userid: string, outboundProfileid: s
         const client = new Telnyx({ apiKey });
         const password = crypto.randomBytes(16).toString('hex');
         const credentialConnection = await client.credentialConnections.create({
-            connection_name: `sip${moment().format(timestampFormat)}`,
-            user_name: `user${moment().format(timestampFormat)}`,
+            connection_name: `sip${format(new Date(), TIMESTAMP_FORMAT)}`,
+            user_name: `user${format(new Date(), TIMESTAMP_FORMAT)}`,
             password,
             webhook_event_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
             outbound: { outbound_voice_profile_id: outboundProfileid },
@@ -119,7 +116,7 @@ const createOutboundVoice = async (apiKey: string) => {
     try {
         const client = new Telnyx({ apiKey });
         const outboundVoiceProfiles = await client.outboundVoiceProfiles.create(
-            { "name": `outbound${moment().format(timestampFormat)}` }
+            { "name": `outbound${format(new Date(), TIMESTAMP_FORMAT)}` }
         );
         return outboundVoiceProfiles;
     } catch (error) {

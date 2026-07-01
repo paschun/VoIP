@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
-import moment from 'moment'
+import { format, subDays } from 'date-fns'
 import cron from 'node-cron'
 import { bodyLimit } from 'hono/body-limit'
 import { HTTPException } from 'hono/http-exception'
@@ -9,7 +9,7 @@ import { factory } from '../core/factory.ts'
 import type { HeaderCtx } from '../core/factory.ts'
 import { auth } from '../middleware/auth.ts'
 import { headerParams } from '../middleware/validate.ts'
-import { combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
+import { combineURLs, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
 import { env } from '../core/env.ts'
 import { uploadHeaders, uploadExt, type UploadHeaders } from '../../shared/contracts/media.ts'
 import type { ApiError, Ok } from '../../shared/api-contracts.ts'
@@ -32,7 +32,7 @@ async function uploadMedia(c: HeaderCtx<UploadHeaders>) {
   const bytes = Buffer.from(await c.req.arrayBuffer()) // load the whole file into memory
   if (bytes.length === 0) throw new HTTPException(400, { message: 'No file uploaded!' })
 
-  const date = moment().format(uploadFolderFormat)
+  const date = format(new Date(), UPLOAD_FOLDER_FORMAT)
   const dir = `./uploads/${date}`
   const filename = crypto.randomBytes(24).toString('hex') + ext
   const mediaPath = `${dir}/${filename}`
@@ -49,7 +49,7 @@ async function uploadMedia(c: HeaderCtx<UploadHeaders>) {
 
 // todo: remove all folders older than 7 days
 function pruneOldUploads() {
-  const startdate = moment().subtract(7, 'days').format(uploadFolderFormat)
+  const startdate = format(subDays(new Date(), 7), UPLOAD_FOLDER_FORMAT)
   try {
     fs.rmSync('./uploads/' + startdate, { recursive: true })
     console.log('removed upload folder:', startdate)

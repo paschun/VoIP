@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 import Telnyx from 'telnyx'
-import moment from 'moment'
+import { format } from 'date-fns'
 import mongoose from 'mongoose'
 import twilio from 'twilio'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
@@ -13,7 +13,7 @@ import Setting from '../model/setting.model.ts'
 import { Message, TextMessage, type MessageDoc, type CommonFields } from '../model/message.model.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
-import { combineURLs, uploadFolderFormat } from '../helper/common.helper.ts'
+import { combineURLs, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
 import { WEBHOOKS } from '../helper/webhook-paths.ts'
 import { getIO } from '../core/socket.ts'
 import { env } from '../core/env.ts'
@@ -284,7 +284,7 @@ async function saveMedia(items: { url: string; contentType: string }[]): Promise
     // todo: make content type detection safer, for png especially
     const ext = contentType === 'image/gif' ? 'gif' : contentType === 'image/jpeg' ? 'jpg' : 'png'
     const name = `${crypto.randomBytes(24).toString('hex')}.${ext}`
-    const date = moment().format(uploadFolderFormat)
+    const date = format(new Date(), UPLOAD_FOLDER_FORMAT)
     try {
       await fs.promises.access(`./uploads/${date}`)
     } catch {

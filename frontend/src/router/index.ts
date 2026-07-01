@@ -24,12 +24,13 @@ declare module 'vue-router' {
 export default createRouter({
   history: createWebHistory(),
   routes: [
+    // i dont think it's possible to hit this /404 route
     {
       path: '/404',
       name: 'error',
       component: () => import('@/components/ErrorPage.vue')
     },
-    // this home route is only used in dev
+    // this home route is only used in dev, because of APPDIRECTORY gating
     {
       path: '/',
       name: 'home',

@@ -1,7 +1,11 @@
 import { SignJWT } from 'jose'
 import { env } from '../core/env.ts'
 
-export const uploadFolderFormat = 'YYYYMMDD'
+/** date-fns format for the per-day upload folder name. */
+export const UPLOAD_FOLDER_FORMAT = 'yyyyMMdd'
+
+/** date-fns format used to build unique, human-readable Telnyx resource names (down to the minute). */
+export const TIMESTAMP_FORMAT = 'yyyyMMddHHmm'
 
 /** Join path segments into one URL, trimming the slashes at each seam so there are no doubles.
  * The first segment keeps any leading slash and the last keeps any trailing slash.
