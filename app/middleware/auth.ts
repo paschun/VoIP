@@ -1,6 +1,6 @@
 import { jwtVerify } from 'jose'
-import { factory } from '../factory.ts'
-import type { AuthUser } from '../factory.ts'
+import { factory } from '../core/factory.ts'
+import type { AuthUser } from '../core/factory.ts'
 import type { ApiError } from '../../shared/api-contracts.ts'
 import { jwtSecret } from '../helper/common.helper.ts'
 

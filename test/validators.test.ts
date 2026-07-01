@@ -6,7 +6,7 @@ import { model, Schema, Types, Error as MongooseError, type Require_id, type Inf
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import { test, expect, describe, vi, expectTypeOf, assert, chai } from 'vitest'
 import z from 'zod'
-import { pathParams } from '../app/validate.ts'
+import { pathParams } from '../app/middleware/validate.ts'
 
 // https://github.com/honojs/middleware/blob/main/packages/standard-validator/src/index.ts
 // https://github.com/honojs/middleware/blob/main/packages/standard-validator/src/index.test.ts

@@ -1,7 +1,7 @@
 import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import { notifyApiError } from '@/core/handle-error.ts'
-import type { AppType } from '../../../app.ts'
+import type { AppType } from '../../../app/app.ts'
 import { authToken } from '@/core/auth-token.ts'
 
 // Dev serves the SPA on :8080 with the API on :3000; in prod the API is same-origin. `/api` is baked into `AppType`'s

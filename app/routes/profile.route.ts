@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../factory.ts'
+import type { Env } from '../core/factory.ts'
 import * as profile from '../controller/profile.controller.ts'
 
 // Routes for `/api/profile`: profile lifecycle (CRD) plus provider config.

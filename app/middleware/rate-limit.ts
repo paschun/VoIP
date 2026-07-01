@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { getConnInfo } from '@hono/node-server/conninfo'
-import { env } from '../../config/env.ts'
-import { factory } from '../factory.ts'
+import { env } from '../core/env.ts'
+import { factory } from '../core/factory.ts'
 
 // Could also use: https://honohub.dev/docs/rate-limiter
 

@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../factory.ts'
+import type { Env } from '../core/factory.ts'
 import * as provider from '../controller/provider.controller.ts'
 
 // Routes for `/api/provider`: a Setting's Twilio/Telnyx webhook config (nothing in Mongo is modified -- the Setting is

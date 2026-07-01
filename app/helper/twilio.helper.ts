@@ -1,8 +1,8 @@
 import twilio from 'twilio'
 import { combineURLs } from './common.helper.ts'
 import { WEBHOOKS } from './webhook-paths.ts'
-import { env } from '../../config/env.ts'
-import { ProviderError } from '../provider-error.ts'
+import { env } from '../core/env.ts'
+import { ProviderError } from '../core/error.ts'
 
 /**
  * Twilio provisioning/teardown helpers. Same error policy as telnyx.helper, split by intent, with the functions below

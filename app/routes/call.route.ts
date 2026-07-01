@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../factory.ts'
+import type { Env } from '../core/factory.ts'
 import * as call from '../controller/call.controller.ts'
 import { WEBHOOKS } from '../helper/webhook-paths.ts'
 

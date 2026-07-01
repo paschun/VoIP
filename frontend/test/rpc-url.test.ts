@@ -1,6 +1,6 @@
 import { describe, test, expect, expectTypeOf } from 'vitest'
 import { hc } from 'hono/client'
-import type { AppType } from '../../app.ts'
+import type { AppType } from '../../app/app.ts'
 
 // Documents how `hc(...).$url()` builds a URL -- the frontend uses it for the media-upload path 
 // `AppType` is type-only, so this never imports/boots the server.

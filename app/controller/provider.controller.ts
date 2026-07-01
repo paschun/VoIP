@@ -4,17 +4,17 @@ import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
 import { combineURLs } from '../helper/common.helper.ts'
 import { WEBHOOKS } from '../helper/webhook-paths.ts'
-import { factory } from '../factory.ts'
-import type { JsonCtx, ParamCtx, ParamJsonCtx } from '../factory.ts'
-import { auth } from '../middleware/auth.hono.ts'
-import { jsonBody, pathParams } from '../validate.ts'
+import { factory } from '../core/factory.ts'
+import type { JsonCtx, ParamCtx, ParamJsonCtx } from '../core/factory.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody, pathParams } from '../middleware/validate.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
   settingIdParam, type SettingIdParam,
   webhookFallbackBody, type WebhookFallbackRequest,
   numberLookupBody, type NumberLookupRequest,
 } from '../../shared/contracts/provider.ts'
-import { ack } from '../util/respond.hono.ts'
+import { ack } from '../helper/respond.helper.ts'
 
 // Load the caller's own Setting by id or 404. User-scoped so a user can't read/alter another's provider config by
 // guessing the id (IDOR). The Setting is only a credential source here; nothing in Mongo is modified -- every write

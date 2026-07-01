@@ -2,7 +2,7 @@ import { sValidator } from '@hono/standard-validator'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
-import type { ApiError } from '../shared/api-contracts.ts'
+import type { ApiError } from '../../shared/api-contracts.ts'
 
 // 422 Unprocessable Content (RFC 9110): the body parsed fine but failed schema validation.
 // A real `ContentfulStatusCode` (unlike the app's old non-standard 419).

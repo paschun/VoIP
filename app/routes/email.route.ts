@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../factory.ts'
+import type { Env } from '../core/factory.ts'
 import * as email from '../controller/email.controller.ts'
 
 // Routes for `/api/email`: the user's SMTP/PGP email config. It's a singleton (one Email doc per user), so the group

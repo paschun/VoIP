@@ -1,14 +1,14 @@
 import type { Server as HttpServer } from 'node:http'
 import type { Http2Server, Http2SecureServer } from 'node:http2'
 import { Server } from 'socket.io'
-import { env } from '../config/env.ts'
+import { env } from './env.ts'
 
 let io: Server | undefined
 
 // is it possible to replace with https://hono.dev/docs/helpers/websocket ??
 
 // maybe todo:
-// 1) authenticate the handshake (validate the access token via socket.handshake.auth.token in io.use(...) middleware, same jose verify as auth.hono.ts)
+// 1) authenticate the handshake (validate the access token via socket.handshake.auth.token in io.use(...) middleware, same jose verify as middleware/auth.ts)
 // 2) authorize joins so a user can only join their own user/profile channel.
 // look at io.use()
 

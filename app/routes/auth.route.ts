@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { Env } from '../factory.ts'
+import type { Env } from '../core/factory.ts'
 import * as user from '../controller/user.controller.ts'
 
 // Routes for `/api/auth`.

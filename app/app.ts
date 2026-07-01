@@ -6,30 +6,30 @@ import { bodyLimit } from 'hono/body-limit'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import type { ApplyGlobalResponse } from 'hono/client'
-import type { ApiError } from './shared/api-contracts.ts'
-import { env } from './config/env.ts'
-import { connectDB } from './config/db.config.ts'
-import { initIO } from './app/socket.ts'
-import { onError } from './app/error.ts'
-import { factory } from './app/factory.ts'
-import { rateLimit } from './app/middleware/rate-limit.ts'
-import { appDirectoryGate } from './app/middleware/app-directory.ts'
-import { authRoutes } from './app/routes/auth.route.ts'
-import { callRoutes } from './app/routes/call.route.ts'
-import { contactRoutes } from './app/routes/contact.route.ts'
-import { emailRoutes } from './app/routes/email.route.ts'
-import { hardwarekeyRoutes } from './app/routes/hardwarekey.route.ts'
-import { mediaRoutes } from './app/routes/media.route.ts'
-import { MAX_UPLOAD_BYTES } from './app/controller/media.controller.ts'
-import { profileRoutes } from './app/routes/profile.route.ts'
-import { providerRoutes } from './app/routes/provider.route.ts'
-import { settingRoutes } from './app/routes/setting.route.ts'
+import type { ApiError } from '../shared/api-contracts.ts'
+import { env } from './core/env.ts'
+import { connectDB } from './core/db.ts'
+import { initIO } from './core/socket.ts'
+import { onError } from './core/error.ts'
+import { factory } from './core/factory.ts'
+import { rateLimit } from './middleware/rate-limit.ts'
+import { appDirectoryGate } from './middleware/app-directory.ts'
+import { authRoutes } from './routes/auth.route.ts'
+import { callRoutes } from './routes/call.route.ts'
+import { contactRoutes } from './routes/contact.route.ts'
+import { emailRoutes } from './routes/email.route.ts'
+import { hardwarekeyRoutes } from './routes/hardwarekey.route.ts'
+import { mediaRoutes } from './routes/media.route.ts'
+import { MAX_UPLOAD_BYTES } from './controller/media.controller.ts'
+import { profileRoutes } from './routes/profile.route.ts'
+import { providerRoutes } from './routes/provider.route.ts'
+import { settingRoutes } from './routes/setting.route.ts'
 
 // `factory.createApp()` (not `new Hono()`) so the root app carries the factory's `Env` -- `c.get('user')` is typed
 // `AuthUser` on guarded routes without re-declaring the generic here (the same factory builds every group's handlers).
 const app = factory.createApp()
 
-// Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see app/error.ts).
+// Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see core/error.ts).
 app.onError(onError)
 
 // Branded static error page served by the backend for the HTTPS backstop and the app-directory gate's 404s.
@@ -115,7 +115,7 @@ const routes = app
   .route('/api/provider', providerRoutes)
   .route('/api/setting', settingRoutes)
 
-// `onError` (app/error.ts) renders every thrown error as `{ message }` at the HTTPException's status, but `hc` can't
+// `onError` (core/error.ts) renders every thrown error as `{ message }` at the HTTPException's status, but `hc` can't
 // infer responses from a global error handler -- so `ApplyGlobalResponse` merges the error contract into every route.
 // Statuses: controllers throw 400/401/403/404/409/422; onError adds 502 (ProviderError) and 500 (fallback).
 type ApiErrors = {

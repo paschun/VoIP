@@ -1,5 +1,5 @@
 import { SignJWT } from 'jose'
-import { env } from '../../config/env.ts'
+import { env } from '../core/env.ts'
 
 export const uploadFolderFormat = 'YYYYMMDD'
 

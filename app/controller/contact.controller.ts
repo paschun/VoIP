@@ -2,10 +2,10 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import Contact from '../model/contact.model.ts'
 import { Message } from '../model/message.model.ts'
-import { factory } from '../factory.ts'
-import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../factory.ts'
-import { auth } from '../middleware/auth.hono.ts'
-import { jsonBody, pathParams, queryParams } from '../validate.ts'
+import { factory } from '../core/factory.ts'
+import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../core/factory.ts'
+import { auth } from '../middleware/auth.ts'
+import { jsonBody, pathParams, queryParams } from '../middleware/validate.ts'
 import { normalizeNumber } from '../helper/common.helper.ts'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
@@ -14,7 +14,7 @@ import {
   contactLookupQuery, type ContactLookupQuery,
   contactIdParam, type ContactIdParam,
 } from '../../shared/contracts/contact.ts'
-import { ack, created } from '../util/respond.hono.ts'
+import { ack, created } from '../helper/respond.helper.ts'
 
 const MAX_CONTACTS = 500
 

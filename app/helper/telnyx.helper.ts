@@ -3,8 +3,8 @@ import moment from 'moment'
 import crypto from 'crypto'
 import { combineURLs } from './common.helper.ts'
 import { WEBHOOKS } from './webhook-paths.ts'
-import { env } from '../../config/env.ts'
-import { ProviderError } from '../provider-error.ts'
+import { env } from '../core/env.ts'
+import { ProviderError } from '../core/error.ts'
 
 /**
  * Telnyx provisioning/teardown helpers. Error policy is split by intent, and the functions below are grouped into the
