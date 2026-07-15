@@ -42,7 +42,7 @@ export const contactSchema = new mongoose.Schema(
     // https://github.com/Automattic/mongoose/blob/master/lib/cast/date.js
     created_at: { type: Date, default: Date.now },
   },
-  { strict: 'throw', strictQuery: 'throw' },
+  { strict: 'throw', strictQuery: 'throw', id: false },
 )
 
 export type ContactDoc = WireDoc<typeof contactSchema>

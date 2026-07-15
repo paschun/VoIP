@@ -11,7 +11,7 @@ const userSchema = new Schema(
       default: null,
     },
   },
-  { strict: 'throw', strictQuery: 'throw' },
+  { strict: 'throw', strictQuery: 'throw', id: false },
 )
 const User = model('User', userSchema)
 

@@ -13,7 +13,7 @@ export const mediaSchema = new Schema(
     media: { type: String, required: true },
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
-  { strict: 'throw', strictQuery: 'throw' },
+  { strict: 'throw', strictQuery: 'throw', id: false },
 )
 
 /** Full JSON shape of a Media document as the frontend receives it */

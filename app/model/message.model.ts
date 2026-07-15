@@ -44,6 +44,7 @@ export const messageSchema = new Schema(
     discriminatorKey: 'datatype',
     strict: 'throw',
     strictQuery: 'throw',
+    id: false,
   },
 )
 

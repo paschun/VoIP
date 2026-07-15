@@ -22,7 +22,7 @@ export const emailSchema = new Schema(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     created_at: { type: Date, default: Date.now },
   },
-  { strict: 'throw', strictQuery: 'throw' },
+  { strict: 'throw', strictQuery: 'throw', id: false },
 )
 
 /** Full JSON shape of an Email document as the frontend receives it (ObjectId/Date already stringified, `__v` present). */

@@ -43,13 +43,13 @@ import User from '../model/user.model.ts'
 const saltRounds = 10
 const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_page=1'
 
-/** The user fields echoed to the client (also persisted in the `userdata` cookie). */
-const userDataResponseGen = (u: {
-  _id: { toString(): string }
-  name?: string | null
-  totpSecret?: string | null
-}): UserData => ({ _id: u._id.toString(), name: u.name ?? '', totp: (u.totpSecret ?? null) !== null })
-// todo: this is used in 3 routes. do they all need this info?
+/** Project a user doc onto the client-facing {@link UserData}: strips secrets; `totp` = secret present.
+ * 
+ * authenticate (login) -- needs all three
+ * changeUsername -- needs all three
+ * readUser (/me) -- Mfa.vue reads only .totp
+ */
+const toUserData = (u: InstanceType<typeof User>): UserData => ({ _id: u._id.toString(), name: u.name, totp: Boolean(u.totpSecret) })
 
 /** Running build id: the short git commit, falling back to `package.json`'s version. */
 const currentVersion = (() => {
@@ -74,12 +74,12 @@ async function authenticate(c: JsonCtx<LoginRequest>) {
 
   // Auth is stateless (the middleware verifies the header JWT token), so the minted token isn't persisted -- it's
   // returned once here for the client to hold.
-  const token = await signToken(user.id, user.name)
+  const token = await signToken(user._id.toString(), user.name)
 
   // Report the available second factors; the client picks which to use (TOTP availability is `user.totp`).
   const keys = await HardwareKey.find({ user: user._id, registrationComplete: true })
   const hardwareKeys = keys.map((k) => ({ _id: k._id.toString(), title: k.title ?? null }))
-  const data = { user: userDataResponseGen(user), token, hardwareKeys }
+  const data = { user: toUserData(user), token, hardwareKeys }
   return c.json({ data } satisfies Ok, 200)
 }
 
@@ -149,7 +149,7 @@ async function changeUsername(c: JsonCtx<UpdateUsernameRequest>) {
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
   user.name = name
   await user.save()
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
+  return c.json({ data: toUserData(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Change the caller's password after checking the old one. */
@@ -192,7 +192,7 @@ async function readUser(c: Context<Env>) {
   const user = await User.findOne({ _id: { $eq: c.get('user').id } })
   if (!user) throw new HTTPException(404, { message: 'User not found!' })
   // only `totp` field is used by caller in Mfa.vue
-  return c.json({ data: userDataResponseGen(user) } satisfies Ok<UserData>, 200)
+  return c.json({ data: toUserData(user) } satisfies Ok<UserData>, 200)
 }
 
 /** Mint a fresh TOTP secret + QR for enrollment. NOT persisted -- the client passes it back to {@link enableTotp} to confirm. */
