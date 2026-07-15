@@ -40,18 +40,6 @@ export const combineURLs = (...urls: string[]): string => {
 }
 
 /**
- * Normalize a dialed/stored phone number to E.164-ish form: strip a leading '+', then re-add the country code. A
- * 10-digit number is assumed US (+1); anything longer is assumed already international and just gets a '+'.
- * TODO: could normalizeNumber be in zod?
- */
-export const normalizeNumber = (raw: string): string => {
-  const digits = raw.trim().replace('+', '')
-  if (digits.length > 10) return `+${digits}`
-  if (digits.length === 10) return `+1${digits}`
-  return digits
-}
-
-/**
  * Ensure today's `uploads/<date>/` dir exists and reserve a unique target for a file with `ext` (leading dot). Returns
  * the on-disk path (`./uploads/...`, what we store) and its public URL. Shared by the raw upload and the MMS download.
  */

@@ -15,7 +15,7 @@ export type DisplayableMediaContentType = z.infer<typeof displayableMediaContent
  * inbound webhook may carry.
  */
 export const TWILIO_INBOUND_CONTENT_TYPES: readonly string[] = [
-  'image/jpeg', 'image/jpg', 'image/gif', 'image/png', 'image/heic', 'image/heif', 'image/tiff', 'image/bmp',
+  'image/jpeg', 'image/gif', 'image/png', 'image/heic', 'image/heif', 'image/tiff', 'image/bmp',
   'video/mpeg4', 'video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/3gpp', 'video/3gpp2',
   'video/3gpp-tt', 'video/H261', 'video/H263', 'video/H263-1998', 'video/H263-2000', 'video/H264', 'video/H265',
   'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/mp3', 'audio/3gpp', 'audio/3gpp2', 'audio/basic', 'audio/L24',

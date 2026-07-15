@@ -131,7 +131,7 @@
             <div class="dialer-container single_header" v-if="!connection">
               <ul class="dialer-pad">
                 <center class="mt-4">
-                  <button type="button" v-b-tooltip.hover title="Call" class="btn btn-success m-1 px-5" @click="toggleCall()">
+                  <button type="button" v-b-tooltip.hover title="Call" class="btn btn-success m-1 px-5" @click="dial(phoneNumber)">
                     <i-bi-telephone-outbound aria-hidden="true" />
                   </button>
                   <button type="button" v-b-tooltip.hover title="Delete" class="btn btn-danger m-1 px-5" @click="removeNumber()">
@@ -179,8 +179,10 @@ import { Device as TwilioDevice, type Call as TwilioCall } from '@twilio/voice-s
 import type { BModal } from 'bootstrap-vue-next'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
+import { e164Phone } from '@shared/contracts/phone.ts'
 import { client, request } from '@/core/rpc.client.ts'
 import { contactsToOptions } from '@/helper.ts'
+import { notifyError } from '@/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
@@ -310,7 +312,16 @@ export default defineComponent({
     },
     async makeCall(phoneNumber: string) {
       this.phoneNumber = phoneNumber
-      const n = phoneNumber.replace(/\D/g, '')
+      if (await this.dial(phoneNumber)) this.callModal?.show()
+    },
+    /** Canonicalize to E.164 and place the call via the active provider SDK; false (with a toast) when invalid. */
+    async dial(raw: string) {
+      const parsed = e164Phone.safeParse(raw)
+      if (!parsed.success) {
+        void notifyError('Please enter a valid phone number')
+        return false
+      }
+      const n = parsed.data
       const callerNumber = this.profileStore.activeProfile?.number ?? ''
       if (this.callType === 'twilio') {
         const call = await this.twilioDevice?.connect({
@@ -326,7 +337,7 @@ export default defineComponent({
           callerNumber,
         })
       }
-      this.callModal?.show()
+      return true
     },
     bindCallEvents(call: TwilioCall) {
       call.on('accept', () => {
@@ -364,24 +375,6 @@ export default defineComponent({
       }
       this.connection = null
       this.incoming = false
-    },
-    async toggleCall() {
-      const n = this.phoneNumber.replace(/\D/g, '')
-      const callerNumber = this.profileStore.activeProfile?.number ?? ''
-      if (this.callType === 'twilio') {
-        const call = await this.twilioDevice?.connect({
-          params: { number: n, twilio_number: callerNumber },
-        })
-        if (call) {
-          this.connection = call
-          this.bindCallEvents(call)
-        }
-      } else if (this.telnyxRtcClient) {
-        this.telnyxRtcClient.newCall({
-          destinationNumber: n,
-          callerNumber,
-        })
-      }
     },
     startTimer() {
       let value = 0
@@ -421,7 +414,7 @@ export default defineComponent({
       if (this.phoneNumber) this.phoneNumber = this.phoneNumber.slice(0, -1)
     },
     contactChangeEvent(option: SelectOptionData<string>) {
-      this.phoneNumber = option.value.replace('+', '')
+      this.phoneNumber = option.value
       this.selectedContact = ''
     },
     destroyTwilioDevice() {

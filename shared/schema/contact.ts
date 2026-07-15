@@ -29,7 +29,7 @@ declare module 'mongoose' {
 // Register custom type with Mongoose
 mongoose.Schema.Types.EmptyString = EmptyString
 
-// A user's address-book entry. `number` is stored canonicalized (see the controller's normalizeNumber).
+// A user's address-book entry. `number` is stored canonical E.164 (the request contracts coerce via e164Phone).
 export const contactSchema = new mongoose.Schema(
   {
     first_name: { type: EmptyString, required: true },

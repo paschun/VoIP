@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Ok } from '../api-contracts.ts'
 import { OUTBOUND_MMS_MAX_ATTACHMENTS, TWILIO_INBOUND_CONTENT_TYPES } from './media.ts'
+import { e164Phone } from './phone.ts'
 import { profileIdParam, type ProfileIdParam } from './profile.ts'
 
 // --- requests ---
@@ -93,7 +94,7 @@ export type ProviderNumbers =
 export type GetNumberResponse = Ok<ProviderNumbers>
 
 export const sendSmsBody = z.object({
-  numbers: z.array(z.string()).min(1),
+  numbers: z.array(e164Phone).min(1),
   profile: z.object({ _id: z.string() }),
   message: z.string().optional().default(''),
   media: z.array(z.string()).max(OUTBOUND_MMS_MAX_ATTACHMENTS).optional().default([]),

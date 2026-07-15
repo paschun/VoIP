@@ -13,7 +13,6 @@ import {
 } from '../../shared/contracts/contact.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx, PathParamCtx, QueryCtx, PathParamJsonCtx } from '../core/factory.ts'
-import { normalizeNumber } from '../helper/common.helper.ts'
 import { ack, created } from '../helper/respond.helper.ts'
 import { auth } from '../middleware/auth.ts'
 import { jsonBody, pathParams, queryParams } from '../middleware/validate.ts'
@@ -34,7 +33,7 @@ async function getContacts(c: Context<Env>) {
 }
 
 async function lookupContact(c: QueryCtx<ContactLookupQuery>) {
-  const number = normalizeNumber(c.req.valid('query').number)
+  const { number } = c.req.valid('query')
   const contact = await Contact.findOne({ user: { $eq: c.get('user').id }, number: { $eq: number } })
   // note: only first_name and last_name are used by client
   const data = contact ? contact.toObject({ flattenObjectIds: true }) : null
@@ -44,7 +43,7 @@ async function lookupContact(c: QueryCtx<ContactLookupQuery>) {
 async function createContact(c: JsonCtx<ContactRequest>) {
   const body = c.req.valid('json')
   const user = c.get('user').id
-  const number = normalizeNumber(body.number)
+  const { number } = body
   const exists = await Contact.findOne({ user: { $eq: user }, number: { $eq: number } })
   if (exists) throw new HTTPException(409, { message: 'Number already exists!' })
   if ((await Contact.countDocuments({ user: { $eq: user } })) >= MAX_CONTACTS) {
@@ -67,7 +66,7 @@ async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
   let count = await Contact.countDocuments({ user: { $eq: user } })
   for (const item of c.req.valid('json').contacts) {
     if (count >= MAX_CONTACTS) break
-    const number = normalizeNumber(item.number)
+    const { number } = item
     const exists = await Contact.findOne({ user: { $eq: user }, number: { $eq: number } })
     if (exists) continue
     await Contact.create({
@@ -90,7 +89,7 @@ async function updateContact(c: PathParamJsonCtx<ContactIdParam, ContactRequest>
   if (!contact) throw new HTTPException(404, { message: 'Contact not found!' })
   contact.first_name = body.first_name
   contact.last_name = body.last_name ?? ''
-  contact.number = normalizeNumber(body.number)
+  contact.number = body.number
   contact.note = body.note ?? ''
   await contact.save()
   return ack(c)

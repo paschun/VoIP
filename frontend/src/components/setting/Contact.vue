@@ -125,11 +125,12 @@
 <script lang="ts">
 import { defineComponent, ref, useTemplateRef } from 'vue'
 import { useRegle } from '@regle/core'
-import { required, regex, withMessage } from '@regle/rules'
+import { required, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import Papa from 'papaparse'
+import { e164Phone } from '@shared/contracts/phone.ts'
 import { client } from '@/core/rpc.client.ts'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
@@ -139,7 +140,7 @@ type ContactRecord = InferResponseType<typeof client.api.contact.$get, SuccessSt
 /** The editable, server-agnostic subset (CSV columns + the create/update form), derived from {@link ContactRecord}. */
 type ContactDraft = Pick<ContactRecord, 'first_name' | 'last_name' | 'number' | 'note'>
 
-const phonenumber = regex(/^\+?[-0-9() ]{5,17}$/)
+const phonenumber = (value: unknown) => e164Phone.safeParse(value).success
 
 function convertToCsv(rows: ContactDraft[], headerList: (keyof ContactDraft)[]): string {
   const header = headerList.join(',')
@@ -223,11 +224,15 @@ export default defineComponent({
         return []
       }
 
-      // Skip the header row; keep rows with a non-empty first name.
-      return csvdata
+      // Skip the header row; keep rows with a non-empty first name and a valid phone number (stored canonical E.164).
+      const parsed = csvdata
         .slice(1)
         .filter((row) => typeof row[0] === 'string' && row[0] !== '')
-        .map((row) => ({ first_name: row[0], last_name: row[1], number: row[2], note: row[3] }))
+        .map((row) => ({ first_name: row[0], last_name: row[1], number: e164Phone.safeParse(row[2]), note: row[3] }))
+      const rows = parsed.flatMap(({ number, ...rest }) => (number.success ? [{ ...rest, number: number.data }] : []))
+      const dropped = parsed.length - rows.length
+      if (dropped) void notifyError(`${dropped} row(s) skipped: invalid phone number`)
+      return rows
     },
     downloadSampleCSV() {
       downloadFile(sampleContacts, 'sample_file')

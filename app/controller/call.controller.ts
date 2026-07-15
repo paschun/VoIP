@@ -18,7 +18,6 @@ import {
 import { factory } from '../core/factory.ts'
 import type { Env, FormCtx, JsonCtx } from '../core/factory.ts'
 import { getIO } from '../core/socket.ts'
-import { normalizeNumber } from '../helper/common.helper.ts'
 import { ack, emptyTwimlReply, ok, xmlResponse } from '../helper/respond.helper.ts'
 import { parseTelnyxCallEvent, type TelnyxCallEvent } from '../helper/telnyx-events.helper.ts'
 import { parseTexmlStatusCallback, type TexmlStatusEvent } from '../helper/texml-events.helper.ts'
@@ -148,14 +147,13 @@ async function dialOutbound(c: FormCtx<TwilioVoiceWebhook>) {
   try {
     const setting = await Setting.findOne({ number: { $eq: body.twilio_number } })
     if (setting) {
-      const phoneNumber = normalizeNumber(body.number)
-      response.dial({ callerId: body.twilio_number }).number(phoneNumber)
+      response.dial({ callerId: body.twilio_number }).number(body.number)
       await recordCall({
         sid: body.CallSid,
         user: setting.user,
         setting: setting._id,
         direction: 'send',
-        number: phoneNumber,
+        number: body.number,
         providerNumber: body.twilio_number,
       })
     }

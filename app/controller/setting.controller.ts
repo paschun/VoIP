@@ -134,18 +134,10 @@ async function listProviderNumbers(c: JsonCtx<GetNumberRequest>) {
   return c.json({ data: { type: 'twilio', numbers } } satisfies GetNumberResponse, 200)
 }
 
-/** Normalize a dialed number: strip formatting, then prefix +1 for a bare 10-digit US number. */
-function normalizeSmsNumber(raw: string): string {
-  const digits = raw.replace(/\s/g, '').replace(/-/g, '').replace(/\)/g, '').replace(/\(/g, '')
-  return digits.length === 10 ? `+1${digits}` : digits
-}
-
-/** Resolve the contact owning `number` for `userId`, trying the full number then its last 10 digits. */
+/** Resolve the contact owning `number` (canonical E.164) for `userId`. */
 async function findContactId(userId: string, number: string) {
-  const exact = await Contact.findOne({ user: { $eq: userId }, number: { $eq: number } })
-  if (exact) return exact._id
-  const short = await Contact.findOne({ user: { $eq: userId }, number: { $eq: number.slice(-10) } })
-  return short?._id
+  const contact = await Contact.findOne({ user: { $eq: userId }, number: { $eq: number } })
+  return contact?._id
 }
 
 /** Send an SMS/MMS to one or more numbers via the profile's provider and persist each as a `send` message. */
@@ -178,8 +170,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
   }
 
   const messageRecords: OutgoingText[] = []
-  for (const raw of numbers) {
-    const toNumber = normalizeSmsNumber(raw)
+  for (const toNumber of numbers) {
     let sid: string | undefined
     if (twilioClient) {
       try {

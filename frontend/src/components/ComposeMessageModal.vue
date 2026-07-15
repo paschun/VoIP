@@ -57,7 +57,9 @@ import { defineComponent, useTemplateRef } from 'vue'
 import { Select, type SelectOptionData } from 'vue3-select-component'
 import VueTagsInput from '@sipec/vue3-tags-input'
 import type { BModal } from 'bootstrap-vue-next'
+import { e164Phone } from '@shared/contracts/phone.ts'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import { notifyError } from '@/notify.ts'
 import { uploadMedia } from '@/core/services/media.ts'
 import { contactsToOptions } from '@/helper.ts'
 import { useContactStore } from '@/stores/contact.ts'
@@ -119,13 +121,16 @@ export default defineComponent({
     },
     onTagsChanged(newTags: Tag[]) {
       this.touched.recipients = true
-      // TODO: normalize each number to E.164 (and reject invalid ones), then dedupe on the canonical form
-      // so the same number typed two ways isn't sent twice. Backend must enforce the same.
-      this.recipients = newTags.map((t) => t.text)
+      // Canonicalize to E.164, drop invalid entries, dedupe -- so the same number typed two ways isn't sent twice.
+      const parsed = newTags.map(({ text }) => e164Phone.safeParse(text))
+      if (parsed.some((p) => !p.success)) void notifyError('Invalid phone number removed')
+      this.recipients = [...new Set(parsed.filter((p) => p.success).map((p) => p.data))]
     },
     contactChangeEvent(option: SelectOptionData<string>) {
       this.touched.recipients = true
-      this.recipients.push(option.value)
+      const parsed = e164Phone.safeParse(option.value)
+      if (!parsed.success) void notifyError('Contact has an invalid phone number')
+      else if (!this.recipients.includes(parsed.data)) this.recipients.push(parsed.data)
       this.selectedContact = ''
     },
     async onFilesPick(e: Event) {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { e164Phone } from './phone.ts'
 
 // `/token` issues a provider access token for the caller's chosen profile (setting). The 200 body (a Twilio JWT, or the
 // Telnyx Setting carrying SIP creds) is RPC-inferred at the call site, not hand-typed here.
@@ -22,7 +23,7 @@ const numericString = z.string().regex(/^\d+$/).optional().catch(undefined)
 export const twilioVoiceWebhook = z.object({
   CallSid: z.string().min(1),
   twilio_number: z.string().min(1), // our number
-  number: z.string().min(1), // the number being dialed
+  number: e164Phone, // the number being dialed
 })
 export type TwilioVoiceWebhook = z.infer<typeof twilioVoiceWebhook>
 
