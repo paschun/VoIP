@@ -1,17 +1,18 @@
-import crypto from 'node:crypto'
 import fs from 'node:fs'
-import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import mongoose from 'mongoose'
-import { format } from 'date-fns'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
 import { createMessage, encrypt, readKey } from 'openpgp'
 import Telnyx from 'telnyx'
 import twilio from 'twilio'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
-  smsTypeParam,
-  type SmsTypeParam,
+  displayableMediaContentType,
+  type DisplayableMediaContentType,
+  OUTBOUND_MMS_TOTAL_BYTES,
+  CONTENT_TYPE_TO_EXT,
+} from '../../shared/contracts/media.ts'
+import {
   getNumberBody,
   type GetNumberRequest,
   type GetNumberResponse,
@@ -27,34 +28,47 @@ import {
   type NotificationRequest,
   profileIdParam,
   type ProfileIdParam,
+  twilioInboundSms,
+  type TwilioInboundSms,
+  twilioSmsStatus,
+  type TwilioSmsStatus,
 } from '../../shared/contracts/setting.ts'
+import type { EmailDoc } from '../../shared/schema/email.ts'
 import { env } from '../core/env.ts'
 import { ProviderError } from '../core/error.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, ParamCtx, ParamJsonCtx, QueryCtx } from '../core/factory.ts'
+import type { FormCtx, JsonCtx, PathParamCtx, PathParamJsonCtx, QueryCtx } from '../core/factory.ts'
 import { getIO } from '../core/socket.ts'
-import { combineURLs, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
-import { ack } from '../helper/respond.helper.ts'
+import { combineURLs, prepareUploadTarget } from '../helper/common.helper.ts'
+import { ack, emptyTwimlReply, ok } from '../helper/respond.helper.ts'
+import { parseTelnyxInboundMessage, parseTelnyxMessageStatus } from '../helper/telnyx-events.helper.ts'
 import { WEBHOOKS } from '../helper/webhook-paths.ts'
 import { auth } from '../middleware/auth.ts'
-import { jsonBody, pathParams, pathParams404, queryParams } from '../middleware/validate.ts'
+import { jsonBody, pathParams, queryParams, webhookForm, webhookJsonParse } from '../middleware/validate.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
-import { Message, TextMessage, type MessageDoc, type CommonFields } from '../model/message.model.ts'
+import Media from '../model/media.model.ts'
+import { Message, TextMessage, type MessageDoc, type TextMessageDoc, type CommonFields } from '../model/message.model.ts'
 import Setting from '../model/setting.model.ts'
 
-// todo: check this against email model
-interface SendEmailSetting {
-  host: string
-  port: number | string
-  secure: boolean
-  email: string
-  password: string
-  sender_email: string
-  to_email: string
-  pgpEncryptEnabled?: boolean
-  pgpPublicKey?: string | null
-}
+/**
+ * A persisted outbound text row (`datatype: 'message'`, `type: 'send'`) built per recipient in `handleSendSms`.
+ * Field types come from the schema-inferred {@link TextMessageDoc}; the literals are the values this path stamps.
+ * `user` stays a string (the JWT id) for mongoose to cast.
+ */
+type OutgoingText = Pick<TextMessageDoc, 'sid' | 'number' | 'telnyx_number' | 'message' | 'setting' | 'contact'> &
+  Partial<Pick<TextMessageDoc, 'media'>> & {
+    user: string
+    type: 'send'
+    status: 'sent'
+    isview: true
+  }
+
+/** The SMTP + PGP fields `sendEmail` needs, sourced from the Email model so they can't drift from the schema. */
+type EmailSettings = Pick<
+  EmailDoc,
+  'host' | 'port' | 'secure' | 'email' | 'password' | 'sender_email' | 'to_email' | 'pgpEncryptEnabled' | 'pgpPublicKey'
+>
 
 /** PGP-encrypt a UTF-8 string against an armored public key, returning ASCII-armored ciphertext. */
 async function pgpEncrypt(text: string, armoredKey: string): Promise<string> {
@@ -63,10 +77,7 @@ async function pgpEncrypt(text: string, armoredKey: string): Promise<string> {
 }
 
 /** Send an SMTP (optionally PGP-encrypted) email notification. Best-effort: resolves false instead of rejecting. */
-async function sendEmail(
-  setting: SendEmailSetting,
-  email: { subject: string; text: string; html: string },
-): Promise<boolean> {
+async function sendEmail(setting: EmailSettings, email: { subject: string; text: string; html: string }): Promise<boolean> {
   try {
     // todo: dont cast to number, ideally handled in validation
     const transporter = nodemailer.createTransport({
@@ -115,11 +126,11 @@ async function listProviderNumbers(c: JsonCtx<GetNumberRequest>) {
   const body = c.req.valid('json')
   if (body.type === 'telnyx') {
     const phoneNumber = await new Telnyx({ apiKey: body.api_key }).phoneNumbers.list()
-    const numbers = (phoneNumber.data ?? []).map((n) => ({ id: n.id, phone_number: n.phone_number }))
+    const numbers = (phoneNumber.data ?? []).map(({ id, phone_number }) => ({ id, phone_number }))
     return c.json({ data: { type: 'telnyx', numbers } } satisfies GetNumberResponse, 200)
   }
   const list = await twilio(body.twilio_sid, body.twilio_token).incomingPhoneNumbers.list()
-  const numbers = list.map((n) => ({ sid: n.sid, phoneNumber: n.phoneNumber }))
+  const numbers = list.map(({ sid, phoneNumber }) => ({ sid, phoneNumber }))
   return c.json({ data: { type: 'twilio', numbers } } satisfies GetNumberResponse, 200)
 }
 
@@ -142,12 +153,31 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
   const userId = c.get('user').id
   const { numbers, profile, message, media } = c.req.valid('json')
   const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: profile._id } })
-  if (!setting) throw new HTTPException(404, { message: 'Message not sent!' })
+  if (!setting) throw new HTTPException(404, { message: 'Profile not found' })
 
-  const messageRecords: Record<string, unknown>[] = []
-  const twilioClient = setting.type === 'twilio' ? twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '') : null
-  const telnyxClient = setting.type === 'telnyx' ? new Telnyx({ apiKey: setting.api_key ?? '' }) : null
+  // A profile without its sender number/credentials can't send -- surface that as 422 rather than passing '' into the
+  // provider client and getting back an opaque 502.
+  const from = setting.number
+  if (!from) throw new HTTPException(422, { message: 'Profile has no sender number' })
 
+  let twilioClient: ReturnType<typeof twilio> | null = null
+  let telnyxClient: Telnyx | null = null
+  if (setting.type === 'twilio') {
+    if (!setting.twilio_sid || !setting.twilio_token) throw new HTTPException(422, { message: 'Twilio profile is missing credentials' })
+    twilioClient = twilio(setting.twilio_sid, setting.twilio_token)
+  } else {
+    if (!setting.api_key) throw new HTTPException(422, { message: 'Telnyx profile is missing an API key' })
+    telnyxClient = new Telnyx({ apiKey: setting.api_key })
+  }
+
+  if (media.length) {
+    const paths = await ownedUploadPaths(userId, media)
+    const maxBytes = twilioClient ? OUTBOUND_MMS_TOTAL_BYTES.twilio : OUTBOUND_MMS_TOTAL_BYTES.telnyx
+    if ((await totalMediaBytes(paths)) > maxBytes)
+      throw new HTTPException(422, { message: `Attached media exceeds the ${maxBytes / 1_000_000} MB MMS limit` })
+  }
+
+  const messageRecords: OutgoingText[] = []
   for (const raw of numbers) {
     const toNumber = normalizeSmsNumber(raw)
     let sid: string | undefined
@@ -155,7 +185,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
       try {
         const sent = await twilioClient.messages.create({
           body: message,
-          from: setting.number ?? '',
+          from,
           to: toNumber,
           statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.sms.smsStatus.full.twilio),
           ...(media.length ? { mediaUrl: media } : {}),
@@ -167,7 +197,7 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
     } else if (telnyxClient) {
       try {
         const sent = await telnyxClient.messages.send({
-          from: setting.number ?? '',
+          from,
           to: toNumber,
           text: message,
           webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.smsStatus.full.telnyx),
@@ -180,205 +210,241 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
     }
     if (!sid) continue
 
-    const record: Record<string, unknown> = {
+    const contactId = await findContactId(userId, toNumber)
+    messageRecords.push({
       sid,
       user: userId,
       number: toNumber,
-      telnyx_number: setting.number,
+      telnyx_number: from,
       type: 'send',
       status: 'sent',
       isview: true,
       message,
       setting: setting._id,
-    }
-    const contactId = await findContactId(userId, toNumber)
-    if (contactId) record.contact = contactId
-    if (media.length) record.media = media
-    messageRecords.push(record)
+      ...(contactId ? { contact: contactId } : {}),
+      ...(media.length ? { media } : {}),
+    })
   }
 
   const messages = await TextMessage.create(messageRecords)
   return c.json({ data: messages } satisfies Ok<unknown[]>, 200)
 }
 
-/** Inbound SMS/MMS webhook (Twilio form or Telnyx JSON). Persists the message, notifies the user, replies empty TwiML. */
-async function handleReceiveSms(c: ParamCtx<SmsTypeParam>) {
-  const { type } = c.req.valid('param')
+/**
+ * Resolve outgoing attachment URLs to the caller's own uploads, returning their relative file paths. 422 when any
+ * entry isn't an upload owned by the user (the UI only ever attaches its own upload URLs), which also blocks sending
+ * other users' uploads or arbitrary URLs from a hand-crafted request.
+ */
+async function ownedUploadPaths(userId: string, urls: string[]): Promise<string[]> {
+  const paths = urls.map(uploadRelPath)
+  const docs = await Media.find({ media: { $in: paths }, user: { $eq: userId } })
+  const owned = new Set(docs.map(({ media }) => media))
+  if (!paths.every((p) => owned.has(p))) throw new HTTPException(422, { message: 'Attached media must be your own uploads' })
+  return paths
+}
+
+/** URL -> the relative path Media docs store (`uploads/...`); non-URLs pass through and simply match no upload. */
+function uploadRelPath(url: string): string {
   try {
-    let media: string[] = []
-    let toNumber: string
-    let fromNumber: string
-    let sid: string
-    let messageText: string
+    // strip all leading slashes: a pathname always starts with '/' (and can start with several, e.g. 'http://x////y'),
+    // while Media docs store the path relative ('uploads/...')
+    return new URL(url).pathname.replace(/^\/+/, '')
+  } catch {
+    return url
+  }
+}
 
-    if (type === 'twilio') {
-      // todo: parse with zod
-      const form = (await c.req.parseBody()) as Record<string, string>
-      messageText = form.Body ?? ''
-      toNumber = form.To ?? ''
-      fromNumber = form.From ?? ''
-      sid = form.SmsSid ?? ''
-      const numMedia = Number(form.NumMedia ?? 0)
-      media = await saveMedia(
-        Array.from({ length: numMedia }, (_, i) => ({
-          url: form[`MediaUrl${i}`] ?? '',
-          contentType: form[`MediaContentType${i}`] ?? '',
-        })),
-      )
-    } else {
-      // telnyx branch
-      // todo: parse with zod
-      const payload = ((await c.req.json()) as any).data.payload
-      toNumber = payload.to[0].phone_number
-      fromNumber = payload.from.phone_number
-      sid = payload.id
-      messageText = payload.text
-      media = await saveMedia((payload.media ?? []).map((m: any) => ({ url: m.url, contentType: m.content_type })))
-    }
+/** Total on-disk size of the attachments. The per-provider caps are in {@link OUTBOUND_MMS_TOTAL_BYTES}. */
+async function totalMediaBytes(paths: string[]): Promise<number> {
+  let total = 0
+  for (const p of paths) {
+    try {
+      total += (await fs.promises.stat(p)).size
+    } catch {} // upload since removed from disk: nothing to measure
+  }
+  return total
+}
 
-    const setting = await Setting.findOne({ number: { $eq: toNumber } })
-    if (setting) {
-      // todo: use better types
-      const record: Record<string, unknown> = {
-        sid,
-        user: setting.user,
-        number: fromNumber,
-        telnyx_number: toNumber,
-        type: 'receive',
-        status: 'received',
-        isview: false,
-        message: messageText,
-        setting: setting._id,
-        media,
-      }
-      const contact = await Contact.findOne({
-        user: { $eq: setting.user?.toString() ?? '' },
-        number: { $eq: fromNumber },
+/** Typed output of the Telnyx inbound/status AJV parsers (their non-null return), for the JSON webhook handlers. */
+type TelnyxInboundData = NonNullable<ReturnType<typeof parseTelnyxInboundMessage>>
+type TelnyxStatusData = NonNullable<ReturnType<typeof parseTelnyxMessageStatus>>
+
+// Two provider-specific payloads with completely different field names get normalized into one provider-agnostic shape
+type InboundSms = {
+  toNumber: string
+  fromNumber: string
+  sid: string
+  messageText: string
+  media: string[]
+}
+
+/** The provider-agnostic tail of inbound SMS/MMS: notify the owner, optionally email, persist the message row. */
+async function persistInboundSms(input: InboundSms) {
+  const { toNumber, fromNumber, sid, messageText, media } = input
+  const setting = await Setting.findOne({ number: { $eq: toNumber } })
+  if (!setting) return
+  const userId = setting.user.toString()
+  const contact = await Contact.findOne({ user: { $eq: userId }, number: { $eq: fromNumber } })
+
+  // todo: type socketIO messages
+  getIO().to(userId).emit('user_message', {
+    message: messageText,
+    number: fromNumber,
+    telnyx_number: toNumber,
+    toUser: setting.user,
+    contact,
+    type: 'receive',
+    status: 'received',
+    isview: false,
+    settings: setting,
+  })
+
+  if (setting.emailnotification) {
+    const emailSetting = await Email.findOne({ user: { $eq: userId } })
+    if (emailSetting) {
+      void sendEmail(emailSetting, {
+        subject: `Message from ${fromNumber}`,
+        text: 'Message received',
+        html: `Received Message on ${toNumber}:<br><hr><br><p>${messageText}</p><br><hr><br>`,
       })
-      if (contact) record.contact = contact._id
-
-      // todo: type socketIO messages
-      getIO()
-        .to(setting.user?.toString() ?? '')
-        .emit('user_message', {
-          message: messageText,
-          number: fromNumber,
-          telnyx_number: toNumber,
-          toUser: setting.user,
-          contact,
-          type: 'receive',
-          status: 'received',
-          isview: false,
-          settings: setting,
-        })
-
-      if (setting.emailnotification) {
-        const emailSetting = await Email.findOne({ user: { $eq: setting.user?.toString() ?? '' } })
-        if (emailSetting) {
-          // todo: dont cast
-          void sendEmail(emailSetting as unknown as SendEmailSetting, {
-            subject: `Message from ${fromNumber}`,
-            text: 'Message received',
-            html: `Received Message on ${toNumber}:<br><hr><br><p>${messageText}</p><br><hr><br>`,
-          })
-        }
-      }
-      await TextMessage.create(record)
-      if (setting.type === 'twilio') void deleteTwilioMessageLater(setting, sid)
     }
+  }
+  await TextMessage.create({
+    sid,
+    user: setting.user,
+    number: fromNumber,
+    telnyx_number: toNumber,
+    type: 'receive',
+    status: 'received',
+    isview: false,
+    message: messageText,
+    setting: setting._id,
+    media,
+    ...(contact ? { contact: contact._id } : {}),
+  })
+  if (setting.type === 'twilio') void deleteTwilioMessageLater(setting, sid)
+}
+
+/** Twilio inbound SMS/MMS (form). Replies empty TwiML immediately; media download + persistence run afterward. */
+async function receiveTwilioSms(c: FormCtx<TwilioInboundSms>) {
+  const form = c.req.valid('form')
+  const attachments = Array.from({ length: form.NumMedia }, (_, i) => ({
+    url: form[`MediaUrl${i}`] ?? '',
+    content_type: form[`MediaContentType${i}`] ?? '',
+  }))
+  void processInboundSms(attachments, {
+    toNumber: form.To,
+    fromNumber: form.From,
+    sid: form.SmsSid,
+    messageText: form.Body ?? '',
+  })
+  return emptyTwimlReply(c)
+}
+
+/** Telnyx inbound SMS/MMS (JSON). Same as Twilio; the empty-TwiML reply is just a 2xx to Telnyx. */
+async function receiveTelnyxSms(c: JsonCtx<TelnyxInboundData>) {
+  const { payload } = c.req.valid('json')
+  void processInboundSms(payload.media ?? [], {
+    toNumber: payload.to[0].phone_number,
+    fromNumber: payload.from.phone_number,
+    sid: payload.id,
+    messageText: payload.text ?? '',
+  })
+  return emptyTwimlReply(c)
+}
+
+/**
+ * Download the displayable attachments, then persist the inbound message with only the URLs whose download succeeded.
+ * Runs after the webhook reply -- providers need a fast 2xx (~2s Telnyx, 15s Twilio) and downloads are unbounded, so
+ * callers must NOT await this. Never rejects.
+ */
+async function processInboundSms(attachments: { url: string; content_type?: string }[], sms: Omit<InboundSms, 'media'>) {
+  try {
+    const results = await Promise.allSettled(attachments.filter(isSavableMedia).map(saveMedia))
+    results.filter((r) => r.status === 'rejected').forEach(({ reason }) => { console.error('MMS attachment download failed:', reason) })
+    const media = results.filter((r) => r.status === 'fulfilled').map(({ value }) => value)
+    await persistInboundSms({ ...sms, media })
   } catch (error) {
     console.error(error)
   }
-  return emptyTwiml(c)
 }
 
-/** Download each MMS attachment to dated `uploads/` storage and return its public URL. */
-async function saveMedia(items: { url: string; contentType: string }[]): Promise<string[]> {
-  const saved: string[] = []
-  for (const { url, contentType } of items) {
-    if (!url) continue
-    // todo: make content type detection safer, for png especially
-    const ext = contentType === 'image/gif' ? 'gif' : contentType === 'image/jpeg' ? 'jpg' : 'png'
-    const name = `${crypto.randomBytes(24).toString('hex')}.${ext}`
-    const date = format(new Date(), UPLOAD_FOLDER_FORMAT)
+/** An MMS attachment we keep: it has a URL and a content type the chat view can display. */
+type SavableMedia = { url: string; content_type: DisplayableMediaContentType }
+
+/**
+ * Predicate for {@link SavableMedia}; logs the attachments it drops (the message itself still persists). `url` is
+ * already guaranteed by both webhook validators, so only the content type narrows here.
+ */
+function isSavableMedia(item: { url: string; content_type?: string }): item is SavableMedia {
+  const savable = displayableMediaContentType.safeParse(item.content_type).success
+  if (!savable) console.error('Skipping MMS attachment with unsupported content type:', item.content_type)
+  return savable
+}
+
+/** Download a displayable MMS attachment to dated `uploads/` storage and return its public URL. */
+async function saveMedia({ url, content_type }: SavableMedia): Promise<string> {
+  const { mediaPath, fullUrl } = await prepareUploadTarget(CONTENT_TYPE_TO_EXT[content_type])
+  await downloadToFile(url, mediaPath)
+  return fullUrl
+}
+
+/** Delete a sent message from Twilio's servers (best-effort, up to 5 tries). Twilio retains sent messages. */
+async function deleteTwilioMessage(setting: { twilio_sid?: string | null; twilio_token?: string | null }, sid: string) {
+  if (!setting.twilio_sid || !setting.twilio_token) return false
+  const client = twilio(setting.twilio_sid, setting.twilio_token)
+  for (let i = 0; i < 5; i++) {
     try {
-      await fs.promises.access(`./uploads/${date}`)
+      if (await client.messages(sid).remove()) return true
     } catch {
-      await fs.promises.mkdir(`./uploads/${date}`)
+      /* retry */
     }
-    // todo: is this a race condition? does this need to be awaited?
-    downloadToFile(url, `./uploads/${date}/${name}`)
-      .then(() => console.log('Image downloaded.'))
-      .catch((err) => console.error('Image download failed:', err))
-    saved.push(combineURLs(env.BASE_URL, 'uploads', date, name))
   }
-  return saved
+  return false
 }
 
-/** Twilio keeps sent messages on its servers; delete this one shortly after delivery (best-effort, up to 5 tries). */
+/** Same delete, deferred ~5s -- the inbound path removes the auto-reply copy shortly after it's sent. */
 function deleteTwilioMessageLater(setting: { twilio_sid?: string | null; twilio_token?: string | null }, sid: string) {
   return new Promise<boolean>((resolve) => {
-    setTimeout(async () => {
-      const client = twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '')
-      for (let i = 0; i < 5; i++) {
-        try {
-          if (await client.messages(sid).remove()) return resolve(true)
-        } catch {
-          /* retry */
-        }
-      }
-      resolve(false)
-    }, 5000)
+    setTimeout(() => resolve(deleteTwilioMessage(setting, sid)), 5000)
   })
 }
 
-/** SMS status webhook (Twilio form or Telnyx JSON). Updates the stored message status, then acknowledges with a 2xx. */
-async function handleSmsStatus(c: ParamCtx<SmsTypeParam>) {
-  const { type } = c.req.valid('param')
+/** Apply a delivery-status update to the stored message row (both providers funnel here). */
+async function applyMessageStatus(sid: string, status: string) {
+  const message = await Message.findOne({ sid: { $eq: sid } })
+  if (message) {
+    message.status = status
+    await message.save()
+  }
+}
+
+/** Twilio SMS status callback (form). On a terminal status, detach the Twilio copy-cleanup; Twilio accepts any 2xx. */
+async function updateTwilioSmsStatus(c: FormCtx<TwilioSmsStatus>) {
+  const form = c.req.valid('form')
   try {
-    let status: string
-    let sid: string
-    if (type === 'twilio') {
-      const form = (await c.req.parseBody()) as Record<string, string>
-      status = form.MessageStatus ?? ''
-      sid = form.MessageSid ?? ''
-      if (['delivered', 'undelivered', 'failed'].includes(status)) {
-        // Twilio retains sent messages; remove this one once it reaches a terminal state.
-        const setting = await Setting.findOne({ number: { $eq: form.From ?? '' } })
-        if (setting?.type === 'twilio') {
-          const client = twilio(setting.twilio_sid ?? '', setting.twilio_token ?? '')
-          for (let i = 0; i < 5; i++) {
-            try {
-              if (await client.messages(sid).remove()) break
-            } catch {
-              /* retry */
-            }
-          }
-        }
-      }
-    } else {
-      // todo: dont cast
-      const payload = ((await c.req.json()) as any).data.payload
-      status = payload.to[0].status
-      sid = payload.id
+    const { MessageStatus: status, MessageSid: sid } = form
+    if (['delivered', 'undelivered', 'failed'].includes(status)) {
+      // Twilio retains sent messages; remove this one once it reaches a terminal state (detached -- see the receive path).
+      const setting = await Setting.findOne({ number: { $eq: form.From ?? '' } })
+      if (setting?.type === 'twilio') void deleteTwilioMessage(setting, sid)
     }
-    const message = await Message.findOne({ sid: { $eq: sid } })
-    if (message) {
-      message.status = status
-      await message.save()
-    }
+    await applyMessageStatus(sid, status)
   } catch (error) {
     console.error(error)
   }
-  // Status callbacks (Twilio statusCallback, Telnyx message webhook) don't consume a reply -- just acknowledge 2xx.
   return ack(c)
 }
 
-/** Empty `<Response/>` TwiML -- the inbound-SMS reply (Twilio parses it as "no auto-reply"; Telnyx just sees a 2xx). */
-function emptyTwiml(c: Context<Env>) {
-  const response = new twilio.twiml.VoiceResponse()
-  c.header('Content-Type', 'text/xml')
-  return c.body(response.toString())
+/** Telnyx SMS status webhook (JSON). Must answer exactly 200 (a non-200 2xx is error 75299 and triggers failover). */
+async function updateTelnyxSmsStatus(c: JsonCtx<TelnyxStatusData>) {
+  const { payload } = c.req.valid('json')
+  try {
+    await applyMessageStatus(payload.id, payload.to[0].status)
+  } catch (error) {
+    console.error(error)
+  }
+  return ok(c)
 }
 
 /** A collapsed conversation row: the latest message per other-party number, with that conversation's unread count. */
@@ -433,7 +499,7 @@ async function aggregateConversations(c: QueryCtx<ConversationsQuery>) {
 }
 
 /** Delete a whole conversation (every message to/from the other party's number) for the caller. */
-async function removeConversation(c: ParamCtx<ConversationParam>) {
+async function removeConversation(c: PathParamCtx<ConversationParam>) {
   const messages = await Message.deleteMany({
     user: { $eq: c.get('user').id },
     number: { $eq: c.req.valid('param').number },
@@ -464,7 +530,7 @@ async function listMessages(c: JsonCtx<MessageListRequest>) {
 }
 
 /** Flip one profile's email-notification flag (`:id` = `Setting._id`, `status` = the boolean to store). */
-async function saveEmailNotification(c: ParamJsonCtx<ProfileIdParam, NotificationRequest>) {
+async function saveEmailNotification(c: PathParamJsonCtx<ProfileIdParam, NotificationRequest>) {
   const { id } = c.req.valid('param')
   const { status } = c.req.valid('json')
   // $eq is "NoSQL-injection-hardened", defends against attacker-provided `{ "$gt": "" }`
@@ -482,8 +548,10 @@ export const saveNotification = factory.createHandlers(
   jsonBody(notificationBody),
   saveEmailNotification,
 )
-export const receiveSms = factory.createHandlers(pathParams404(smsTypeParam), handleReceiveSms)
-export const smsStatus = factory.createHandlers(pathParams404(smsTypeParam), handleSmsStatus)
+export const receiveSmsTwilio = factory.createHandlers(webhookForm(twilioInboundSms, emptyTwimlReply), receiveTwilioSms)
+export const receiveSmsTelnyx = factory.createHandlers(webhookJsonParse(parseTelnyxInboundMessage, emptyTwimlReply), receiveTelnyxSms)
+export const smsStatusTwilio = factory.createHandlers(webhookForm(twilioSmsStatus), updateTwilioSmsStatus)
+export const smsStatusTelnyx = factory.createHandlers(webhookJsonParse(parseTelnyxMessageStatus), updateTelnyxSmsStatus)
 export const sendMessage = factory.createHandlers(auth, jsonBody(sendSmsBody), handleSendSms)
 export const listConversations = factory.createHandlers(auth, queryParams(conversationsQuery), aggregateConversations)
 export const getConversationMessages = factory.createHandlers(auth, jsonBody(messageListBody), listMessages)

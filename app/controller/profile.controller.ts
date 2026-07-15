@@ -12,7 +12,7 @@ import {
 import { createSettingBody, type CreateSettingRequest } from '../../shared/contracts/setting.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, ParamCtx } from '../core/factory.ts'
+import type { Env, JsonCtx, PathParamCtx } from '../core/factory.ts'
 import { combineURLs } from '../helper/common.helper.ts'
 import { teardownProvider } from '../helper/teardown.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
@@ -47,7 +47,7 @@ export const profilesWithUnread = (userId: string) =>
     .populate<{ messageCount: number }>({ path: 'messageCount', match: { isview: false } }) // type: PopulateDocumentResult<Document>
     .populate<{ totalCount: number }>({ path: 'totalCount', match: { isview: false } })
 
-async function getProfile(c: ParamCtx<ProfileIdParam>) {
+async function getProfile(c: PathParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
   const profile = await profileWithUnread(
     c.get('user').id,
@@ -64,7 +64,7 @@ async function getProfiles(c: Context<Env>) {
   return c.json({ data } satisfies Ok, 200)
 }
 
-async function removeProfile(c: ParamCtx<ProfileIdParam>) {
+async function removeProfile(c: PathParamCtx<ProfileIdParam>) {
   const { id } = c.req.valid('param')
   // Scope by user so one user can't delete another's profile by guessing its id (IDOR); a non-owned id 404s.
   const setting = await Setting.findOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } }).orFail(
@@ -79,7 +79,7 @@ async function removeProfile(c: ParamCtx<ProfileIdParam>) {
 }
 
 /** Disconnect a profile from its provider (best-effort teardown) and null out its stored credentials. */
-async function resetProviderConfig(c: ParamCtx<ProfileIdParam>) {
+async function resetProviderConfig(c: PathParamCtx<ProfileIdParam>) {
   const userId = c.get('user').id
   const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: c.req.valid('param').id } })
   if (!setting) throw new HTTPException(404, { message: 'Setting not found!' })
@@ -172,12 +172,14 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
       name: 'VoIP sms Web Application',
       enabled: true,
       webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
+      webhook_api_version: '2', // v2 is the default
       whitelisted_destinations: ['*'],
     })
     messagingProfileId = created.data?.id ?? ''
   } else {
     await client.messagingProfiles.update(setting.setting ?? '', {
       webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
+      webhook_api_version: '2',
     })
     messagingProfileId = setting.setting ?? ''
   }

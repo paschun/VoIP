@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { Types } from 'mongoose'
+import type { Types } from 'mongoose'
 import twilio from 'twilio'
 import type { Ok } from '../../shared/api-contracts.ts'
 import {
@@ -12,16 +12,18 @@ import {
   type TwilioStatusWebhook,
   twilioInboundWebhook,
   type TwilioInboundWebhook,
-  telnyxCallEvent,
-  type TelnyxCallEvent,
+  texmlInboundWebhook,
+  type TexmlInboundWebhook,
 } from '../../shared/contracts/call.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, FormCtx } from '../core/factory.ts'
+import type { Env, FormCtx, JsonCtx } from '../core/factory.ts'
 import { getIO } from '../core/socket.ts'
 import { normalizeNumber } from '../helper/common.helper.ts'
-import { ack } from '../helper/respond.helper.ts'
+import { ack, emptyTwimlReply, ok, xmlResponse } from '../helper/respond.helper.ts'
+import { parseTelnyxCallEvent, type TelnyxCallEvent } from '../helper/telnyx-events.helper.ts'
+import { parseTexmlStatusCallback, type TexmlStatusEvent } from '../helper/texml-events.helper.ts'
 import { auth } from '../middleware/auth.ts'
-import { jsonBody, formBody } from '../middleware/validate.ts'
+import { jsonBody, webhookForm } from '../middleware/validate.ts'
 import Contact from '../model/contact.model.ts'
 import { Call } from '../model/message.model.ts'
 import Setting from '../model/setting.model.ts'
@@ -31,10 +33,6 @@ import Setting from '../model/setting.model.ts'
 // TwiML/TeXML dial instructions; the status/event handlers just acknowledge. Each builds its provider-facing reply
 // before the best-effort DB work, so a logging failure can't break the live call.
 
-const xmlResponse = (c: Context<Env>, xml: string) => c.body(xml, 200, { 'Content-Type': 'text/xml' })
-
-const emptyTwiml = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
-
 /**
  * Persist a call-log entry, linking a known contact if one matches the other party. Each caller builds its provider
  * reply *before* invoking this, so if a Mongoose read/write throws (DB blip, validation), the caller's own try/catch
@@ -42,19 +40,17 @@ const emptyTwiml = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
  */
 async function recordCall(opts: {
   sid: string
-  user: Types.ObjectId | null | undefined
+  user: Types.ObjectId
   setting: Types.ObjectId
   direction: 'send' | 'receive'
   number: string // the other party
   providerNumber: string // our provider number
 }) {
-  const user = opts.user
-  if (!user) return
   // findOne/create calls can throw (DB blip, a cast/validation error)
-  const contact = await Contact.findOne({ user: { $eq: user }, number: { $eq: opts.number } })
+  const contact = await Contact.findOne({ user: { $eq: opts.user }, number: { $eq: opts.number } })
   await Call.create({
     sid: opts.sid,
-    user,
+    user: opts.user,
     type: opts.direction,
     number: opts.number,
     telnyx_number: opts.providerNumber,
@@ -74,10 +70,10 @@ async function notifyCallOwner(providerNumber: string | null | undefined, otherN
 }
 
 /** Apply a Twilio-shaped status payload (Twilio status callback + Telnyx TeXML status callback) to the call log. */
-async function applyStatus(body: TwilioStatusWebhook) {
-  const call = await Call.findOne({ sid: { $eq: body.CallSid ?? '' } })
+async function applyStatus(body: TwilioStatusWebhook | TexmlStatusEvent) {
+  const call = await Call.findOne({ sid: { $eq: body.CallSid } })
   if (!call) return
-  if (body.CallDuration) call.duration = Number(body.CallDuration)
+  if ('CallDuration' in body && body.CallDuration) call.duration = Number(body.CallDuration)
   if (body.CallStatus) call.status = body.CallStatus
   await call.save()
   await notifyCallOwner(call.telnyx_number, call.number)
@@ -88,28 +84,29 @@ async function applyStatus(body: TwilioStatusWebhook) {
  * Twilio-style markup): Telnyx POSTs JSON lifecycle events (`call.initiated`, `call.hangup`, ...) and we react -- here,
  * logging an outbound call when it starts and finalizing its duration/status on hangup.
  */
-async function applyTelnyxEvent(event: TelnyxCallEvent['data']) {
-  const { payload } = event
+async function applyTelnyxCallEvent(event: TelnyxCallEvent['data']) {
   switch (event.event_type) {
-    case 'call.initiated':
-      if (payload.direction === 'outgoing') {
-        const setting = await Setting.findOne({ number: { $eq: payload.from ?? '' } })
-        if (setting) {
-          await recordCall({
-            sid: payload.call_session_id ?? '',
-            user: setting.user,
-            setting: setting._id,
-            direction: 'send',
-            number: payload.to ?? '',
-            providerNumber: payload.from ?? '',
-          })
-        }
+    case 'call.initiated': {
+      const { call_session_id, direction, from, to } = event.payload
+      if (direction !== 'outgoing') break
+      const setting = await Setting.findOne({ number: { $eq: from } })
+      if (setting) {
+        await recordCall({
+          sid: call_session_id,
+          user: setting.user,
+          setting: setting._id,
+          direction: 'send',
+          number: to,
+          providerNumber: from,
+        })
       }
       break
+    }
     case 'call.hangup': {
-      const call = await Call.findOne({ sid: { $eq: payload.call_session_id ?? '' } })
+      const call = await Call.findOne({ sid: { $eq: event.payload.call_session_id } })
       if (call) {
-        const seconds = (new Date(payload.end_time ?? 0).getTime() - new Date(payload.start_time ?? 0).getTime()) / 1000
+        // call duration = occurred_at - start_time
+        const seconds = (new Date(event.occurred_at).getTime() - new Date(event.payload.start_time).getTime()) / 1000
         call.duration = Math.ceil(seconds)
         call.status = 'completed'
         await call.save()
@@ -140,28 +137,26 @@ async function issueToken(c: JsonCtx<GetTokenRequest>) {
     return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok, 200)
   }
 
-  return c.json(
-    { data: { type: setting.type ?? 'telnyx', setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok,
-    200,
-  )
+  // setting.type === 'telnyx'
+  return c.json({ data: { type: setting.type, setting: setting.toObject({ flattenObjectIds: true }) } } satisfies Ok, 200)
 }
 
 /** Twilio outbound: the TwiML app's voice URL. Returns dial TwiML so Twilio bridges the call to the dialed number. */
 async function dialOutbound(c: FormCtx<TwilioVoiceWebhook>) {
   const response = new twilio.twiml.VoiceResponse() // TwiML builder
+  const body = c.req.valid('form')
   try {
-    const body = c.req.valid('form')
-    const setting = await Setting.findOne({ number: { $eq: body.twilio_number ?? '' } })
+    const setting = await Setting.findOne({ number: { $eq: body.twilio_number } })
     if (setting) {
-      const phoneNumber = normalizeNumber(body.number ?? '')
-      response.dial({ callerId: body.twilio_number ?? '' }).number(phoneNumber)
+      const phoneNumber = normalizeNumber(body.number)
+      response.dial({ callerId: body.twilio_number }).number(phoneNumber)
       await recordCall({
-        sid: body.CallSid ?? '',
+        sid: body.CallSid,
         user: setting.user,
         setting: setting._id,
         direction: 'send',
         number: phoneNumber,
-        providerNumber: body.twilio_number ?? '',
+        providerNumber: body.twilio_number,
       })
     }
   } catch (e) {
@@ -183,21 +178,23 @@ async function recordCallStatus(c: FormCtx<TwilioStatusWebhook>) {
 /** Twilio inbound: bridge the call to the owner's browser client. */
 async function dialIncoming(c: FormCtx<TwilioInboundWebhook>) {
   const response = new twilio.twiml.VoiceResponse() // TwiML builder
+  const body = c.req.valid('form')
   try {
-    const body = c.req.valid('form')
-    const setting = await Setting.findOne({ number: { $eq: body.To ?? '' } })
+    const setting = await Setting.findOne({ number: { $eq: body.To } })
     if (setting) {
+      // stateful API
       response
         .dial()
         .client()
-        .identity(setting.user?.toString() ?? '')
+        .identity(setting.user.toString())
+
       await recordCall({
-        sid: body.CallSid ?? '',
+        sid: body.CallSid,
         user: setting.user,
         setting: setting._id,
         direction: 'receive',
-        number: body.From ?? '',
-        providerNumber: body.To ?? '',
+        number: body.From,
+        providerNumber: body.To,
       })
     }
   } catch (e) {
@@ -207,31 +204,22 @@ async function dialIncoming(c: FormCtx<TwilioInboundWebhook>) {
 }
 
 /** Telnyx inbound (TeXML): bridge the call to the owner's SIP client. */
-async function dialTelnyxSip(c: FormCtx<TwilioInboundWebhook>) {
-  let callXml = emptyTwiml
-  try {
-    const body = c.req.valid('form')
-    const setting = await Setting.findOne({ number: { $eq: body.To ?? '' } })
-    if (setting && setting.sip_username) {
-      callXml = `<?xml version="1.0" encoding="UTF-8"?>
-                 <Response>
-                   <Dial>
-                     <Sip>sip:${setting.sip_username}@sip.telnyx.com</Sip>
-                   </Dial>
-                 </Response>`
-      await recordCall({
-        sid: body.CallSid ?? '',
-        user: setting.user,
-        setting: setting._id,
-        direction: 'receive',
-        number: body.From ?? '',
-        providerNumber: body.To ?? '',
-      })
-    }
-  } catch (e) {
-    console.error(e)
-  }
-  return xmlResponse(c, callXml)
+async function dialTelnyxSip(c: FormCtx<TexmlInboundWebhook>) {
+  const body = c.req.valid('form')
+  const setting = await Setting.findOne({ number: { $eq: body.To } }).catch((e) => console.error(e))
+  if (!setting?.sip_username) return emptyTwimlReply(c)
+  await recordCall({
+    sid: body.CallSid,
+    user: setting.user,
+    setting: setting._id,
+    direction: 'receive',
+    number: body.From,
+    providerNumber: body.To,
+  }).catch((e) => console.error(e))
+  return xmlResponse(
+    c,
+    `<?xml version="1.0" encoding="UTF-8"?><Response><Dial><Sip>sip:${setting.sip_username}@sip.telnyx.com</Sip></Dial></Response>`,
+  )
 }
 
 /**
@@ -242,24 +230,28 @@ async function dialTelnyxSip(c: FormCtx<TwilioInboundWebhook>) {
 async function recordTelnyxStatus(c: Context<Env>) {
   try {
     if ((c.req.header('content-type') ?? '').includes('application/json')) {
-      const parsed = telnyxCallEvent.safeParse(await c.req.json())
-      if (parsed.success) await applyTelnyxEvent(parsed.data.data)
-      else console.error('Unhandled Telnyx webhook payload', parsed.error)
+      // https://developers.telnyx.com/api-reference/callbacks/call-initiated
+      // these JSON events are from SIP `credentialConnections.create`
+      const event = parseTelnyxCallEvent(await c.req.json())
+      if (event) await applyTelnyxCallEvent(event)
     } else {
       // TeXML status callbacks arrive as Twilio-shaped form posts
-      const parsed = twilioStatusWebhook.safeParse(await c.req.parseBody())
-      if (parsed.success) await applyStatus(parsed.data)
-      else console.error('Unhandled Telnyx TeXML status payload', parsed.error)
+      // https://developers.telnyx.com/api-reference/callbacks/texml-call-answered
+      // this is from `status_callback` in `texmlApplications.create`
+      const event = parseTexmlStatusCallback(await c.req.parseBody())
+      if (event) await applyStatus(event)
     }
   } catch (e) {
     console.error(e)
   }
-  return ack(c)
+  // Telnyx requires exactly 200 (a non-200 2xx is error 75299 and per the spec triggers failover redelivery)
+  // https://developers.telnyx.com/development/api-fundamentals/api-errors
+  return ok(c)
 }
 
 export const token = factory.createHandlers(auth, jsonBody(getTokenBody), issueToken)
-export const makeCall = factory.createHandlers(formBody(twilioVoiceWebhook), dialOutbound)
-export const status = factory.createHandlers(formBody(twilioStatusWebhook), recordCallStatus)
-export const incoming = factory.createHandlers(formBody(twilioInboundWebhook), dialIncoming)
-export const telnyx = factory.createHandlers(formBody(twilioInboundWebhook), dialTelnyxSip)
+export const makeCall = factory.createHandlers(webhookForm(twilioVoiceWebhook, emptyTwimlReply), dialOutbound)
+export const status = factory.createHandlers(webhookForm(twilioStatusWebhook), recordCallStatus)
+export const incoming = factory.createHandlers(webhookForm(twilioInboundWebhook, emptyTwimlReply), dialIncoming)
+export const telnyx = factory.createHandlers(webhookForm(texmlInboundWebhook, emptyTwimlReply), dialTelnyxSip)
 export const statusTelnyx = factory.createHandlers(recordTelnyxStatus)

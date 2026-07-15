@@ -17,7 +17,7 @@ import {
   type DeleteKeyParams,
 } from '../../shared/contracts/hardwarekey.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, ParamCtx } from '../core/factory.ts'
+import type { Env, JsonCtx, PathParamCtx } from '../core/factory.ts'
 import { ack } from '../helper/respond.helper.ts'
 import { auth } from '../middleware/auth.ts'
 import { jsonBody, pathParams } from '../middleware/validate.ts'
@@ -167,7 +167,7 @@ async function getKeys(c: Context<Env>) {
 }
 
 /** Delete one of the caller's keys (owner-scoped, so a non-owned id can't be removed); idempotent. */
-async function deleteRecord(c: ParamCtx<DeleteKeyParams>) {
+async function deleteRecord(c: PathParamCtx<DeleteKeyParams>) {
   const userId = c.get('user').id
   const key = await HardwareKey.findOne({ _id: c.req.valid('param').id, user: userId })
   if (key) await key.deleteOne()

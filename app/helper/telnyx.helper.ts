@@ -60,6 +60,13 @@ const requestCurl = async (
 
 // === Setup / GET / fallback helpers: THROW ProviderError on failure (onError renders 502). See file header. ===
 
+/**
+ * A TeXML application only takes the instruction-fetch `voice_url` and the call-progress `status_callback`, so those
+ * are the only webhooks Telnyx sends unprompted. Every other webhook family (Refer/AMD/Gather/AiGather/HttpRequest)
+ * has to be requested per call -- an `action`/callback attribute on the corresponding TeXML verb, or a
+ * machine-detection parameter on the dial API call -- and the TeXML we serve is a bare `<Dial>`, so none are ever
+ * elicited.
+ */
 const createTexmlApp = async (apiKey: string) => {
   try {
     const texmlApp = await new Telnyx({ apiKey }).texmlApplications.create({
@@ -75,6 +82,7 @@ const createTexmlApp = async (apiKey: string) => {
   }
 }
 
+// we do update incase BASE_URL has changed
 const updateTexmlApp = async (apiKey: string, twimlid: string) => {
   const url = `https://api.telnyx.com/v2/texml_applications/${twimlid}`
   const data = {
@@ -95,6 +103,7 @@ const createSIPApp = async (apiKey: string, userid: string, outboundProfileid: s
       user_name: `user${format(new Date(), TIMESTAMP_FORMAT)}`,
       password,
       webhook_event_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
+      webhook_api_version: '2', // default is v1 . v2 has `data` envelope
       outbound: { outbound_voice_profile_id: outboundProfileid },
       sip_uri_calling_preference: 'unrestricted',
     })
@@ -108,7 +117,8 @@ const updateSIPApp = async (apiKey: string, uuid: string, outboundProfileid: str
   try {
     const client = new Telnyx({ apiKey })
     await client.credentialConnections.update(uuid, {
-      webhook_event_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full),
+      webhook_event_url: combineURLs(env.BASE_URL, WEBHOOKS.call.telnyxStatus.full), // Voice API JSON webhooks 
+      webhook_api_version: '2', // migrates connections provisioned before we pinned v2
       outbound: { outbound_voice_profile_id: outboundProfileid },
       sip_uri_calling_preference: 'unrestricted',
     })

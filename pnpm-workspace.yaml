@@ -1,0 +1,8 @@
+packages:
+  - 'frontend'
+minimumReleaseAge: 1440
+# engineStrict will not install any package that claims to not be compatible with the current Node version
+engineStrict: true
+allowBuilds:
+  cbor-extract: false
+  vue-demi: false

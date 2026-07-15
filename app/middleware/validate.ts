@@ -1,8 +1,10 @@
 import type { Context } from 'hono'
 import { sValidator } from '@hono/standard-validator'
+import { validator } from 'hono/validator'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { ApiError } from '../../shared/api-contracts.ts'
+import { ack, ok } from '../helper/respond.helper.ts'
 
 // 422 Unprocessable Content (RFC 9110): the body parsed fine but failed schema validation.
 // A real `ContentfulStatusCode` (unlike the app's old non-standard 419).
@@ -44,3 +46,32 @@ export const pathParams404 = <S extends StandardSchemaV1>(schema: S) => sValidat
 export const queryParams = <S extends StandardSchemaV1>(schema: S) => sValidator('query', schema, hook422)
 /** Request-header validation (e.g. an upload's `Content-Type`): binds `c.req.valid('header')` to the schema's output type. */
 export const headerParams = <S extends StandardSchemaV1>(schema: S) => sValidator('header', schema, hook422)
+
+// --- provider webhook validators ---
+// Unauthenticated provider callbacks must never answer a non-2xx (the provider would retry / play an error / route to
+// failover), so these behave like `formBody`/`jsonBody` but, on an invalid body, LOG and answer a success-shaped 2xx
+// instead of a 422. `onInvalid` builds that reply -- `ack` (204) / `ok` (200) for callbacks whose body is ignored, or a
+// route-specific XML reply (inbound SMS/voice -> empty TwiML). On success the parsed body binds to `c.req.valid(...)`
+// exactly like the normal validators, so handlers stay in Pattern A (`c: FormCtx<T>` / `JsonCtx<T>`).
+
+/** sValidator hook that answers `onInvalid` (a 2xx) instead of 422 on a bad body. Standard Schema, so zod plugs in. */
+const webhookHook =
+  (onInvalid: (c: Context) => Response) =>
+  (result: { success: true } | { success: false; error: readonly StandardSchemaV1.Issue[] }, c: Context) => {
+    if (result.success) return undefined
+    console.error('Rejected webhook payload', result.error)
+    return onInvalid(c)
+  }
+
+/** Provider form webhook (Twilio) validated by a Standard Schema (our zod contracts): binds `c.req.valid('form')`. */
+export const webhookForm = <S extends StandardSchemaV1>(schema: S, onInvalid: (c: Context) => Response = ack) =>
+  sValidator('form', schema, webhookHook(onInvalid))
+
+/**
+ * Provider JSON webhook (Telnyx) validated by an AJV parser rather than a Standard Schema. The parser is already
+ * `(raw) => T | null` (typed output, or `null` for an unhandled/invalid event which it logs itself), so it drops
+ * straight into a manual `validator` -- no Standard Schema adapter. `null` -> the `onInvalid` 2xx; otherwise the typed
+ * value binds to `c.req.valid('json')`.
+ */
+export const webhookJsonParse = <T>(parse: (raw: unknown) => T | null, onInvalid: (c: Context) => Response = ok) =>
+  validator('json', (value, c) => parse(value) ?? onInvalid(c))

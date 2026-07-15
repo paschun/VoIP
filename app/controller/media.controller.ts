@@ -1,15 +1,13 @@
-import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { bodyLimit } from 'hono/body-limit'
 import { HTTPException } from 'hono/http-exception'
 import { format, subDays } from 'date-fns'
 import cron from 'node-cron'
 import type { ApiError, Ok } from '../../shared/api-contracts.ts'
-import { uploadHeaders, uploadExt, type UploadHeaders } from '../../shared/contracts/media.ts'
-import { env } from '../core/env.ts'
+import { uploadHeaders, CONTENT_TYPE_TO_EXT, type UploadHeaders } from '../../shared/contracts/media.ts'
 import { factory } from '../core/factory.ts'
 import type { HeaderCtx } from '../core/factory.ts'
-import { combineURLs, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
+import { prepareUploadTarget, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
 import { auth } from '../middleware/auth.ts'
 import { headerParams } from '../middleware/validate.ts'
 import Media from '../model/media.model.ts'
@@ -27,24 +25,17 @@ export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024 // 15 MB
 async function uploadMedia(c: HeaderCtx<UploadHeaders>) {
   const validHeaders = c.req.valid('header')
   const contentType = validHeaders['content-type']
-  const ext = uploadExt[contentType]
+  const ext = CONTENT_TYPE_TO_EXT[contentType]
 
   const bytes = Buffer.from(await c.req.arrayBuffer()) // load the whole file into memory
   if (bytes.length === 0) throw new HTTPException(400, { message: 'No file uploaded!' })
 
-  const date = format(new Date(), UPLOAD_FOLDER_FORMAT)
-  const dir = `./uploads/${date}`
-  const filename = crypto.randomBytes(24).toString('hex') + ext
-  const mediaPath = `${dir}/${filename}`
-  await fs.promises.mkdir(dir, { recursive: true })
+  const { mediaPath, fullUrl } = await prepareUploadTarget(ext)
   await fs.promises.writeFile(mediaPath, bytes)
 
-  // `Media.create` resolves to the saved doc or rejects (validation / duplicate-key / connection) — it never returns
-  // falsy, so there's no "not created" branch to guard; a real failure throws and `app.onError` logs it once as a 500.
+  // Just the on-disk path is stored in mongo, but the full url is returned to the client.
   await Media.create({ media: mediaPath, user: c.get('user').id })
-  // just the uploads path is stored in mongo, but the full url is returned to the client
-  const fullMediaUrl = combineURLs(env.BASE_URL, mediaPath)
-  return c.json({ data: { media: fullMediaUrl } } satisfies Ok, 200)
+  return c.json({ data: { media: fullUrl } } satisfies Ok, 200)
 }
 
 // todo: remove all folders older than 7 days

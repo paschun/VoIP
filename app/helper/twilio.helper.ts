@@ -26,7 +26,7 @@ const createTwiml = async (sid: string, token: string) => {
       voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioVoice.full),
       statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioStatus.full),
       statusCallbackMethod: 'POST',
-      friendlyName: 'Operationprivacy VoIPSuite',
+      friendlyName: 'VoIPSuite',
     })
     return twiml.sid
   } catch (e) {

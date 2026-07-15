@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Ok } from '../api-contracts.ts'
+import { OUTBOUND_MMS_MAX_ATTACHMENTS, TWILIO_INBOUND_CONTENT_TYPES } from './media.ts'
 import { profileIdParam, type ProfileIdParam } from './profile.ts'
 
 // --- requests ---
@@ -31,9 +32,52 @@ export { profileIdParam, type ProfileIdParam }
 export const notificationBody = z.object({ status: z.boolean() })
 export type NotificationRequest = z.infer<typeof notificationBody>
 
-/** The `:type` provider segment on the SMS webhook routes (`/receive-sms/:type`, `/sms-status/:type`). */
-export const smsTypeParam = z.object({ type: z.enum(['telnyx', 'twilio']) })
-export type SmsTypeParam = z.infer<typeof smsTypeParam>
+// --- provider SMS webhook payloads ---
+// Unauthenticated provider callbacks (field sets: webhook/telephony-webhook-reference.md §7-§8). A webhook must never
+// be answered with a non-2xx, so the controllers validate these via `webhookForm` (log + success-shaped reply on
+// failure). Required fields are the ones the handler cannot work without; the rest stay optional -- same rationale as
+// the voice webhooks in call.ts. Only Twilio's form posts are described here (all values strings) -- Twilio publishes
+// no webhook schema, so the contract is zod authored against its docs. Telnyx JSON events are instead validated
+// against Telnyx's own OpenAPI spec in app/helper/telnyx-events.helper.ts.
+
+/**
+ * Twilio inbound SMS/MMS form post (https://www.twilio.com/docs/messaging/guides/webhook-request). `.catchall` covers
+ * the indexed `MediaUrl0`/`MediaContentType0`/... MMS keys; the refinement requires each of the `NumMedia` pairs to be
+ * a URL with a content type Twilio could actually deliver. A malformed `NumMedia` degrades to 0 (attachments dropped,
+ * message kept); there is no upper bound -- Twilio documents no receive-side media cap.
+ */
+export const twilioInboundSms = z
+  .object({
+    Body: z.string().optional(), // may be empty/absent on MMS
+    To: z.string().min(1), // our number
+    From: z.string().min(1), // the sender
+    SmsSid: z.string().min(1),
+    NumMedia: z.string().regex(/^\d+$/).transform(Number).catch(0),
+  })
+  .catchall(z.string())
+  .superRefine((form, ctx) => {
+    for (let i = 0; i < form.NumMedia; i++) {
+      if (!z.url().safeParse(form[`MediaUrl${i}`]).success)
+        ctx.addIssue({ code: 'custom', path: [`MediaUrl${i}`], message: 'Expected a media URL' })
+      if (!TWILIO_INBOUND_CONTENT_TYPES.includes(form[`MediaContentType${i}`] ?? ''))
+        ctx.addIssue({ code: 'custom', path: [`MediaContentType${i}`], message: 'Unexpected media content type' })
+    }
+  })
+export type TwilioInboundSms = z.infer<typeof twilioInboundSms>
+
+/**
+ * Twilio SMS status callback form post. Twilio guarantees no field, so this reflects handler need, not the docs:
+ * status + sid are required (nothing works without them); `From` (our number) is optional -- best-effort profile
+ * lookup for cleanup, so its absence must not fail validation and trigger a provider retry.
+ * https://www.twilio.com/docs/messaging/guides/track-outbound-message-status (only MessageStatus/ErrorCode added to a
+ * "subset" of https://www.twilio.com/docs/messaging/guides/webhook-request#request-parameters, an evolving set).
+ */
+export const twilioSmsStatus = z.object({
+  MessageStatus: z.string().min(1),
+  MessageSid: z.string().min(1),
+  From: z.string().optional(),
+})
+export type TwilioSmsStatus = z.infer<typeof twilioSmsStatus>
 
 /** Public: list a provider's phone numbers from caller-supplied credentials (discriminated so each branch is required). */
 export const getNumberBody = z.discriminatedUnion('type', [
@@ -52,7 +96,7 @@ export const sendSmsBody = z.object({
   numbers: z.array(z.string()).min(1),
   profile: z.object({ _id: z.string() }),
   message: z.string().optional().default(''),
-  media: z.array(z.string()).optional().default([]),
+  media: z.array(z.string()).max(OUTBOUND_MMS_MAX_ATTACHMENTS).optional().default([]),
 })
 export type SendSmsRequest = z.infer<typeof sendSmsBody>
 

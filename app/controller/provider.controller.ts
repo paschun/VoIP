@@ -9,7 +9,7 @@ import {
   type NumberLookupRequest,
 } from '../../shared/contracts/provider.ts'
 import { factory } from '../core/factory.ts'
-import type { JsonCtx, ParamCtx, ParamJsonCtx } from '../core/factory.ts'
+import type { JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { combineURLs } from '../helper/common.helper.ts'
 import { ack } from '../helper/respond.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
@@ -28,7 +28,7 @@ async function ownSetting(userId: string, settingId: string) {
   return setting
 }
 
-async function getTwilioWebhookConfig(c: ParamCtx<SettingIdParam>) {
+async function getTwilioWebhookConfig(c: PathParamCtx<SettingIdParam>) {
   const { settingId } = c.req.valid('param')
   const setting = await ownSetting(c.get('user').id, settingId)
   const app = await twilioHelper.twimlGet({
@@ -41,7 +41,7 @@ async function getTwilioWebhookConfig(c: ParamCtx<SettingIdParam>) {
   return c.json({ data: { voiceUrl, voiceFallbackUrl } } satisfies Ok, 200)
 }
 
-async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
+async function patchTwilioWebhook(c: PathParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
   const { settingId } = c.req.valid('param')
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)
@@ -65,7 +65,7 @@ async function patchTwilioWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbac
   return ack(c)
 }
 
-async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
+async function getTelnyxWebhookConfig(c: PathParamCtx<SettingIdParam>) {
   const { settingId } = c.req.valid('param')
   const setting = await ownSetting(c.get('user').id, settingId)
   const messageProfile = await telnyxHelper.messageProfileGet({
@@ -80,7 +80,7 @@ async function getTelnyxWebhookConfig(c: ParamCtx<SettingIdParam>) {
   return c.json({ data: result } satisfies Ok, 200)
 }
 
-async function patchTelnyxWebhook(c: ParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
+async function patchTelnyxWebhook(c: PathParamJsonCtx<SettingIdParam, WebhookFallbackRequest>) {
   const { settingId } = c.req.valid('param')
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)

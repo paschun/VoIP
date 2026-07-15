@@ -14,38 +14,57 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc",
-    "oxlint": "oxlint --ignore-pattern 'frontend/**'"
+    "oxlint": "oxlint --ignore-pattern 'frontend/**'",
+    "spec:texml": "openapi-typescript app/spec/texml-calls.yml -o app/spec/texml-calls.d.ts"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.9.0",
+      "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^26.0.0",
+      "onFail": "error"
+    }
   },
   "dependencies": {
-    "@hono/node-server": "^2.0.4",
-    "@hono/standard-validator": "^0.2.2",
+    "@hono/node-server": "^2.0.6",
+    "@hono/standard-validator": "<1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
-    "hono": "^4.12.25",
+    "hono": "^4.12.27",
     "jose": "^6.2.3",
-    "mongoose": "^9.6.2",
-    "node-cron": "^4.2.1",
-    "nodemailer": "^9.0.0",
-    "openpgp": "^6.3.0",
+    "mongoose": "^9.7.3",
+    "node-cron": "^4.5.0",
+    "nodemailer": "^9.0.3",
+    "openpgp": "^6.3.1",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.3",
     "speakeasy": "^2.0.0",
     "telnyx": "^7.2.0",
+    "telnyx-openapi": "github:team-telnyx/openapi#9d8aee4e6be23fc692c25da298e3459b91a73d69",
     "twilio": "^6.0.2",
+    "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@standard-schema/spec": "^1.1.0",
-    "@types/node": "^26.0.0",
-    "@types/nodemailer": "^8.0.0",
+    "@types/node": "^26.0.1",
+    "@types/nodemailer": "^8.0.1",
     "@types/qrcode": "^1.5.6",
     "@types/speakeasy": "^2.0.10",
     "mongodb-memory-server-core": "^11.2.0",
+    "openapi-typescript": "^7.13.0",
     "oxfmt": "<1",
-    "oxlint": "^1.68.0",
-    "oxlint-tsgolint": "^0.23.0",
+    "oxlint": "^1.72.0",
+    "oxlint-tsgolint": "<1",
     "type-fest": "^5.7.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }

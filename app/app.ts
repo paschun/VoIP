@@ -142,6 +142,8 @@ export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
 app.use('*', appDirectoryGate(errorPage))
 
 // Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
+// Uploads are served without Content-Disposition: consumers that want a filename (e.g. Twilio fetching outbound MMS
+// media) fall back to the URL, whose generated name already carries the content-type-derived extension.
 app.use('/uploads/*', serveStatic({ root: './' }))
 app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
 app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallback

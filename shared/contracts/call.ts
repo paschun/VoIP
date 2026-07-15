@@ -5,50 +5,47 @@ import { z } from 'zod'
 export const getTokenBody = z.object({ setting_id: z.string().min(1) })
 export type GetTokenRequest = z.infer<typeof getTokenBody>
 
-// Provider webhook payloads. These are unauthenticated provider callbacks, and a webhook must never reject a provider
-// with 422, so `.partial()` makes every field optional in one shot -- validation here exists only to TYPE the handful
-// of fields we read (catching field-name typos at compile time), not to gate the request. Form values are always
-// strings. (`.partial()`, not `.optional()` on the whole object: the body is always present, it's the *fields* that
-// may be absent; `.optional()` would type the whole object as possibly-`undefined`.)
-export const twilioVoiceWebhook = z
-  .object({
-    CallSid: z.string(),
-    twilio_number: z.string(), // our number (custom param the frontend Device sends)
-    number: z.string(), // the number being dialed (custom param)
-  })
-  .partial()
+// Provider voice-webhook form payloads (field sets: webhook/telephony-webhook-reference.md §1-§4; the §5 TeXML
+// status callback is instead AJV-validated against Telnyx's TeXML spec in app/helper/texml-events.helper.ts).
+// Unauthenticated
+// provider callbacks that must never be answered with a non-2xx, so the controllers validate them via `webhookForm`
+// (log + success-shaped reply on failure), never a 422-ing validator. Required fields are exactly the ones a handler
+// cannot work without -- a missing `CallSid` used to fall back to `sid: ''` and no-op silently; now it's a logged
+// rejection. Fields a handler merely defaults stay optional. `CallStatus` stays `z.string()` at runtime: providers add
+// values, and a runtime enum would drop real updates (see MESSAGE_STATUSES in app/model/message.model.ts). All form
+// values are strings; unknown keys are ignored.
+
+/** Digits-only string; when malformed it drops to `undefined` instead of failing the payload (prevents NaN writes). */
+const numericString = z.string().regex(/^\d+$/).optional().catch(undefined)
+
+/** §1 Twilio outbound voice (TwiML app voice URL). `twilio_number`/`number` are custom params our Device sends. */
+export const twilioVoiceWebhook = z.object({
+  CallSid: z.string().min(1),
+  twilio_number: z.string().min(1), // our number
+  number: z.string().min(1), // the number being dialed
+})
 export type TwilioVoiceWebhook = z.infer<typeof twilioVoiceWebhook>
 
-export const twilioStatusWebhook = z
-  .object({
-    CallSid: z.string(),
-    CallDuration: z.string(),
-    CallStatus: z.string(),
-  })
-  .partial()
+/** §2 Twilio voice status callback. */
+export const twilioStatusWebhook = z.object({
+  CallSid: z.string().min(1),
+  CallDuration: numericString,
+  CallStatus: z.string().optional(),
+})
 export type TwilioStatusWebhook = z.infer<typeof twilioStatusWebhook>
 
-export const twilioInboundWebhook = z
-  .object({
-    CallSid: z.string(),
-    To: z.string(), // our number
-    From: z.string(), // the caller
-  })
-  .partial()
+/** §3 Twilio inbound voice. */
+export const twilioInboundWebhook = z.object({
+  CallSid: z.string().min(1),
+  To: z.string().min(1), // our number
+  From: z.string().min(1), // the caller
+})
 export type TwilioInboundWebhook = z.infer<typeof twilioInboundWebhook>
 
-// Telnyx native Call Control events (sent as JSON, no CallSid). Only the fields we act on are modelled.
-export const telnyxCallEvent = z.object({
-  data: z.object({
-    event_type: z.string(),
-    payload: z.object({
-      direction: z.string().optional(),
-      from: z.string().optional(),
-      to: z.string().optional(),
-      call_session_id: z.string().optional(),
-      start_time: z.string().optional(),
-      end_time: z.string().optional(),
-    }),
-  }),
+/** §4 Telnyx TeXML inbound voice. Twilio-shaped but its own schema: the TeXML field set differs from Twilio's. */
+export const texmlInboundWebhook = z.object({
+  CallSid: z.string().min(1),
+  To: z.string().min(1), // our number
+  From: z.string().min(1), // the caller
 })
-export type TelnyxCallEvent = z.infer<typeof telnyxCallEvent>
+export type TexmlInboundWebhook = z.infer<typeof texmlInboundWebhook>

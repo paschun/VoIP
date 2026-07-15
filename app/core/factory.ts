@@ -26,7 +26,7 @@ export const factory = createFactory<Env>()
 export type JsonCtx<T> = Context<Env, string, { in: { json: T }; out: { json: T } }>
 
 /** Context for a handler guarded by `pathParams(schema)`: `c.req.valid('param')` is `T`. */
-export type ParamCtx<T> = Context<Env, string, { in: { param: T }; out: { param: T } }>
+export type PathParamCtx<T> = Context<Env, string, { in: { param: T }; out: { param: T } }>
 
 /** Context for a handler guarded by `formBody(schema)` (x-www-form-urlencoded / multipart, e.g. Twilio webhooks): `c.req.valid('form')` is `T`. */
 export type FormCtx<T> = Context<Env, string, { in: { form: T }; out: { form: T } }>
@@ -38,4 +38,4 @@ export type QueryCtx<T> = Context<Env, string, { in: { query: T }; out: { query:
 export type HeaderCtx<T> = Context<Env, string, { in: { header: T }; out: { header: T } }>
 
 /** Context for a handler guarded by both `pathParams` and `jsonBody` (e.g. `PUT /:id`): `valid('param')` and `valid('json')`. */
-export type ParamJsonCtx<P, J> = Context<Env, string, { in: { param: P; json: J }; out: { param: P; json: J } }>
+export type PathParamJsonCtx<P, J> = Context<Env, string, { in: { param: P; json: J }; out: { param: P; json: J } }>

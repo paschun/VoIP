@@ -12,7 +12,7 @@ import {
   type ContactIdParam,
 } from '../../shared/contracts/contact.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, ParamCtx, QueryCtx, ParamJsonCtx } from '../core/factory.ts'
+import type { Env, JsonCtx, PathParamCtx, QueryCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { normalizeNumber } from '../helper/common.helper.ts'
 import { ack, created } from '../helper/respond.helper.ts'
 import { auth } from '../middleware/auth.ts'
@@ -82,7 +82,7 @@ async function bulkCreateContacts(c: JsonCtx<ContactBulkRequest>) {
   return created(c)
 }
 
-async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
+async function updateContact(c: PathParamJsonCtx<ContactIdParam, ContactRequest>) {
   const { id } = c.req.valid('param')
   const body = c.req.valid('json')
   // Scope by user so a user can't update another's contact by guessing its id (IDOR); a non-owned id 404s.
@@ -96,7 +96,7 @@ async function updateContact(c: ParamJsonCtx<ContactIdParam, ContactRequest>) {
   return ack(c)
 }
 
-async function deleteContact(c: ParamCtx<ContactIdParam>) {
+async function deleteContact(c: PathParamCtx<ContactIdParam>) {
   const { id } = c.req.valid('param')
   // Scope by user so a user can only delete their own contacts.
   const result = await Contact.deleteOne({ _id: { $eq: id }, user: { $eq: c.get('user').id } })

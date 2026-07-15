@@ -24,7 +24,6 @@ export const emailSchema = new Schema(
   },
   { strict: 'throw', strictQuery: 'throw' },
 )
-// console.dir(emailSchema.toJSONSchema(), { depth: 5 })
 
 /** Full JSON shape of an Email document as the frontend receives it (ObjectId/Date already stringified, `__v` present). */
 export type EmailDoc = WireDoc<typeof emailSchema>

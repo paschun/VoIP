@@ -1,0 +1,2924 @@
+openapi: 3.1.0
+info:
+  title: Telnyx TeXML Calls API
+  version: 2.0.0
+  description: API for managing TeXML Calls.
+  contact:
+    email: support@telnyx.com
+servers:
+  - url: https://api.telnyx.com/v2
+security:
+  - bearerAuth: []
+tags:
+  - name: Command
+    description: TeXML command operations
+  - name: Callbacks
+    description: Webhook callbacks for call events
+paths:
+  /texml/Accounts/{account_sid}/Calls:
+    get:
+      summary: Fetch multiple call resources
+      description: Returns multiple call resouces for an account. This endpoint is eventually consistent.
+      x-latency-category: responsive
+      operationId: GetTexmlCalls
+      tags:
+        - TeXML REST Commands
+      parameters:
+        - $ref: '#/components/parameters/AccountSid'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/StartTime'
+        - $ref: '#/components/parameters/StartTime_gt'
+        - $ref: '#/components/parameters/StartTime_lt'
+        - $ref: '#/components/parameters/EndTime'
+        - $ref: '#/components/parameters/EndTime_gt'
+        - $ref: '#/components/parameters/EndTime_lt'
+      responses:
+        '200':
+          description: Multiple call resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResourceIndex'
+        '404':
+          $ref: '#/components/responses/call-scripting_NotFoundResponse'
+      x-codeSamples:
+        - lang: JavaScript
+          source: |-
+            import Telnyx from 'telnyx';
+
+            const client = new Telnyx({
+              apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+            });
+
+            const response = await client.texml.accounts.calls.retrieveCalls('account_sid');
+
+            console.log(response.calls);
+        - lang: Python
+          source: |-
+            import os
+            from telnyx import Telnyx
+
+            client = Telnyx(
+                api_key=os.environ.get("TELNYX_API_KEY"),  # This is the default and can be omitted
+            )
+            response = client.texml.accounts.calls.retrieve_calls(
+                account_sid="account_sid",
+            )
+            print(response.calls)
+        - lang: Go
+          source: "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\n\t\"github.com/team-telnyx/telnyx-go\"\n\t\"github.com/team-telnyx/telnyx-go/option\"\n)\n\nfunc main() {\n\tclient := telnyx.NewClient(\n\t\toption.WithAPIKey(\"My API Key\"),\n\t)\n\tresponse, err := client.Texml.Accounts.Calls.GetCalls(\n\t\tcontext.TODO(),\n\t\t\"account_sid\",\n\t\ttelnyx.TexmlAccountCallGetCallsParams{},\n\t)\n\tif err != nil {\n\t\tpanic(err.Error())\n\t}\n\tfmt.Printf(\"%+v\\n\", response.Calls)\n}\n"
+        - lang: Java
+          source: |-
+            package com.telnyx.sdk.example;
+
+            import com.telnyx.sdk.client.TelnyxClient;
+            import com.telnyx.sdk.client.okhttp.TelnyxOkHttpClient;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallRetrieveCallsParams;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallRetrieveCallsResponse;
+
+            public final class Main {
+                private Main() {}
+
+                public static void main(String[] args) {
+                    TelnyxClient client = TelnyxOkHttpClient.fromEnv();
+
+                    CallRetrieveCallsResponse response = client.texml().accounts().calls().retrieveCalls("account_sid");
+                }
+            }
+        - lang: Ruby
+          source: |-
+            require "telnyx"
+
+            telnyx = Telnyx::Client.new(api_key: "My API Key")
+
+            response = telnyx.texml.accounts.calls.retrieve_calls("account_sid")
+
+            puts(response)
+        - lang: PHP
+          source: |-
+            <?php
+
+            require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+            use Telnyx\Client;
+            use Telnyx\Core\Exceptions\APIException;
+
+            $client = new Client(apiKey: getenv('TELNYX_API_KEY') ?: 'My API Key');
+
+            try {
+              $response = $client->texml->accounts->calls->retrieveCalls(
+                'account_sid',
+                endTime: 'EndTime',
+                endTimeGt: 'EndTime_gt',
+                endTimeLt: 'EndTime_lt',
+                from: 'From',
+                page: 0,
+                pageSize: 0,
+                pageToken: 'PageToken',
+                startTime: 'StartTime',
+                startTimeGt: 'StartTime_gt',
+                startTimeLt: 'StartTime_lt',
+                status: 'canceled',
+                to: 'To',
+              );
+
+              var_dump($response);
+            } catch (APIException $e) {
+              echo $e->getMessage();
+            }
+        - lang: CLI
+          source: |-
+            telnyx texml:accounts:calls retrieve-calls \
+              --api-key 'My API Key' \
+              --account-sid account_sid
+    post:
+      summary: Initiate an outbound call
+      description: Initiate an outbound TeXML call. Telnyx will request TeXML from the XML Request URL configured for the connection in the Mission Control Portal.
+      x-latency-category: responsive
+      x-group-parameters: 'true'
+      operationId: InitiateTexmlCall
+      tags:
+        - TeXML REST Commands
+      parameters:
+        - $ref: '#/components/parameters/AccountSid'
+      requestBody:
+        description: Iniatiate Call request object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateCallRequest'
+      responses:
+        '200':
+          description: Successful response upon initiating a TeXML call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateCallResult'
+        '422':
+          $ref: '#/components/responses/call-scripting_UnprocessableEntityResponse'
+      x-codeSamples:
+        - lang: JavaScript
+          source: |-
+            import Telnyx from 'telnyx';
+
+            const client = new Telnyx({
+              apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+            });
+
+            const response = await client.texml.accounts.calls.calls('account_sid', {
+              params: { Url: 'https://www.example.com/texml.xml' },
+            });
+
+            console.log(response.from);
+        - lang: Python
+          source: |-
+            import os
+            from telnyx import Telnyx
+
+            client = Telnyx(
+                api_key=os.environ.get("TELNYX_API_KEY"),  # This is the default and can be omitted
+            )
+            response = client.texml.accounts.calls.calls(
+                account_sid="account_sid",
+                params={
+                    "url": "https://www.example.com/texml.xml"
+                },
+            )
+            print(response.from_)
+        - lang: Go
+          source: "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\n\t\"github.com/team-telnyx/telnyx-go\"\n\t\"github.com/team-telnyx/telnyx-go/option\"\n)\n\nfunc main() {\n\tclient := telnyx.NewClient(\n\t\toption.WithAPIKey(\"My API Key\"),\n\t)\n\tresponse, err := client.Texml.Accounts.Calls.Calls(\n\t\tcontext.TODO(),\n\t\t\"account_sid\",\n\t\ttelnyx.TexmlAccountCallCallsParams{\n\t\t\tOfWithURL: &telnyx.TexmlAccountCallCallsParamsParamsWithURL{\n\t\t\t\tURL: \"https://www.example.com/texml.xml\",\n\t\t\t},\n\t\t},\n\t)\n\tif err != nil {\n\t\tpanic(err.Error())\n\t}\n\tfmt.Printf(\"%+v\\n\", response.From)\n}\n"
+        - lang: Java
+          source: |-
+            package com.telnyx.sdk.example;
+
+            import com.telnyx.sdk.client.TelnyxClient;
+            import com.telnyx.sdk.client.okhttp.TelnyxOkHttpClient;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallCallsParams;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallCallsResponse;
+
+            public final class Main {
+                private Main() {}
+
+                public static void main(String[] args) {
+                    TelnyxClient client = TelnyxOkHttpClient.fromEnv();
+
+                    CallCallsParams params = CallCallsParams.builder()
+                        .accountSid("account_sid")
+                        .params(CallCallsParams.Params.WithUrl.builder()
+                            .url("https://www.example.com/texml.xml")
+                            .build())
+                        .build();
+                    CallCallsResponse response = client.texml().accounts().calls().calls(params);
+                }
+            }
+        - lang: Ruby
+          source: |-
+            require "telnyx"
+
+            telnyx = Telnyx::Client.new(api_key: "My API Key")
+
+            response = telnyx.texml.accounts.calls.calls("account_sid", params: {Url: "https://www.example.com/texml.xml"})
+
+            puts(response)
+        - lang: PHP
+          source: |-
+            <?php
+
+            require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+            use Telnyx\Client;
+            use Telnyx\Core\Exceptions\APIException;
+
+            $client = new Client(apiKey: getenv('TELNYX_API_KEY') ?: 'My API Key');
+
+            try {
+              $response = $client->texml->accounts->calls->calls(
+                'account_sid',
+                params: [
+                  'url' => 'https://www.example.com/texml.xml',
+                  'applicationSid' => 'example-app-sid',
+                  'asyncAmd' => true,
+                  'asyncAmdStatusCallback' => 'https://www.example.com/callback',
+                  'asyncAmdStatusCallbackMethod' => 'GET',
+                  'callerID' => 'Info',
+                  'cancelPlaybackOnDetectMessageEnd' => false,
+                  'cancelPlaybackOnMachineDetection' => false,
+                  'customHeaders' => [
+                    ['name' => 'X-Custom-Header', 'value' => 'custom-value']
+                  ],
+                  'deepfakeDetection' => 'Enable',
+                  'deepfakeDetectionCallbackMethod' => 'GET',
+                  'deepfakeDetectionCallbackURL' => 'https://www.example.com/deepfake-callback',
+                  'detectionMode' => 'Premium',
+                  'fallbackURL' => 'https://www.example.com/instructions-fallback.xml',
+                  'from' => '+13120001234',
+                  'machineDetection' => 'Enable',
+                  'machineDetectionPromptEndTimeout' => 5000,
+                  'machineDetectionSilenceTimeout' => 2000,
+                  'machineDetectionSpeechEndThreshold' => 2000,
+                  'machineDetectionSpeechThreshold' => 2000,
+                  'machineDetectionTimeout' => 5000,
+                  'mediaEncryption' => 'disabled',
+                  'preferredCodecs' => 'PCMA,PCMU',
+                  'record' => false,
+                  'recordingChannels' => 'dual',
+                  'recordingStatusCallback' => 'https://example.com/recording_status_callback',
+                  'recordingStatusCallbackEvent' => 'in-progress completed absent',
+                  'recordingStatusCallbackMethod' => 'GET',
+                  'recordingTimeout' => 5,
+                  'recordingTrack' => 'inbound',
+                  'sendRecordingURL' => false,
+                  'sipAuthPassword' => '1234',
+                  'sipAuthUsername' => 'user',
+                  'sipRegion' => 'Canada',
+                  'statusCallback' => 'https://www.example.com/statuscallback-listener',
+                  'statusCallbackEvent' => 'initiated',
+                  'statusCallbackMethod' => 'GET',
+                  'superviseCallSid' => 'v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg',
+                  'supervisingRole' => 'monitor',
+                  'texml' => 'Texml',
+                  'timeLimit' => 3600,
+                  'timeout' => 60,
+                  'to' => '+13121230000',
+                  'trim' => 'trim-silence',
+                  'urlMethod' => 'GET',
+                ],
+              );
+
+              var_dump($response);
+            } catch (APIException $e) {
+              echo $e->getMessage();
+            }
+        - lang: CLI
+          source: |-
+            telnyx texml:accounts:calls calls \
+              --api-key 'My API Key' \
+              --account-sid account_sid \
+              --params '{Url: https://www.example.com/texml.xml}'
+  /texml/Accounts/{account_sid}/Calls/{call_sid}:
+    get:
+      summary: Fetch a call
+      description: Returns an individual call identified by its CallSid. This endpoint is eventually consistent.
+      x-latency-category: responsive
+      operationId: GetTexmlCall
+      tags:
+        - TeXML REST Commands
+      parameters:
+        - $ref: '#/components/parameters/CallSid'
+        - $ref: '#/components/parameters/AccountSid'
+      responses:
+        '200':
+          description: Call resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResource'
+        '404':
+          $ref: '#/components/responses/call-scripting_NotFoundResponse'
+      x-codeSamples:
+        - lang: JavaScript
+          source: |-
+            import Telnyx from 'telnyx';
+
+            const client = new Telnyx({
+              apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+            });
+
+            const call = await client.texml.accounts.calls.retrieve('call_sid', { account_sid: 'account_sid' });
+
+            console.log(call.account_sid);
+        - lang: Python
+          source: |-
+            import os
+            from telnyx import Telnyx
+
+            client = Telnyx(
+                api_key=os.environ.get("TELNYX_API_KEY"),  # This is the default and can be omitted
+            )
+            call = client.texml.accounts.calls.retrieve(
+                call_sid="call_sid",
+                account_sid="account_sid",
+            )
+            print(call.account_sid)
+        - lang: Go
+          source: "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\n\t\"github.com/team-telnyx/telnyx-go\"\n\t\"github.com/team-telnyx/telnyx-go/option\"\n)\n\nfunc main() {\n\tclient := telnyx.NewClient(\n\t\toption.WithAPIKey(\"My API Key\"),\n\t)\n\tcall, err := client.Texml.Accounts.Calls.Get(\n\t\tcontext.TODO(),\n\t\t\"call_sid\",\n\t\ttelnyx.TexmlAccountCallGetParams{\n\t\t\tAccountSid: \"account_sid\",\n\t\t},\n\t)\n\tif err != nil {\n\t\tpanic(err.Error())\n\t}\n\tfmt.Printf(\"%+v\\n\", call.AccountSid)\n}\n"
+        - lang: Java
+          source: |-
+            package com.telnyx.sdk.example;
+
+            import com.telnyx.sdk.client.TelnyxClient;
+            import com.telnyx.sdk.client.okhttp.TelnyxOkHttpClient;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallRetrieveParams;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallRetrieveResponse;
+
+            public final class Main {
+                private Main() {}
+
+                public static void main(String[] args) {
+                    TelnyxClient client = TelnyxOkHttpClient.fromEnv();
+
+                    CallRetrieveParams params = CallRetrieveParams.builder()
+                        .accountSid("account_sid")
+                        .callSid("call_sid")
+                        .build();
+                    CallRetrieveResponse call = client.texml().accounts().calls().retrieve(params);
+                }
+            }
+        - lang: Ruby
+          source: |-
+            require "telnyx"
+
+            telnyx = Telnyx::Client.new(api_key: "My API Key")
+
+            call = telnyx.texml.accounts.calls.retrieve("call_sid", account_sid: "account_sid")
+
+            puts(call)
+        - lang: PHP
+          source: |-
+            <?php
+
+            require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+            use Telnyx\Client;
+            use Telnyx\Core\Exceptions\APIException;
+
+            $client = new Client(apiKey: getenv('TELNYX_API_KEY') ?: 'My API Key');
+
+            try {
+              $call = $client->texml->accounts->calls->retrieve(
+                'call_sid', accountSid: 'account_sid'
+              );
+
+              var_dump($call);
+            } catch (APIException $e) {
+              echo $e->getMessage();
+            }
+        - lang: CLI
+          source: |-
+            telnyx texml:accounts:calls retrieve \
+              --api-key 'My API Key' \
+              --account-sid account_sid \
+              --call-sid call_sid
+    post:
+      summary: Update call
+      description: Update TeXML call. Please note that the keys present in the payload MUST BE formatted in CamelCase as specified in the example.
+      x-latency-category: responsive
+      x-group-parameters: 'true'
+      operationId: UpdateTexmlCall
+      tags:
+        - TeXML REST Commands
+      parameters:
+        - $ref: '#/components/parameters/CallSid'
+        - $ref: '#/components/parameters/AccountSid'
+      requestBody:
+        description: Update Call request object
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCallRequest'
+      responses:
+        '200':
+          description: Call resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResource'
+        '404':
+          $ref: '#/components/responses/call-scripting_NotFoundResponse'
+        '422':
+          $ref: '#/components/responses/call-scripting_UnprocessableEntityResponse'
+      x-codeSamples:
+        - lang: JavaScript
+          source: |-
+            import Telnyx from 'telnyx';
+
+            const client = new Telnyx({
+              apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+            });
+
+            const call = await client.texml.accounts.calls.update('call_sid', { account_sid: 'account_sid' });
+
+            console.log(call.account_sid);
+        - lang: Python
+          source: |-
+            import os
+            from telnyx import Telnyx
+
+            client = Telnyx(
+                api_key=os.environ.get("TELNYX_API_KEY"),  # This is the default and can be omitted
+            )
+            call = client.texml.accounts.calls.update(
+                call_sid="call_sid",
+                account_sid="account_sid",
+            )
+            print(call.account_sid)
+        - lang: Go
+          source: "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\n\t\"github.com/team-telnyx/telnyx-go\"\n\t\"github.com/team-telnyx/telnyx-go/option\"\n)\n\nfunc main() {\n\tclient := telnyx.NewClient(\n\t\toption.WithAPIKey(\"My API Key\"),\n\t)\n\tcall, err := client.Texml.Accounts.Calls.Update(\n\t\tcontext.TODO(),\n\t\t\"call_sid\",\n\t\ttelnyx.TexmlAccountCallUpdateParams{\n\t\t\tAccountSid: \"account_sid\",\n\t\t\tUpdateCall: telnyx.UpdateCallParam{},\n\t\t},\n\t)\n\tif err != nil {\n\t\tpanic(err.Error())\n\t}\n\tfmt.Printf(\"%+v\\n\", call.AccountSid)\n}\n"
+        - lang: Java
+          source: |-
+            package com.telnyx.sdk.example;
+
+            import com.telnyx.sdk.client.TelnyxClient;
+            import com.telnyx.sdk.client.okhttp.TelnyxOkHttpClient;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallUpdateParams;
+            import com.telnyx.sdk.models.texml.accounts.calls.CallUpdateResponse;
+            import com.telnyx.sdk.models.texml.accounts.calls.UpdateCall;
+
+            public final class Main {
+                private Main() {}
+
+                public static void main(String[] args) {
+                    TelnyxClient client = TelnyxOkHttpClient.fromEnv();
+
+                    CallUpdateParams params = CallUpdateParams.builder()
+                        .accountSid("account_sid")
+                        .callSid("call_sid")
+                        .updateCall(UpdateCall.builder().build())
+                        .build();
+                    CallUpdateResponse call = client.texml().accounts().calls().update(params);
+                }
+            }
+        - lang: Ruby
+          source: |-
+            require "telnyx"
+
+            telnyx = Telnyx::Client.new(api_key: "My API Key")
+
+            call = telnyx.texml.accounts.calls.update("call_sid", account_sid: "account_sid")
+
+            puts(call)
+        - lang: PHP
+          source: |-
+            <?php
+
+            require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+            use Telnyx\Client;
+            use Telnyx\Core\Exceptions\APIException;
+
+            $client = new Client(apiKey: getenv('TELNYX_API_KEY') ?: 'My API Key');
+
+            try {
+              $call = $client->texml->accounts->calls->update(
+                'call_sid',
+                accountSid: 'account_sid',
+                fallbackMethod: 'GET',
+                fallbackURL: 'https://www.example.com/intruction-c.xml',
+                method: 'GET',
+                status: 'completed',
+                statusCallback: 'https://www.example.com/callback',
+                statusCallbackMethod: 'GET',
+                texml: '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Hello</Say></Response>',
+                url: 'https://www.example.com/intruction-b.xml',
+              );
+
+              var_dump($call);
+            } catch (APIException $e) {
+              echo $e->getMessage();
+            }
+        - lang: CLI
+          source: |-
+            telnyx texml:accounts:calls update \
+              --api-key 'My API Key' \
+              --account-sid account_sid \
+              --call-sid call_sid
+  /texml/ai_calls/{connection_id}:
+    post:
+      summary: Initiate an outbound AI call
+      description: |
+        Initiate an outbound AI call with warm-up support. Validates parameters, builds an internal TeXML with an AI Assistant configuration, encodes instructions into client state, and calls the dial API. The Twiml, Texml, and Url parameters are not allowed and will result in a 422 error.
+
+        **Expected callback events:**
+
+        Status callbacks: `initiated`, `ringing`, `answered`, one terminal status (`completed`, `no-answer`, `busy`, `canceled`, or `failed`), then `analyzed` after post-call processing completes.
+
+        Conversation callbacks: `conversation_created` and `conversation_ended`.
+
+        Recording, AMD, transcription, and deepfake detection callbacks are only sent when those features are enabled.
+      x-latency-category: responsive
+      x-group-parameters: 'true'
+      operationId: InitiateTexmlAICall
+      tags:
+        - TeXML REST Commands
+      parameters:
+        - name: connection_id
+          in: path
+          description: The ID of the TeXML connection to use for the call.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Initiate AI Call request object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateAICallRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/InitiateAICallResponse'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedResponse'
+        '422':
+          $ref: '#/components/responses/call-scripting_UnprocessableEntityResponse'
+      x-codeSamples:
+        - lang: JavaScript
+          source: |-
+            import Telnyx from 'telnyx';
+
+            const client = new Telnyx({
+              apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+            });
+
+            const response = await client.texml.initiateAICall('connection_id', {
+              AIAssistantId: 'ai-assistant-id-123',
+              From: '+13120001234',
+              To: '+13121230000',
+            });
+
+            console.log(response.call_sid);
+        - lang: Python
+          source: |-
+            import os
+            from telnyx import Telnyx
+
+            client = Telnyx(
+                api_key=os.environ.get("TELNYX_API_KEY"),  # This is the default and can be omitted
+            )
+            response = client.texml.initiate_ai_call(
+                connection_id="connection_id",
+                ai_assistant_id="ai-assistant-id-123",
+                from_="+13120001234",
+                to="+13121230000",
+            )
+            print(response.call_sid)
+        - lang: Go
+          source: "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\n\t\"github.com/team-telnyx/telnyx-go\"\n\t\"github.com/team-telnyx/telnyx-go/option\"\n)\n\nfunc main() {\n\tclient := telnyx.NewClient(\n\t\toption.WithAPIKey(\"My API Key\"),\n\t)\n\tresponse, err := client.Texml.InitiateAICall(\n\t\tcontext.TODO(),\n\t\t\"connection_id\",\n\t\ttelnyx.TexmlInitiateAICallParams{\n\t\t\tAIAssistantID: \"ai-assistant-id-123\",\n\t\t\tFrom:          \"+13120001234\",\n\t\t\tTo:            \"+13121230000\",\n\t\t},\n\t)\n\tif err != nil {\n\t\tpanic(err.Error())\n\t}\n\tfmt.Printf(\"%+v\\n\", response.CallSid)\n}\n"
+        - lang: Java
+          source: |-
+            package com.telnyx.sdk.example;
+
+            import com.telnyx.sdk.client.TelnyxClient;
+            import com.telnyx.sdk.client.okhttp.TelnyxOkHttpClient;
+            import com.telnyx.sdk.models.texml.TexmlInitiateAiCallParams;
+            import com.telnyx.sdk.models.texml.TexmlInitiateAiCallResponse;
+
+            public final class Main {
+                private Main() {}
+
+                public static void main(String[] args) {
+                    TelnyxClient client = TelnyxOkHttpClient.fromEnv();
+
+                    TexmlInitiateAiCallParams params = TexmlInitiateAiCallParams.builder()
+                        .connectionId("connection_id")
+                        .aiAssistantId("ai-assistant-id-123")
+                        .from("+13120001234")
+                        .to("+13121230000")
+                        .build();
+                    TexmlInitiateAiCallResponse response = client.texml().initiateAiCall(params);
+                }
+            }
+        - lang: Ruby
+          source: |-
+            require "telnyx"
+
+            telnyx = Telnyx::Client.new(api_key: "My API Key")
+
+            response = telnyx.texml.initiate_ai_call(
+              "connection_id",
+              ai_assistant_id: "ai-assistant-id-123",
+              from: "+13120001234",
+              to: "+13121230000"
+            )
+
+            puts(response)
+        - lang: PHP
+          source: |-
+            <?php
+
+            require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+            use Telnyx\Client;
+            use Telnyx\Core\Exceptions\APIException;
+
+            $client = new Client(apiKey: getenv('TELNYX_API_KEY') ?: 'My API Key');
+
+            try {
+              $response = $client->texml->initiateAICall(
+                'connection_id',
+                aiAssistantID: 'ai-assistant-id-123',
+                from: '+13120001234',
+                to: '+13121230000',
+                aiAssistantDynamicVariables: [
+                  'customer_name' => 'John Doe', 'account_id' => '12345'
+                ],
+                aiAssistantVersion: 'AIAssistantVersion',
+                asyncAmd: true,
+                asyncAmdStatusCallback: 'https://www.example.com/callback',
+                asyncAmdStatusCallbackMethod: 'GET',
+                callerID: 'Info',
+                conversationCallback: 'https://www.example.com/conversation-callback',
+                conversationCallbackMethod: 'GET',
+                conversationCallbacks: [
+                  'https://www.example.com/conversation-callback1',
+                  'https://www.example.com/conversation-callback2',
+                ],
+                customHeaders: [['name' => 'X-Custom-Header', 'value' => 'custom-value']],
+                detectionMode: 'Premium',
+                machineDetection: 'Enable',
+                machineDetectionPromptEndTimeout: 5000,
+                machineDetectionSilenceTimeout: 2000,
+                machineDetectionSpeechEndThreshold: 2000,
+                machineDetectionSpeechThreshold: 2000,
+                machineDetectionTimeout: 5000,
+                passports: 'Passports',
+                preferredCodecs: 'PCMA,PCMU',
+                record: false,
+                recordingChannels: 'dual',
+                recordingStatusCallback: 'https://example.com/recording_status_callback',
+                recordingStatusCallbackEvent: 'in-progress completed absent',
+                recordingStatusCallbackMethod: 'GET',
+                recordingTimeout: 5,
+                recordingTrack: 'inbound',
+                sendRecordingURL: false,
+                sipAuthPassword: '1234',
+                sipAuthUsername: 'user',
+                sipRegion: 'Canada',
+                statusCallback: 'https://www.example.com/callback',
+                statusCallbackEvent: 'initiated answered',
+                statusCallbackMethod: 'GET',
+                statusCallbacks: [
+                  'https://www.example.com/callback1', 'https://www.example.com/callback2'
+                ],
+                timeLimit: 3600,
+                timeoutSeconds: 60,
+                trim: 'trim-silence',
+              );
+
+              var_dump($response);
+            } catch (APIException $e) {
+              echo $e->getMessage();
+            }
+        - lang: CLI
+          source: |-
+            telnyx texml initiate-ai-call \
+              --api-key 'My API Key' \
+              --connection-id connection_id \
+              --ai-assistant-id ai-assistant-id-123 \
+              --from +13120001234 \
+              --to +13121230000
+webhooks:
+  TexmlCallAnsweredWebhook:
+    post:
+      operationId: TexmlCallAnswered
+      summary: TeXML Call Answered
+      description: |-
+        Webhook sent when a TeXML call is answered.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlCallAnsweredWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlCallCompletedWebhook:
+    post:
+      operationId: TexmlCallCompleted
+      summary: TeXML Call Completed
+      description: |-
+        Webhook sent when a TeXML call is completed.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlCallCompletedWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlCallInitiatedWebhook:
+    post:
+      operationId: TexmlCallInitiated
+      summary: TeXML Call Initiated
+      description: |-
+        Webhook sent when a TeXML call is initiated.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlCallInitiatedWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlCallRingingWebhook:
+    post:
+      operationId: TexmlCallRinging
+      summary: TeXML Call Ringing
+      description: |-
+        Webhook sent when a TeXML call is ringing.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlCallRingingWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlCallAmdWebhook:
+    post:
+      operationId: TexmlCallAmd
+      summary: TeXML Call AMD
+      description: |-
+        Webhook sent when Answering Machine Detection (AMD) completes during a TeXML call.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlCallAmdWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlCallDtmfWebhook:
+    post:
+      operationId: TexmlCallDtmf
+      summary: TeXML Call DTMF
+      description: |-
+        Webhook sent when a DTMF digit is received during a TeXML call.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlCallDtmfWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlGatherWebhook:
+    post:
+      operationId: TexmlGather
+      summary: TeXML Gather
+      description: |-
+        Webhook sent when a Gather command completes (sent to the action URL).
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlGatherWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlHttpRequestWebhook:
+    post:
+      operationId: TexmlHttpRequest
+      summary: TeXML HTTP Request
+      description: |-
+        Webhook sent as response to an HTTP Request instruction.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlHttpRequestWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlAiGatherWebhook:
+    post:
+      operationId: TexmlAiGather
+      summary: TeXML AI Gather
+      description: |-
+        Webhook sent when AI Gather completes with transcription results.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlAiGatherWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+  TexmlReferStatusWebhook:
+    post:
+      operationId: TexmlReferStatus
+      summary: TeXML Refer Status
+      description: |-
+        Webhook sent for SIP REFER status updates.
+        This webhook uses Telnyx headers (telnyx-timestamp, telnyx-signature-ed25519) that are compatible with Standard Webhooks specification for SDK generation. Custom validation logic can map these to standard webhook-timestamp and webhook-signature equivalents. See https://github.com/standard-webhooks/standard-webhooks for details.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TexmlReferStatusWebhookSchema'
+      responses:
+        '200':
+          description: The server must return an HTTP 200, otherwise we will reattempt delivery at the failover webhook URL.
+      parameters:
+        - name: telnyx-timestamp
+          in: header
+          required: true
+          description: Unix timestamp (seconds since epoch) of when the webhook was sent - compatible with webhook-timestamp
+          schema:
+            type: integer
+            format: int64
+            description: Unix timestamp for replay attack prevention
+          x-webhook-equivalent: webhook-timestamp
+        - name: telnyx-signature-ed25519
+          in: header
+          required: true
+          description: Base64 encoded Ed25519 signature for webhook verification - compatible with webhook-signature
+          schema:
+            type: string
+            description: Ed25519 signature of timestamp|payload for verification
+          x-webhook-equivalent: webhook-signature
+      tags:
+        - Callbacks
+components:
+  securitySchemes:
+    bearerAuth:
+      scheme: bearer
+      type: http
+  parameters:
+    AccountSid:
+      name: account_sid
+      in: path
+      required: true
+      description: The id of the account the resource belongs to.
+      schema:
+        type: string
+    Page:
+      name: Page
+      in: query
+      required: false
+      description: The number of the page to be displayed, zero-indexed, should be used in conjuction with PageToken.
+      schema:
+        type: integer
+      example: 1
+    PageSize:
+      name: PageSize
+      in: query
+      required: false
+      description: The number of records to be displayed on a page
+      schema:
+        type: integer
+      example: 10
+    PageToken:
+      name: PageToken
+      in: query
+      required: false
+      description: Used to request the next page of results.
+      schema:
+        type: string
+    To:
+      name: To
+      in: query
+      required: false
+      description: Filters calls by the to number.
+      schema:
+        type: string
+      example: '+1312345678'
+    From:
+      name: From
+      in: query
+      required: false
+      description: Filters calls by the from number.
+      schema:
+        type: string
+      example: '+1312345678'
+    Status:
+      name: Status
+      in: query
+      required: false
+      description: Filters calls by status.
+      schema:
+        type: string
+        enum:
+          - canceled
+          - completed
+          - failed
+          - busy
+          - no-answer
+      example: no-answer
+    StartTime:
+      name: StartTime
+      in: query
+      required: false
+      description: Filters calls by their start date. Expected format is YYYY-MM-DD.
+      schema:
+        type: string
+      example: '2023-05-22'
+    StartTime_gt:
+      name: StartTime_gt
+      in: query
+      required: false
+      description: Filters calls by their start date (after). Expected format is YYYY-MM-DD
+      schema:
+        type: string
+      example: '2023-05-22'
+    StartTime_lt:
+      name: StartTime_lt
+      in: query
+      required: false
+      description: Filters calls by their start date (before). Expected format is YYYY-MM-DD
+      schema:
+        type: string
+      example: '2023-05-22'
+    EndTime:
+      name: EndTime
+      in: query
+      required: false
+      description: Filters calls by their end date. Expected format is YYYY-MM-DD
+      schema:
+        type: string
+      example: '2023-05-22'
+    EndTime_gt:
+      name: EndTime_gt
+      in: query
+      required: false
+      description: Filters calls by their end date (after). Expected format is YYYY-MM-DD
+      schema:
+        type: string
+      example: '2023-05-22'
+    EndTime_lt:
+      name: EndTime_lt
+      in: query
+      required: false
+      description: Filters calls by their end date (before). Expected format is YYYY-MM-DD
+      schema:
+        type: string
+      example: '2023-05-22'
+    CallSid:
+      name: call_sid
+      in: path
+      required: true
+      description: The CallSid that identifies the call to update.
+      schema:
+        type: string
+  schemas:
+    CallResource:
+      type: object
+      title: Call resource
+      example:
+        account_sid: 61bf923e-5e4d-4595-a110-56190ea18a1b
+        answered_by: human
+        caller_name: '+13122010094'
+        date_created: Thu, 15 Jun 2023 09:56:45 +0000
+        date_updated: Thu, 15 Jun 2023 09:56:56 +0000
+        direction: inbound
+        duration: '11'
+        end_time: Thu, 15 Jun 2023 09:56:56 +0000
+        from: '+13123456789'
+        from_formatted: (312) 345-6789
+        sid: v3:KBnLO0ZK3DhKM5s7bE9VluaSmKsOchKht_fUYvxcp8ysbmzCCtpkmA
+        start_time: Thu, 15 Jun 2023 09:56:45 +0000
+        status: completed
+        to: '+13987654321'
+        to_formatted: (398) 765-4321
+        uri: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls/v3:KBnLO0ZK3DhKM5s7bE9VluaSmKsOchKht_fUYvxcp8ysbmzCCtpkmA.json
+      properties:
+        account_sid:
+          type: string
+          description: The id of the account the resource belongs to.
+          example: 61bf923e-5e4d-4595-a110-56190ea18a1b
+        answered_by:
+          type: string
+          description: The value of the answering machine detection result, if this feature was enabled for the call.
+          enum:
+            - human
+            - machine
+            - not_sure
+          example: human
+        caller_name:
+          type: string
+          description: Caller ID, if present.
+          example: CALLER
+        date_created:
+          type: string
+          description: The timestamp of when the resource was created.
+          example: Thu, 15 Jun 2023 09:56:45 +0000
+        date_updated:
+          type: string
+          description: The timestamp of when the resource was last updated.
+          example: Thu, 15 Jun 2023 09:56:45 +0000
+        direction:
+          type: string
+          description: The direction of this call.
+          enum:
+            - inbound
+            - outbound
+          example: inbound
+        duration:
+          type: string
+          description: The duration of this call, given in seconds.
+          example: '12'
+        end_time:
+          type: string
+          description: The end time of this call.
+          example: Thu, 15 Jun 2023 09:56:45 +0000
+        from:
+          type: string
+          description: The phone number or SIP address that made this call.
+          example: '+13123456789'
+        from_formatted:
+          type: string
+          description: The from number formatted for display.
+          example: (312) 345-6789
+        price:
+          type: string
+          description: The price of this call, the currency is specified in the price_unit field. Only populated when the call cost feature is enabled for the account.
+          example: '0.10'
+        price_unit:
+          type: string
+          description: The unit in which the price is given.
+          example: USD
+        sid:
+          type: string
+          description: The identifier of this call.
+          example: v3:KBnLO0ZK3DhKM5s7bE9VluaSmKsOchKht_fUYvxcp8ysbmzCCtpkmA
+        start_time:
+          type: string
+          description: The start time of this call.
+          example: Thu, 15 Jun 2023 09:56:45 +0000
+        status:
+          type: string
+          description: The status of this call.
+          enum:
+            - ringing
+            - in-progress
+            - canceled
+            - completed
+            - failed
+            - busy
+            - no-answer
+          example: completed
+        to:
+          type: string
+          description: The phone number or SIP address that received this call.
+          example: '+13987654321'
+        to_formatted:
+          type: string
+          description: The to number formatted for display.
+          example: (398) 765-4321
+        uri:
+          type: string
+          description: The relative URI for this call.
+          example: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls/v3:KBnLO0ZK3DhKM5s7bE9VluaSmKsOchKht_fUYvxcp8ysbmzCCtpkmA.json
+    CallResourceIndex:
+      type: object
+      title: Multiple call resources
+      example:
+        calls: []
+        end: 0
+        first_page_uri: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls.json?Page=0&PageSize=1
+        next_page_uri: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls.json?Page=1&PageSize=1&PageToken=MTY4AjgyNDkwNzIxMQ
+        page: 0
+        page_size: 1
+        start: 0
+        uri: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls.json?Page=0&PageSize=1
+      properties:
+        calls:
+          type: array
+          items:
+            $ref: '#/components/schemas/CallResource'
+        end:
+          type: integer
+          description: The number of the last element on the page, zero-indexed.
+          example: 19
+        first_page_uri:
+          type: string
+          description: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls.json?Page=0&PageSize=1
+          example: accepted
+        next_page_uri:
+          type: string
+          description: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls.json?Page=1&PageSize=1&PageToken=MTY4AjgyNDkwNzIxMQ
+          example: accepted
+        page:
+          type: integer
+          description: Current page number, zero-indexed.
+          example: 0
+        page_size:
+          type: integer
+          description: The number of items on the page
+          example: 20
+        start:
+          type: integer
+          description: The number of the first element on the page, zero-indexed.
+          example: 0
+        uri:
+          type: string
+          description: The URI of the current page.
+          example: /v2/texml/Accounts/61bf923e-5e4d-4595-a110-56190ea18a1b/Calls.json?Page=0&PageSize=1
+    call-scripting_ResourceNotFoundError:
+      type: object
+      title: Resource not found
+      example:
+        errors:
+          - detail: Resource not found
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+    SendRecordingUrl:
+      type: boolean
+      description: Whether to send RecordingUrl in webhooks.
+      example: false
+      default: true
+    InitiateCallRequest:
+      type: object
+      title: Initiate Call Request
+      required:
+        - To
+        - From
+        - ApplicationSid
+      properties:
+        ApplicationSid:
+          description: The ID of the TeXML Application.
+          type: string
+        To:
+          description: The phone number of the called party. Phone numbers are formatted with a `+` and country code.
+          example: '+16175551212'
+          type: string
+        From:
+          description: The phone number of the party that initiated the call. Phone numbers are formatted with a `+` and country code.
+          example: '+16175551212'
+          type: string
+        CallerId:
+          description: To be used as the caller id name (SIP From Display Name) presented to the destination (`To` number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and `-_~!.+` special characters. If ommited, the display name will be the same as the number in the `From` field.
+          example: Info
+          type: string
+        Url:
+          description: The URL from which Telnyx will retrieve the TeXML call instructions.
+          example: https://www.example.com/instructions.xml
+          type: string
+        UrlMethod:
+          description: HTTP request type used for `Url`. The default value is inherited from TeXML Application setting.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        FallbackUrl:
+          description: A failover URL for which Telnyx will retrieve the TeXML call instructions if the `Url` is not responding.
+          example: https://www.example.com/instructions-fallback.xml
+          type: string
+        StatusCallback:
+          description: URL destination for Telnyx to send status callback events to for the call.
+          example: https://www.example.com/callback
+          type: string
+        StatusCallbackMethod:
+          description: HTTP request type used for `StatusCallback`.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        StatusCallbackEvent:
+          description: The call events for which Telnyx should send a webhook. Multiple events can be defined when separated by a space.
+          example: initiated answered
+          default: completed
+          type: string
+        MachineDetection:
+          description: Enables Answering Machine Detection.
+          example: Enable
+          default: Disable
+          type: string
+          enum:
+            - Enable
+            - Disable
+            - DetectMessageEnd
+        DetectionMode:
+          description: Allows you to choose between Regular, Premium, and PremiumCallScreening detections. See https://developers.telnyx.com/docs/voice/programmable-voice/answering-machine-detection
+          example: Premium
+          default: Regular
+          type: string
+          enum:
+            - Premium
+            - Regular
+            - PremiumCallScreening
+        AsyncAmd:
+          description: Select whether to perform answering machine detection in the background. By default execution is blocked until Answering Machine Detection is completed.
+          example: true
+          default: false
+          type: boolean
+        AsyncAmdStatusCallback:
+          description: URL destination for Telnyx to send AMD callback events to for the call.
+          example: https://www.example.com/callback
+          type: string
+        AsyncAmdStatusCallbackMethod:
+          description: HTTP request type used for `AsyncAmdStatusCallback`. The default value is inherited from TeXML Application setting.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        MachineDetectionTimeout:
+          description: Maximum timeout threshold in milliseconds for overall detection.
+          example: 5000
+          default: 30000
+          maximum: 60000
+          minimum: 500
+          type: integer
+        MachineDetectionPromptEndTimeout:
+          description: Silence duration threshold after a call screening prompt before ending prompt detection, in milliseconds. Used when `DetectionMode` is `PremiumCallScreening`.
+          example: 5000
+          minimum: 1000
+          maximum: 120000
+          type: integer
+        MachineDetectionSpeechThreshold:
+          description: Maximum threshold of a human greeting. If greeting longer than this value, considered machine. Ignored when `premium` detection is used.
+          example: 2000
+          default: 3500
+          type: integer
+        MachineDetectionSpeechEndThreshold:
+          description: Silence duration threshold after a greeting message or voice for it be considered human. Ignored when `premium` detection is used.
+          example: 2000
+          default: 800
+          type: integer
+        MachineDetectionSilenceTimeout:
+          description: If initial silence duration is greater than this value, consider it a machine. Ignored when `premium` detection is used.
+          example: 2000
+          default: 3500
+          type: integer
+        CancelPlaybackOnMachineDetection:
+          description: Whether to cancel ongoing playback on `machine` detection. Defaults to `true`.
+          default: true
+          example: false
+          type: boolean
+        CancelPlaybackOnDetectMessageEnd:
+          description: Whether to cancel ongoing playback on `greeting ended` detection. Defaults to `true`.
+          default: true
+          example: false
+          type: boolean
+        DeepfakeDetection:
+          description: Enables Deepfake Detection on the dialed call. When enabled, audio from the remote party is analyzed to determine whether the voice is AI-generated. Results are delivered asynchronously via a callback.
+          example: Enable
+          type: string
+          enum:
+            - Enable
+        DeepfakeDetectionCallbackUrl:
+          description: URL destination for Telnyx to send deepfake detection callback events to for the call.
+          example: https://www.example.com/deepfake-callback
+          type: string
+        DeepfakeDetectionCallbackMethod:
+          description: HTTP request type used for `DeepfakeDetectionCallbackUrl`.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        PreferredCodecs:
+          description: The list of comma-separated codecs to be offered on a call.
+          example: PCMA,PCMU
+          type: string
+        Record:
+          description: Whether to record the entire participant's call leg. Defaults to `false`.
+          example: false
+          type: boolean
+        RecordingChannels:
+          description: The number of channels in the final recording. Defaults to `mono`.
+          example: dual
+          type: string
+          enum:
+            - mono
+            - dual
+        RecordingStatusCallback:
+          description: The URL the recording callbacks will be sent to.
+          example: https://example.com/recording_status_callback
+          type: string
+        RecordingStatusCallbackMethod:
+          description: HTTP request type used for `RecordingStatusCallback`. Defaults to `POST`.
+          example: GET
+          type: string
+          enum:
+            - GET
+            - POST
+        RecordingStatusCallbackEvent:
+          description: 'The changes to the recording''s state that should generate a call to `RecoridngStatusCallback`. Can be: `in-progress`, `completed` and `absent`. Separate multiple values with a space. Defaults to `completed`.'
+          example: in-progress completed absent
+          type: string
+        RecordingTimeout:
+          description: The number of seconds that Telnyx will wait for the recording to be stopped if silence is detected. The timer only starts when the speech is detected. Please note that the transcription is used to detect silence and the related charge will be applied. The minimum value is 0. The default value is 0 (infinite)
+          example: 5
+          type: integer
+          default: 0
+        RecordingTrack:
+          description: The audio track to record for the call. The default is `both`.
+          example: inbound
+          type: string
+          enum:
+            - inbound
+            - outbound
+            - both
+        SendRecordingUrl:
+          $ref: '#/components/schemas/SendRecordingUrl'
+        SipAuthPassword:
+          description: The password to use for SIP authentication.
+          example: '1234'
+          type: string
+        SipAuthUsername:
+          description: The username to use for SIP authentication.
+          example: user
+          type: string
+        Trim:
+          description: Whether to trim any leading and trailing silence from the recording. Defaults to `trim-silence`.
+          example: trim-silence
+          type: string
+          enum:
+            - trim-silence
+            - do-not-trim
+        CustomHeaders:
+          description: Custom HTTP headers to be sent with the call. Each header should be an object with 'name' and 'value' properties.
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: The name of the custom header
+              value:
+                type: string
+                description: The value of the custom header
+            required:
+              - name
+              - value
+          example:
+            - name: X-Custom-Header
+              value: custom-value
+        SipRegion:
+          description: Defines the SIP region to be used for the call.
+          type: string
+          default: US
+          enum:
+            - US
+            - Europe
+            - Canada
+            - Australia
+            - Middle East
+          example: Canada
+        MediaEncryption:
+          description: Defines whether media should be encrypted on the call. When set to `SRTP`, the call will use Secure Real-time Transport Protocol for media encryption. When set to `DTLS`, the call will use DTLS for media encryption. Only supported for SIP destinations.
+          example: disabled
+          default: disabled
+          type: string
+          enum:
+            - disabled
+            - SRTP
+            - DTLS
+        SuperviseCallSid:
+          description: The call control ID of the existing call to supervise. When provided, the created leg will be added to the specified call in supervising mode. Status callbacks and action callbacks will NOT be sent for the supervising leg.
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+          type: string
+        SupervisingRole:
+          description: 'The supervising role for the new leg. Determines the audio behavior: barge (hear both sides), whisper (only hear supervisor), monitor (hear both sides but supervisor muted). Default: barge'
+          example: monitor
+          type: string
+          enum:
+            - barge
+            - whisper
+            - monitor
+          default: barge
+        Timeout:
+          description: The number of seconds to wait for the called party to answer the call before the call is canceled. The minimum value is 5 and the maximum value is 120. Default is 30 seconds.
+          example: 60
+          type: integer
+          minimum: 5
+          maximum: 120
+          default: 30
+          x-stainless-param: timeout_seconds
+        TimeLimit:
+          description: The maximum duration of the call in seconds. The minimum value is 30 and the maximum value is 14400 (4 hours). Default is 14400 seconds.
+          example: 3600
+          type: integer
+          minimum: 30
+          maximum: 14400
+          default: 14400
+        Texml:
+          description: TeXML to be used as instructions for the call. If provided, the call will execute these instructions instead of fetching from the Url.
+          example: <?xml version="1.0" encoding="UTF-8"?><Response><Say>Hello</Say></Response>
+          type: string
+      oneOf:
+        - title: With URL
+          required:
+            - Url
+          properties:
+            Texml:
+              not: {}
+        - title: With TeXML
+          required:
+            - Texml
+          properties:
+            Url:
+              not: {}
+        - title: Application Default
+          properties:
+            Url:
+              not: {}
+            Texml:
+              not: {}
+      example:
+        To: '+13121230000'
+        From: '+13120001234'
+        Url: https://www.example.com/texml.xml
+        StatusCallback: https://www.example.com/statuscallback-listener
+        ApplicationSid: example-app-sid
+    InitiateCallResult:
+      type: object
+      title: Initaite TeXML Call Result
+      example:
+        from: '+13120001234'
+        to: '+13121230000'
+        status: queued
+      properties:
+        from:
+          type: string
+          example: '+13120001234'
+        to:
+          type: string
+          example: '+13120000000'
+        status:
+          type: string
+          example: accepted
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              detail:
+                type: string
+              meta:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+              title:
+                type: string
+              source:
+                type: object
+                properties:
+                  pointer:
+                    type: string
+    UpdateCallRequest:
+      type: object
+      title: Update Call Request
+      properties:
+        Status:
+          description: The value to set the call status to. Setting the status to completed ends the call.
+          example: completed
+          type: string
+        Url:
+          description: The URL where TeXML will make a request to retrieve a new set of TeXML instructions to continue the call flow.
+          example: https://www.example.com/intruction-b.xml
+          type: string
+        Method:
+          description: HTTP request type used for `Url`.
+          example: GET
+          type: string
+          enum:
+            - GET
+            - POST
+        FallbackUrl:
+          description: A failover URL for which Telnyx will retrieve the TeXML call instructions if the Url is not responding.
+          example: https://www.example.com/intruction-c.xml
+          type: string
+        FallbackMethod:
+          description: HTTP request type used for `FallbackUrl`.
+          example: GET
+          type: string
+          enum:
+            - GET
+            - POST
+        StatusCallback:
+          description: URL destination for Telnyx to send status callback events to for the call.
+          example: https://www.example.com/callback
+          type: string
+        StatusCallbackMethod:
+          description: HTTP request type used for `StatusCallback`.
+          example: GET
+          type: string
+          enum:
+            - GET
+            - POST
+        Texml:
+          description: TeXML to replace the current one with.
+          example: <?xml version="1.0" encoding="UTF-8"?><Response><Say>Hello</Say></Response>
+          type: string
+      example:
+        Status: completed
+    InitiateAICallRequest:
+      type: object
+      title: Initiate AI Call Request
+      required:
+        - From
+        - To
+        - AIAssistantId
+      properties:
+        From:
+          description: The phone number of the party initiating the call. Phone numbers are formatted with a `+` and country code.
+          example: '+16175551212'
+          type: string
+        To:
+          description: The phone number of the called party. Phone numbers are formatted with a `+` and country code.
+          example: '+16175551212'
+          type: string
+        AIAssistantId:
+          description: The ID of the AI assistant to use for the call.
+          type: string
+        AIAssistantVersion:
+          description: The version of the AI assistant to use.
+          type: string
+        AIAssistantDynamicVariables:
+          description: Key-value map of dynamic variables to pass to the AI assistant.
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            customer_name: John Doe
+            account_id: '12345'
+        CallerId:
+          description: To be used as the caller id name (SIP From Display Name) presented to the destination (`To` number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and `-_~!.+` special characters. If omitted, the display name will be the same as the number in the `From` field.
+          example: Info
+          type: string
+        StatusCallback:
+          description: URL destination for Telnyx to send status callback events for this AI call. When provided, this per-call value overrides the status callback URL configured on the TeXML application/connection.
+          example: https://www.example.com/callback
+          type: string
+        StatusCallbackEvent:
+          description: 'The status callback events for which Telnyx should send a webhook for this AI call. Multiple events can be defined when separated by a space. Valid values: initiated, ringing, answered, completed, no-answer, busy, canceled, failed, analyzed. When provided, this per-call value overrides the status callback events configured on the TeXML application/connection.'
+          example: initiated answered
+          default: completed
+          type: string
+        StatusCallbackMethod:
+          description: HTTP request type used for `StatusCallback` and `StatusCallbacks` for this AI call. When provided, this per-call value overrides the status callback method configured on the TeXML application/connection.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        StatusCallbacks:
+          description: Array of URL destinations for Telnyx to send status callback events for this AI call. When provided, these per-call values override the status callback URL configured on the TeXML application/connection.
+          type: array
+          items:
+            type: string
+          example:
+            - https://www.example.com/callback1
+            - https://www.example.com/callback2
+        CustomHeaders:
+          description: Custom HTTP headers to be sent with the call. Each header should be an object with 'name' and 'value' properties.
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: The name of the custom header
+              value:
+                type: string
+                description: The value of the custom header
+            required:
+              - name
+              - value
+          example:
+            - name: X-Custom-Header
+              value: custom-value
+        ConversationCallback:
+          description: URL destination for Telnyx to send AI conversation callback events for this call. Events include `conversation_created` and `conversation_ended`.
+          example: https://www.example.com/conversation-callback
+          type: string
+        ConversationCallbackMethod:
+          description: HTTP request type used for `ConversationCallback` and `ConversationCallbacks`.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        ConversationCallbacks:
+          description: Array of URL destinations for AI conversation callback events for this call. Events include `conversation_created` and `conversation_ended`.
+          type: array
+          items:
+            type: string
+          example:
+            - https://www.example.com/conversation-callback1
+            - https://www.example.com/conversation-callback2
+        MachineDetection:
+          description: Enables Answering Machine Detection.
+          example: Enable
+          default: Disable
+          type: string
+          enum:
+            - Enable
+            - Disable
+            - DetectMessageEnd
+        DetectionMode:
+          description: Allows you to choose between Regular, Premium, and PremiumCallScreening detections. See https://developers.telnyx.com/docs/voice/programmable-voice/answering-machine-detection
+          example: Premium
+          default: Regular
+          type: string
+          enum:
+            - Premium
+            - Regular
+            - PremiumCallScreening
+        AsyncAmd:
+          description: Select whether to perform answering machine detection in the background. By default execution is blocked until Answering Machine Detection is completed.
+          example: true
+          default: false
+          type: boolean
+        AsyncAmdStatusCallback:
+          description: URL destination for Telnyx to send AMD callback events to for the call.
+          example: https://www.example.com/callback
+          type: string
+        AsyncAmdStatusCallbackMethod:
+          description: HTTP request type used for `AsyncAmdStatusCallback`.
+          example: GET
+          default: POST
+          type: string
+          enum:
+            - GET
+            - POST
+        MachineDetectionTimeout:
+          description: Maximum timeout threshold in milliseconds for overall detection.
+          example: 5000
+          default: 30000
+          maximum: 60000
+          minimum: 500
+          type: integer
+        MachineDetectionPromptEndTimeout:
+          description: Silence duration threshold after a call screening prompt before ending prompt detection, in milliseconds. Used when `DetectionMode` is `PremiumCallScreening`.
+          example: 5000
+          minimum: 1000
+          maximum: 120000
+          type: integer
+        MachineDetectionSpeechThreshold:
+          description: Maximum threshold of a human greeting. If greeting longer than this value, considered machine. Ignored when `premium` detection is used.
+          example: 2000
+          default: 3500
+          type: integer
+        MachineDetectionSpeechEndThreshold:
+          description: Silence duration threshold after a greeting message or voice for it be considered human. Ignored when `premium` detection is used.
+          example: 2000
+          default: 800
+          type: integer
+        MachineDetectionSilenceTimeout:
+          description: If initial silence duration is greater than this value, consider it a machine. Ignored when `premium` detection is used.
+          example: 2000
+          default: 3500
+          type: integer
+        Passports:
+          description: A string of passport identifiers to associate with the call.
+          type: string
+        TimeLimit:
+          description: The maximum duration of the call in seconds. The minimum value is 30 and the maximum value is 14400 (4 hours). Default is 14400 seconds.
+          example: 3600
+          type: integer
+          minimum: 30
+          maximum: 14400
+          default: 14400
+        Timeout:
+          description: The number of seconds to wait for the called party to answer the call before the call is canceled. The minimum value is 5 and the maximum value is 120. Default is 30 seconds.
+          example: 60
+          type: integer
+          minimum: 5
+          maximum: 120
+          default: 30
+          x-stainless-param: timeout_seconds
+        Record:
+          description: Whether to record the entire participant's call leg. Defaults to `false`.
+          example: false
+          type: boolean
+        RecordingChannels:
+          description: The number of channels in the final recording. Defaults to `mono`.
+          example: dual
+          type: string
+          enum:
+            - mono
+            - dual
+        RecordingStatusCallback:
+          description: The URL the recording callbacks will be sent to.
+          example: https://example.com/recording_status_callback
+          type: string
+        RecordingStatusCallbackMethod:
+          description: HTTP request type used for `RecordingStatusCallback`. Defaults to `POST`.
+          example: GET
+          type: string
+          enum:
+            - GET
+            - POST
+        RecordingStatusCallbackEvent:
+          description: 'The changes to the recording''s state that should generate a call to `RecordingStatusCallback`. Can be: `in-progress`, `completed` and `absent`. Separate multiple values with a space. Defaults to `completed`.'
+          example: in-progress completed absent
+          type: string
+        RecordingTimeout:
+          description: The number of seconds that Telnyx will wait for the recording to be stopped if silence is detected. The timer only starts when the speech is detected. The minimum value is 0. The default value is 0 (infinite).
+          example: 5
+          type: integer
+          default: 0
+        RecordingTrack:
+          description: The audio track to record for the call. The default is `both`.
+          example: inbound
+          type: string
+          enum:
+            - inbound
+            - outbound
+            - both
+        Trim:
+          description: Whether to trim any leading and trailing silence from the recording. Defaults to `trim-silence`.
+          example: trim-silence
+          type: string
+          enum:
+            - trim-silence
+            - do-not-trim
+        SendRecordingUrl:
+          $ref: '#/components/schemas/SendRecordingUrl'
+        PreferredCodecs:
+          description: The list of comma-separated codecs to be offered on a call.
+          example: PCMA,PCMU
+          type: string
+        SipAuthUsername:
+          description: The username to use for SIP authentication.
+          example: user
+          type: string
+        SipAuthPassword:
+          description: The password to use for SIP authentication.
+          example: '1234'
+          type: string
+        SipRegion:
+          description: Defines the SIP region to be used for the call.
+          type: string
+          default: US
+          enum:
+            - US
+            - Europe
+            - Canada
+            - Australia
+            - Middle East
+          example: Canada
+      example:
+        From: '+13120001234'
+        To: '+13121230000'
+        AIAssistantId: ai-assistant-id-123
+    InitiateAICallResult:
+      type: object
+      title: Initiate AI Call Result
+      example:
+        from: '+13120001234'
+        to: '+13121230000'
+        status: queued
+        call_sid: v3:example-call-sid
+      properties:
+        from:
+          type: string
+          example: '+13120001234'
+        to:
+          type: string
+          example: '+13120000000'
+        status:
+          type: string
+          example: queued
+        call_sid:
+          type: string
+          example: v3:example-call-sid
+    TexmlCallAnsweredWebhookSchema:
+      type: object
+      title: TeXML Call Answered Webhook
+      description: Webhook sent when a TeXML call is answered.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        CallDuration:
+          type: string
+          description: The duration of the call in seconds (conditional, only present if start_time and end_time are available).
+          example: '15'
+        CallInitiatedAt:
+          type: string
+          format: date-time
+          description: The timestamp when the call was initiated.
+          example: '2024-01-15T10:30:26.028Z'
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallStatus:
+          type: string
+          description: The status of the call.
+          enum:
+            - in-progress
+          example: in-progress
+        CallbackSource:
+          type: string
+          description: The source of the callback.
+          enum:
+            - call-progress-events
+          example: call-progress-events
+        CallerId:
+          type: string
+          description: The display name of the caller.
+          example: John Doe
+        Codec:
+          type: string
+          description: The audio codec used for the call (conditional).
+          example: PCMU
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        ErrorCode:
+          type: string
+          description: Error code if an error occurred (conditional).
+          example: '10001'
+        ErrorMessage:
+          type: string
+          description: Error message if an error occurred (conditional).
+          example: Call failed
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        ParentCallSid:
+          type: string
+          description: The unique identifier of the parent call (conditional, only present for outbound calls initiated via Dial).
+          example: v3:parent-call-id
+        ParentCallSidLegacy:
+          type: string
+          description: Legacy parent call identifier, same as ParentCallSid (conditional, only present for outbound calls initiated via Dial).
+          example: v3:parent-call-id
+        SamplingRate:
+          type: string
+          description: The audio sampling rate (conditional).
+          example: '8000'
+        SequenceNumber:
+          type: integer
+          description: The sequence number of the event.
+          example: 2
+        ShakenStirAttestation:
+          type: string
+          description: SHAKEN/STIR attestation level (conditional, only present if shaken_stir_data is available).
+          example: A
+        ShakenStirValidated:
+          type: boolean
+          description: Whether SHAKEN/STIR validation passed (conditional, only present if shaken_stir_data is available).
+          example: true
+        Timestamp:
+          type: string
+          format: date-time
+          description: The UTC timestamp when the webhook was generated.
+          example: '2024-01-15T10:30:00Z'
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+      required:
+        - AccountSid
+        - CallInitiatedAt
+        - CallSid
+        - CallSidLegacy
+        - CallStatus
+        - From
+        - To
+        - ConnectionId
+        - Timestamp
+        - CallbackSource
+        - SequenceNumber
+    TexmlCallCompletedWebhookSchema:
+      type: object
+      title: TeXML Call Completed Webhook
+      description: Webhook sent when a TeXML call is completed.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        AnsweredTime:
+          type: string
+          format: date-time
+          description: The time when the call was answered (only present when CallStatus is 'completed').
+          example: '2024-01-15T10:30:15Z'
+        CallControlId:
+          type: string
+          description: The call control ID (only present when CallStatus is 'completed').
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallDuration:
+          type: string
+          description: The duration of the call in seconds (conditional, only present if start_time and end_time are available).
+          example: '45'
+        CallInitiatedAt:
+          type: string
+          format: date-time
+          description: The timestamp when the call was initiated.
+          example: '2024-01-15T10:30:26.028Z'
+        CallLegId:
+          type: string
+          description: The call leg ID (only present when CallStatus is 'completed').
+          example: abc123-leg1
+        CallQualityStats:
+          type: string
+          description: JSON-encoded call quality statistics (only present when CallStatus is 'completed').
+          example: '{"mos":4.2,"jitter":10,"packet_loss":0.5}'
+        CallSessionId:
+          type: string
+          description: The call session ID (only present when CallStatus is 'completed').
+          example: session-abc123
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallStatus:
+          type: string
+          description: The status of the call.
+          enum:
+            - completed
+            - busy
+            - no-answer
+            - canceled
+            - failed
+          example: completed
+        CallbackSource:
+          type: string
+          description: The source of the callback.
+          enum:
+            - call-progress-events
+          example: call-progress-events
+        CallerId:
+          type: string
+          description: The display name of the caller.
+          example: John Doe
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        DialCallDuration:
+          type: string
+          description: The duration of the dialed call in seconds (conditional, only present in hangup action callbacks for Dial).
+          example: '120'
+        DialCallSid:
+          type: string
+          description: The unique identifier of the dialed call (conditional, only present in hangup action callbacks for Dial).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        DialCallSidLegacy:
+          type: string
+          description: Legacy dialed call identifier, same as DialCallSid (conditional, only present in hangup action callbacks for Dial).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        DialCallStatus:
+          type: string
+          description: The status of the dialed call (conditional, only present in hangup action callbacks for Dial).
+          enum:
+            - completed
+            - busy
+            - no-answer
+            - canceled
+            - failed
+          example: completed
+        EndTime:
+          type: string
+          format: date-time
+          description: The time when the call ended (only present when CallStatus is 'completed').
+          example: '2024-01-15T10:31:00Z'
+        ErrorCode:
+          type: string
+          description: Error code if an error occurred (conditional).
+          example: '10001'
+        ErrorMessage:
+          type: string
+          description: Error message if an error occurred (conditional).
+          example: Call failed
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        HangupCause:
+          type: string
+          description: The reason for call hangup (only present when CallStatus is 'completed').
+          example: normal_clearing
+        HangupSource:
+          type: string
+          description: The source of the hangup (conditional, only present for hangup events).
+          example: caller
+        OccurredAt:
+          type: string
+          format: date-time
+          description: The timestamp when the event occurred (only present when CallStatus is 'completed').
+          example: '2024-01-15T10:31:00Z'
+        OrganizationId:
+          type: string
+          description: The organization ID (only present when CallStatus is 'completed').
+          example: org-abc123
+        ParentCallSid:
+          type: string
+          description: The unique identifier of the parent call that initiated this outbound call (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        ParentCallSidLegacy:
+          type: string
+          description: Legacy parent call identifier, same as ParentCallSid (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        RecordingDuration:
+          type: string
+          description: The duration of the recording in seconds (conditional, only present if recording was enabled).
+          example: '90'
+        RecordingUrl:
+          type: string
+          description: The URL where the call recording can be accessed (conditional, only present if recording was enabled).
+          example: https://api.telnyx.com/v2/recordings/abc123.wav
+        SequenceNumber:
+          type: integer
+          description: The sequence number of the event.
+          example: 3
+        ShakenStirAttestation:
+          type: string
+          description: SHAKEN/STIR attestation level (conditional, only present if shaken_stir_data is available).
+          example: A
+        ShakenStirValidated:
+          type: boolean
+          description: Whether SHAKEN/STIR validation passed (conditional, only present if shaken_stir_data is available).
+          example: true
+        SipHangupCause:
+          type: string
+          description: The SIP hangup cause code (conditional, only present for hangup events).
+          example: '200'
+        StartTime:
+          type: string
+          format: date-time
+          description: The time when the call started (only present when CallStatus is 'completed').
+          example: '2024-01-15T10:30:00Z'
+        Timestamp:
+          type: string
+          format: date-time
+          description: The UTC timestamp when the webhook was generated.
+          example: '2024-01-15T10:30:00Z'
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+        UserId:
+          type: string
+          description: The user ID (only present when CallStatus is 'completed').
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+      required:
+        - AccountSid
+        - CallInitiatedAt
+        - CallSid
+        - CallSidLegacy
+        - CallStatus
+        - From
+        - To
+        - ConnectionId
+        - Timestamp
+        - CallbackSource
+        - SequenceNumber
+    TexmlCallInitiatedWebhookSchema:
+      type: object
+      title: TeXML Call Initiated Webhook
+      description: Webhook sent when a TeXML call is initiated.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        CallInitiatedAt:
+          type: string
+          format: date-time
+          description: The timestamp when the call was initiated.
+          example: '2024-01-15T10:30:26.028Z'
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallStatus:
+          type: string
+          description: The status of the call.
+          enum:
+            - initiated
+          example: initiated
+        CallbackSource:
+          type: string
+          description: The source of the callback.
+          enum:
+            - call-progress-events
+          example: call-progress-events
+        CallerId:
+          type: string
+          description: The display name of the caller.
+          example: John Doe
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        ErrorCode:
+          type: string
+          description: Error code if an error occurred (conditional).
+          example: '10001'
+        ErrorMessage:
+          type: string
+          description: Error message if an error occurred (conditional).
+          example: Call failed
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        ParentCallSid:
+          type: string
+          description: The unique identifier of the parent call that initiated this outbound call (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        ParentCallSidLegacy:
+          type: string
+          description: Legacy parent call identifier, same as ParentCallSid (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        SequenceNumber:
+          type: integer
+          description: The sequence number of the event.
+          example: 0
+        ShakenStirAttestation:
+          type: string
+          description: SHAKEN/STIR attestation level (conditional, only present if shaken_stir_data is available).
+          example: A
+        ShakenStirValidated:
+          type: boolean
+          description: Whether SHAKEN/STIR validation passed (conditional, only present if shaken_stir_data is available).
+          example: true
+        Timestamp:
+          type: string
+          format: date-time
+          description: The UTC timestamp when the webhook was generated.
+          example: '2024-01-15T10:30:00Z'
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+      required:
+        - AccountSid
+        - CallInitiatedAt
+        - CallSid
+        - CallSidLegacy
+        - CallStatus
+        - From
+        - To
+        - ConnectionId
+        - Timestamp
+        - CallbackSource
+        - SequenceNumber
+    TexmlCallRingingWebhookSchema:
+      type: object
+      title: TeXML Call Ringing Webhook
+      description: Webhook sent when a TeXML call is ringing.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        CallDuration:
+          type: string
+          description: The duration of the call in seconds (conditional, only present if start_time and end_time are available).
+          example: '10'
+        CallInitiatedAt:
+          type: string
+          format: date-time
+          description: The timestamp when the call was initiated.
+          example: '2024-01-15T10:30:26.028Z'
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallStatus:
+          type: string
+          description: The status of the call.
+          enum:
+            - ringing
+          example: ringing
+        CallbackSource:
+          type: string
+          description: The source of the callback.
+          enum:
+            - call-progress-events
+          example: call-progress-events
+        CallerId:
+          type: string
+          description: The display name of the caller.
+          example: John Doe
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        ErrorCode:
+          type: string
+          description: Error code if an error occurred (conditional).
+          example: '10001'
+        ErrorMessage:
+          type: string
+          description: Error message if an error occurred (conditional).
+          example: Call failed
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        ParentCallSid:
+          type: string
+          description: The unique identifier of the parent call that initiated this outbound call (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        ParentCallSidLegacy:
+          type: string
+          description: Legacy parent call identifier, same as ParentCallSid (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        SequenceNumber:
+          type: integer
+          description: The sequence number of the event.
+          example: 1
+        ShakenStirAttestation:
+          type: string
+          description: SHAKEN/STIR attestation level (conditional, only present if shaken_stir_data is available).
+          example: A
+        ShakenStirValidated:
+          type: boolean
+          description: Whether SHAKEN/STIR validation passed (conditional, only present if shaken_stir_data is available).
+          example: true
+        Timestamp:
+          type: string
+          format: date-time
+          description: The UTC timestamp when the webhook was generated.
+          example: '2024-01-15T10:30:00Z'
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+      required:
+        - AccountSid
+        - CallInitiatedAt
+        - CallSid
+        - CallSidLegacy
+        - CallStatus
+        - From
+        - To
+        - ConnectionId
+        - Timestamp
+        - CallbackSource
+        - SequenceNumber
+    TexmlCallAmdWebhookSchema:
+      type: object
+      title: TeXML Call AMD Webhook
+      description: Webhook sent when Answering Machine Detection (AMD) completes during a TeXML call.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        AnsweredBy:
+          type: string
+          description: The result of the answering machine detection.
+          enum:
+            - human
+            - machine_start
+            - machine_end_beep
+            - machine_end_silence
+            - machine_end_other
+            - fax
+            - unknown
+          example: human
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        MachineDetectionDuration:
+          type: string
+          description: The duration of the machine detection in milliseconds.
+          example: '2500'
+      required:
+        - AccountSid
+        - AnsweredBy
+        - CallSid
+        - CallSidLegacy
+        - ConnectionId
+        - MachineDetectionDuration
+    TexmlCallDtmfWebhookSchema:
+      type: object
+      title: TeXML Call DTMF Webhook
+      description: Webhook sent when a DTMF digit is received during a TeXML call.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        CallInitiatedAt:
+          type: string
+          format: date-time
+          description: The timestamp when the call was initiated.
+          example: '2024-01-15T10:30:26.028Z'
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallStatus:
+          type: string
+          description: The status of the call.
+          enum:
+            - dtmf
+          example: dtmf
+        CallbackSource:
+          type: string
+          description: The source of the callback.
+          enum:
+            - call-progress-events
+          example: call-progress-events
+        CallerId:
+          type: string
+          description: The display name of the caller.
+          example: John Doe
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        Digit:
+          type: string
+          description: The DTMF digit that was pressed (0-9, *,
+          example: '5'
+        ErrorCode:
+          type: string
+          description: Error code if an error occurred (conditional).
+          example: '10001'
+        ErrorMessage:
+          type: string
+          description: Error message if an error occurred (conditional).
+          example: Call failed
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        ParentCallSid:
+          type: string
+          description: The unique identifier of the parent call (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        ParentCallSidLegacy:
+          type: string
+          description: Legacy parent call identifier, same as ParentCallSid (conditional, only present for outbound calls initiated via Dial).
+          example: v3:MdI91X4lWFEs7IgbBEOT9M4AigoY08M0WWZFISt1Yw2axZ_IiE4pqg
+        SequenceNumber:
+          type: integer
+          description: The sequence number of the event.
+          example: 3
+        ShakenStirAttestation:
+          type: string
+          description: SHAKEN/STIR attestation level (conditional, only present if shaken_stir_data is available).
+          example: A
+        ShakenStirValidated:
+          type: boolean
+          description: Whether SHAKEN/STIR validation passed (conditional, only present if shaken_stir_data is available).
+          example: true
+        Timestamp:
+          type: string
+          format: date-time
+          description: The UTC timestamp when the webhook was generated.
+          example: '2024-01-15T10:30:00Z'
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+      required:
+        - AccountSid
+        - CallInitiatedAt
+        - CallSid
+        - CallSidLegacy
+        - CallStatus
+        - From
+        - To
+        - ConnectionId
+        - Timestamp
+        - CallbackSource
+        - SequenceNumber
+        - Digit
+    TexmlGatherWebhookSchema:
+      type: object
+      title: TeXML Gather Webhook
+      description: Webhook sent when a Gather command completes (sent to the action URL).
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: cb6cfbbc-eb00-41af-a3f3-0d7b32009e4b
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v2:DPNqxVjTNtQYaKdcKbU0QgRFrQ3YzuAQrVYC4Ggcuq7zTpDkUB7A4w
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v2:DPNqxVjTNtQYaKdcKbU0QgRFrQ3YzuAQrVYC4Ggcuq7zTpDkUB7A4w
+        Confidence:
+          type: number
+          description: The average confidence score of the speech transcription (conditional, only present when input is speech).
+          example: 0.95
+        Digits:
+          type: string
+          description: The DTMF digits collected by the Gather command (conditional, only present when input is dtmf).
+          example: '1'
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: Defaultj35z6@sip.telnyx.com
+        SpeechResult:
+          type: string
+          description: The transcribed text from speech input (conditional, only present when input is speech).
+          example: Please connect me to sales
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+12132045020'
+      required:
+        - AccountSid
+        - CallSid
+        - CallSidLegacy
+        - From
+        - To
+    TexmlHttpRequestWebhookSchema:
+      type: object
+      title: TeXML HTTP Request Webhook
+      description: Webhook sent to the action URL after an HttpRequest instruction completes (when async="false"). This webhook contains standard call parameters plus any custom fields extracted from the HTTP response via Field mappings defined in the Response/Content section.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        CallerId:
+          type: string
+          description: The display name of the caller (conditional, only present if caller_id_name is set).
+          example: John Doe
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+      additionalProperties: true
+      required:
+        - AccountSid
+        - CallSid
+        - CallSidLegacy
+        - From
+        - To
+        - ConnectionId
+    TexmlAiGatherWebhookSchema:
+      type: object
+      title: TeXML AI Gather Webhook
+      description: Webhook sent to the action URL when AI Gather completes. Contains standard call parameters plus AI conversation results in base64-encoded JSON format.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        Base64MessageHistory:
+          type: string
+          description: Base64-encoded JSON array of message history (conditional).
+          example: W3sicm9sZSI6InVzZXIiLCJjb250ZW50IjoiSGVsbG8ifV0=
+        Base64Result:
+          type: string
+          description: Base64-encoded JSON object containing AI gather result (conditional).
+          example: eyJzdGF0dXMiOiJ2YWxpZCIsInJlc3VsdCI6eyJ0ZXh0IjoiSSB3b3VsZCBsaWtlIHRvIHNjaGVkdWxlIGFuIGFwcG9pbnRtZW50In19
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        ConnectionId:
+          type: string
+          description: The unique identifier of the connection.
+          example: '1234567890'
+        From:
+          type: string
+          description: The phone number or SIP address of the caller.
+          example: '+35319605860'
+        Status:
+          type: string
+          description: The status of the AI gather operation.
+          example: valid
+        To:
+          type: string
+          description: The phone number or SIP address that was called.
+          example: '+13129457420'
+      required:
+        - AccountSid
+        - CallSid
+        - CallSidLegacy
+        - From
+        - To
+        - ConnectionId
+        - Status
+    TexmlReferStatusWebhookSchema:
+      type: object
+      title: TeXML Refer Status Webhook
+      description: Webhook sent for SIP REFER status updates.
+      properties:
+        AccountSid:
+          type: string
+          description: The unique identifier of the account (user_id).
+          example: f5586561-8ff0-4291-a51b-c7dfe4139ff9
+        CallSid:
+          type: string
+          description: The unique identifier of the call (call_control_id).
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        CallSidLegacy:
+          type: string
+          description: Legacy call identifier, same as CallSid.
+          example: v3:9X2vxPDFY2RHSJ1EdMS0RHRksMTg7ldNxdjWbVr9zBjbGjGsSe-aiQ
+        NotifySipResponseCode:
+          type: string
+          description: The SIP response code from the NOTIFY message (conditional, only present on success).
+          example: '200'
+        ReferCallStatus:
+          type: string
+          description: The status of the SIP REFER operation.
+          enum:
+            - failed
+            - in-progress
+            - busy
+            - canceled
+          example: in-progress
+        ReferSipResponseCode:
+          type: string
+          description: The SIP response code from the REFER message (conditional, only present on success).
+          example: '202'
+        Timestamp:
+          type: string
+          format: date-time
+          description: The timestamp when the event occurred.
+          example: '2024-01-15T10:30:00Z'
+      required:
+        - AccountSid
+        - CallSid
+        - CallSidLegacy
+        - ReferCallStatus
+        - Timestamp
+  responses:
+    call-scripting_NotFoundResponse:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/call-scripting_ResourceNotFoundError'
+    call-scripting_UnprocessableEntityResponse:
+      description: Unprocessable entity. The request was well-formed but contains semantic errors.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_required_parameter:
+              summary: Missing required parameter
+              value:
+                errors:
+                  - code: '10004'
+                    title: Missing required parameter
+                    detail: 'Can''t be blank: ApplicationId'
+                    source:
+                      pointer: /ApplicationId
+            invalid_parameter_type:
+              summary: Invalid parameter type
+              value:
+                errors:
+                  - code: '10026'
+                    title: Invalid parameter type
+                    detail: The 'To' parameter must be of type 'string'
+                    source:
+                      pointer: /To
+            invalid_enumerated_value:
+              summary: Invalid enumerated value
+              value:
+                errors:
+                  - code: '10032'
+                    title: Invalid enumerated value
+                    detail: Status must be one of completed
+                    source:
+                      pointer: /Status
+            invalid_send_digits:
+              summary: Invalid SendDigits format
+              value:
+                errors:
+                  - code: '90014'
+                    title: Invalid value for SendDigits
+                    detail: 'The ''SendDigits'' parameter must be a ''string'' made of a combination of either 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, w, W, * or #'
+                    source:
+                      pointer: /SendDigits
+    InitiateAICallResponse:
+      description: Successful response upon initiating an AI call.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InitiateAICallResult'
+    UnauthenticatedResponse:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            Authentication Failed:
+              value:
+                errors:
+                  - code: '10009'
+                    title: Authentication failed
+                    detail: Could not understand the provided credentials.
+                    meta:
+                      url: https://developers.telnyx.com/docs/overview/errors/10009
+x-tagGroups:
+  - name: Calls
+    tags:
+      - Command
+      - Callbacks

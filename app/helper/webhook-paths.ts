@@ -7,7 +7,7 @@
  *
  *   WEBHOOKS.call.twilioVoice.route -> '/make-call'            (registered under the /api/call group)
  *   WEBHOOKS.call.twilioVoice.full  -> '/api/call/make-call'   (URL handed to Twilio)
- *   WEBHOOKS.sms.receiveSms.route   -> '/receive-sms/:type'    (one route; the handler validates :type per provider)
+ *   WEBHOOKS.sms.receiveSms.routes  -> { twilio: '/receive-sms/twilio', telnyx: '/receive-sms/telnyx' }
  *   WEBHOOKS.sms.receiveSms.full    -> { twilio: '/api/setting/receive-sms/twilio', telnyx: '.../telnyx' }
  */
 
@@ -15,15 +15,12 @@
 const callHook = <S extends string>(route: S) => ({ route, full: `/api/call${route}` }) as const
 
 /**
- * An SMS webhook: a single `:type` route under the /api/setting group (the handler validates `:type` and branches on
- * it -- Twilio sends form bodies, Telnyx sends JSON), plus the concrete per-provider URLs (`:type` resolved to
- * `twilio` / `telnyx`) handed to each provider.
- *
- * `:type` is validated in the route handler as either 'telnyx' | 'twilio'
+ * An SMS webhook: one concrete route per provider under the /api/setting group (Twilio posts form bodies, Telnyx posts
+ * JSON, so each gets its own validator + handler), plus the matching absolute URLs handed to each provider.
  */
 const smsHook = <S extends string>(base: S) =>
   ({
-    route: `${base}/:type`,
+    routes: { twilio: `${base}/twilio`, telnyx: `${base}/telnyx` },
     full: { twilio: `/api/setting${base}/twilio`, telnyx: `/api/setting${base}/telnyx` },
   }) as const
 
