@@ -26,7 +26,7 @@ export async function uploadMedia(file: File, token: string, onProgress: (loaded
   })
   const init: RequestInit & { duplex: 'half' } = {
     method: 'POST',
-    headers: { token, 'Content-Type': file.type },
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type },
     body: file.stream().pipeThrough(progress),
     duplex: 'half',
   }

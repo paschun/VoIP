@@ -1,7 +1,7 @@
 import { describe, test, expect, expectTypeOf, beforeAll, afterAll, afterEach, assert } from 'vitest'
 import { testClient } from 'hono/testing'
 import mongoose from 'mongoose'
-import { signToken } from '../app/helper/common.helper.ts'
+import { signToken } from '../app/middleware/auth.ts'
 import HardwareKey from '../app/model/hardwarekey.model.ts'
 import { hardwarekeyRoutes } from '../app/routes/hardwarekey.route.ts'
 import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
@@ -11,11 +11,11 @@ import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts
 
 const client = testClient(hardwarekeyRoutes)
 const userId = new mongoose.Types.ObjectId().toString()
-let auth: { headers: { token: string } }
+let auth: { headers: { Authorization: string } }
 
 beforeAll(async () => {
   await connectMemoryDb()
-  auth = { headers: { token: await signToken(userId, 'Test User') } }
+  auth = { headers: { Authorization: `Bearer ${await signToken(userId, 'Test User')}` } }
 })
 afterAll(disconnectMemoryDb)
 afterEach(clearDb)

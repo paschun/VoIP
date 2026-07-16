@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 
 /**
- * Bearer token sent as the `token` header on every API call, persisted to localStorage (survives refresh). Lives in a
+ * Bearer token sent as the `Authorization` header on every API call, persisted to localStorage (survives refresh). Lives in a
  * leaf module (imports nothing app-level) so the RPC client and the user store can both read/write it without an import
  * cycle -- the client must stay independent of the store so route types can be inferred from `client`.
  *

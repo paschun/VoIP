@@ -3,7 +3,7 @@ import type { InferResponseType } from 'hono/client'
 import { testClient } from 'hono/testing'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import mongoose from 'mongoose'
-import { signToken } from '../app/helper/common.helper.ts'
+import { signToken } from '../app/middleware/auth.ts'
 import { TextMessage, Call } from '../app/model/message.model.ts'
 import { settingRoutes } from '../app/routes/setting.route.ts'
 import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
@@ -19,11 +19,11 @@ import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts
 const client = testClient(settingRoutes)
 const userId = new mongoose.Types.ObjectId().toString()
 const profileId = new mongoose.Types.ObjectId().toString()
-let auth: { headers: { token: string } }
+let auth: { headers: { Authorization: string } }
 
 beforeAll(async () => {
   await connectMemoryDb()
-  auth = { headers: { token: await signToken(userId, 'Test User') } }
+  auth = { headers: { Authorization: `Bearer ${await signToken(userId, 'Test User')}` } }
 })
 afterAll(disconnectMemoryDb)
 afterEach(clearDb)

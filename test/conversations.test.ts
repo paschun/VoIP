@@ -4,7 +4,7 @@ import { testClient } from 'hono/testing'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import mongoose from 'mongoose'
 import { conversationsForProfile, type ConversationRow } from '../app/controller/setting.controller.ts'
-import { signToken } from '../app/helper/common.helper.ts'
+import { signToken } from '../app/middleware/auth.ts'
 import Contact from '../app/model/contact.model.ts'
 import { TextMessage, Call } from '../app/model/message.model.ts'
 import { settingRoutes } from '../app/routes/setting.route.ts'
@@ -21,14 +21,14 @@ const userId = new mongoose.Types.ObjectId()
 const profileId = new mongoose.Types.ObjectId()
 
 const client = testClient(settingRoutes)
-let auth: { headers: { token: string } }
+let auth: { headers: { Authorization: string } }
 
 // The RPC-inferred wire row: `ConversationRow` after JSON serialization (Date -> ISO string).
 type WireRow = InferResponseType<typeof client.conversations.$get, SuccessStatusCode>['data'][number]
 
 beforeAll(async () => {
   await connectMemoryDb()
-  auth = { headers: { token: await signToken(userId.toString(), 'Test User') } }
+  auth = { headers: { Authorization: `Bearer ${await signToken(userId.toString(), 'Test User')}` } }
 })
 afterAll(disconnectMemoryDb)
 afterEach(clearDb)
@@ -247,7 +247,9 @@ describe('GET /conversations -- RPC route (aggregateConversations)', () => {
 
   test("a different user sees none of this profile's conversations", async () => {
     await TextMessage.create(msg({ number: '+11111111111', message: 'mine', created_at: new Date('2026-01-01') }))
-    const otherAuth = { headers: { token: await signToken(new mongoose.Types.ObjectId().toString(), 'Other') } }
+    const otherAuth = {
+      headers: { Authorization: `Bearer ${await signToken(new mongoose.Types.ObjectId().toString(), 'Other')}` },
+    }
 
     const res = await client.conversations.$get({ query: { profile: profileId.toString() } }, otherAuth)
     assert(res.status === 200)

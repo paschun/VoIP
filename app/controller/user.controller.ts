@@ -27,7 +27,7 @@ import {
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx } from '../core/factory.ts'
-import { signToken } from '../helper/common.helper.ts'
+import { signToken } from '../middleware/auth.ts'
 import { ack } from '../helper/respond.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'

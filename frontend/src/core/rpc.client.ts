@@ -9,7 +9,7 @@ const origin = window.location.origin
 
 /** The token comes from the {@link authToken} leaf module. */
 export const client = hc<AppType>(origin, {
-  headers: () => ({ token: authToken.value, 'Cache-Control': 'no-cache' }),
+  headers: () => ({ Authorization: `Bearer ${authToken.value}`, 'Cache-Control': 'no-cache' }),
 })
 
 /** Client for the websocket route only */
