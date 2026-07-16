@@ -4,9 +4,9 @@ import { authToken } from '@/core/auth-token.ts'
 import { notifyApiError } from '@/core/handle-error.ts'
 import type { AppType } from '../../../app/app.ts'
 
-// Dev serves the SPA on :8080 with the API on :3000; in prod the API is same-origin. `/api` is baked into `AppType`'s
-// route tree, so the base is the origin only (e.g. `client.api.auth.login.$post`).
-const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:3000' : window.location.origin
+// The API is same-origin everywhere: prod serves the SPA from the backend, dev proxies `/api` to it (vite.config.ts).
+// `/api` is baked into `AppType`'s route tree, so the base is the origin only (e.g. `client.api.auth.login.$post`).
+const origin = window.location.origin
 
 /**
  * Typed RPC client over the backend `AppType`: paths, inputs, and outputs are inferred from the server routes, e.g.

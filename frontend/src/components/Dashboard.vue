@@ -157,16 +157,15 @@
 /** Main messaging view: conversation list (NumberList), the chat thread, the compose SMS/MMS modal, and the call tab. */
 import { defineComponent, useTemplateRef } from 'vue'
 import type { BOffcanvas } from 'bootstrap-vue-next'
-import { io, type Socket } from 'socket.io-client'
 import CallView from '@/components/CallView.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { uploadMedia } from '@/core/services/media.ts'
+import { connectSocket, disconnectSocket, type UserMessage } from '@/core/socket.ts'
 import { formatTimestamp } from '@/helper.ts'
 import { notifyError, notifyInfo } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { useConversationStore, type Conversation } from '@/stores/conversation.ts'
-import { useProfileStore } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
 import NumberList from './inbox/NumberList.vue'
 
@@ -195,7 +194,6 @@ export default defineComponent({
     const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>('mobileSidebar')
     const chatContainer = useTemplateRef<HTMLDivElement>('chatContainer')
     return {
-      profileStore: useProfileStore(),
       userStore: useUserStore(),
       conversationStore: useConversationStore(),
       callView,
@@ -212,8 +210,6 @@ export default defineComponent({
     uploadedImages: string[]
     chatListLoader: boolean
     messageBody: string
-    socket: Socket | null
-    baseurl: string
     zoomImage: string
   } {
     return {
@@ -224,8 +220,6 @@ export default defineComponent({
       uploadedImages: [],
       chatListLoader: false,
       messageBody: '',
-      socket: null,
-      baseurl: '',
       zoomImage: '',
     }
   },
@@ -233,29 +227,13 @@ export default defineComponent({
     if (!this.userStore.isLoggedIn) {
       // Bounce to the login page inside the current directory -- never bare `/`, which the server gate 404s.
       this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
+      return
     }
-    const baseUrl = window.location.origin
-    if (baseUrl === 'http://localhost:8080') {
-      this.baseurl = 'http://localhost:3000'
-    }
-    const socket = io(this.baseurl, { transports: ['websocket'] })
-    this.socket = socket
-    socket.on('new_message', () => {
-      void this.conversationStore.loadConversations()
-      void this.conversationStore.refreshMessages()
-    })
-    socket.emit('join_profile_channel', this.userStore.userData?._id.toString())
-
-    socket.on('user_message', (data: { number: string; message: string }) => {
-      if (this.conversationStore.hasActiveConversation) {
-        void this.conversationStore.refreshMessages()
-      } else {
-        void this.profileStore.refreshActiveProfile()
-        this.numberList?.refreshProfile()
-      }
-      void this.conversationStore.loadConversations()
-      this.notifyMe(data.number, data.message)
-    })
+    const userId = this.userStore.userData?._id.toString()
+    if (userId) connectSocket(userId, this.onUserMessage)
+  },
+  unmounted() {
+    disconnectSocket()
   },
   computed: {
     /** Averaging percentages is wrong with mixed file sizes; tracking loaded/total bytes would be accurate. */
@@ -266,6 +244,11 @@ export default defineComponent({
   },
   methods: {
     formatTimestamp,
+    /** UI reaction to an incoming message (core/socket.ts owns the store refreshes). */
+    onUserMessage(data: UserMessage) {
+      if (!this.conversationStore.hasActiveConversation) this.numberList?.refreshProfile()
+      void this.notifyMe(data.number, data.message)
+    },
     addContact(phoneNumber: string) {
       this.numberList?.openAddContact(phoneNumber)
     },

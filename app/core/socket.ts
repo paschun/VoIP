@@ -1,7 +1,6 @@
 import type { Server as HttpServer } from 'node:http'
 import type { Http2Server, Http2SecureServer } from 'node:http2'
 import { Server } from 'socket.io'
-import { env } from './env.ts'
 
 let io: Server | undefined
 
@@ -14,15 +13,10 @@ let io: Server | undefined
 
 // Accepts whatever `@hono/node-server`'s `serve()` returns (its `ServerType` union); socket.io's constructor takes all three.
 export function initIO(server: HttpServer | Http2Server | Http2SecureServer) {
-  // Mirror the HTTP CORS policy (app.ts): the Vite dev client (localhost:8080) connects cross-origin; in prod the
-  // client is same-origin (BASE_URL). The handshake's Origin must be allow-listed.
-  io = new Server(server, { cors: { origin: env.HTTPS ? env.BASE_URL : 'http://localhost:8080' } })
+  // No CORS config: the client is same-origin everywhere (prod serves the SPA; dev proxies the websocket via Vite).
+  io = new Server(server)
   io.on('connection', (socket) => {
     console.log('a user connected')
-    socket.on('join_channel', (channel: string) => {
-      console.log(`${channel} user joined channel`)
-      void socket.join(channel)
-    })
     socket.on('join_profile_channel', (channel: string) => {
       console.log(`${channel} user joined channel`)
       void socket.join(channel)

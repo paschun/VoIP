@@ -4,7 +4,6 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { bodyLimit } from 'hono/body-limit'
 import type { ApplyGlobalResponse } from 'hono/client'
 import { compress } from 'hono/compress'
-import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import type { ApiError } from '../shared/api-contracts.ts'
 import { MAX_UPLOAD_BYTES } from './controller/media.controller.ts'
@@ -87,10 +86,6 @@ app.use(
     },
   }),
 )
-
-// Dev only: the Vite dev server (localhost:8080) calls the API cross-origin. In prod the API and UI are same-origin, so
-// CORS never applies and this is skipped.
-if (!env.HTTPS) app.use(cors({ origin: ['http://localhost:8080'] }))
 
 // Coarse request-body backstop. The only large body is the media upload, which enforces its own MAX_UPLOAD_BYTES cap
 // per-request (media.controller); every other endpoint is small JSON -- text, IDs, provider config, media URLs (never
