@@ -38,7 +38,7 @@ import { env } from '../core/env.ts'
 import { ProviderError } from '../core/error.ts'
 import { factory } from '../core/factory.ts'
 import type { FormCtx, JsonCtx, PathParamCtx, PathParamJsonCtx, QueryCtx } from '../core/factory.ts'
-import { getIO } from '../core/socket.ts'
+import { sendToUser } from '../core/socket.ts'
 import { combineURLs, prepareUploadTarget } from '../helper/common.helper.ts'
 import { ack, emptyTwimlReply, ok } from '../helper/respond.helper.ts'
 import { parseTelnyxInboundMessage, parseTelnyxMessageStatus } from '../helper/telnyx-events.helper.ts'
@@ -277,18 +277,7 @@ async function persistInboundSms(input: InboundSms) {
   const userId = setting.user.toString()
   const contact = await Contact.findOne({ user: { $eq: userId }, number: { $eq: fromNumber } })
 
-  // todo: type socketIO messages
-  getIO().to(userId).emit('user_message', {
-    message: messageText,
-    number: fromNumber,
-    telnyx_number: toNumber,
-    toUser: setting.user,
-    contact,
-    type: 'receive',
-    status: 'received',
-    isview: false,
-    settings: setting,
-  })
+  sendToUser(userId, { event: 'user_message', message: messageText, number: fromNumber })
 
   if (setting.emailnotification) {
     const emailSetting = await Email.findOne({ user: { $eq: userId } })
@@ -352,7 +341,9 @@ async function receiveTelnyxSms(c: JsonCtx<TelnyxInboundData>) {
 async function processInboundSms(attachments: { url: string; content_type?: string }[], sms: Omit<InboundSms, 'media'>) {
   try {
     const results = await Promise.allSettled(attachments.filter(isSavableMedia).map(saveMedia))
-    results.filter((r) => r.status === 'rejected').forEach(({ reason }) => { console.error('MMS attachment download failed:', reason) })
+    results
+      .filter((r) => r.status === 'rejected')
+      .forEach(({ reason }) => { console.error('MMS attachment download failed:', reason) })
     const media = results.filter((r) => r.status === 'fulfilled').map(({ value }) => value)
     await persistInboundSms({ ...sms, media })
   } catch (error) {

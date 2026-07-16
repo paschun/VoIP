@@ -44,7 +44,6 @@
     "nodemailer": "^9.0.3",
     "openpgp": "^6.3.1",
     "qrcode": "^1.5.4",
-    "socket.io": "^4.8.3",
     "speakeasy": "^2.0.0",
     "telnyx": "^7.2.0",
     "telnyx-openapi": "github:team-telnyx/openapi#9d8aee4e6be23fc692c25da298e3459b91a73d69",

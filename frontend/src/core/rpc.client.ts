@@ -2,21 +2,18 @@ import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import { authToken } from '@/core/auth-token.ts'
 import { notifyApiError } from '@/core/handle-error.ts'
-import type { AppType } from '../../../app/app.ts'
+import type { AppType, WsAppType } from '../../../app/app.ts'
 
-// The API is same-origin everywhere: prod serves the SPA from the backend, dev proxies `/api` to it (vite.config.ts).
-// `/api` is baked into `AppType`'s route tree, so the base is the origin only (e.g. `client.api.auth.login.$post`).
+// The API is same-origin on both dev + prod
 const origin = window.location.origin
 
-/**
- * Typed RPC client over the backend `AppType`: paths, inputs, and outputs are inferred from the server routes, e.g.
- * `client.api.auth.login.$post({ json: { email, password } })`. The token + no-cache headers attach per request (a
- * function, so the current token is read fresh each time). The token comes from the {@link authToken} leaf module, not
- * the user store: keeping `client` store-independent is what lets the stores infer their types from `client`.
- */
+/** The token comes from the {@link authToken} leaf module. */
 export const client = hc<AppType>(origin, {
   headers: () => ({ token: authToken.value, 'Cache-Control': 'no-cache' }),
 })
+
+/** Client for the websocket route only */
+export const wsClient = hc<WsAppType>(origin)
 
 /*
 https://github.com/honojs/hono/blob/v4.12.26/src/client/utils.ts#L92

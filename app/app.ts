@@ -11,7 +11,7 @@ import { connectDB } from './core/db.ts'
 import { env } from './core/env.ts'
 import { onError } from './core/error.ts'
 import { factory } from './core/factory.ts'
-import { initIO } from './core/socket.ts'
+import { socketRoutes, wss } from './core/socket.ts'
 import { appDirectoryGate } from './middleware/app-directory.ts'
 import { rateLimit } from './middleware/rate-limit.ts'
 import { authRoutes } from './routes/auth.route.ts'
@@ -112,6 +112,12 @@ const routes = app
   .route('/api/provider', providerRoutes)
   .route('/api/setting', settingRoutes)
 
+// Registered outside the `routes` chain. `AppType` below wraps `routes` in `ApplyGlobalResponse`, which adds the
+// JSON `ApiErrors` responses to every endpoint's schema. `hc` generates a `$ws` method only for an endpoint whose
+// schema holds `outputFormat: 'ws'` responses exclusively -- with those JSON entries merged in, the client type
+// would have no `$ws`. So the ws route gets its own contract.
+const wsRoutes = app.route('/api', socketRoutes)
+
 // `onError` (core/error.ts) renders every thrown error as `{ message }` at the HTTPException's status, but `hc` can't
 // infer responses from a global error handler -- so `ApplyGlobalResponse` merges the error contract into every route.
 // Statuses: controllers throw 400/401/403/404/409/422; onError adds 502 (ProviderError) and 500 (fallback).
@@ -128,6 +134,9 @@ type ApiErrors = {
 
 /** The RPC API surface: every `/api/...` route with its validated input, `c.json()` output, and error contract. Consumed by `hc<AppType>`. */
 export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
+
+/** The websocket route's own RPC contract, consumed by `hc<WsAppType>` (frontend `client.api.ws.$ws(...)`). */
+export type WsAppType = typeof wsRoutes
 
 // Static assets + SPA fallback
 // ----------------------------
@@ -146,6 +155,5 @@ app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallbac
 // Startup
 // -------
 await connectDB()
-const server = serve({ fetch: app.fetch, port: env.PORT })
-initIO(server)
+serve({ fetch: app.fetch, port: env.PORT, websocket: { server: wss } })
 console.log('hono listening on PORT', env.PORT)

@@ -53,11 +53,10 @@ export default defineConfig({
     strictPort: true,
     // Allow importing ../shared (above the Vite root) in dev.
     fs: { allow: ['..'] },
-    // Dev runs same-origin like prod: the API and the socket.io websocket are proxied to the backend on :3000
-    // (`preview.proxy` defaults to this too), so no cross-origin handling exists anywhere in the app.
+    // Dev runs same-origin like prod: /api (including the /api/ws websocket upgrade) is proxied to the backend on
+    // :3000 (`preview.proxy` defaults to this too), so no cross-origin handling exists anywhere in the app.
     proxy: {
-      '/api': 'http://localhost:3000',
-      '/socket.io': { target: 'http://localhost:3000', ws: true },
+      '/api': { target: 'http://localhost:3000', ws: true },
     },
   },
   preview: {

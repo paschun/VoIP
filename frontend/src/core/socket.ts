@@ -1,22 +1,34 @@
-import { io, type Socket } from 'socket.io-client'
+import type { SocketMessage } from '@shared/contracts/socket.ts'
+import { authToken } from '@/core/auth-token.ts'
+import { wsClient } from '@/core/rpc.client.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
-/** The slice of the backend's `user_message` payload the frontend consumes (inbound SMS/MMS and call-log changes). */
-export type UserMessage = { number: string; message: string }
+export type { SocketMessage }
 
-let socket: Socket | null = null
+let socket: WebSocket | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let attempts = 0
 
 /**
- * Open the app's socket.io connection (same-origin, see vite.config.ts for the dev websocket proxy), join the user's
- * channel, and refresh the stores on incoming events. `onUserMessage` is the UI hook: it fires after the store
- * refreshes for each `user_message` (e.g. desktop notification). Reconnects fresh if already connected.
+ * Open the app websocket (typed RPC `$ws`). The server pushes `SocketMessage`s for the JWT's user; store refreshes
+ * happen here and `onUserMessage` is the UI hook (notification, sidebar refresh). Reconnects with capped exponential
+ * backoff until `disconnectSocket()`.
  */
-export function connectSocket(userId: string, onUserMessage: (data: UserMessage) => void) {
+export function connectSocket(onUserMessage: (msg: SocketMessage) => void) {
   disconnectSocket()
-  socket = io({ transports: ['websocket'] })
-  socket.emit('join_profile_channel', userId)
-  socket.on('user_message', (data: UserMessage) => {
+  open(onUserMessage)
+}
+
+function open(onUserMessage: (msg: SocketMessage) => void) {
+  const ws = wsClient.api.ws.$ws({ query: { token: authToken.value } })
+  socket = ws
+  ws.addEventListener('open', () => {
+    attempts = 0
+  })
+  ws.addEventListener('message', (evt) => {
+    const msg: SocketMessage = JSON.parse(evt.data)
+    if (msg.event !== 'user_message') return
     const conversationStore = useConversationStore()
     if (conversationStore.hasActiveConversation) {
       void conversationStore.refreshMessages()
@@ -24,11 +36,20 @@ export function connectSocket(userId: string, onUserMessage: (data: UserMessage)
       void useProfileStore().refreshActiveProfile()
     }
     void conversationStore.loadConversations()
-    onUserMessage(data)
+    onUserMessage(msg)
+  })
+  ws.addEventListener('close', () => {
+    if (socket !== ws) return // superseded, or closed by disconnectSocket
+    const delay = Math.min(1000 * 2 ** attempts++, 30_000) // exponential backoff: 1s, 2s, 4s, ... capped at 30s
+    reconnectTimer = setTimeout(() => open(onUserMessage), delay)
   })
 }
 
 export function disconnectSocket() {
-  socket?.disconnect()
-  socket = null
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+  reconnectTimer = null
+  attempts = 0
+  const ws = socket
+  socket = null // cleared before close() so the close listener sees an intentional close and doesn't reconnect
+  ws?.close()
 }

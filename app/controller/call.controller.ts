@@ -17,7 +17,7 @@ import {
 } from '../../shared/contracts/call.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, FormCtx, JsonCtx } from '../core/factory.ts'
-import { getIO } from '../core/socket.ts'
+import { sendToUser } from '../core/socket.ts'
 import { ack, emptyTwimlReply, ok, xmlResponse } from '../helper/respond.helper.ts'
 import { parseTelnyxCallEvent, type TelnyxCallEvent } from '../helper/telnyx-events.helper.ts'
 import { parseTexmlStatusCallback, type TexmlStatusEvent } from '../helper/texml-events.helper.ts'
@@ -60,12 +60,9 @@ async function recordCall(opts: {
 }
 
 /** Notify the owner of `providerNumber` (our provider number) that a call row changed, so their open clients refresh. */
-async function notifyCallOwner(providerNumber: string | null | undefined, otherNumber: string | null | undefined) {
-  const setting = await Setting.findOne({ number: { $eq: providerNumber ?? '' } })
-  if (setting)
-    getIO()
-      .to(setting.user?.toString() ?? '')
-      .emit('user_message', { message: 'call', number: otherNumber })
+async function notifyCallOwner(providerNumber: string, otherNumber: string) {
+  const setting = await Setting.findOne({ number: { $eq: providerNumber } })
+  if (setting) sendToUser(setting.user.toString(), { event: 'user_message', message: 'call', number: otherNumber })
 }
 
 /** Apply a Twilio-shaped status payload (Twilio status callback + Telnyx TeXML status callback) to the call log. */
@@ -181,10 +178,7 @@ async function dialIncoming(c: FormCtx<TwilioInboundWebhook>) {
     const setting = await Setting.findOne({ number: { $eq: body.To } })
     if (setting) {
       // stateful API
-      response
-        .dial()
-        .client()
-        .identity(setting.user.toString())
+      response.dial().client().identity(setting.user.toString())
 
       await recordCall({
         sid: body.CallSid,

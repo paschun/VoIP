@@ -161,7 +161,7 @@ import CallView from '@/components/CallView.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { uploadMedia } from '@/core/services/media.ts'
-import { connectSocket, disconnectSocket, type UserMessage } from '@/core/socket.ts'
+import { connectSocket, disconnectSocket, type SocketMessage } from '@/core/socket.ts'
 import { formatTimestamp } from '@/helper.ts'
 import { notifyError, notifyInfo } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
@@ -229,8 +229,7 @@ export default defineComponent({
       this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
       return
     }
-    const userId = this.userStore.userData?._id.toString()
-    if (userId) connectSocket(userId, this.onUserMessage)
+    connectSocket(this.onUserMessage)
   },
   unmounted() {
     disconnectSocket()
@@ -245,7 +244,7 @@ export default defineComponent({
   methods: {
     formatTimestamp,
     /** UI reaction to an incoming message (core/socket.ts owns the store refreshes). */
-    onUserMessage(data: UserMessage) {
+    onUserMessage(data: SocketMessage) {
       if (!this.conversationStore.hasActiveConversation) this.numberList?.refreshProfile()
       void this.notifyMe(data.number, data.message)
     },
@@ -315,28 +314,16 @@ export default defineComponent({
     unhighlight() {
       this.isDragging = false
     },
-    async notifyMe(user: string, message: string) {
-      const msgIcon = new URL('@/assets/img/icon.png', import.meta.url).href
+    async notifyMe(number: string, message: string) {
       if (!('Notification' in window)) {
         alert('This browser does not support desktop notification')
-      } else if (Notification.permission === 'granted') {
-        const options = {
-          body: message,
-          dir: 'auto' as const,
-          icon: msgIcon,
-        }
-        new Notification('Message from ' + user, options)
-      } else if (Notification.permission !== 'denied') {
-        const permission = await Notification.requestPermission()
-        if (permission === 'granted') {
-          const options = {
-            body: message,
-            dir: 'auto',
-            icon: msgIcon,
-          } as const
-          new Notification('Message from ' + user, options)
-        }
+        return
       }
+      if (Notification.permission === 'denied') return
+      const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
+      if (permission !== 'granted') return
+      const icon = new URL('@/assets/img/icon.png', import.meta.url).href
+      new Notification('Message from ' + number, { body: message, dir: 'auto', icon })
     },
     async deleteChat() {
       const result = await this.$swal.fire({
