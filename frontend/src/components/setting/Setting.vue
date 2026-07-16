@@ -16,7 +16,7 @@
             <i-bi-shield-lock aria-hidden="true" class="mx-2" />MFA Settings
           </li>
         </ul>
-        <div class="version">{{ versionOption }}</div>
+        <div class="version">{{ versionStore.version }}</div>
       </div>
       <settings-section v-if="activeMenu == 'email'" title="Email Settings" @back="enableMenu('setting')">
         <email-setting></email-setting>
@@ -48,6 +48,7 @@
 import { defineComponent } from 'vue'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/notify.ts'
+import { useVersionStore } from '@/stores/version.ts'
 import AccountSetting from './account/AccountSetting.vue'
 import EmailSetting from './EmailSetting.vue'
 import Mfa from './security/Mfa.vue'
@@ -56,24 +57,19 @@ import SettingsSection from './SettingsSection.vue'
 export default defineComponent({
   name: 'SettingPanel',
   components: { EmailSetting, AccountSetting, Mfa, SettingsSection },
+  setup() {
+    return { versionStore: useVersionStore() }
+  },
   data() {
     return {
       activeMenu: 'setting',
-      versionOption: 'v0',
       checkPasswordMenu: '',
       check_password: '',
     }
   },
-  mounted() {
-    this.getVersion()
-  },
   methods: {
     enableMenu(menu: string) {
       this.activeMenu = menu
-    },
-    async getVersion() {
-      const res = await request(client.api.auth.version.$get())
-      this.versionOption = res.data
     },
     passwordEnable(menu: string) {
       this.checkPasswordMenu = menu

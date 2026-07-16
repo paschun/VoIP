@@ -7,13 +7,11 @@ import { authToken as token } from '@/core/auth-token.ts'
 import { client, request } from '@/core/rpc.client.ts'
 
 /** The signed-in user, inferred from the `PATCH /api/auth/username` 200 body (`{ data: UserData }`). */
-type UserData = InferResponseType<typeof client.api.auth.username.$patch, SuccessStatusCode>['data']
+export type UserData = InferResponseType<typeof client.api.auth.username.$patch, SuccessStatusCode>['data']
 
 /** Signed-in user + auth token, persisted to localStorage (reactive, survives refresh). Single source for both; written/cleared together. */
 export const useUserStore = defineStore('user', () => {
   const userData = useLocalStorage<UserData | null>('user-data', null, { serializer: StorageSerializers.object })
-
-  // todo: activeUser? but its only used in Login.vue so maybe not
 
   const isLoggedIn = computed(() => token.value.length > 0)
 

@@ -3,7 +3,7 @@
     <div class="login-box dark-mode p-3">
       <theme-button id-hide="false" />
       <h1 class="dark-mode">Login</h1>
-      <form @submit.prevent="submitLogin" class="ml-2 mr-2" v-if="!otpScreen && !keyScreen">
+      <form @submit.prevent="submitLogin" class="ml-2 mr-2" v-if="screen === 'login'">
         <div class="form-group mt-4">
           <b-input-group>
             <b-input-group-text>
@@ -43,10 +43,10 @@
         <div class="d-grid">
           <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
         </div>
-        <div class="my-2 small" v-if="signUpOption">Don’t have an account yet? <router-link :to="signupRoute" class="mx-2"> Sign up</router-link></div>
+        <div class="my-2 small" v-if="signupEnabled">Don't have an account yet? <router-link :to="signupRoute" class="mx-2"> Sign up</router-link></div>
         <div class="d-grid d-md-flex mt-2 small" v-else>New registrations are disabled</div>
       </form>
-      <form class="ml-2 mr-2 text-center" v-bind:class="{ 'd-none': !otpScreen }" @submit.prevent="verifyOtp">
+      <form class="ml-2 mr-2 text-center" :class="{ 'd-none': screen !== 'otp' }" @submit.prevent="verifyOtp">
         <div class="form-group my-4">
           <label>Enter Verification Code</label>
           <input
@@ -66,14 +66,14 @@
           <button class="btn btn-success m-3 px-5" type="button" @click="verifyOtp" id="login-button2">Verify</button>
         </div>
         <div class="p-2">
-          <button type="button" class="btn btn-link p-0" @click="chooseMethods('show_method')">Choose A Different Verification Method</button>
+          <button type="button" class="btn btn-link p-0" @click="showScreen('picker')">Choose A Different Verification Method</button>
         </div>
       </form>
 
-      <form class="ml-2 mr-2 text-center" v-if="keyScreen">
-        <div class="" v-if="verification_method">
-          <div class="card my-4" v-if="keys.length > 0">
-            <div class="card-body" style="cursor: pointer" @click="chooseMethods('hardware_key')">
+      <form class="ml-2 mr-2 text-center" v-if="screen === 'keys' || screen === 'picker'">
+        <div v-if="screen === 'picker'">
+          <div class="card my-4" v-if="loginStore.hardwareKeys.length > 0">
+            <div class="card-body" style="cursor: pointer" @click="showScreen('keys')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
                   <i-bi-key />
@@ -85,25 +85,25 @@
               </div>
             </div>
           </div>
-          <div class="card" v-if="totpAvailable">
-            <div class="card-body" style="cursor: pointer" @click="chooseMethods('totp')">
+          <div class="card" v-if="loginStore.totpAvailable">
+            <div class="card-body" style="cursor: pointer" @click="showScreen('otp')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
                   <i-bi-calculator-fill />
                 </div>
                 <div class="border-dark px-2" style="border-left: 1px solid">
                   <h4>TOTP Code</h4>
-                  <p>Use a time based on-time verification passcode.</p>
+                  <p>Use a time-based one-time verification passcode.</p>
                 </div>
               </div>
             </div>
           </div>
           <div class="p-2">
-            <button type="button" class="btn btn-link p-0 mt-2" @click="chooseMethods('Cancel')">Cancel</button>
+            <button type="button" class="btn btn-link p-0 mt-2" @click="showScreen('login')">Cancel</button>
           </div>
         </div>
         <div v-else>
-          <div class="card my-4" v-for="key in keys" :key="key._id">
+          <div class="card my-4" v-for="key in loginStore.hardwareKeys" :key="key._id">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -115,7 +115,7 @@
               </div>
             </div>
           </div>
-          <button type="button" class="btn btn-link p-0" @click="chooseMethods('show_method')">Choose A Different Verification Method</button>
+          <button type="button" class="btn btn-link p-0" @click="showScreen('picker')">Choose A Different Verification Method</button>
         </div>
       </form>
 
@@ -128,7 +128,7 @@
         </a>
       </div>
     </div>
-    <p class="version">{{ versionOption }}</p>
+    <p class="version">{{ versionStore.version }}</p>
   </div>
 </template>
 
@@ -141,12 +141,11 @@ import ThemeButton from '@/components/ThemeButton.vue'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
+import { useLoginStore, type HardwareKey } from '@/stores/login.ts'
 import { useUserStore } from '@/stores/user.ts'
+import { useVersionStore } from '@/stores/version.ts'
 
-interface HardwareKey {
-  _id: string
-  title: string | null
-}
+type Screen = 'login' | 'picker' | 'keys' | 'otp'
 
 export default defineComponent({
   name: 'LoginView',
@@ -163,22 +162,10 @@ export default defineComponent({
         otp: { required: withMessage(required, 'Verification code is required') },
       },
     )
-    return { loginR$, otpR$, formState, userStore: useUserStore() }
+    return { loginR$, otpR$, userStore: useUserStore(), loginStore: useLoginStore(), versionStore: useVersionStore() }
   },
-  data() {
-    return {
-      otpScreen: false,
-      signUpOption: false,
-      versionOption: 'v1.0.0',
-      activeUser: {
-        user: null as any,
-        token: '',
-      },
-      keyScreen: false,
-      keys: [] as HardwareKey[],
-      totpAvailable: false,
-      verification_method: false,
-    }
+  data(): { screen: Screen; signupEnabled: boolean } {
+    return { screen: 'login', signupEnabled: false }
   },
   computed: {
     signupRoute(): RouteLocationRaw {
@@ -187,54 +174,34 @@ export default defineComponent({
   },
   mounted() {
     this.redirectIfLoggedIn()
-    this.getSignup()
-    this.getVersion()
+    this.fetchSignupEnabled()
   },
   methods: {
     // The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
     // itself when the user is already signed in.
     redirectIfLoggedIn() {
-      if (this.userStore.isLoggedIn) {
-        this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-      }
+      if (this.userStore.isLoggedIn) this.goToDashboard()
     },
-    async getSignup() {
-      const res = await request(client.api.auth['signup-enabled'].$get())
-      this.signUpOption = res.data
+    goToDashboard() {
+      this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
     },
-    async getVersion() {
-      const res = await request(client.api.auth.version.$get())
-      this.versionOption = res.data
+    async fetchSignupEnabled() {
+      const { data } = await request(client.api.auth['signup-enabled'].$get())
+      this.signupEnabled = data
     },
     async submitLogin() {
       const { valid, data } = await this.loginR$.$validate()
       if (!valid) return
 
-      const res = await request(client.api.auth.login.$post({ json: data }))
-      const { user, token, hardwareKeys } = res.data
-      this.keys = hardwareKeys
-      this.totpAvailable = user.totp
-      this.verification_method = false
+      await this.loginStore.passwordLogin(data)
       // Which second factor to use is the client's choice: prefer a hardware key, then TOTP, else log straight in.
-      if (hardwareKeys.length) {
-        this.activeUser.token = token
-        this.activeUser.user = user
-        this.keyScreen = true
-        this.otpScreen = false
-      } else if (user.totp) {
-        this.activeUser.token = token
-        this.activeUser.user = user
-        this.otpScreen = true
-      } else {
-        this.userStore.login(user, token)
-        this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-      }
+      if (this.loginStore.hardwareKeys.length) this.screen = 'keys'
+      else if (this.loginStore.totpAvailable) this.screen = 'otp'
+      else this.goToDashboard()
     },
     async verifyKey(key: HardwareKey) {
-      const challengeRes = await request(
-        client.api.hardwarekey.authentication.challenge.$post({ json: { userId: this.activeUser.user._id, title: key.title ?? '' } }),
-      )
-      const requestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(challengeRes.data.publicKey)
+      const publicKey = await this.loginStore.hardwareKeyChallenge(key)
+      const requestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(publicKey)
       let assertion: PublicKeyCredential | null
       try {
         assertion = (await navigator.credentials.get({ publicKey: requestOptions })) as PublicKeyCredential | null
@@ -251,45 +218,23 @@ export default defineComponent({
       // create()-or-get() union: `RegistrationResponseJSON | AuthenticationResponseJSON`.
       // Narrow it to read the user handle the server resolves the key by.
       const { userHandle } = (assertion.toJSON() as AuthenticationResponseJSON).response
-      await request(client.api.hardwarekey.authentication.verify.$post({ json: { userId: this.activeUser.user._id, response: { userHandle } } }))
-      this.userStore.login(this.activeUser.user, this.activeUser.token)
-      this.activeUser.token = ''
-      this.activeUser.user = null
-      this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
+      await this.loginStore.verifyHardwareKey(userHandle)
+      this.goToDashboard()
     },
     async verifyOtp() {
-      const { valid } = await this.otpR$.$validate()
+      const { valid, data } = await this.otpR$.$validate()
       if (!valid) return
 
       // If verification fails this will get a http 400 response and throw
-      await request(client.api.auth.totp.verify.$post({ json: { userId: this.activeUser.user._id, code: this.otpR$.$value.otp } }))
-      this.userStore.login(this.activeUser.user, this.activeUser.token)
-      this.activeUser.token = ''
-      this.activeUser.user = null
-      this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
+      await this.loginStore.verifyTotp(data.otp)
+      this.goToDashboard()
     },
-    chooseMethods(method: string) {
-      if (method === 'hardware_key') {
-        this.otpScreen = false
-        this.keyScreen = true
-        this.verification_method = false
-      } else if (method === 'show_method') {
-        this.otpScreen = false
-        this.keyScreen = true
-        this.verification_method = true
-      } else if (method === 'Cancel') {
-        this.otpScreen = false
-        this.keyScreen = false
-        this.activeUser = {
-          user: null,
-          token: '',
-        }
-        this.formState = { name: '', password: '' } // todo: change to $reset
-      } else if (method === 'totp') {
-        this.keyScreen = false
-        this.otpScreen = true
-        this.verification_method = false
+    showScreen(screen: Screen) {
+      if (screen === 'login') {
+        this.loginStore.reset()
+        this.loginR$.$reset({ toInitialState: true })
       }
+      this.screen = screen
     },
   },
 })
