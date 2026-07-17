@@ -3,16 +3,26 @@
  * file that uses them.
  */
 import type { SelectOptionData } from 'vue3-select-component'
+import Swal from 'sweetalert2'
 import type { Contact } from '@shared/api-contracts.ts'
+import { notifyInfo } from '@/notify.ts'
 
 /**
- * `JSON.parse` a value that may be absent — e.g. `localStorage.getItem(...)` or
- * `cookie.get(...)`, which return `string | null`. Returns `null` for a
- * null/undefined input (mirroring the old `JSON.parse(null)` → null behavior)
- * instead of the awkward `?? 'null'` dance. Throws on malformed JSON, like
- * `JSON.parse` itself.
+ * Confirm/deny "delete X?" dialog. Resolves `true` only on confirm; a deny shows the `denyMessage` toast; a dismiss
+ * (esc/backdrop) resolves `false` silently.
  */
-export const parseJSON = (value: string | null | undefined): any => (value === null || value === undefined ? null : JSON.parse(value))
+export async function confirmDelete(title: string, denyMessage = 'Not deleted'): Promise<boolean> {
+  const result = await Swal.fire({
+    icon: 'info',
+    title,
+    showDenyButton: true,
+    showCancelButton: false,
+    confirmButtonText: 'Yes, Delete',
+    denyButtonText: 'No',
+  })
+  if (result.isDenied) void notifyInfo(denyMessage)
+  return result.isConfirmed
+}
 
 /**
  * Format a `created_at` timestamp for display (an inbox row or a thread entry).

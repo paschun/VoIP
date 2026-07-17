@@ -32,3 +32,28 @@ export async function uploadMedia(file: File, token: string, onProgress: (loaded
   }
   return request(fetch(client.api.media.uploads.$url(), init) as unknown as Promise<UploadResponse>)
 }
+
+/**
+ * Upload several files concurrently, reporting aggregate progress (mean percent across files, 0-100). Resolves to
+ * the stored media URLs in input order; rejects on the first failed upload (after its central error toast).
+ */
+export async function uploadMediaFiles(
+  files: Iterable<File>,
+  token: string,
+  onProgress: (percent: number) => void = () => {},
+): Promise<string[]> {
+  const list = [...files]
+  const progress = list.map(() => 0)
+  const report = () => onProgress(progress.reduce((tot, curr) => tot + curr, 0) / progress.length)
+  return Promise.all(
+    list.map(async (file, i) => {
+      const res = await uploadMedia(file, token, (loaded, total) => {
+        progress[i] = total > 0 ? (loaded * 100) / total : 100 // no total: count the file as done
+        report()
+      })
+      progress[i] = 100
+      report()
+      return res.data.media
+    }),
+  )
+}
