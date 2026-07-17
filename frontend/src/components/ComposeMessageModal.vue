@@ -34,14 +34,14 @@
         </div>
       </div>
       <!-- send images over MMS -->
-      <label class="input-group mb-3" for="model_file_input" style="cursor: pointer">
+      <label class="input-group mb-3" for="attachment-file-input" style="cursor: pointer">
         <span class="input-group-text paperClip chat-input">
           <i-bi-paperclip />
         </span>
         <span class="form-control chat-input" :class="{ 'text-secondary': !selectedFileNames }">{{ selectedFileNames || 'Choose file' }}</span>
       </label>
       <div class="form-group mb-2 mt-4 d-none">
-        <input type="file" id="model_file_input" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick" />
+        <input type="file" id="attachment-file-input" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick" />
       </div>
 
       <div class="d-grid d-md-flex">

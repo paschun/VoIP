@@ -12,7 +12,7 @@
           <div>
             <div class="d-flex justify-content-start">
               <div class="ml-1">
-                <b-button v-b-tooltip.hover title="Add Contact" @click="openContactModel()" class="float-left d-flex m-1" size="sm" variant="primary">
+                <b-button v-b-tooltip.hover title="Add Contact" @click="openContactModal()" class="float-left d-flex m-1" size="sm" variant="primary">
                   <i-bi-plus-circle />
                 </b-button>
               </div>
@@ -103,14 +103,14 @@
               <div class="d-flex justify-content-end">
                 <button class="btn btn-success mb-2 float-right" @click="downloadSampleCSV()">Sample File</button>
               </div>
-              <label class="input-group mb-3" for="model_file_input2" style="cursor: pointer">
+              <label class="input-group mb-3" for="csv-file-input" style="cursor: pointer">
                 <span class="input-group-text paperClip chat-input"><i-bi-paperclip /></span>
-                <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !modelFileValue }">{{
-                  modelFileValue || 'Choose file'
+                <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !csvFileName }">{{
+                  csvFileName || 'Choose file'
                 }}</span>
               </label>
               <div class="form-group mb-2 mt-4 d-none">
-                <input type="file" id="model_file_input2" class="form-control chat-input" accept=".csv" @change="onSelect" />
+                <input type="file" id="csv-file-input" class="form-control chat-input" accept=".csv" @change="onSelect" />
               </div>
               <div class="d-flex justify-content-start bd-highlight">
                 <div class="bd-highlight"><button type="button" @click="importContactsCsv()" class="btn btn-primary float-right">Save</button></div>
@@ -131,7 +131,7 @@ import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import Papa from 'papaparse'
 import { e164Phone } from '@shared/contracts/phone.ts'
-import { client } from '@/core/rpc.client.ts'
+import type { client } from '@/core/rpc.client.ts'
 import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
 
@@ -185,7 +185,7 @@ export default defineComponent({
   },
   data() {
     return {
-      modelFileValue: '',
+      csvFileName: '',
       editId: '',
       search_contacts: [] as ContactRecord[],
       query: '',
@@ -211,7 +211,7 @@ export default defineComponent({
       const target = event.target as HTMLInputElement
       if (!target?.files) return
       const fileToRead = target.files[0]
-      this.modelFileValue = fileToRead.name
+      this.csvFileName = fileToRead.name
       this.parsedCsvContacts = await this.parseCsvContacts(fileToRead)
     },
 
@@ -237,7 +237,7 @@ export default defineComponent({
     downloadSampleCSV() {
       downloadFile(sampleContacts, 'sample_file')
     },
-    openContactModel() {
+    openContactModal() {
       this.editId = ''
       this.emptyContact()
       this.contactModal?.show()
@@ -255,7 +255,7 @@ export default defineComponent({
       if (this.parsedCsvContacts.length > 0) {
         await this.contactStore.importContacts(this.parsedCsvContacts)
         this.contactModal?.hide()
-        this.modelFileValue = ''
+        this.csvFileName = ''
       } else {
         void notifyError('Please upload valid file!')
       }
