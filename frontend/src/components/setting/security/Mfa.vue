@@ -46,7 +46,7 @@
           {{ secret }}
         </div>
       </div>
-      <div class="text-secondary text-center" id="clickText">Click On Key To Copy</div>
+      <div class="text-secondary text-center">{{ secretCopied ? 'Copied!' : 'Click On Key To Copy' }}</div>
       <div class="form-group mt-1">
         <label>Enter Verification Code</label>
         <input
@@ -79,6 +79,7 @@ export default defineComponent({
       qr: '',
       verification_code: '',
       secret: '',
+      secretCopied: false,
     }
   },
   mounted() {
@@ -108,6 +109,7 @@ export default defineComponent({
       const res = await request(client.api.auth.totp.qr.$post())
       this.qr = res.data.image
       this.secret = res.data.secret
+      this.secretCopied = false
     },
     async verifyStatusCode() {
       if (this.verification_code === '') {
@@ -125,8 +127,7 @@ export default defineComponent({
     copySecret() {
       try {
         navigator.clipboard.writeText(this.secret)
-        const answer = document.getElementById('clickText')!
-        answer.innerHTML = 'Copied!'
+        this.secretCopied = true
       } catch (err) {
         console.error('Failed to copy!', err)
       }
