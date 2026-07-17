@@ -82,6 +82,7 @@ import { required, minLength, sameAs, lowercase, withMessage } from '@regle/rule
 import { DetailedError } from 'hono/client'
 import { client, request } from '@/core/rpc.client.ts'
 import { appDirectory } from '@/router/helpers.ts'
+import { useServerMetaStore } from '@/stores/server-meta.ts'
 
 export default defineComponent({
   name: 'SignupView',
@@ -103,15 +104,15 @@ export default defineComponent({
         sameAs: sameAs(() => form.password),
       },
     })
-    return { r$ }
+    return { r$, meta: useServerMetaStore() }
   },
   computed: {
     loginRoute(): RouteLocationRaw {
       return { name: 'login', params: { appdirectory: appDirectory(this.$route) } }
     },
   },
-  mounted() {
-    void this.redirectIfSignupDisabled()
+  async mounted() {
+    await this.redirectIfSignupDisabled()
   },
   methods: {
     async handleSubmit() {
@@ -130,10 +131,9 @@ export default defineComponent({
     },
 
     async redirectIfSignupDisabled() {
-      // todo: this API call in both here and Login.vue . dedupe somehow?
-      const { data } = await request(client.api.auth['signup-enabled'].$get())
       // todo: not the best security mechanism. should be blocked on the router level ideally
-      if (!data) this.$router.push(this.loginRoute)
+      await this.meta.signupReady
+      if (!this.meta.signupEnabled) await this.$router.push(this.loginRoute)
     },
   },
 })

@@ -43,7 +43,7 @@
         <div class="d-grid">
           <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
         </div>
-        <div class="my-2 small" v-if="signupEnabled">Don't have an account yet? <router-link :to="signupRoute" class="mx-2"> Sign up</router-link></div>
+        <div class="my-2 small" v-if="meta.signupEnabled">Don't have an account yet? <router-link :to="signupRoute" class="mx-2"> Sign up</router-link></div>
         <div class="d-grid d-md-flex mt-2 small" v-else>New registrations are disabled</div>
       </form>
       <form class="ml-2 mr-2 text-center" :class="{ 'd-none': screen !== 'otp' }" @submit.prevent="verifyOtp">
@@ -128,7 +128,7 @@
         </a>
       </div>
     </div>
-    <p class="version">{{ versionStore.version }}</p>
+    <p class="version">{{ meta.version }}</p>
   </div>
 </template>
 
@@ -138,12 +138,11 @@ import type { RouteLocationRaw } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, withMessage } from '@regle/rules'
 import ThemeButton from '@/components/ThemeButton.vue'
-import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { useLoginStore, type HardwareKey } from '@/stores/login.ts'
+import { useServerMetaStore } from '@/stores/server-meta.ts'
 import { useUserStore } from '@/stores/user.ts'
-import { useVersionStore } from '@/stores/version.ts'
 
 type Screen = 'login' | 'picker' | 'keys' | 'otp'
 
@@ -162,10 +161,16 @@ export default defineComponent({
         otp: { required: withMessage(required, 'Verification code is required') },
       },
     )
-    return { loginR$, otpR$, userStore: useUserStore(), loginStore: useLoginStore(), versionStore: useVersionStore() }
+    return {
+      loginR$,
+      otpR$,
+      userStore: useUserStore(),
+      loginStore: useLoginStore(),
+      meta: useServerMetaStore(),
+    }
   },
-  data(): { screen: Screen; signupEnabled: boolean } {
-    return { screen: 'login', signupEnabled: false }
+  data(): { screen: Screen } {
+    return { screen: 'login' }
   },
   computed: {
     signupRoute(): RouteLocationRaw {
@@ -174,7 +179,6 @@ export default defineComponent({
   },
   mounted() {
     this.redirectIfLoggedIn()
-    this.fetchSignupEnabled()
   },
   methods: {
     // The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
@@ -184,10 +188,6 @@ export default defineComponent({
     },
     goToDashboard() {
       this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
-    },
-    async fetchSignupEnabled() {
-      const { data } = await request(client.api.auth['signup-enabled'].$get())
-      this.signupEnabled = data
     },
     async submitLogin() {
       const { valid, data } = await this.loginR$.$validate()

@@ -124,6 +124,7 @@ function readVersion(c: Context<Env>) {
 async function readUpdateAvailable(c: Context<Env>) {
   let updateAvailable = false
   try {
+    // todo: could cache this value once per day
     const response = await fetch(remoteVersionURL)
     if (response.ok) {
       // TODO: zod-validate the GitHub "commits" API schema rather than trusting the shape.
