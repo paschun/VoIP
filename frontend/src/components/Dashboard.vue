@@ -18,7 +18,7 @@
             </b-button>
           </div>
         </div>
-        <number-list ref="numberList" @conversationSelected="firstChatShow" @messageSent="onMessageSent" />
+        <number-list ref="numberList" @conversationOpened="onConversationOpened" @messageSent="onMessageSent" />
       </template>
     </b-offcanvas>
     <section
@@ -85,10 +85,10 @@
         </div>
       </div>
       <div class="wrap-chat">
-        <div class="loading-bar" v-if="chatListLoader">
+        <div class="loading-bar" v-if="conversationStore.threadIsLoading">
           <div class="blue-bar"></div>
         </div>
-        <div ref="chatContainer" class="chat" :class="{ 'opacity-0': chatListLoader }">
+        <div ref="chatContainer" class="chat" :class="{ 'opacity-0': conversationStore.threadIsLoading }">
           <div v-if="conversationStore.hasActiveConversation">
             <div v-for="message in conversationStore.messages" :key="message._id">
               <div
@@ -165,7 +165,8 @@ import { connectSocket, disconnectSocket, type SocketMessage } from '@/core/sock
 import { formatTimestamp } from '@/helper.ts'
 import { notifyError, notifyInfo } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
-import { useConversationStore, type Conversation } from '@/stores/conversation.ts'
+import { useConversationStore } from '@/stores/conversation.ts'
+import { useProfileStore } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
 import NumberList from './inbox/NumberList.vue'
 
@@ -196,6 +197,7 @@ export default defineComponent({
     return {
       userStore: useUserStore(),
       conversationStore: useConversationStore(),
+      profileStore: useProfileStore(),
       callView,
       numberList,
       mobileSidebar,
@@ -208,7 +210,6 @@ export default defineComponent({
     isUploading: boolean
     uploadProgress: number[] // numbers from 0 to 100
     uploadedImages: string[]
-    chatListLoader: boolean
     messageBody: string
     zoomImage: string
   } {
@@ -218,7 +219,6 @@ export default defineComponent({
       isUploading: false,
       uploadProgress: [],
       uploadedImages: [],
-      chatListLoader: false,
       messageBody: '',
       zoomImage: '',
     }
@@ -245,7 +245,7 @@ export default defineComponent({
     formatTimestamp,
     /** UI reaction to an incoming message (core/socket.ts owns the store refreshes). */
     onUserMessage(data: SocketMessage) {
-      if (!this.conversationStore.hasActiveConversation) this.numberList?.refreshProfile()
+      if (!this.conversationStore.hasActiveConversation) void this.profileStore.loadProfiles()
       void this.notifyMe(data.number, data.message)
     },
     addContact(phoneNumber: string) {
@@ -365,19 +365,13 @@ export default defineComponent({
     hideImageDrag() {
       this.uploadedImages = []
     },
-    async firstChatShow(conversation: Conversation) {
-      this.chatListLoader = true
-      try {
-        await this.conversationStore.openConversation(conversation)
-        // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the
-        // thread isn't rendered yet, so chat-container's scrollHeight is stale and we'd land mid-thread.
-        await this.$nextTick()
-        this.scrollChatToBottom()
-      } finally {
-        this.chatListLoader = false
-      }
+    /** A conversation was opened (NumberList already loaded the thread via the store): sync the chat pane UI. */
+    async onConversationOpened() {
+      // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the
+      // thread isn't rendered yet, so chat-container's scrollHeight is stale and we'd land mid-thread.
+      await this.$nextTick()
+      this.scrollChatToBottom()
       this.resetComposer()
-      this.numberList?.refreshProfile()
       this.mobileSidebar?.hide()
     },
     scrollChatToBottom() {

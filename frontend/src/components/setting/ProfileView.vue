@@ -2,7 +2,7 @@
   <div>
     <loading-spinner :show="profileStore.profileIsLoading" />
     <div v-for="profile in profileStore.profiles" :key="profile._id">
-      <b-dropdown-item-button @click="changeProfile(profile)">
+      <b-dropdown-item-button @click="profileStore.setActiveProfile(profile)">
         <div class="d-flex flex-row">
           <div>
             <div class="d-flex flex-column">
@@ -46,10 +46,7 @@
 </template>
 
 <script lang="ts">
-/**
- * Profile data goes through the profile store / profileService (no direct
- * $post here): loadProfiles -> profile/getdata, createProfile -> profile/create.
- */
+/** Profile selector dropdown + add-profile modal. All profile data flows through the profile store. */
 import { defineComponent, useTemplateRef } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'
@@ -70,31 +67,9 @@ export default defineComponent({
     return { r$, profileStore: useProfileStore(), addProfileModal }
   },
   mounted() {
-    this.initSelection()
+    void this.profileStore.initSelection()
   },
   methods: {
-    changeProfile(profile: any) {
-      this.profileStore.setActiveProfile(profile)
-    },
-    activeFirstProfile() {
-      const profiles = this.profileStore.profiles
-      if (profiles.length > 0) {
-        this.changeProfile(profiles[0])
-      }
-    },
-    /**
-     * Load the list and select once (stored profile, else the first), firing the profile-changed watchers. Used on
-     * mount + after create/delete.
-     */
-    async initSelection() {
-      const list = await this.profileStore.loadProfiles()
-      const selected = this.profileStore.resolveActiveProfile(list)
-      if (selected) this.changeProfile(selected)
-    },
-    /** List/badge refresh only (no re-selection) for pull-to-refresh / new message. */
-    getAllProfiles() {
-      void this.profileStore.loadProfiles()
-    },
     async addProfile() {
       const { valid, data } = await this.r$.$validate()
       if (!valid) return

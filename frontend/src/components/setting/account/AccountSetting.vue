@@ -80,7 +80,7 @@ export default defineComponent({
         confirmButtonText: 'Ok',
       })
       this.userStore.logout()
-      window.location.href = `/${appDirectory(this.$route)}/`
+      this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
     },
   },
 })

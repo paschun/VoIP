@@ -1,6 +1,6 @@
 <template>
   <div>
-    <loading-spinner :show="isLoading" />
+    <loading-spinner :show="isSavingProviderSetting" />
     <div class="profile">
       <div class="d-flex flex-row bd-highlight align-items-center align-self-center">
         <div class="mt-2">
@@ -40,7 +40,7 @@
               </div>
             </template>
             <b-dropdown-divider></b-dropdown-divider>
-            <profile-view ref="profileView" />
+            <profile-view />
             <b-dropdown-item-button @click="logout()">
               <i-bi-power aria-hidden="true" />
               Logout
@@ -56,7 +56,7 @@
       </div>
     </div>
     <div class="contact-list">
-      <div class="box-placeholder" v-if="messageListLoader">
+      <div class="box-placeholder" v-if="conversationStore.inboxIsLoading">
         <div class="p-4">
           <span class="category text link"></span>
           <h4 class="text line"></h4>
@@ -79,7 +79,7 @@
           <div class="text"></div>
         </div>
       </div>
-      <template v-if="!messageListLoader">
+      <template v-if="!conversationStore.inboxIsLoading">
         <div
           v-for="item in searchNumbers"
           :key="item._id"
@@ -290,8 +290,6 @@ import { defineComponent, ref, useTemplateRef } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
 import { required, requiredIf, literal, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
-import type { InferRequestType, InferResponseType } from 'hono/client'
-import type { SuccessStatusCode } from 'hono/utils/http-status'
 import PullToRefresh from 'pulltorefreshjs'
 import ComposeMessageModal from '@/components/ComposeMessageModal.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -299,13 +297,13 @@ import Contact from '@/components/setting/Contact.vue'
 import ProfileView from '@/components/setting/ProfileView.vue'
 import Setting from '@/components/setting/Setting.vue'
 import ThemeButton from '@/components/ThemeButton.vue'
-import { client, request } from '@/core/rpc.client.ts'
+import { getProviderNumbers, lookupNumber, type ProviderNumbers } from '@/core/services/provider.ts'
 import { formatTimestamp } from '@/helper.ts'
 import { notifySuccess, notifyInfo } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore, type Conversation } from '@/stores/conversation.ts'
-import { useProfileStore } from '@/stores/profile.ts'
+import { useProfileStore, type ProviderSettingPayload } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
 import CustomAutocompleteSelect from '../CustomAutocompleteSelect.vue'
 
@@ -313,19 +311,15 @@ function getValidString(str: string): string {
   return str.length > 10 ? str.substring(0, 10) + '..' : str
 }
 
-/** The full provider-config request body, inferred from the endpoint's tightened zod schema. */
-type ProviderSettingPayload = InferRequestType<typeof client.api.profile.provider.$post>['json']
 /** The subset edited in the settings modal (server-side identifiers are added at submit). `type` discriminates which provider's fields the variant rules require. */
 type ProviderSettingForm = Omit<ProviderSettingPayload, 'setting' | 'sid' | 'override'>
-/** The provider-numbers response payload, discriminated by `type`. */
-type ProviderNumbers = InferResponseType<(typeof client.api.setting)['provider-numbers']['$post'], SuccessStatusCode>['data']
 /** A purchasable Telnyx number from the provider-numbers lookup (`id` is the lookup's sid). */
 type TelnyxNumber = Extract<ProviderNumbers, { type: 'telnyx' }>['numbers'][number]
 /** A purchasable Twilio number from the provider-numbers lookup. */
 type TwilioNumber = Extract<ProviderNumbers, { type: 'twilio' }>['numbers'][number]
 
 export default defineComponent({
-  emits: ['conversationSelected', 'messageSent'],
+  emits: ['conversationOpened', 'messageSent'],
   components: {
     ProfileView,
     LoadingSpinner,
@@ -370,7 +364,6 @@ export default defineComponent({
         ...provider.value,
       }
     })
-    const profileView = useTemplateRef<InstanceType<typeof ProfileView>>('profileView')
     const profileSettingModal = useTemplateRef<InstanceType<typeof BModal>>('profileSettingModal')
     const contactComponent = useTemplateRef<InstanceType<typeof Contact>>('contactComponent')
     const composeModal = useTemplateRef<InstanceType<typeof ComposeMessageModal>>('composeModal')
@@ -381,24 +374,27 @@ export default defineComponent({
       userStore: useUserStore(),
       contactStore: useContactStore(),
       conversationStore: useConversationStore(),
-      profileView,
       profileSettingModal,
       contactComponent,
       composeModal,
     }
   },
-  data() {
+  data(): {
+    query: string
+    isSavingProviderSetting: boolean
+    telnyxNumbers: TelnyxNumber[]
+    twilioNumbers: TwilioNumber[]
+    options: { text: string; value: ProviderSettingForm['type'] }[]
+  } {
     return {
       query: '',
-      isLoading: false, // todo: fixme
-      messageListLoader: true,
-      telnyxNumbers: [] as TelnyxNumber[],
-      twilioNumbers: [] as TwilioNumber[],
+      isSavingProviderSetting: false, // covers both legs: the number-lookup and the save itself
+      telnyxNumbers: [],
+      twilioNumbers: [],
       options: [
         { text: 'Telnyx', value: 'telnyx' },
         { text: 'Twilio', value: 'twilio' },
       ],
-      showDelete: false,
     }
   },
   computed: {
@@ -415,15 +411,21 @@ export default defineComponent({
       const p = this.profileStore.activeProfile
       return p && 'totalCount' in p ? (p.totalCount ?? 0) : 0
     },
+    /** The active profile has provider creds saved, so the delete-key icon applies. */
+    showDelete(): boolean {
+      const p = this.profileStore.activeProfile
+      if (!p) return false
+      return p.type === 'telnyx' ? !!p.api_key : !!p.twilio_sid
+    },
   },
   watch: {
-    // Selection changed: rebuild the inbox + settings form for the new profile and pull its detail (unread counts).
-    // Gating on the id (not activeProfile) avoids a refetch loop, since refreshActiveProfile reassigns a same-id
-    // object. immediate so a profile persisted in localStorage loads on mount -- its id doesn't "change".
+    // Selection changed: reseed the settings form for the new profile and pull its detail (unread counts). The inbox
+    // reload is the conversation store's own reaction. Gating on the id (not activeProfile) avoids a refetch loop,
+    // since refreshActiveProfile reassigns a same-id object -- and keeps in-progress form edits from being clobbered.
+    // immediate so a profile persisted in localStorage loads on mount -- its id doesn't "change".
     'profileStore.activeProfileId': {
       immediate: true,
       handler() {
-        this.getNumberList()
         this.getSetting()
         void this.profileStore.refreshActiveProfile()
       },
@@ -442,41 +444,22 @@ export default defineComponent({
   methods: {
     formatTimestamp,
     pullRefreshFunction() {
-      this.getNumberList()
+      void this.conversationStore.reloadInbox()
       void this.profileStore.refreshActiveProfile()
-      this.refreshProfile()
+      void this.profileStore.loadProfiles()
     },
     /** Open the add-contact modal prefilled with a number -- relays the Dashboard chat-header entry down to Contact. */
     openAddContact(phoneNumber: string) {
       this.contactComponent?.openWith(phoneNumber)
     },
     getValidString,
-    refreshProfile() {
-      this.profileView?.getAllProfiles()
-    },
-    selectConversation(item: Conversation) {
-      this.$emit('conversationSelected', item)
+    async selectConversation(item: Conversation) {
+      await this.conversationStore.openConversation(item)
+      this.$emit('conversationOpened')
     },
     logout() {
       this.userStore.logout()
-      window.location.href = `/${appDirectory(this.$route)}/`
-    },
-    async getNumberList() {
-      this.messageListLoader = true
-      try {
-        await this.conversationStore.loadConversations()
-      } finally {
-        this.messageListLoader = false
-      }
-    },
-    hideShowDeleteIcon(response: any) {
-      if (response.type === 'telnyx' && response.api_key) {
-        this.showDelete = true
-      } else if (response.type === 'twilio' && response.twilio_sid) {
-        this.showDelete = true
-      } else {
-        this.showDelete = false
-      }
+      this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
     },
     getSetting() {
       const profile = this.profileStore.activeProfile
@@ -490,7 +473,6 @@ export default defineComponent({
         twilio_token: profile.twilio_token ?? '',
         twilio_number: profile.number ?? '',
       }
-      this.hideShowDeleteIcon(profile)
       this.getNumbers(profile.type)
     },
     async deleteProfile() {
@@ -515,9 +497,9 @@ export default defineComponent({
       this.telnyxNumbers = []
       this.twilioNumbers = []
       this.profileSettingModal?.hide()
-      setTimeout(() => {
-        this.profileView?.activeFirstProfile()
-      }, 2000)
+      // deleteActiveProfile already reloaded the list, so the next selection is available now.
+      const next = this.profileStore.profiles[0]
+      if (next) this.profileStore.setActiveProfile(next)
     },
     async deleteApiKey() {
       const result = await this.$swal.fire({
@@ -534,29 +516,24 @@ export default defineComponent({
       }
       if (!result.isConfirmed) return
 
-      const { data } = await request(client.api.profile[':id'].provider.$delete({ param: { id: this.profileStore.activeProfileId } }))
+      await this.profileStore.deleteProviderSetting()
       notifySuccess('Key deleted successfully!')
       // Clear only the provider fields, keeping `profile`: the profile still exists (just its provider config is
       // gone) and the modal stays open, so its name must remain visible. A full reset would blank it.
       this.form = { ...this.form, api_key: '', number: '', twilio_sid: '', twilio_token: '', twilio_number: '' }
       this.telnyxNumbers = []
       this.twilioNumbers = []
-      this.profileStore.setActiveProfile(data)
-      this.hideShowDeleteIcon(data)
-      this.profileView?.getAllProfiles()
     },
     async getNumbers(type: 'telnyx' | 'twilio') {
       const v = this.r$.$value
       if (type === 'telnyx') {
         this.telnyxNumbers = []
-        const { data } = await request(client.api.setting['provider-numbers'].$post({ json: { type: 'telnyx', api_key: v.api_key } }))
+        const data = await getProviderNumbers({ type: 'telnyx', api_key: v.api_key })
         if (data.type !== 'telnyx') throw new Error('backend returned wrong number type')
         this.telnyxNumbers = data.numbers
       } else {
         this.twilioNumbers = []
-        const { data } = await request(
-          client.api.setting['provider-numbers'].$post({ json: { type: 'twilio', twilio_sid: v.twilio_sid, twilio_token: v.twilio_token } }),
-        )
+        const data = await getProviderNumbers({ type: 'twilio', twilio_sid: v.twilio_sid, twilio_token: v.twilio_token })
         if (data.type !== 'twilio') throw new Error('backend returned wrong number type')
         this.twilioNumbers = data.numbers
       }
@@ -584,34 +561,25 @@ export default defineComponent({
         profile: providerSettings.profile,
         override: true,
       }
-      this.isLoading = true
+      this.isSavingProviderSetting = true
       let isCall = false
       try {
-        // number-lookup returns the provider's number record (typed loosely server-side)
         // a configured call webhook means call routing already exists, so we prompt before overriding it.
         if (providerSettings.type === 'telnyx') {
-          const { data } = await request(
-            client.api.provider['number-lookup'].$post({
-              json: { type: 'telnyx', api_key: providerSettingPayload.api_key, number: providerSettingPayload.number, sid },
-            }),
-          )
+          const data = await lookupNumber({ type: 'telnyx', api_key: providerSettingPayload.api_key, number: providerSettingPayload.number, sid })
           isCall = !!data.connection_id
         } else {
-          const { data } = await request(
-            client.api.provider['number-lookup'].$post({
-              json: {
-                type: 'twilio',
-                twilio_sid: providerSettingPayload.twilio_sid,
-                twilio_token: providerSettingPayload.twilio_token,
-                twilio_number: providerSettingPayload.twilio_number,
-                sid,
-              },
-            }),
-          )
+          const data = await lookupNumber({
+            type: 'twilio',
+            twilio_sid: providerSettingPayload.twilio_sid,
+            twilio_token: providerSettingPayload.twilio_token,
+            twilio_number: providerSettingPayload.twilio_number,
+            sid,
+          })
           isCall = !!data.voiceApplicationSid || !!data.voiceUrl
         }
       } finally {
-        this.isLoading = false
+        this.isSavingProviderSetting = false
       }
       // Prompt outside the loader block (matching the old fire-and-forget swal that ran after `finally`).
       if (isCall) {
@@ -629,16 +597,13 @@ export default defineComponent({
       await this.createProviderSetting(providerSettingPayload)
     },
     async createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
-      this.isLoading = true
+      this.isSavingProviderSetting = true
       try {
-        const { data } = await request(client.api.profile.provider.$post({ json: providerSettingPayload }))
+        await this.profileStore.saveProviderSetting(providerSettingPayload)
         this.profileSettingModal?.hide()
-        this.hideShowDeleteIcon(data)
-        this.profileView?.getAllProfiles()
-        this.profileStore.setActiveProfile(data)
         this.r$.$reset() // just-saved values are the new baseline
       } finally {
-        this.isLoading = false
+        this.isSavingProviderSetting = false
       }
     },
   },

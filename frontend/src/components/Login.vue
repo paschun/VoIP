@@ -177,17 +177,17 @@ export default defineComponent({
       return { name: 'signup', params: { appdirectory: appDirectory(this.$route) } }
     },
   },
-  mounted() {
-    this.redirectIfLoggedIn()
+  async mounted() {
+    await this.redirectIfLoggedIn()
   },
   methods: {
     // The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
     // itself when the user is already signed in.
-    redirectIfLoggedIn() {
-      if (this.userStore.isLoggedIn) this.goToDashboard()
+    async redirectIfLoggedIn() {
+      if (this.userStore.isLoggedIn) await this.goToDashboard()
     },
-    goToDashboard() {
-      this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
+    async goToDashboard() {
+      await this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
     },
     async submitLogin() {
       const { valid, data } = await this.loginR$.$validate()

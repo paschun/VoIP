@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
-import type { InferResponseType } from 'hono/client'
+import type { InferRequestType, InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
 import { client, request } from '@/core/rpc.client.ts'
@@ -19,6 +19,9 @@ type Profile = InferResponseType<typeof client.api.profile.$post, SuccessStatusC
  * {@link Profile} with the two count fields
  */
 type ProfileWithUnread = InferResponseType<(typeof client.api.profile)[':id']['$get'], SuccessStatusCode>['data']
+
+/** The full provider-config request body (`POST /api/profile/provider`), inferred from the endpoint's tightened zod schema. */
+export type ProviderSettingPayload = InferRequestType<typeof client.api.profile.provider.$post>['json']
 
 // The currently-selected profile, shared across the app and persisted to localStorage. Selection is reactive state;
 // interested components `watch` it.
@@ -67,9 +70,14 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  /** Resolve the stored selection against a list (matching id, else the first). */
-  function resolveActiveProfile(list: ProfileWithUnread[]): ProfileWithUnread | undefined {
-    return list.find((p) => p._id === activeProfile.value?._id) ?? list[0]
+  /**
+   * Load the list and select once (the stored profile if still present, else the first), firing the profile-changed
+   * watchers. Used on mount + after create/delete.
+   */
+  async function initSelection(): Promise<void> {
+    const list = await loadProfiles()
+    const selected = list.find((p) => p._id === activeProfile.value?._id) ?? list[0]
+    if (selected) setActiveProfile(selected)
   }
 
   /** Create a profile, select it (fires watchers), and refresh the list. Returns it; throws on failure. */
@@ -93,6 +101,20 @@ export const useProfileStore = defineStore('profile', () => {
     setActiveProfile(data)
   }
 
+  /** Save a profile's provider config, select the returned profile (fires watchers), and refresh the list. */
+  async function saveProviderSetting(payload: ProviderSettingPayload): Promise<void> {
+    const { data } = await request(client.api.profile.provider.$post({ json: payload }))
+    setActiveProfile(data)
+    await loadProfiles()
+  }
+
+  /** Delete the active profile's provider config (the profile itself survives), reselect it stripped, and refresh the list. */
+  async function deleteProviderSetting(): Promise<void> {
+    const { data } = await request(client.api.profile[':id'].provider.$delete({ param: { id: activeProfileId.value } }))
+    setActiveProfile(data)
+    await loadProfiles()
+  }
+
   /** Delete the active profile, clear the selection, and refresh the list. */
   async function deleteActiveProfile(): Promise<void> {
     if (!activeProfile.value) return
@@ -111,8 +133,10 @@ export const useProfileStore = defineStore('profile', () => {
     setActiveProfile,
     clearActiveProfile,
     loadProfiles,
-    resolveActiveProfile,
+    initSelection,
     createProfile,
+    saveProviderSetting,
+    deleteProviderSetting,
     refreshActiveProfile,
     deleteActiveProfile,
   }
