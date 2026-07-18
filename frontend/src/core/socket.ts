@@ -1,26 +1,25 @@
 import type { SocketMessage } from '@shared/contracts/socket.ts'
 import { authToken } from '@/core/auth-token.ts'
+import { showMessageNotification } from '@/core/notifications.ts'
 import { wsClient } from '@/core/rpc.client.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'
-
-export type { SocketMessage }
 
 let socket: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let attempts = 0
 
 /**
- * Open the app websocket (typed RPC `$ws`). The server pushes `SocketMessage`s for the JWT's user; store refreshes
- * happen here and `onUserMessage` is the UI hook (notification, sidebar refresh). Reconnects with capped exponential
- * backoff until `disconnectSocket()`.
+ * Open the app websocket (typed RPC `$ws`). The server pushes `SocketMessage`s for the JWT's user; every
+ * incoming-message reaction (store refreshes + desktop notification) happens here. Reconnects with capped
+ * exponential backoff until `disconnectSocket()`.
  */
-export function connectSocket(onUserMessage: (msg: SocketMessage) => void) {
+export function connectSocket() {
   disconnectSocket()
-  open(onUserMessage)
+  open()
 }
 
-function open(onUserMessage: (msg: SocketMessage) => void) {
+function open() {
   const ws = wsClient.api.ws.$ws({ query: { token: authToken.value } })
   socket = ws
   ws.addEventListener('open', () => {
@@ -33,15 +32,17 @@ function open(onUserMessage: (msg: SocketMessage) => void) {
     if (conversationStore.hasActiveConversation) {
       void conversationStore.refreshMessages()
     } else {
-      void useProfileStore().refreshActiveProfile()
+      const profileStore = useProfileStore()
+      void profileStore.refreshActiveProfile()
+      void profileStore.loadProfiles()
     }
     void conversationStore.loadConversations()
-    onUserMessage(msg)
+    void showMessageNotification(msg.number, msg.message)
   })
   ws.addEventListener('close', () => {
     if (socket !== ws) return // superseded, or closed by disconnectSocket
     const delay = Math.min(1000 * 2 ** attempts++, 30_000) // exponential backoff: 1s, 2s, 4s, ... capped at 30s
-    reconnectTimer = setTimeout(() => open(onUserMessage), delay)
+    reconnectTimer = setTimeout(() => open(), delay)
   })
 }
 

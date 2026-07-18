@@ -71,11 +71,6 @@ export default defineComponent({
     },
   },
   methods: {
-    // TODO(Chat agent): Dashboard swaps its template-ref call to callStore.dial(); delete this then.
-    async makeCall(phoneNumber: string) {
-      this.dialInput = phoneNumber
-      await this.callStore.dial(phoneNumber)
-    },
     setDialInput(number: string) {
       this.dialInput = number
     },

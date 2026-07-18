@@ -45,6 +45,10 @@ export const formatTimestamp = (value: string, longMonth = true): string => {
   }).format(d)
 }
 
+/** Seconds -> "mm:ss" call-duration display (minutes aren't capped at an hour). */
+export const formatDuration = (seconds: number): string =>
+  String(Math.trunc(seconds / 60)).padStart(2, '0') + ':' + String(Math.trunc(seconds) % 60).padStart(2, '0')
+
 /** Map contacts to `v-select` options (label = full name, value = number). */
 export const contactsToOptions = (contacts: Contact[]): SelectOptionData<string>[] =>
   contacts.map((c) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))

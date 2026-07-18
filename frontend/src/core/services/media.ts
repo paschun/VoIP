@@ -34,8 +34,9 @@ export async function uploadMedia(file: File, token: string, onProgress: (loaded
 }
 
 /**
- * Upload several files concurrently, reporting aggregate progress (mean percent across files, 0-100). Resolves to
- * the stored media URLs in input order; rejects on the first failed upload (after its central error toast).
+ * Upload several files concurrently, reporting aggregate progress (mean percent across files, 0-100; inaccurate
+ * with mixed file sizes -- tracking loaded/total bytes would be accurate). Resolves to the stored media URLs in
+ * input order; rejects on the first failed upload (after its central error toast).
  */
 export async function uploadMediaFiles(
   files: Iterable<File>,
