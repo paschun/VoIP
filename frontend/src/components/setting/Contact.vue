@@ -12,7 +12,7 @@
           <div>
             <div class="d-flex justify-content-start">
               <div class="ml-1">
-                <b-button v-b-tooltip.hover title="Add Contact" @click="openContactModal()" class="float-left d-flex m-1" size="sm" variant="primary">
+                <b-button v-b-tooltip.hover title="Add Contact" @click="contactStore.startCreate()" class="float-left d-flex m-1" size="sm" variant="primary">
                   <i-bi-plus-circle />
                 </b-button>
               </div>
@@ -38,19 +38,19 @@
               <div class="d-flex flex-row bd-highlight">
                 <div class="bd-highlight">&nbsp;&nbsp;<i-bi-search />&nbsp;&nbsp;</div>
                 <div class="bd-highlight">
-                  <input type="text" class="input-search" v-model="query" @keyup="searchContact()" placeholder="Search" />
+                  <input type="text" class="input-search" v-model="query" placeholder="Search" />
                 </div>
               </div>
             </div>
           </div>
           <ul class="list-group">
-            <li v-for="contact in search_contacts" :key="contact._id" class="list-group-item d-flex justify-content-between align-items-center">
+            <li v-for="contact in searchContacts" :key="contact._id" class="list-group-item d-flex justify-content-between align-items-center">
               <div class="d-flex flex-column bd-highlight">
                 <div class="bd-highlight">{{ contact.first_name }} {{ contact.last_name }}</div>
                 <div class="bd-highlight">{{ contact.number }}</div>
               </div>
               <div>
-                <i-bi-pencil-square title="Update" style="cursor: pointer" @click="updateContact(contact)" />
+                <i-bi-pencil-square title="Update" style="cursor: pointer" @click="contactStore.startEdit(contact)" />
                 <i-bi-trash-fill title="Delete" style="cursor: pointer" @click="deleteContact(contact._id)" />
               </div>
             </li>
@@ -59,263 +59,48 @@
       </template>
     </b-offcanvas>
 
-    <b-modal ref="contactModal" id="modal-contact" title="Contact" no-footer>
-      <div class="card mt-4">
-        <div class="card-body">
-          <b-tabs content-class="mt-3">
-            <b-tab title="Add Contact" active>
-              <form @submit.prevent="saveContact">
-                <div class="form-group m-auto mb-2">
-                  <label>First Name</label>
-                  <input
-                    class="form-control"
-                    type="text"
-                    placeholder="First Name"
-                    v-model="r$.$value.first_name"
-                    :class="{ 'is-invalid': r$.first_name.$error }"
-                  />
-                  <div v-if="r$.first_name.$error" class="invalid-feedback">
-                    <span v-for="error of r$.$errors.first_name" :key="error">{{ error }}</span>
-                  </div>
-                </div>
-                <div class="form-group m-auto mb-2">
-                  <label>Last Name</label>
-                  <input class="form-control" type="text" placeholder="Last Name" v-model="r$.$value.last_name" />
-                </div>
-                <div class="form-group m-auto mb-2">
-                  <label>Number</label>
-                  <input class="form-control" type="text" placeholder="Number" v-model="r$.$value.number" :class="{ 'is-invalid': r$.number.$error }" />
-                  <div v-if="r$.number.$error" class="invalid-feedback">
-                    <span v-for="error of r$.$errors.number" :key="error">{{ error }}</span>
-                  </div>
-                </div>
-
-                <div class="form-group m-auto mb-2">
-                  <label>Note</label>
-                  <input class="form-control" type="text" placeholder="Note" v-model="r$.$value.note" />
-                </div>
-                <div class="d-flex justify-content-start bd-highlight">
-                  <div class="bd-highlight"><button type="submit" class="btn btn-primary float-right">Save</button></div>
-                </div>
-              </form>
-            </b-tab>
-            <b-tab title="Add Multiple">
-              <div class="d-flex justify-content-end">
-                <button class="btn btn-success mb-2 float-right" @click="downloadSampleCSV()">Sample File</button>
-              </div>
-              <label class="input-group mb-3" for="csv-file-input" style="cursor: pointer">
-                <span class="input-group-text paperClip chat-input"><i-bi-paperclip /></span>
-                <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !csvFileName }">{{
-                  csvFileName || 'Choose file'
-                }}</span>
-              </label>
-              <div class="form-group mb-2 mt-4 d-none">
-                <input type="file" id="csv-file-input" class="form-control chat-input" accept=".csv" @change="onSelect" />
-              </div>
-              <div class="d-flex justify-content-start bd-highlight">
-                <div class="bd-highlight"><button type="button" @click="importContactsCsv()" class="btn btn-primary float-right">Save</button></div>
-              </div>
-            </b-tab>
-          </b-tabs>
-        </div>
-      </div>
-    </b-modal>
+    <ContactFormModal />
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, useTemplateRef } from 'vue'
-import { useRegle } from '@regle/core'
-import { required, withMessage } from '@regle/rules'
-import type { BModal } from 'bootstrap-vue-next'
-import type { InferResponseType } from 'hono/client'
-import type { SuccessStatusCode } from 'hono/utils/http-status'
-import Papa from 'papaparse'
-import { e164Phone } from '@shared/contracts/phone.ts'
-import type { client } from '@/core/rpc.client.ts'
-import { notifySuccess, notifyError, notifyInfo } from '@/notify.ts'
-import { useContactStore } from '@/stores/contact.ts'
-
-/** A saved contact, inferred from the contact-list route. */
-type ContactRecord = InferResponseType<typeof client.api.contact.$get, SuccessStatusCode>['data'][number]
-/** The editable, server-agnostic subset (CSV columns + the create/update form), derived from {@link ContactRecord}. */
-type ContactDraft = Pick<ContactRecord, 'first_name' | 'last_name' | 'number' | 'note'>
-
-const phonenumber = (value: unknown) => e164Phone.safeParse(value).success
-
-function convertToCsv(rows: ContactDraft[], headerList: (keyof ContactDraft)[]): string {
-  const header = headerList.join(',')
-  const body = rows.map((row) => headerList.map((prop) => row[prop]).join(',')).join('\r\n')
-  return header + '\r\n' + body + '\r\n'
-}
-
-function downloadFile(rows: ContactDraft[], filename = 'data') {
-  const csvData = convertToCsv(rows, ['first_name', 'last_name', 'number', 'note'])
-  const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const dwldLink = document.createElement('a')
-  const isSafariBrowser = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
-  if (isSafariBrowser) dwldLink.setAttribute('target', '_blank')
-  dwldLink.setAttribute('href', url)
-  dwldLink.setAttribute('download', filename + '.csv')
-  dwldLink.style.visibility = 'hidden'
-  document.body.appendChild(dwldLink)
-  dwldLink.click()
-  document.body.removeChild(dwldLink)
-}
-
-const sampleContacts = [
-  {
-    first_name: 'John',
-    last_name: 'Doe',
-    number: '12300XXXXX',
-    note: 'notes go here',
-  },
-] satisfies ContactDraft[]
+import { defineComponent } from 'vue'
+import ContactFormModal from '@/components/ContactFormModal.vue'
+import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'
+import { confirmDelete } from '@/helper.ts'
+import { notifySuccess } from '@/notify.ts'
+import { useContactStore, type Contact } from '@/stores/contact.ts'
 
 export default defineComponent({
   name: 'ContactList',
+  components: { ContactFormModal },
   setup() {
-    const formState = ref({ first_name: '', last_name: '', number: '', note: '' })
-    const { r$ } = useRegle(formState, {
-      first_name: { required: withMessage(required, 'First Name is required') },
-      number: { required: withMessage(required, 'Number is required'), phonenumber: withMessage(phonenumber, 'Please enter valid number. ') },
-    })
-    const contactModal = useTemplateRef<InstanceType<typeof BModal>>('contactModal')
-    return { r$, formState, contactModal, contactStore: useContactStore() }
+    return { contactStore: useContactStore() }
   },
   data() {
-    return {
-      csvFileName: '',
-      editId: '',
-      search_contacts: [] as ContactRecord[],
-      query: '',
-      parsedCsvContacts: [] as ContactDraft[],
-    }
+    return { query: '' }
+  },
+  computed: {
+    /** Contact rows filtered by the search box. */
+    searchContacts(): Contact[] {
+      const search = new RegExp(this.query, 'i')
+      return this.contactStore.contacts.filter((item) => search.test(item.first_name) || search.test(item.last_name) || search.test(item.number))
+    },
   },
   methods: {
-    /** Open the modal prefilled with a number -- the Dashboard chat-header "add to contacts" entry, relayed via NumberList. */
-    openWith(number: string) {
-      this.editId = ''
-      this.emptyContact()
-      this.contactModal?.show()
-      this.formState.number = number
-    },
     exportContact() {
-      downloadFile(this.contactStore.contacts, 'contacts')
-    },
-    emptyContact() {
-      this.formState = { first_name: '', last_name: '', number: '', note: '' }
-    },
-
-    async onSelect(event: Event) {
-      const target = event.target as HTMLInputElement
-      if (!target?.files) return
-      const fileToRead = target.files[0]
-      this.csvFileName = fileToRead.name
-      this.parsedCsvContacts = await this.parseCsvContacts(fileToRead)
-    },
-
-    async parseCsvContacts(file: File): Promise<ContactDraft[]> {
-      const fileText = await file.text()
-
-      const { data: csvdata, errors } = Papa.parse<string[]>(fileText, { header: false })
-      if (errors.length) {
-        errors.forEach((err) => void notifyError(JSON.stringify(err), 'Error parsing CSV'))
-        return []
-      }
-
-      // Skip the header row; keep rows with a non-empty first name and a valid phone number (stored canonical E.164).
-      const parsed = csvdata
-        .slice(1)
-        .filter((row) => typeof row[0] === 'string' && row[0] !== '')
-        .map((row) => ({ first_name: row[0], last_name: row[1], number: e164Phone.safeParse(row[2]), note: row[3] }))
-      const rows = parsed.flatMap(({ number, ...rest }) => (number.success ? [{ ...rest, number: number.data }] : []))
-      const dropped = parsed.length - rows.length
-      if (dropped) void notifyError(`${dropped} row(s) skipped: invalid phone number`)
-      return rows
-    },
-    downloadSampleCSV() {
-      downloadFile(sampleContacts, 'sample_file')
-    },
-    openContactModal() {
-      this.editId = ''
-      this.emptyContact()
-      this.contactModal?.show()
-    },
-    async saveContact() {
-      const { valid, data } = await this.r$.$validate()
-      if (!valid) return
-
-      await this.contactStore.saveContact(data, this.editId || undefined)
-      this.contactModal?.hide()
-      this.emptyContact()
-    },
-
-    async importContactsCsv() {
-      if (this.parsedCsvContacts.length > 0) {
-        await this.contactStore.importContacts(this.parsedCsvContacts)
-        this.contactModal?.hide()
-        this.csvFileName = ''
-      } else {
-        void notifyError('Please upload valid file!')
-      }
+      downloadContactsCsv(this.contactStore.contacts, 'contacts')
     },
     async deleteContact(id: string) {
-      const result = await this.$swal.fire({
-        icon: 'info',
-        title: 'Do you want to delete this contact?',
-        showDenyButton: true,
-        showCancelButton: false,
-        confirmButtonText: 'Yes, Delete',
-        denyButtonText: 'No',
-      })
-      if (result.isDenied) {
-        notifyInfo('contact not deleted')
-        return
-      }
-      if (!result.isConfirmed) return
+      if (!(await confirmDelete('Do you want to delete this contact?', 'contact not deleted'))) return
 
       await this.contactStore.deleteContact(id)
       notifySuccess('Contact Deleted successfully!')
     },
-    updateContact(contact: ContactRecord) {
-      this.editId = contact._id
-      this.formState = {
-        first_name: contact.first_name,
-        last_name: contact.last_name,
-        number: contact.number,
-        note: contact.note ?? '',
-      }
-      this.contactModal?.show()
-    },
     async deleteAll() {
-      const result = await this.$swal.fire({
-        icon: 'info',
-        title: 'Are you sure you want to delete ALL contacts?',
-        showDenyButton: true,
-        showCancelButton: false,
-        confirmButtonText: 'Yes, Delete all',
-        denyButtonText: 'No',
-      })
-      if (result.isDenied) {
-        notifyInfo('contacts not deleted')
-        return
-      }
-      if (!result.isConfirmed) return
+      if (!(await confirmDelete('Are you sure you want to delete ALL contacts?', 'contacts not deleted'))) return
 
       await this.contactStore.deleteAllContacts()
       notifySuccess('All contacts deleted successfully')
-    },
-    searchContact() {
-      const search = new RegExp(this.query, 'i')
-      this.search_contacts = this.contactStore.contacts.filter(
-        (item: ContactRecord) => search.test(item.first_name) || search.test(item.last_name) || search.test(item.number),
-      )
-    },
-  },
-  watch: {
-    'contactStore.contacts'() {
-      this.searchContact()
     },
   },
 })
@@ -324,20 +109,5 @@ export default defineComponent({
 <style scoped>
 .pointer-icon {
   cursor: pointer;
-}
-.close {
-  margin: 0 !important;
-}
-.paperClip {
-  border-radius: 0% !important;
-  border-top-left-radius: 5px !important;
-  border-bottom-left-radius: 5px !important;
-  padding: 0.5rem 0.75rem !important;
-  border-right: 1px solid lightgray;
-  background: white !important;
-}
-.csv_field_input {
-  background: white !important;
-  color: black;
 }
 </style>

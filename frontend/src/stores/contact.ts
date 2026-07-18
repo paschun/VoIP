@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { InferRequestType, InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
@@ -11,6 +11,10 @@ export type Contact = InferResponseType<typeof client.api.contact.$get, SuccessS
 type ContactInput = InferRequestType<typeof client.api.contact.$post>['json']
 /** One bulk-import row (lenient: only `number` required), inferred from the bulk route. */
 type ContactBulkRow = InferRequestType<typeof client.api.contact.bulk.$post>['json']['contacts'][number]
+/** The editable subset of a contact: the add/edit form draft and a CSV row. */
+export type ContactDraft = Pick<Contact, 'first_name' | 'last_name' | 'number' | 'note'>
+
+const emptyDraft = (): ContactDraft => ({ first_name: '', last_name: '', number: '', note: '' })
 
 // Could do patch-in-place instead of re-fetch-all every time there is a mutation
 //  - create ($post) and update ($put) return the saved ContactDoc: push it / replace the item by _id.
@@ -27,6 +31,32 @@ type ContactBulkRow = InferRequestType<typeof client.api.contact.bulk.$post>['js
 export const useContactStore = defineStore('contact', () => {
   const contacts = ref<Contact[]>([])
 
+  /** The in-progress add/edit; null when none. */
+  const draft = ref<ContactDraft | null>(null)
+  /** The contact `draft` is editing; '' while creating. */
+  const editId = ref('')
+  /** Whether a contact draft is in progress -- ContactFormModal shows itself while true. */
+  const drafting = computed(() => draft.value !== null)
+
+  /** Start drafting a new contact, number prefilled (chat-header "+", contact list). */
+  function startCreate(number = ''): void {
+    editId.value = ''
+    draft.value = { ...emptyDraft(), number }
+  }
+
+  /** Start editing an existing contact. */
+  function startEdit(contact: Contact): void {
+    editId.value = contact._id
+    const { first_name, last_name, number, note } = contact
+    draft.value = { first_name, last_name, number, note }
+  }
+
+  /** Abandon the in-progress draft. */
+  function discardDraft(): void {
+    draft.value = null
+    editId.value = ''
+  }
+
   /** Refresh the full contact list. Returns it; throws (after the central toast) on failure. */
   async function loadContacts(): Promise<Contact[]> {
     const { data } = await request(client.api.contact.$get())
@@ -42,14 +72,15 @@ export const useContactStore = defineStore('contact', () => {
     await cs.loadConversations()
   }
 
-  /** Create a contact, or update the one at `id` when given; then refresh. */
-  async function saveContact(input: ContactInput, id?: string): Promise<void> {
-    if (id) {
-      await request(client.api.contact[':id'].$put({ param: { id }, json: input }))
+  /** Persist the draft as `input` (its validated form): update when editing, create otherwise; refresh and close. */
+  async function submitDraft(input: ContactInput): Promise<void> {
+    if (editId.value) {
+      await request(client.api.contact[':id'].$put({ param: { id: editId.value }, json: input }))
     } else {
       await request(client.api.contact.$post({ json: input }))
     }
     await afterMutation()
+    discardDraft()
   }
 
   /** Bulk-create contacts from parsed CSV rows; then refresh. */
@@ -79,5 +110,19 @@ export const useContactStore = defineStore('contact', () => {
     return contacts.value.find((c) => c.number === number) ?? null
   }
 
-  return { contacts, loadContacts, saveContact, importContacts, deleteContact, deleteAllContacts, lookupContact }
+  return {
+    contacts,
+    draft,
+    drafting,
+    editId,
+    startCreate,
+    startEdit,
+    discardDraft,
+    submitDraft,
+    loadContacts,
+    importContacts,
+    deleteContact,
+    deleteAllContacts,
+    lookupContact,
+  }
 })

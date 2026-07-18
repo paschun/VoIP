@@ -18,7 +18,7 @@
             </b-button>
           </div>
         </div>
-        <number-list ref="numberList" @conversationOpened="onConversationOpened" @messageSent="onMessageSent" />
+        <number-list @conversationOpened="onConversationOpened" @messageSent="onMessageSent" />
       </template>
     </b-offcanvas>
     <section
@@ -46,7 +46,7 @@
               <span
                 style="cursor: copy"
                 title="Add Contact"
-                @click="addContact(conversationStore.activeRemoteNumber)"
+                @click="contactStore.startCreate(conversationStore.activeRemoteNumber)"
                 v-if="!conversationStore.activeConversation.contact"
               >
                 <i-bi-plus-circle aria-hidden="true" style="font-size: 1.5em" />
@@ -165,6 +165,7 @@ import { connectSocket, disconnectSocket, type SocketMessage } from '@/core/sock
 import { formatTimestamp } from '@/helper.ts'
 import { notifyError, notifyInfo } from '@/notify.ts'
 import { appDirectory } from '@/router/helpers.ts'
+import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -191,15 +192,14 @@ export default defineComponent({
   },
   setup() {
     const callView = useTemplateRef<InstanceType<typeof CallView>>('callView')
-    const numberList = useTemplateRef<InstanceType<typeof NumberList>>('numberList')
     const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>('mobileSidebar')
     const chatContainer = useTemplateRef<HTMLDivElement>('chatContainer')
     return {
       userStore: useUserStore(),
       conversationStore: useConversationStore(),
+      contactStore: useContactStore(),
       profileStore: useProfileStore(),
       callView,
-      numberList,
       mobileSidebar,
       chatContainer,
     }
@@ -247,9 +247,6 @@ export default defineComponent({
     onUserMessage(data: SocketMessage) {
       if (!this.conversationStore.hasActiveConversation) void this.profileStore.loadProfiles()
       void this.notifyMe(data.number, data.message)
-    },
-    addContact(phoneNumber: string) {
-      this.numberList?.openAddContact(phoneNumber)
     },
     /** A compose-modal send may have created the first thread for a number; drop the mobile sidebar to reveal it. */
     onMessageSent() {

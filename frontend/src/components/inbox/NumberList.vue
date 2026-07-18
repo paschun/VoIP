@@ -7,7 +7,7 @@
           <div class="d-flex flex-row bd-highlight">
             <setting></setting>
             <div class="bd-highlight">
-              <contact ref="contactComponent"></contact>
+              <contact></contact>
             </div>
             <div class="bd-highlight">
               <i-bi-telephone aria-hidden="true" class="m-2" title="Call" v-b-modal.call-modal style="cursor: pointer" />
@@ -365,7 +365,6 @@ export default defineComponent({
       }
     })
     const profileSettingModal = useTemplateRef<InstanceType<typeof BModal>>('profileSettingModal')
-    const contactComponent = useTemplateRef<InstanceType<typeof Contact>>('contactComponent')
     const composeModal = useTemplateRef<InstanceType<typeof ComposeMessageModal>>('composeModal')
     return {
       r$,
@@ -375,7 +374,6 @@ export default defineComponent({
       contactStore: useContactStore(),
       conversationStore: useConversationStore(),
       profileSettingModal,
-      contactComponent,
       composeModal,
     }
   },
@@ -447,10 +445,6 @@ export default defineComponent({
       void this.conversationStore.reloadInbox()
       void this.profileStore.refreshActiveProfile()
       void this.profileStore.loadProfiles()
-    },
-    /** Open the add-contact modal prefilled with a number -- relays the Dashboard chat-header entry down to Contact. */
-    openAddContact(phoneNumber: string) {
-      this.contactComponent?.openWith(phoneNumber)
     },
     getValidString,
     async selectConversation(item: Conversation) {
