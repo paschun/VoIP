@@ -132,7 +132,7 @@ section {
   color: var(--text-primary-color);
 }
 
-/* Rounded primary submit button, shared by Login, ComposeMessageModal, and NumberList. */
+/* Rounded primary submit button, shared by Login, ComposeMessageModal, and ProviderSettingModal. */
 .submit-btn {
   border: none;
   border-radius: 10px;

@@ -5,8 +5,7 @@
       <div class="px-3 py-2" v-if="activeMenu == 'setting'">
         <ul class="list-group">
           <li class="list-group-item" @click="enableMenu('email')" style="cursor: pointer"><i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
-          <!-- #profile-setting-modal lives in NumberList.vue -->
-          <li class="list-group-item" v-b-modal.profile-setting-modal style="cursor: pointer">
+          <li class="list-group-item" @click="providerSettingModal?.open()" style="cursor: pointer">
             <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
           </li>
           <li class="list-group-item" @click="enableMenu('account')" style="cursor: pointer">
@@ -42,23 +41,26 @@
         </div>
       </settings-section>
     </b-offcanvas>
+    <provider-setting-modal ref="providerSettingModal" />
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, useTemplateRef } from 'vue'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/notify.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 import AccountSetting from './account/AccountSetting.vue'
 import EmailSetting from './EmailSetting.vue'
+import ProviderSettingModal from './ProviderSettingModal.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
 
 export default defineComponent({
   name: 'SettingPanel',
-  components: { EmailSetting, AccountSetting, Mfa, SettingsSection },
+  components: { EmailSetting, AccountSetting, Mfa, SettingsSection, ProviderSettingModal },
   setup() {
-    return { meta: useServerMetaStore() }
+    const providerSettingModal = useTemplateRef<InstanceType<typeof ProviderSettingModal>>('providerSettingModal')
+    return { meta: useServerMetaStore(), providerSettingModal }
   },
   data() {
     return {
