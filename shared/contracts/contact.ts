@@ -23,14 +23,10 @@ export const contactBulkItem = z.object({
 export const contactBulkBody = z.object({ contacts: z.array(contactBulkItem) })
 export type ContactBulkRequest = z.infer<typeof contactBulkBody>
 
-export const contactLookupQuery = z.object({ number: e164Phone })
-export type ContactLookupQuery = z.infer<typeof contactLookupQuery>
-
 export const contactIdParam = z.object({ id: z.string().min(1) })
 export type ContactIdParam = z.infer<typeof contactIdParam>
 
 export type ContactResponse = Ok<ContactDoc>
-export type ContactLookupResponse = Ok<ContactDoc | null>
 export type ContactListResponse = Ok<ContactDoc[]>
 export type ContactBulkResponse = Ok<{ created: number }>
 export type ContactDeleteResponse = Ok<null>

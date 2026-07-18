@@ -6,16 +6,14 @@ import {
   type ContactRequest,
   contactBulkBody,
   type ContactBulkRequest,
-  contactLookupQuery,
-  type ContactLookupQuery,
   contactIdParam,
   type ContactIdParam,
 } from '../../shared/contracts/contact.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, PathParamCtx, QueryCtx, PathParamJsonCtx } from '../core/factory.ts'
+import type { Env, JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { ack, created } from '../helper/respond.helper.ts'
 import { auth } from '../middleware/auth.ts'
-import { jsonBody, pathParams, queryParams } from '../middleware/validate.ts'
+import { jsonBody, pathParams } from '../middleware/validate.ts'
 import Contact from '../model/contact.model.ts'
 import { Message } from '../model/message.model.ts'
 
@@ -29,14 +27,6 @@ async function getContacts(c: Context<Env>) {
     .collation({ locale: 'en' })
     .sort({ first_name: 1 })
   const data = contacts.map((d) => d.toObject({ flattenObjectIds: true }))
-  return c.json({ data } satisfies Ok, 200)
-}
-
-async function lookupContact(c: QueryCtx<ContactLookupQuery>) {
-  const { number } = c.req.valid('query')
-  const contact = await Contact.findOne({ user: { $eq: c.get('user').id }, number: { $eq: number } })
-  // note: only first_name and last_name are used by client
-  const data = contact ? contact.toObject({ flattenObjectIds: true }) : null
   return c.json({ data } satisfies Ok, 200)
 }
 
@@ -109,7 +99,6 @@ async function deleteAllContacts(c: Context<Env>) {
 }
 
 export const getAll = factory.createHandlers(auth, getContacts)
-export const lookup = factory.createHandlers(auth, queryParams(contactLookupQuery), lookupContact)
 export const create = factory.createHandlers(auth, jsonBody(contactBody), createContact)
 export const bulk = factory.createHandlers(auth, jsonBody(contactBulkBody), bulkCreateContacts)
 export const update = factory.createHandlers(auth, pathParams(contactIdParam), jsonBody(contactBody), updateContact)

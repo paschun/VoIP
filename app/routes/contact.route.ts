@@ -4,7 +4,6 @@ import type { Env } from '../core/factory.ts'
 
 // Routes for `/api/contact`.
 export const contactRoutes = new Hono<Env>()
-  .get('/lookup', ...contact.lookup)
   .get('/', ...contact.getAll)
   .post('/', ...contact.create)
   .post('/bulk', ...contact.bulk)
