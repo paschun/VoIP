@@ -11,8 +11,6 @@ export type Contact = InferResponseType<typeof client.api.contact.$get, SuccessS
 type ContactInput = InferRequestType<typeof client.api.contact.$post>['json']
 /** One bulk-import row (lenient: only `number` required), inferred from the bulk route. */
 type ContactBulkRow = InferRequestType<typeof client.api.contact.bulk.$post>['json']['contacts'][number]
-/** Number lookup result: the matching contact, or null when none. */
-type ContactMatch = InferResponseType<typeof client.api.contact.lookup.$get, SuccessStatusCode>['data']
 
 // Could do patch-in-place instead of re-fetch-all every time there is a mutation
 //  - create ($post) and update ($put) return the saved ContactDoc: push it / replace the item by _id.
@@ -36,7 +34,8 @@ export const useContactStore = defineStore('contact', () => {
     return data
   }
 
-  /** Refresh the contact list and the inbox that embeds contact names. Lazy useStore() keeps the cross-store link acyclic. */
+  /** Refresh the contact list and the inbox that embeds contact names.
+   *  Function-scoped useConversationStore() keeps a hypothetical cross-store dependency safe. */
   async function afterMutation(): Promise<void> {
     const cs = useConversationStore()
     await loadContacts()
@@ -71,10 +70,13 @@ export const useContactStore = defineStore('contact', () => {
     await afterMutation()
   }
 
-  /** Resolve a phone number to its saved contact (caller-name lookup); null when unknown. Does not touch the list. */
-  async function lookupContact(number: string): Promise<ContactMatch> {
-    const { data } = await request(client.api.contact.lookup.$get({ query: { number } }))
-    return data
+  /**
+   * Resolve a phone number to its saved contact (caller-name lookup); null when unknown. Purely local: an exact
+   * `number` match over the loaded list (numbers are stored E.164), fetching it first only if it's still empty.
+   */
+  async function lookupContact(number: string): Promise<Contact | null> {
+    if (!contacts.value.length) await loadContacts()
+    return contacts.value.find((c) => c.number === number) ?? null
   }
 
   return { contacts, loadContacts, saveContact, importContacts, deleteContact, deleteAllContacts, lookupContact }
