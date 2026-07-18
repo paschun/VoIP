@@ -23,8 +23,7 @@
                 </label>
               </div>
               <div class="col-sm m-auto col-10">
-                <input class="form-control" type="text" placeholder="Alias/Name" v-model="r$.$value.profile" :class="{ 'is-invalid': r$.profile.$error }" />
-                <field-errors :field="r$.profile" />
+                <span class="form-control-plaintext">{{ profileStore.activeProfile?.profile }}</span>
               </div>
               <div class="col-1 m-auto">
                 <span class="float-right" style="cursor: pointer" title="Delete">
@@ -150,16 +149,11 @@
 <script lang="ts">
 /**
  * The telnyx/twilio provider settings modal, opened from Setting.vue's "Profile Settings" entry via `open()`.
- *
- * TODO: this modal does two jobs and guesses intent from `profile === ""`. Split into two single-purpose flows:
- *   1. createProfile(name):     form = { profile: required }          -> POST profile; make it active
- *   2. configureProvider():     variant on `type`, provider fields required (active profile assumed, name
- *                               shown read-only)                       -> POST profile/provider
- * Then neither form needs requiredIf/`configuringProvider`; step 1 can reuse ProfileView's create flow.
+ * Configure-only: it edits the active profile's provider config; profile create/select lives in ProfileView.
  */
 import { defineComponent, ref, useTemplateRef } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
-import { required, requiredIf, literal, withMessage } from '@regle/rules'
+import { required, literal, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
 import CustomAutocompleteSelect from '@/components/CustomAutocompleteSelect.vue'
 import FieldErrors from '@/components/FieldErrors.vue'
@@ -167,11 +161,21 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { getProviderNumbers, lookupNumber, type ProviderNumbers } from '@/core/services/provider.ts'
 import { confirmDelete } from '@/helper.ts'
-import { notifySuccess } from '@/notify.ts'
+import { notifyInfo, notifySuccess } from '@/notify.ts'
 import { useProfileStore, type ProviderSettingPayload } from '@/stores/profile.ts'
 
-/** The subset edited in the settings modal (server-side identifiers are added at submit). `type` discriminates which provider's fields the variant rules require. */
-type ProviderSettingForm = Omit<ProviderSettingPayload, 'setting' | 'sid' | 'override'>
+/**
+ * The fields edited in the settings modal (the profile name and server-side identifiers are added at submit). Both
+ * providers' fields coexist so toggling the radio preserves entries; submit narrows to the active variant.
+ */
+type ProviderSettingForm = {
+  type: ProviderSettingPayload['type']
+  api_key: string
+  number: string
+  twilio_sid: string
+  twilio_token: string
+  twilio_number: string
+}
 /** A purchasable Telnyx number from the provider-numbers lookup (`id` is the lookup's sid). */
 type TelnyxNumber = Extract<ProviderNumbers, { type: 'telnyx' }>['numbers'][number]
 /** A purchasable Twilio number from the provider-numbers lookup. */
@@ -183,37 +187,27 @@ export default defineComponent({
   setup() {
     const form = ref<ProviderSettingForm>({
       type: 'telnyx',
-      profile: '',
       api_key: '',
       number: '',
       twilio_sid: '',
       twilio_token: '',
       twilio_number: '',
     })
-    // Provider fields are required only when no profile name is entered (i.e. configuring the active profile's provider).
-    const requiredWhenConfiguring = (msg: string) =>
-      withMessage(
-        requiredIf(() => !form.value.profile),
-        msg,
-      )
     const { r$ } = useRegle(form, () => {
       const provider = createVariant(form, 'type', [
         {
           type: { literal: literal('telnyx') },
-          api_key: { required: requiredWhenConfiguring('API Key is required') },
-          number: { required: requiredWhenConfiguring('Number is required') },
+          api_key: { required: withMessage(required, 'API Key is required') },
+          number: { required: withMessage(required, 'Number is required') },
         },
         {
           type: { literal: literal('twilio') },
-          twilio_sid: { required: requiredWhenConfiguring('Twilio sid is required') },
-          twilio_token: { required: requiredWhenConfiguring('Twilio token is required') },
-          twilio_number: { required: requiredWhenConfiguring('Number is required') },
+          twilio_sid: { required: withMessage(required, 'Twilio sid is required') },
+          twilio_token: { required: withMessage(required, 'Twilio token is required') },
+          twilio_number: { required: withMessage(required, 'Number is required') },
         },
       ])
-      return {
-        profile: { required: withMessage(required, 'Profile is required') },
-        ...provider.value,
-      }
+      return { ...provider.value }
     })
     const modal = useTemplateRef<InstanceType<typeof BModal>>('modal')
     return { r$, form, profileStore: useProfileStore(), modal }
@@ -255,6 +249,10 @@ export default defineComponent({
   },
   methods: {
     open() {
+      if (!this.profileStore.hasActiveProfile) {
+        void notifyInfo('Create a profile first')
+        return
+      }
       this.modal?.show()
     },
     /** Copy the active profile's saved settings into the form and load its provider's purchasable numbers. */
@@ -263,7 +261,6 @@ export default defineComponent({
       if (!profile) return
       this.form = {
         type: profile.type,
-        profile: profile.profile ?? '',
         api_key: profile.api_key ?? '',
         number: profile.number ?? '',
         twilio_sid: profile.twilio_sid ?? '',
@@ -289,8 +286,7 @@ export default defineComponent({
       if (!(await confirmDelete('Do you want to delete this setting?', 'setting not deleted'))) return
       await this.profileStore.deleteProviderSetting()
       notifySuccess('Key deleted successfully!')
-      // Clear only the provider fields, keeping `profile`: the profile still exists (just its provider config is
-      // gone) and the modal stays open, so its name must remain visible. A full reset would blank it.
+      // The modal stays open on the (still-existing) profile, now with blank provider fields.
       this.form = { ...this.form, api_key: '', number: '', twilio_sid: '', twilio_token: '', twilio_number: '' }
       this.telnyxNumbers = []
       this.twilioNumbers = []
@@ -311,34 +307,36 @@ export default defineComponent({
       }
     },
     async saveProviderSetting() {
-      // dont use validated `data` because it would be weaker-typed here
-      // its conditionally-required provider fields are MaybeOutput<string>, not string.
+      // dont use validated `data`: createVariant types its provider fields as MaybeOutput<string>, not string.
       const { valid } = await this.r$.$validate()
       if (!valid) return
+      const activeProfile = this.profileStore.activeProfile
+      if (!activeProfile) return // open() gates on this; re-checked for type narrowing
       // r$.$value is reactive and the awaits below give the user a window to edit the form, so grab a snapshot
-      const providerSettings = { ...this.r$.$value }
-      const sid =
-        providerSettings.type === 'telnyx'
-          ? (this.telnyxNumbers.find((n) => n.phone_number === providerSettings.number)?.id ?? '')
-          : (this.twilioNumbers.find((n) => n.phoneNumber === providerSettings.twilio_number)?.sid ?? '')
-      const providerSettingPayload: ProviderSettingPayload = {
-        api_key: providerSettings.api_key,
-        number: providerSettings.number,
-        sid,
-        type: providerSettings.type,
-        twilio_sid: providerSettings.twilio_sid,
-        twilio_token: providerSettings.twilio_token,
-        twilio_number: providerSettings.twilio_number,
-        setting: this.profileStore.activeProfileId,
-        profile: providerSettings.profile,
-        override: true,
-      }
+      const { type, api_key, number, twilio_sid, twilio_token, twilio_number } = this.r$.$value
+      const base = { setting: this.profileStore.activeProfileId, profile: activeProfile.profile ?? '', override: true }
+      const providerSettingPayload: ProviderSettingPayload =
+        type === 'telnyx'
+          ? { ...base, type, api_key, number, sid: this.telnyxNumbers.find((n) => n.phone_number === number)?.id ?? '' }
+          : {
+              ...base,
+              type,
+              twilio_sid,
+              twilio_token,
+              twilio_number,
+              sid: this.twilioNumbers.find((n) => n.phoneNumber === twilio_number)?.sid ?? '',
+            }
       this.isSavingProviderSetting = true
       let isCall = false
       try {
         // a configured call webhook means call routing already exists, so we prompt before overriding it.
-        if (providerSettings.type === 'telnyx') {
-          const data = await lookupNumber({ type: 'telnyx', api_key: providerSettingPayload.api_key, number: providerSettingPayload.number, sid })
+        if (providerSettingPayload.type === 'telnyx') {
+          const data = await lookupNumber({
+            type: 'telnyx',
+            api_key: providerSettingPayload.api_key,
+            number: providerSettingPayload.number,
+            sid: providerSettingPayload.sid,
+          })
           isCall = !!data.connection_id
         } else {
           const data = await lookupNumber({
@@ -346,7 +344,7 @@ export default defineComponent({
             twilio_sid: providerSettingPayload.twilio_sid,
             twilio_token: providerSettingPayload.twilio_token,
             twilio_number: providerSettingPayload.twilio_number,
-            sid,
+            sid: providerSettingPayload.sid,
           })
           isCall = !!data.voiceApplicationSid || !!data.voiceUrl
         }

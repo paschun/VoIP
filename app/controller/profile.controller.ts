@@ -12,7 +12,7 @@ import {
 import { createSettingBody, type CreateSettingRequest } from '../../shared/contracts/setting.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
-import type { Env, JsonCtx, PathParamCtx } from '../core/factory.ts'
+import type { Env, JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { combineURLs } from '../helper/common.helper.ts'
 import { teardownProvider } from '../helper/teardown.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
@@ -113,20 +113,27 @@ async function saveProviderConfig(c: JsonCtx<CreateSettingRequest>) {
   return body.type === 'telnyx' ? saveTelnyxConfig(c, userId, body) : saveTwilioConfig(c, userId, body)
 }
 
-/** Rename an existing profile when only `profile` (no provider credentials) is supplied. */
-async function renameProfile(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
-  const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: body.setting } })
-  if (!setting) throw new HTTPException(404, { message: 'setting not found!' })
-  setting.profile = body.profile
+async function renameProfile(c: PathParamJsonCtx<ProfileIdParam, CreateProfileRequest>) {
+  const userId = c.get('user').id
+  const { id } = c.req.valid('param')
+  const { profile } = c.req.valid('json')
+  const setting = await Setting.findOne({ user: { $eq: userId }, _id: { $eq: id } }).orFail(
+    () => new HTTPException(404, { message: 'Profile not found!' }),
+  )
+  const dup = await Setting.findOne({ user: { $eq: userId }, profile: { $eq: profile }, _id: { $not: { $eq: id } } })
+  if (dup) throw new HTTPException(409, { message: 'Profile already exists!' })
+  setting.profile = profile
   await setting.save()
   const data = setting.toObject({ flattenObjectIds: true })
   return c.json({ data } satisfies Ok, 200)
 }
 
-async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
+async function saveTelnyxConfig(
+  c: JsonCtx<CreateSettingRequest>,
+  userId: string,
+  body: Extract<CreateSettingRequest, { type: 'telnyx' }>,
+) {
   const { api_key, number, sid } = body
-  if (!api_key || !number) return renameProfile(c, userId, body)
-
   const dup = await Setting.findOne({ _id: { $not: { $eq: body.setting } }, number: { $eq: number } })
   if (dup) throw new HTTPException(409, { message: 'Number already assigned to another profile!' })
 
@@ -193,10 +200,12 @@ async function saveTelnyxConfig(c: JsonCtx<CreateSettingRequest>, userId: string
   return c.json({ data } satisfies Ok, 200)
 }
 
-async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string, body: CreateSettingRequest) {
+async function saveTwilioConfig(
+  c: JsonCtx<CreateSettingRequest>,
+  userId: string,
+  body: Extract<CreateSettingRequest, { type: 'twilio' }>,
+) {
   const { twilio_sid, twilio_token, twilio_number, sid } = body
-  if (!twilio_sid || !twilio_token || !twilio_number || !sid) return renameProfile(c, userId, body)
-
   const dup = await Setting.findOne({ _id: { $not: { $eq: body.setting } }, number: { $eq: twilio_number } })
   if (dup) throw new HTTPException(409, { message: 'Number already assigned to another profile!' })
 
@@ -250,6 +259,7 @@ async function saveTwilioConfig(c: JsonCtx<CreateSettingRequest>, userId: string
 }
 
 export const create = factory.createHandlers(auth, jsonBody(profileCreateBody), createProfile)
+export const rename = factory.createHandlers(auth, pathParams(profileIdParam), jsonBody(profileCreateBody), renameProfile)
 export const saveProvider = factory.createHandlers(auth, jsonBody(createSettingBody), saveProviderConfig)
 export const getAll = factory.createHandlers(auth, getProfiles)
 export const getOne = factory.createHandlers(auth, pathParams(profileIdParam), getProfile)

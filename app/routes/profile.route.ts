@@ -5,6 +5,7 @@ import type { Env } from '../core/factory.ts'
 // Routes for `/api/profile`: profile lifecycle (CRD) plus provider config.
 export const profileRoutes = new Hono<Env>()
   .post('/', ...profile.create)
+  .patch('/:id', ...profile.rename)
   .post('/provider', ...profile.saveProvider)
   .get('/', ...profile.getAll)
   .get('/:id', ...profile.getOne)

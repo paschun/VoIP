@@ -6,22 +6,33 @@ import { profileIdParam, type ProfileIdParam } from './profile.ts'
 
 // --- requests ---
 
-/**
- * Create or (re)provision a profile's provider config. `user` is taken from the auth token, not the body. Provider
- * credentials are optional: supply the full set to provision Twilio/Telnyx, or just `profile` to rename an existing one.
- */
-export const createSettingBody = z.object({
-  type: z.enum(['telnyx', 'twilio']),
+/** Fields common to both provider-config variants. `setting` is the target profile's id; renames go through `PATCH /profile/:id`. */
+const settingBase = z.object({
   profile: z.string().min(1),
   setting: z.string(),
   override: z.boolean(),
-  api_key: z.string(),
-  number: z.string(),
-  sid: z.string(),
-  twilio_sid: z.string(),
-  twilio_token: z.string(),
-  twilio_number: z.string(),
 })
+
+/**
+ * Create or (re)provision a profile's provider config. `user` is taken from the auth token, not the body.
+ * Discriminated on `type` so each provider's full credential set is required. Telnyx's `sid` (the number's provider
+ * id) stays lenient: a hand-typed number has no lookup match, and the Telnyx leg tolerates that.
+ */
+export const createSettingBody = z.discriminatedUnion('type', [
+  settingBase.extend({
+    type: z.literal('telnyx'),
+    api_key: z.string().min(1),
+    number: z.string().min(1),
+    sid: z.string(),
+  }),
+  settingBase.extend({
+    type: z.literal('twilio'),
+    twilio_sid: z.string().min(1),
+    twilio_token: z.string().min(1),
+    twilio_number: z.string().min(1),
+    sid: z.string().min(1),
+  }),
+])
 export type CreateSettingRequest = z.infer<typeof createSettingBody>
 
 // `profileIdParam` (`GET /profiles/:id`, `DELETE /profiles/:id/provider`) is shared with the profile routes, and also

@@ -91,6 +91,43 @@ describe('GET /api/profile/:id -- single profile detail', () => {
   })
 })
 
+describe('PATCH /api/profile/:id -- rename', () => {
+  test('renames an owned profile and returns the updated doc', async () => {
+    const mine = await Setting.create({ user: userId, profile: 'Work', type: 'twilio' })
+    const res = await client[':id'].$patch({ param: { id: mine._id.toString() }, json: { profile: 'Biz' } }, auth)
+    expect(res.status).toBe(200)
+    if (res.status !== 200) return
+    const body = await res.json()
+    expect(body.data.profile).toBe('Biz')
+    const saved = await Setting.findById(mine._id).orFail()
+    expect(saved.profile).toBe('Biz')
+  })
+
+  test("404s for an id the user does not own; 409s on a duplicate name", async () => {
+    const foreign = await Setting.create({ user: new mongoose.Types.ObjectId().toString(), profile: 'Their', type: 'twilio' })
+    const notMine = await client[':id'].$patch({ param: { id: foreign._id.toString() }, json: { profile: 'X' } }, auth)
+    expect(notMine.status).toBe(404)
+
+    const a = await Setting.create({ user: userId, profile: 'A', type: 'twilio' })
+    await Setting.create({ user: userId, profile: 'B', type: 'twilio' })
+    const dup = await client[':id'].$patch({ param: { id: a._id.toString() }, json: { profile: 'B' } }, auth)
+    expect(dup.status).toBe(409)
+  })
+})
+
+describe('POST /api/profile/provider -- per-provider required credentials', () => {
+  test('422s when provider credentials are blank (the old silent rename fallback)', async () => {
+    const mine = await Setting.create({ user: userId, profile: 'Work', type: 'telnyx' })
+    const res = await client.provider.$post(
+      { json: { type: 'telnyx', profile: 'Renamed', setting: mine._id.toString(), override: false, api_key: '', number: '', sid: '' } },
+      auth,
+    )
+    expect(res.status).toBe(422)
+    const saved = await Setting.findById(mine._id).orFail()
+    expect(saved.profile).toBe('Work') // no rename side effect
+  })
+})
+
 describe('POST /api/profile -- create returns a profile without counts', () => {
   test('count virtuals are absent on the create response (not populated)', async () => {
     const res = await client.index.$post({ json: { profile: 'Fresh' } }, auth)
