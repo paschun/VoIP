@@ -138,7 +138,7 @@ export default defineComponent({
   border-radius: 10px;
   overflow: hidden;
   margin: auto;
-  box-shadow: 0px 0px 2px 0px #aaa;
+  box-shadow: 0 0 2px 0 #aaa;
 }
 @media only screen and (max-width: 768px) {
   .wrap {

@@ -174,7 +174,6 @@ export default defineComponent({
       if (this.userStore.isLoggedIn) await this.goToDashboard()
     },
     async goToDashboard() {
-      // named locations inherit the current route's params (appdirectory) when none are passed
       await this.$router.push({ name: 'dashboard' })
     },
     async submitLogin() {

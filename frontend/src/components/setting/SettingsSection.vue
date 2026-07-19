@@ -15,8 +15,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 /**
- * Standard "section header with back arrow" layout used by the settings
- * sidebars. Slot is the section body.
+ * Standard "section header with back arrow" layout used by the settings * sidebars. Slot is the section body.
  */
 export default defineComponent({
   name: 'SettingsSection',

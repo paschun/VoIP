@@ -188,7 +188,7 @@ export default defineComponent({
 }
 .input-message {
   width: 100%;
-  margin: 0px 10px;
+  margin: 0 10px;
   border: none;
   background: var(--chat-you);
   color: var(--text-primary-color) !important;

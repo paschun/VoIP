@@ -98,8 +98,8 @@ export default defineComponent({
   position: fixed;
   height: 100%;
   width: 100%;
-  left: 0px;
-  top: 0px;
+  left: 0;
+  top: 0;
   text-align: center;
   background-color: var(--background-color-secondary) !important;
 }
