@@ -66,6 +66,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import Swal from 'sweetalert2'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/core/notify.ts'
 import HardwareKey from './HardwareKey.vue'
@@ -88,7 +89,7 @@ export default defineComponent({
   methods: {
     async totpStatusChange() {
       if (!this.totpEnabled) {
-        const result = await this.$swal.fire({
+        const result = await Swal.fire({
           title: 'Are you sure?',
           text: 'Software token will be deleted. You will have to reconfigure it!',
           icon: 'warning',

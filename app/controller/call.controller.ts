@@ -18,6 +18,7 @@ import {
 import { factory } from '../core/factory.ts'
 import type { Env, FormCtx, JsonCtx } from '../core/factory.ts'
 import { sendToUser } from '../core/socket.ts'
+import { requireConfigured } from '../helper/common.helper.ts'
 import { ack, emptyTwimlReply, ok, xmlResponse } from '../helper/respond.helper.ts'
 import { parseTelnyxCallEvent, type TelnyxCallEvent } from '../helper/telnyx-events.helper.ts'
 import { parseTexmlStatusCallback, type TexmlStatusEvent } from '../helper/texml-events.helper.ts'
@@ -123,12 +124,15 @@ async function issueToken(c: JsonCtx<GetTokenRequest>) {
   if (setting.type === 'twilio') {
     const AccessToken = twilio.jwt.AccessToken
     const voiceGrant = new AccessToken.VoiceGrant({
-      outgoingApplicationSid: setting.twiml_app ?? '',
+      outgoingApplicationSid: requireConfigured(setting.twiml_app, 'twilio'),
       incomingAllow: true,
     })
-    const token = new AccessToken(setting.twilio_sid ?? '', setting.app_key ?? '', setting.app_secret ?? '', {
-      identity: c.get('user').id,
-    })
+    const token = new AccessToken(
+      requireConfigured(setting.twilio_sid, 'twilio'),
+      requireConfigured(setting.app_key, 'twilio'),
+      requireConfigured(setting.app_secret, 'twilio'),
+      { identity: c.get('user').id },
+    )
     token.addGrant(voiceGrant)
     return c.json({ data: { type: setting.type, token: token.toJwt() } } satisfies Ok, 200)
   }

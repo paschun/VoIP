@@ -33,7 +33,6 @@
     "sweetalert2": "^11.26.24",
     "vue": "^3.5.35",
     "vue-router": "^5.1.0",
-    "vue-sweetalert2": "^5.0.11",
     "vue3-select-component": "^1.0.0",
     "zod": "^4.4.3"
   },

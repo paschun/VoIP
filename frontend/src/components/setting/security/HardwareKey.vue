@@ -40,6 +40,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import Swal from 'sweetalert2'
 import { decode as cborDecode } from 'cbor-x/decode'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
@@ -118,7 +119,7 @@ export default defineComponent({
   },
   methods: {
     async deleteKey(id: string) {
-      const result = await this.$swal.fire({
+      const result = await Swal.fire({
         title: 'Are you sure?',
         text: 'Hardware key will be deleted. You will have to set it up again!',
         icon: 'warning',

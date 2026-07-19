@@ -54,7 +54,7 @@
         <div class="d-grid">
           <button class="btn btn-primary mt-3" type="submit" :disabled="!r$.$correct">Sign Up</button>
         </div>
-        <div class="my-2 small">Already have an account? <router-link :to="loginRoute" class="mx-2">Login</router-link></div>
+        <div class="my-2 small">Already have an account? <router-link :to="{ name: 'login' }" class="mx-2">Login</router-link></div>
       </form>
       <div class="d-flex my-4 justify-content-center">
         <a href="https://www.twitter.com/0perationP" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
@@ -70,12 +70,10 @@
 
 <script lang="ts">
 import { defineComponent, reactive } from 'vue'
-import type { RouteLocationRaw } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, sameAs, lowercase, withMessage } from '@regle/rules'
 import { DetailedError } from 'hono/client'
 import { client, request } from '@/core/rpc.client.ts'
-import { appDirectory } from '@/router/helpers.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
 export default defineComponent({
@@ -100,11 +98,6 @@ export default defineComponent({
     })
     return { r$, meta: useServerMetaStore() }
   },
-  computed: {
-    loginRoute(): RouteLocationRaw {
-      return { name: 'login', params: { appdirectory: appDirectory(this.$route) } }
-    },
-  },
   async mounted() {
     await this.redirectIfSignupDisabled()
   },
@@ -121,13 +114,14 @@ export default defineComponent({
         }
         throw err // skips logic below
       }
-      this.$router.push(this.loginRoute) // pure-JS navigation, not a reload of the page
+      // pure-JS navigation, not a reload of the page; named locations inherit the current appdirectory param
+      this.$router.push({ name: 'login' })
     },
 
     async redirectIfSignupDisabled() {
       // todo: not the best security mechanism. should be blocked on the router level ideally
       await this.meta.signupReady
-      if (!this.meta.signupEnabled) await this.$router.push(this.loginRoute)
+      if (!this.meta.signupEnabled) await this.$router.push({ name: 'login' })
     },
   },
 })

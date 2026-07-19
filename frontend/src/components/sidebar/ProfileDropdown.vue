@@ -81,7 +81,6 @@ import type { BModal } from 'bootstrap-vue-next'
 import { DetailedError } from 'hono/client'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import { notifySuccess } from '@/core/notify.ts'
-import { appDirectory } from '@/router/helpers.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
 
@@ -141,7 +140,7 @@ export default defineComponent({
     },
     logout() {
       this.userStore.logout()
-      this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
+      this.$router.push({ name: 'login' })
     },
   },
 })

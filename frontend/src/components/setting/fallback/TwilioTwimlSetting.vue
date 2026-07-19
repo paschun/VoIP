@@ -7,7 +7,6 @@
     success-message="TwiML Setting updated successfully!"
     required-message="Twiml Fallback Url Is Required"
     invalid-message="Please enter valid Twiml Fallback Url"
-    normalize-host
   />
 </template>
 

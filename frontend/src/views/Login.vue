@@ -39,7 +39,7 @@
         <div class="d-grid">
           <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
         </div>
-        <div class="my-2 small" v-if="meta.signupEnabled">Don't have an account yet? <router-link :to="signupRoute" class="mx-2"> Sign up</router-link></div>
+        <div class="my-2 small" v-if="meta.signupEnabled">Don't have an account yet? <router-link :to="{ name: 'signup' }" class="mx-2"> Sign up</router-link></div>
         <div class="d-grid d-md-flex mt-2 small" v-else>New registrations are disabled</div>
       </form>
       <form class="ml-2 mr-2 text-center" :class="{ 'd-none': screen !== 'otp' }" @submit.prevent="verifyOtp">
@@ -128,12 +128,10 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-import type { RouteLocationRaw } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, withMessage } from '@regle/rules'
 import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { notifyError } from '@/core/notify.ts'
-import { appDirectory } from '@/router/helpers.ts'
 import { useLoginStore, type HardwareKey } from '@/stores/login.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -166,11 +164,6 @@ export default defineComponent({
   data(): { screen: Screen } {
     return { screen: 'login' }
   },
-  computed: {
-    signupRoute(): RouteLocationRaw {
-      return { name: 'signup', params: { appdirectory: appDirectory(this.$route) } }
-    },
-  },
   async mounted() {
     await this.redirectIfLoggedIn()
   },
@@ -181,7 +174,8 @@ export default defineComponent({
       if (this.userStore.isLoggedIn) await this.goToDashboard()
     },
     async goToDashboard() {
-      await this.$router.push({ name: 'dashboard', params: { appdirectory: appDirectory(this.$route) } })
+      // named locations inherit the current route's params (appdirectory) when none are passed
+      await this.$router.push({ name: 'dashboard' })
     },
     async submitLogin() {
       const { valid, data } = await this.loginR$.$validate()

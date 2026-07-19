@@ -56,7 +56,7 @@ import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
 
 export default defineComponent({
-  name: 'SettingPanel',
+  name: 'SettingsPanel',
   components: { EmailSetting, AccountSetting, Mfa, SettingsSection, ProviderSettingModal },
   setup() {
     const providerSettingModal = useTemplateRef<InstanceType<typeof ProviderSettingModal>>('providerSettingModal')

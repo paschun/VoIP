@@ -10,7 +10,7 @@ import {
 } from '../../shared/contracts/provider.ts'
 import { factory } from '../core/factory.ts'
 import type { JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
-import { combineURLs } from '../helper/common.helper.ts'
+import { combineURLs, requireConfigured } from '../helper/common.helper.ts'
 import { ack } from '../helper/respond.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
@@ -32,9 +32,9 @@ async function getTwilioWebhookConfig(c: PathParamCtx<SettingIdParam>) {
   const { settingId } = c.req.valid('param')
   const setting = await ownSetting(c.get('user').id, settingId)
   const app = await twilioHelper.twimlGet({
-    sid: setting.twilio_sid ?? '',
-    token: setting.twilio_token ?? '',
-    twimlsid: setting.twiml_app ?? '',
+    sid: requireConfigured(setting.twilio_sid, 'twilio'),
+    token: requireConfigured(setting.twilio_token, 'twilio'),
+    twimlsid: requireConfigured(setting.twiml_app, 'twilio'),
   })
   // pick only the fields the client uses
   const { voiceUrl, voiceFallbackUrl } = app
@@ -46,18 +46,18 @@ async function patchTwilioWebhook(c: PathParamJsonCtx<SettingIdParam, WebhookFal
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)
 
-  // `?? ''` covers Setting fields the type allows to be null; a configured setting always has them set. The fallback
-  // helpers throw ProviderError on a provider failure, which onError renders as a 502.
+  const sid = requireConfigured(setting.twilio_sid, 'twilio')
+  const token = requireConfigured(setting.twilio_token, 'twilio')
   await twilioHelper.twimlFallbackUpdate({
-    sid: setting.twilio_sid ?? '',
-    token: setting.twilio_token ?? '',
-    twimlsid: setting.twiml_app ?? '',
+    sid,
+    token,
+    twimlsid: requireConfigured(setting.twiml_app, 'twilio'),
     url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioVoice.full),
   })
   await twilioHelper.numberFallbackUpdate({
-    sid: setting.twilio_sid ?? '',
-    token: setting.twilio_token ?? '',
-    numbersid: setting.sid ?? '',
+    sid,
+    token,
+    numbersid: requireConfigured(setting.sid, 'twilio'),
     voice_url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioIncoming.full),
     sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
   })
@@ -69,8 +69,8 @@ async function getTelnyxWebhookConfig(c: PathParamCtx<SettingIdParam>) {
   const { settingId } = c.req.valid('param')
   const setting = await ownSetting(c.get('user').id, settingId)
   const messageProfile = await telnyxHelper.messageProfileGet({
-    apiKey: setting.api_key ?? '',
-    setting: setting.setting ?? '',
+    apiKey: requireConfigured(setting.api_key, 'telnyx'),
+    setting: requireConfigured(setting.setting, 'telnyx'),
   })
   // pick only the fields the client uses
   const result = {
@@ -85,19 +85,20 @@ async function patchTelnyxWebhook(c: PathParamJsonCtx<SettingIdParam, WebhookFal
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)
 
+  const apiKey = requireConfigured(setting.api_key, 'telnyx')
   await telnyxHelper.messageProfileFallback({
-    apiKey: setting.api_key ?? '',
-    setting: setting.setting ?? '',
+    apiKey,
+    setting: requireConfigured(setting.setting, 'telnyx'),
     url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.telnyx),
   })
   await telnyxHelper.texmlAppFallback({
-    apiKey: setting.api_key ?? '',
-    twimlid: setting.telnyx_twiml ?? '',
+    apiKey,
+    twimlid: requireConfigured(setting.telnyx_twiml, 'telnyx'),
     url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxVoice.full),
   })
   await telnyxHelper.sipAppFallback({
-    apiKey: setting.api_key ?? '',
-    uuid: setting.sip_id ?? '',
+    apiKey,
+    uuid: requireConfigured(setting.sip_id, 'telnyx'),
     url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
   })
 

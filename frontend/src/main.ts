@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import VueSweetalert2 from 'vue-sweetalert2'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 // Global plugins
 import { createPinia } from 'pinia'
@@ -34,6 +33,5 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(createBootstrap())
-app.use(VueSweetalert2)
 
 app.mount('#app')

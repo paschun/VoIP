@@ -73,7 +73,6 @@ import MessageComposer from '@/components/chat/MessageComposer.vue'
 import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { connectSocket, disconnectSocket } from '@/core/socket.ts'
 import { confirmDelete } from '@/helper.ts'
-import { appDirectory } from '@/router/helpers.ts'
 import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
@@ -101,8 +100,8 @@ export default defineComponent({
   },
   mounted() {
     if (!this.userStore.isLoggedIn) {
-      // Bounce to the login page inside the current directory -- never bare `/`, which the server gate 404s.
-      this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
+      // Bounce to login inside the current directory (the appdirectory param is inherited from the current route).
+      this.$router.push({ name: 'login' })
       return
     }
     connectSocket()

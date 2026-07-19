@@ -23,7 +23,7 @@
       </div>
     </div>
     <conversation-list />
-    <setting></setting>
+    <settings-panel></settings-panel>
     <contact-list></contact-list>
     <compose-message-modal ref="composeModal" @sent="$emit('messageSent')" />
   </div>
@@ -35,7 +35,7 @@
 import { defineComponent, useTemplateRef } from 'vue'
 import ComposeMessageModal from '@/components/chat/ComposeMessageModal.vue'
 import ContactList from '@/components/contacts/ContactList.vue'
-import Setting from '@/components/setting/Setting.vue'
+import SettingsPanel from '@/components/setting/SettingsPanel.vue'
 import { useContactStore } from '@/stores/contact.ts'
 import ConversationList from './ConversationList.vue'
 import ProfileDropdown from './ProfileDropdown.vue'
@@ -45,7 +45,7 @@ export default defineComponent({
   emits: ['messageSent'],
   components: {
     ContactList,
-    Setting,
+    SettingsPanel,
     ComposeMessageModal,
     ConversationList,
     ProfileDropdown,

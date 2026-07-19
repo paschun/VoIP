@@ -63,14 +63,14 @@ from DetailedError:
  * if you need a typed failure shape, don't use {@link parseResponse}.`
  */
 export function request<T extends ClientResponse<unknown>>(req: T | Promise<T>) {
-  return parseResponse(req).catch(async (err: unknown) => {
+  return parseResponse(req).catch((err: unknown) => {
     console.error(err)
     if (err instanceof DetailedError) {
       // DetailedError from parseResponse will only have `.{name,message,statusCode,detail.{data,statusText}}
       // Our error from backend always sends a response body with `{ message }`, which will be `.detail.data.message` on DetailedError
-      await notifyApiError(err.statusCode, err.detail?.data?.message)
+      notifyApiError(err.statusCode, err.detail?.data?.message)
     } else if (err instanceof Error) {
-      await notifyApiError(undefined, err.toString())
+      notifyApiError(undefined, err.toString())
     }
     throw err
   })

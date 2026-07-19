@@ -155,6 +155,7 @@ import { defineComponent, ref, useTemplateRef } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
 import { required, literal, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
+import Swal from 'sweetalert2'
 import FieldErrors from '@/components/shared/FieldErrors.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import ThemeButton from '@/components/shared/ThemeButton.vue'
@@ -291,16 +292,21 @@ export default defineComponent({
       this.telnyxNumbers = []
       this.twilioNumbers = []
     },
-    /** Fetch the provider's available numbers into the matching autocomplete list, using the creds in the form. */
+    /**
+     * Fetch the provider's available numbers into the matching autocomplete list, using the creds in the form.
+     * The route requires non-empty creds, so skip the call (leaving the list empty) until they're filled in.
+     */
     async loadProviderNumbers(type: 'telnyx' | 'twilio') {
       const v = this.r$.$value
       if (type === 'telnyx') {
         this.telnyxNumbers = []
+        if (!v.api_key) return
         const data = await getProviderNumbers({ type: 'telnyx', api_key: v.api_key })
         if (data.type !== 'telnyx') throw new Error('backend returned wrong number type')
         this.telnyxNumbers = data.numbers
       } else {
         this.twilioNumbers = []
+        if (!v.twilio_sid || !v.twilio_token) return
         const data = await getProviderNumbers({ type: 'twilio', twilio_sid: v.twilio_sid, twilio_token: v.twilio_token })
         if (data.type !== 'twilio') throw new Error('backend returned wrong number type')
         this.twilioNumbers = data.numbers
@@ -353,7 +359,7 @@ export default defineComponent({
       }
       // Prompt outside the loader block (matching the old fire-and-forget swal that ran after `finally`).
       if (isCall) {
-        const result = await this.$swal.fire({
+        const result = await Swal.fire({
           icon: 'warning',
           title: 'Call Setting',
           text: 'The call setting is already available. Do you want to override the call setting?',

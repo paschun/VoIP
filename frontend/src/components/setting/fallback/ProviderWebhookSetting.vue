@@ -28,11 +28,11 @@ import { client, request } from '@/core/rpc.client.ts'
 import { notifySuccess } from '@/core/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
-/** Strip everything but `${protocol}//${hostname}` from a URL string. */
-const toOrigin = (str: string): string => {
-  const u = new URL(str)
-  return `${u.protocol}//${u.hostname}`
-}
+/** Strip a URL down to its origin; unparseable input passes through untouched.
+ * The backend takes the url you send and appends its own fixed webhook path to it.
+ * The user edits the host, the app owns the path.
+ */
+const toOrigin = (url: string): string => URL.parse(url)?.origin ?? url
 
 /**
  * Shared "webhook URL + fallback URL" settings form, used by the Telnyx
@@ -52,17 +52,13 @@ export default defineComponent({
   props: {
     /** Which provider's webhook config to read/patch (selects the typed RPC route). */
     provider: { type: String as PropType<'twilio' | 'telnyx'>, required: true },
-    /** When true, GET response URLs are stripped to `${protocol}//${hostname}`. */
-    normalizeHost: { type: Boolean, default: false },
-    /** When true, the user-entered fallback URL is stripped to `${protocol}//${hostname}` before submit. */
-    normalizeSubmit: { type: Boolean, default: false },
     /** Toast text shown after a successful save. */
     successMessage: { type: String, required: true },
     mainLabel: { type: String, default: 'Webhook URL' },
     fallbackLabel: { type: String, default: 'Webhook Fallback URL' },
     fallbackPlaceholder: { type: String, default: 'Enter Webhook Fallback URL' },
-    requiredMessage: { type: String, default: 'Url Is Required' },
-    invalidMessage: { type: String, default: 'Please enter valid Url' },
+    requiredMessage: { type: String, default: 'URL Is Required' },
+    invalidMessage: { type: String, default: 'Please enter valid URL' },
   },
   data() {
     return {
@@ -83,7 +79,6 @@ export default defineComponent({
       const settingId = this.profileStore.activeProfileId
       if (!settingId) return
 
-      const normalize = (v: string | null | undefined) => (this.normalizeHost && v ? toOrigin(v) : v)
       let main: string | null | undefined
       let fallback: string | null | undefined
       if (this.provider === 'twilio') {
@@ -95,15 +90,15 @@ export default defineComponent({
         main = data.webhook_url
         fallback = data.webhook_failover_url
       }
-      this.mainUrl = normalize(main) ?? ''
-      if (fallback) this.fallbackUrl = normalize(fallback) ?? ''
+      this.mainUrl = main ? toOrigin(main) : ''
+      if (fallback) this.fallbackUrl = toOrigin(fallback)
     },
     async saveFallbackUrl() {
       const { valid, data } = await this.r$.$validate()
       const settingId = this.profileStore.activeProfileId
       if (!valid || !settingId) return
 
-      const submitUrl = this.normalizeSubmit ? toOrigin(data) : data
+      const submitUrl = toOrigin(data)
       const param = { settingId }
       if (this.provider === 'twilio') {
         await request(client.api.provider.twilio.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))

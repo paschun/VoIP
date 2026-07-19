@@ -25,8 +25,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import Swal from 'sweetalert2'
 import { client, request } from '@/core/rpc.client.ts'
-import { appDirectory } from '@/router/helpers.ts'
 import { useUserStore } from '@/stores/user.ts'
 import FallbackSetting from '../fallback/FallbackSetting.vue'
 import SettingsSection from '../SettingsSection.vue'
@@ -48,7 +48,7 @@ export default defineComponent({
       this.activeMenu = menu
     },
     async deleteAccount() {
-      const result = await this.$swal.fire({
+      const result = await Swal.fire({
         icon: 'warning',
         text: 'Please enter your account password to delete account. This process is irreversible',
         title: 'Delete Account',
@@ -67,12 +67,12 @@ export default defineComponent({
             return false
           }
         },
-        allowOutsideClick: () => !this.$swal.isLoading(),
+        allowOutsideClick: () => !Swal.isLoading(),
       })
       // request() already toasted on failure; preConfirm returns false then, so gate on the value (a failed delete must
       // not fall through to the success swal + logout).
       if (!result.value) return
-      await this.$swal.fire({
+      await Swal.fire({
         icon: 'success',
         title: 'Account Delete',
         text: `Your account deleted successfully`,
@@ -81,7 +81,7 @@ export default defineComponent({
         confirmButtonText: 'Ok',
       })
       this.userStore.logout()
-      this.$router.push({ name: 'login', params: { appdirectory: appDirectory(this.$route) } })
+      this.$router.push({ name: 'login' })
     },
   },
 })

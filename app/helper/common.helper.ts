@@ -1,7 +1,19 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { format } from 'date-fns'
+import { HTTPException } from 'hono/http-exception'
 import { env } from '../core/env.ts'
+
+/**
+ * Return `value` if present, else throw 409. An absent provider credential/id means the profile was never configured
+ * for `provider` -- a conflict, not an upstream call with empty creds (which the provider rejects with 401)
+ */
+export function requireConfigured<T>(value: T | null | undefined, provider: 'twilio' | 'telnyx'): NonNullable<T> {
+  if (value === null || value === undefined || value === '') {
+    throw new HTTPException(409, { message: `${provider} is not configured for this profile` })
+  }
+  return value
+}
 
 /** date-fns format for the per-day upload folder name. */
 export const UPLOAD_FOLDER_FORMAT = 'yyyyMMdd'

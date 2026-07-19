@@ -27,7 +27,7 @@ const swalError = ({ title, text }: { title?: string | number; text?: string }) 
  *
  * TODO: notification is mixed here with removing cookies/navigating. Separate those concerns.
  */
-export async function notifyApiError(status?: ApiErrorStatus, message?: string): Promise<void> {
+export function notifyApiError(status?: ApiErrorStatus, message?: string): void {
   console.error(`HTTP error status:`, status, '- message:', message)
 
   if (!status) {
@@ -41,9 +41,9 @@ export async function notifyApiError(status?: ApiErrorStatus, message?: string):
     const user = useUserStore()
     if (user.isLoggedIn) {
       user.logout()
-      const path = window.location.pathname.split('/')[1]
-      // todo: test this await
-      await router.push(`/${path}/`)
+      // we aren't awaitng the redirect, because its a side effect and shouldn't gate error propagation. Awaiting it
+      // up the chain (into request()) would hold the API-error rejection until navigation settles
+      void router.push({ name: 'login' })
     }
     // 400 Bad Request (malformed/invalid input)
     // 403 Forbidden (authenticated but not allowed / called out of order),
