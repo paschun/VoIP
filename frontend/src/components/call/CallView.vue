@@ -43,10 +43,10 @@
  */
 import { defineComponent, useTemplateRef } from 'vue'
 import type { BModal } from 'bootstrap-vue-next'
-import ActiveCallPanel from '@/components/ActiveCallPanel.vue'
-import ContactPicker from '@/components/ContactPicker.vue'
-import DialerPad from '@/components/DialerPad.vue'
-import IncomingCallPanel from '@/components/IncomingCallPanel.vue'
+import ContactPicker from '@/components/shared/ContactPicker.vue'
+import ActiveCallPanel from './ActiveCallPanel.vue'
+import DialerPad from './DialerPad.vue'
+import IncomingCallPanel from './IncomingCallPanel.vue'
 import { type CallState, type DialKey, useCallStore } from '@/stores/call.ts'
 
 export default defineComponent({

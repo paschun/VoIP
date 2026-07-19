@@ -43,7 +43,7 @@
  * upload progress), send. Emits `sent` after a successful send.
  */
 import { defineComponent } from 'vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import { uploadMediaFiles } from '@/core/services/media.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useConversationStore } from '@/stores/conversation.ts'

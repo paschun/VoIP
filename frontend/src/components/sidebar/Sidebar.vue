@@ -33,8 +33,8 @@
 /** The sidebar column: header icon row (settings, contacts, call, compose), the profile dropdown, the inbox list, and
  * the settings/contacts offcanvas panels the icons toggle. */
 import { defineComponent, useTemplateRef } from 'vue'
-import ComposeMessageModal from '@/components/ComposeMessageModal.vue'
-import ContactList from '@/components/setting/ContactList.vue'
+import ComposeMessageModal from '@/components/chat/ComposeMessageModal.vue'
+import ContactList from '@/components/contacts/ContactList.vue'
 import Setting from '@/components/setting/Setting.vue'
 import { useContactStore } from '@/stores/contact.ts'
 import ConversationList from './ConversationList.vue'

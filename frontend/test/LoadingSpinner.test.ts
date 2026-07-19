@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { DOMWrapper, mount } from '@vue/test-utils'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 
 afterEach(() => {
   // vitest does not reset the DOM every test

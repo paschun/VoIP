@@ -9,8 +9,8 @@
 /** No backend calls of its own: renders the provider settings for the active profile's type (useProfileStore). */
 import { defineComponent } from 'vue'
 import { useProfileStore } from '@/stores/profile.ts'
-import TelnyxMessageSetting from './call/TelnyxMessageSetting.vue'
-import TwilioTwimlSetting from './call/TwilioTwimlSetting.vue'
+import TelnyxMessageSetting from './TelnyxMessageSetting.vue'
+import TwilioTwimlSetting from './TwilioTwimlSetting.vue'
 
 export default defineComponent({
   components: { TelnyxMessageSetting, TwilioTwimlSetting },

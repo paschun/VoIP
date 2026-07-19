@@ -155,14 +155,14 @@ import { defineComponent, ref, useTemplateRef } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
 import { required, literal, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
-import CustomAutocompleteSelect from '@/components/CustomAutocompleteSelect.vue'
-import FieldErrors from '@/components/FieldErrors.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import ThemeButton from '@/components/ThemeButton.vue'
+import FieldErrors from '@/components/shared/FieldErrors.vue'
+import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { getProviderNumbers, lookupNumber, type ProviderNumbers } from '@/core/services/provider.ts'
 import { confirmDelete } from '@/helper.ts'
 import { notifyInfo, notifySuccess } from '@/core/notify.ts'
 import { useProfileStore, type ProviderSettingPayload } from '@/stores/profile.ts'
+import CustomAutocompleteSelect from './CustomAutocompleteSelect.vue'
 
 /**
  * The fields edited in the settings modal (the profile name and server-side identifiers are added at submit). Both

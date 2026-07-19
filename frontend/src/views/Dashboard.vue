@@ -67,10 +67,10 @@
 /** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
 import { defineComponent, useTemplateRef } from 'vue'
 import type { BOffcanvas } from 'bootstrap-vue-next'
-import CallView from '@/components/CallView.vue'
-import ChatThread from '@/components/ChatThread.vue'
-import MessageComposer from '@/components/MessageComposer.vue'
-import ThemeButton from '@/components/ThemeButton.vue'
+import CallView from '@/components/call/CallView.vue'
+import ChatThread from '@/components/chat/ChatThread.vue'
+import MessageComposer from '@/components/chat/MessageComposer.vue'
+import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { connectSocket, disconnectSocket } from '@/core/socket.ts'
 import { confirmDelete } from '@/helper.ts'
 import { appDirectory } from '@/router/helpers.ts'
@@ -78,7 +78,7 @@ import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
-import Sidebar from './inbox/Sidebar.vue'
+import Sidebar from '@/components/sidebar/Sidebar.vue'
 
 export default defineComponent({
   name: 'DashboardView',

@@ -25,7 +25,7 @@ export default createRouter({
   history: createWebHistory(),
   routes: [
     // in dev, index.html is served by vite dev server on port 8080, so this is reachable
-    // in prod, index.html is served by node.js, which has appdir gating, so this route is unreachable
+    // in prod, index.html is served by node.js backend, which has appdir gating, so this route is unreachable
     {
       path: '/',
       name: 'root',
@@ -36,23 +36,23 @@ export default createRouter({
       path: '/:appdirectory/',
       name: 'login',
       strict: true, // we know its appdir and not a typo when it has a trailing slash
-      component: () => import('@/components/Login.vue'),
+      component: () => import('@/views/Login.vue'),
     },
     {
       path: '/:appdirectory/signup',
       name: 'signup',
-      component: () => import('@/components/Signup.vue'),
+      component: () => import('@/views/Signup.vue'),
     },
     {
       path: '/:appdirectory/dashboard',
       name: 'dashboard',
-      component: () => import('@/components/Dashboard.vue'),
+      component: () => import('@/views/Dashboard.vue'),
     },
     {
       // https://router.vuejs.org/guide/essentials/dynamic-matching.html#Catch-all-404-Not-found-Route
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      component: () => import('@/components/ErrorPage.vue'),
+      component: () => import('@/views/ErrorPage.vue'),
     },
   ],
 })

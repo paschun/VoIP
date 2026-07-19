@@ -64,7 +64,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import ContactFormModal from '@/components/ContactFormModal.vue'
+import ContactFormModal from './ContactFormModal.vue'
 import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'
 import { confirmDelete } from '@/helper.ts'
 import { notifySuccess } from '@/core/notify.ts'
