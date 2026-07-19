@@ -32,10 +32,3 @@ export interface ApiError {
  */
 export type ApiResult<T> = (Ok<T> & { ok: true }) | (ApiError & { ok: false; status?: number })
 
-export interface Contact {
-  _id: string
-  first_name: string
-  last_name: string
-  number: string
-  note?: string
-}

@@ -17,9 +17,7 @@
               title="Enter Username"
             />
           </b-input-group>
-          <div v-if="r$.name.$error" class="invalid-feedback">
-            <span v-for="error of r$.name.$errors" :key="error">{{ error }}</span>
-          </div>
+          <FieldErrors :field="r$.name" />
         </div>
         <div class="form-group mb-2 mt-4">
           <b-input-group>
@@ -35,9 +33,7 @@
               title="Enter Password"
             />
           </b-input-group>
-          <div v-if="r$.password.$error" class="invalid-feedback">
-            <span v-for="error of r$.password.$errors" :key="error">{{ error }}</span>
-          </div>
+          <FieldErrors :field="r$.password" />
         </div>
         <div class="form-group mb-2 mt-2">
           <b-input-group>
@@ -53,9 +49,7 @@
               title="Enter Password Again"
             />
           </b-input-group>
-          <div v-if="r$.c_password.$error" class="invalid-feedback">
-            <span v-for="error of r$.c_password.$errors" :key="error">{{ error }}</span>
-          </div>
+          <FieldErrors :field="r$.c_password" />
         </div>
         <div class="d-grid">
           <button class="btn btn-primary mt-3" type="submit" :disabled="!r$.$correct">Sign Up</button>

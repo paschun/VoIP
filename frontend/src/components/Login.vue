@@ -18,9 +18,7 @@
               title="Enter Username"
             />
           </b-input-group>
-          <div v-if="loginR$.name.$error" class="invalid-feedback">
-            <span v-for="error of loginR$.$errors.name" :key="error">{{ error }}</span>
-          </div>
+          <FieldErrors :field="loginR$.name" />
         </div>
         <div class="form-group mb-2 mt-4">
           <b-input-group>
@@ -36,9 +34,7 @@
               title="Enter Password"
             />
           </b-input-group>
-          <div v-if="loginR$.password.$error" class="invalid-feedback">
-            <span v-for="error of loginR$.$errors.password" :key="error">{{ error }}</span>
-          </div>
+          <FieldErrors :field="loginR$.password" />
         </div>
         <div class="d-grid">
           <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
@@ -58,9 +54,7 @@
             :class="{ 'is-invalid': otpR$.otp.$error }"
             @keyup.enter="verifyOtp"
           />
-          <div v-if="otpR$.otp.$error" class="invalid-feedback">
-            <span v-for="error of otpR$.$errors.otp" :key="error">{{ error }}</span>
-          </div>
+          <FieldErrors :field="otpR$.otp" />
         </div>
         <div class="text-center">
           <button class="btn btn-success m-3 px-5" type="button" @click="verifyOtp" id="login-button2">Verify</button>

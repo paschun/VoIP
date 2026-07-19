@@ -3,39 +3,27 @@
     <form @submit.prevent="saveEmailSetting" class="ml-2 mr-2">
       <div class="form-group mt-2">
         <input class="form-control" v-model="r$.$value.email" placeholder="Enter Email" :class="{ 'is-invalid': r$.email.$error }" />
-        <div v-if="r$.email.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.email" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.email" />
       </div>
       <div class="form-group mt-2">
         <input class="form-control" v-model="r$.$value.password" placeholder="Enter Password" :class="{ 'is-invalid': r$.password.$error }" />
-        <div v-if="r$.password.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.password" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.password" />
       </div>
       <div class="form-group mt-2">
         <input class="form-control" v-model="r$.$value.sender_email" placeholder="Email FROM" :class="{ 'is-invalid': r$.sender_email.$error }" />
-        <div v-if="r$.sender_email.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.sender_email" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.sender_email" />
       </div>
       <div class="form-group mt-2">
         <input class="form-control" v-model="r$.$value.to_email" placeholder="Email TO" :class="{ 'is-invalid': r$.to_email.$error }" />
-        <div v-if="r$.to_email.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.to_email" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.to_email" />
       </div>
       <div class="form-group mt-2">
         <input class="form-control" v-model="r$.$value.host" placeholder="Enter Host (smtp.domain.com)" :class="{ 'is-invalid': r$.host.$error }" />
-        <div v-if="r$.host.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.host" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.host" />
       </div>
       <div class="form-group mt-2">
         <input class="form-control" v-model="r$.$value.port" placeholder="Enter Port (465 or 587)" :class="{ 'is-invalid': r$.port.$error }" />
-        <div v-if="r$.port.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.port" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.port" />
       </div>
       <div class="form-group mt-2">
         <b-form-checkbox v-model="r$.$value.secure" plain v-b-tooltip.hover.bottomright="'for 465 only'"> Secure </b-form-checkbox>
@@ -48,9 +36,7 @@
           :class="{ 'is-invalid': r$.pgpPublicKey.$error }"
         >
         </textarea>
-        <div v-if="r$.pgpPublicKey.$error" class="invalid-feedback">
-          <span v-for="error of r$.$errors.pgpPublicKey" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.pgpPublicKey" />
       </div>
       <div class="form-group mt-2">
         <b-form-checkbox v-model="r$.$value.pgpEncryptEnabled" plain v-b-tooltip.hover.bottomright="'for PGP encrypted emails'">

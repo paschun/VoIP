@@ -14,7 +14,7 @@ type UploadResponse = Awaited<ReturnType<typeof client.api.media.uploads.$post>>
  * through `request()` so failures hit the same central toast/parse path as every hc call; the cast supplies the
  * inferred success-body type. `$url()` gives the route's absolute URL (see test/rpc-url.test.ts).
  */
-export async function uploadMedia(file: File, token: string, onProgress: (loaded: number, total: number) => void = () => {}): Promise<UploadResponseSuccess> {
+async function uploadMedia(file: File, token: string, onProgress: (loaded: number, total: number) => void = () => {}): Promise<UploadResponseSuccess> {
   const total = file.size
   let loaded = 0
   const progress = new TransformStream<Uint8Array, Uint8Array>({

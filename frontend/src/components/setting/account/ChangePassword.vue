@@ -9,16 +9,12 @@
           placeholder="Old Password"
           :class="{ 'is-invalid': r$.old_password.$error }"
         />
-        <div v-if="r$.old_password.$error" class="invalid-feedback">
-          <span v-for="error of r$.old_password.$errors" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.old_password" />
       </div>
 
       <div class="form-group mb-2 mt-4">
         <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }" />
-        <div v-if="r$.password.$error" class="invalid-feedback">
-          <span v-for="error of r$.password.$errors" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.password" />
       </div>
 
       <div class="form-group mb-2 mt-2">
@@ -29,9 +25,7 @@
           placeholder="Confirm Password"
           :class="{ 'is-invalid': r$.c_password.$error }"
         />
-        <div v-if="r$.c_password.$error" class="invalid-feedback">
-          <span v-for="error of r$.c_password.$errors" :key="error">{{ error }}</span>
-        </div>
+        <FieldErrors :field="r$.c_password" />
       </div>
       <div class="form-group">
         <button class="btn btn-success mt-2" type="submit" :disabled="!r$.$correct">Change</button>

@@ -10,9 +10,12 @@
 import { defineComponent } from 'vue'
 import { Select, type SelectOptionData } from 'vue3-select-component'
 import { e164Phone } from '@shared/contracts/phone.ts'
-import { contactsToOptions } from '@/helper.ts'
 import { notifyError } from '@/notify.ts'
-import { useContactStore } from '@/stores/contact.ts'
+import { useContactStore, type Contact } from '@/stores/contact.ts'
+
+/** Map contacts to `v-select` options (label = full name, value = number). */
+const contactsToOptions = (contacts: Contact[]): SelectOptionData<string>[] =>
+  contacts.map((c) => ({ label: `${c.first_name} ${c.last_name}`, value: c.number }))
 
 export default defineComponent({
   name: 'ContactPicker',
