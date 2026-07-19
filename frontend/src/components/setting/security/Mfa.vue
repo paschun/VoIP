@@ -67,7 +67,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifyError } from '@/notify.ts'
+import { notifyError } from '@/core/notify.ts'
 import HardwareKey from './HardwareKey.vue'
 export default defineComponent({
   name: 'MfaSetting',

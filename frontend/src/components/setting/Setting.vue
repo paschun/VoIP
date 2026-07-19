@@ -47,7 +47,7 @@
 <script lang="ts">
 import { defineComponent, useTemplateRef } from 'vue'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifyError } from '@/notify.ts'
+import { notifyError } from '@/core/notify.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 import AccountSetting from './account/AccountSetting.vue'
 import EmailSetting from './EmailSetting.vue'

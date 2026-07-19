@@ -44,7 +44,7 @@ import { decode as cborDecode } from 'cbor-x/decode'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifySuccess, notifyError } from '@/notify.ts'
+import { notifySuccess, notifyError } from '@/core/notify.ts'
 
 type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, SuccessStatusCode>['data']
 

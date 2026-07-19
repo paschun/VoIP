@@ -17,7 +17,7 @@
             </b-button>
           </div>
         </div>
-        <number-list @messageSent="onMessageSent" />
+        <sidebar @messageSent="onMessageSent" />
       </template>
     </b-offcanvas>
     <section class="col col-md-8 pb-2">
@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts">
-/** Main messaging view: conversation list (NumberList), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
+/** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
 import { defineComponent, useTemplateRef } from 'vue'
 import type { BOffcanvas } from 'bootstrap-vue-next'
 import CallView from '@/components/CallView.vue'
@@ -78,12 +78,12 @@ import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
-import NumberList from './inbox/NumberList.vue'
+import Sidebar from './inbox/Sidebar.vue'
 
 export default defineComponent({
   name: 'DashboardView',
   components: {
-    NumberList,
+    Sidebar,
     ThemeButton,
     CallView,
     ChatThread,

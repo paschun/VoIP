@@ -67,11 +67,10 @@ import { defineComponent } from 'vue'
 import ContactFormModal from '@/components/ContactFormModal.vue'
 import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'
 import { confirmDelete } from '@/helper.ts'
-import { notifySuccess } from '@/notify.ts'
+import { notifySuccess } from '@/core/notify.ts'
 import { useContactStore, type Contact } from '@/stores/contact.ts'
 
 export default defineComponent({
-  name: 'ContactList',
   components: { ContactFormModal },
   setup() {
     return { contactStore: useContactStore() }

@@ -16,8 +16,9 @@
     <settings-section v-if="activeMenu == 'password'" title="Change Password" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
       <change-password></change-password>
     </settings-section>
+    <!-- TODO: provider webhook fallback settings arguably belong under the profile/provider settings UI, not Account Settings. -->
     <settings-section v-if="activeMenu == 'fallback'" title="Fallback Setting" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
-      <call-setting></call-setting>
+      <fallback-setting></fallback-setting>
     </settings-section>
   </div>
 </template>
@@ -27,13 +28,13 @@ import { defineComponent } from 'vue'
 import { client, request } from '@/core/rpc.client.ts'
 import { appDirectory } from '@/router/helpers.ts'
 import { useUserStore } from '@/stores/user.ts'
-import CallSetting from '../CallSetting.vue'
+import FallbackSetting from '../FallbackSetting.vue'
 import SettingsSection from '../SettingsSection.vue'
 import ChangePassword from './ChangePassword.vue'
 import ChangeUsername from './ChangeUsername.vue'
 
 export default defineComponent({
-  components: { ChangeUsername, ChangePassword, CallSetting, SettingsSection },
+  components: { ChangeUsername, ChangePassword, FallbackSetting, SettingsSection },
   setup() {
     return { userStore: useUserStore() }
   },

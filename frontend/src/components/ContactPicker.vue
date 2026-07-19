@@ -10,7 +10,7 @@
 import { defineComponent } from 'vue'
 import { Select, type SelectOptionData } from 'vue3-select-component'
 import { e164Phone } from '@shared/contracts/phone.ts'
-import { notifyError } from '@/notify.ts'
+import { notifyError } from '@/core/notify.ts'
 import { useContactStore, type Contact } from '@/stores/contact.ts'
 
 /** Map contacts to `v-select` options (label = full name, value = number). */

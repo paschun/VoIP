@@ -149,7 +149,7 @@
 <script lang="ts">
 /**
  * The telnyx/twilio provider settings modal, opened from Setting.vue's "Profile Settings" entry via `open()`.
- * Configure-only: it edits the active profile's provider config; profile create/select lives in ProfileView.
+ * Configure-only: it edits the active profile's provider config; profile create/select lives in ProfileDropdown.
  */
 import { defineComponent, ref, useTemplateRef } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
@@ -161,7 +161,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ThemeButton from '@/components/ThemeButton.vue'
 import { getProviderNumbers, lookupNumber, type ProviderNumbers } from '@/core/services/provider.ts'
 import { confirmDelete } from '@/helper.ts'
-import { notifyInfo, notifySuccess } from '@/notify.ts'
+import { notifyInfo, notifySuccess } from '@/core/notify.ts'
 import { useProfileStore, type ProviderSettingPayload } from '@/stores/profile.ts'
 
 /**

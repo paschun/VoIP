@@ -24,7 +24,7 @@ const emptyDraft = (): ContactDraft => ({ first_name: '', last_name: '', number:
 // Could also model the store as a Map keyed by _id instead of an array, with getters for sorted/filtered views
 
 /**
- * The user's address book + all contact data access. Holds the shared list (read by NumberList/Contact/Dashboard/
+ * The user's address book + all contact data access. Holds the shared list (read by Sidebar/ContactList/Dashboard/
  * CallView) and owns every read/write so no view talks to the contact routes directly. Mutations refresh the list AND
  * the conversation inbox (its rows denormalize the contact name), so callers never reload either by hand.
  */

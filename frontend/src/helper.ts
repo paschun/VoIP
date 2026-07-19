@@ -3,7 +3,7 @@
  * file that uses them.
  */
 import Swal from 'sweetalert2'
-import { notifyInfo } from '@/notify.ts'
+import { notifyInfo } from '@/core/notify.ts'
 
 /**
  * Confirm/deny "delete X?" dialog. Resolves `true` only on confirm; a deny shows the `denyMessage` toast; a dismiss

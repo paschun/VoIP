@@ -45,7 +45,7 @@
 import { defineComponent } from 'vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { uploadMediaFiles } from '@/core/services/media.ts'
-import { notifyError } from '@/notify.ts'
+import { notifyError } from '@/core/notify.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
 

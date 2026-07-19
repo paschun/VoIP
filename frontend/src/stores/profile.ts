@@ -37,7 +37,7 @@ export const useProfileStore = defineStore('profile', () => {
   })
 
   const profiles = ref<ProfileWithUnread[]>([])
-  const profileIsLoading = ref(false) // used in ProfileView
+  const profileIsLoading = ref(false) // used in ProfileDropdown
 
   // these are refs inside here, but on the outside they are unwrapped by store proxy. use `storeToRefs` to get refs on the outside.
   const activeProfileId = computed(() => activeProfile.value?._id ?? '')

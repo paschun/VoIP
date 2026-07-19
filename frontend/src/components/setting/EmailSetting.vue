@@ -76,7 +76,7 @@ import type { EmailCreateRequest } from '@shared/contracts/email.ts'
 import type { EmailDoc } from '@shared/schema/email.ts'
 import type { CheckboxValue } from 'bootstrap-vue-next'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifySuccess } from '@/notify.ts'
+import { notifySuccess } from '@/core/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
 /**

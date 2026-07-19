@@ -40,7 +40,7 @@ import { useRegle } from '@regle/core'
 import { required, minLength, sameAs, withMessage } from '@regle/rules'
 import { DetailedError } from 'hono/client'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifySuccess } from '@/notify.ts'
+import { notifySuccess } from '@/core/notify.ts'
 
 export default defineComponent({
   setup() {

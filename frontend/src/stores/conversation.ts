@@ -11,7 +11,7 @@ export type Conversation = InferResponseType<typeof client.api.setting.conversat
 export type ChatMessage = InferResponseType<typeof client.api.setting.conversations.messages.$post, SuccessStatusCode>['data'][number]
 
 /**
- * The active profile's inbox + open chat thread. Holds the conversation list (the NumberList sidebar) and the selected
+ * The active profile's inbox + open chat thread. Holds the conversation list (the Sidebar) and the selected
  * thread's messages (the Dashboard chat pane), and owns every read/write so neither view talks to the conversation
  * routes directly. Selection lives here too (replacing the old per-component `activeChat` + localStorage copy), so the
  * sidebar highlight and the chat pane stay in sync without emits or `$ref` poking.

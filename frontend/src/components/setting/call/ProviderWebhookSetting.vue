@@ -25,7 +25,7 @@ import { defineComponent, ref, type PropType } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, withMessage, httpUrl } from '@regle/rules'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifySuccess } from '@/notify.ts'
+import { notifySuccess } from '@/core/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
 /** Strip everything but `${protocol}//${hostname}` from a URL string. */

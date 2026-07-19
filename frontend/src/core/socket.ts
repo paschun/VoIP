@@ -1,6 +1,6 @@
 import type { SocketMessage } from '@shared/contracts/socket.ts'
 import { authToken } from '@/core/auth-token.ts'
-import { showMessageNotification } from '@/core/notifications.ts'
+import { showMessageNotification } from '@/core/notify.ts'
 import { wsClient } from '@/core/rpc.client.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'

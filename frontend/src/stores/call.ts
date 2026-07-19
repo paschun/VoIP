@@ -6,7 +6,7 @@ import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
 import { e164Phone } from '@shared/contracts/phone.ts'
 import { client, request } from '@/core/rpc.client.ts'
-import { notifyError } from '@/notify.ts'
+import { notifyError } from '@/core/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 

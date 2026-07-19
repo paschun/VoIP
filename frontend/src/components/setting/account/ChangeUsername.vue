@@ -19,7 +19,7 @@ import { defineComponent, ref } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, minLength, lowercase } from '@regle/rules'
 import { DetailedError } from 'hono/client'
-import { notifySuccess } from '@/notify.ts'
+import { notifySuccess } from '@/core/notify.ts'
 import { useUserStore } from '@/stores/user.ts'
 
 export default defineComponent({

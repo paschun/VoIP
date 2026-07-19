@@ -1,7 +1,7 @@
 <template>
   <div>
-    <twiml-setting v-if="profileStore.activeProfileType === 'twilio'" />
-    <message-setting v-if="profileStore.activeProfileType === 'telnyx'" />
+    <twilio-twiml-setting v-if="profileStore.activeProfileType === 'twilio'" />
+    <telnyx-message-setting v-if="profileStore.activeProfileType === 'telnyx'" />
   </div>
 </template>
 
@@ -9,11 +9,11 @@
 /** No backend calls of its own: renders the provider settings for the active profile's type (useProfileStore). */
 import { defineComponent } from 'vue'
 import { useProfileStore } from '@/stores/profile.ts'
-import MessageSetting from './call/telnyx/MessageSetting.vue'
-import TwimlSetting from './call/twilio/TwimlSetting.vue'
+import TelnyxMessageSetting from './call/TelnyxMessageSetting.vue'
+import TwilioTwimlSetting from './call/TwilioTwimlSetting.vue'
 
 export default defineComponent({
-  components: { MessageSetting, TwimlSetting },
+  components: { TelnyxMessageSetting, TwilioTwimlSetting },
   setup() {
     return { profileStore: useProfileStore() }
   },

@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import { e164Phone } from '@shared/contracts/phone.ts'
-import { notifyError } from '@/notify.ts'
+import { notifyError } from '@/core/notify.ts'
 import type { ContactDraft } from '@/stores/contact.ts'
 
 const CSV_COLUMNS = ['first_name', 'last_name', 'number', 'note'] satisfies (keyof ContactDraft)[]
