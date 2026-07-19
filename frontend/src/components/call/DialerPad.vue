@@ -11,9 +11,8 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /** The 12-key dial pad. Emits `press` per key; the parent decides between number entry and DTMF. */
-import { defineComponent } from 'vue'
 import type { DialKey } from '@/stores/call.ts'
 
 // '1' has an empty alpha: it still renders hidden so that the button matches the height of 2-9.
@@ -36,20 +35,11 @@ const rows: [DialKey, string?][][] = [
   [['*'], ['0'], ['#']],
 ]
 
-export default defineComponent({
-  name: 'DialerPad',
-  emits: {
-    press: (key: DialKey) => typeof key === 'string', // runtime validation
-  },
-  data() {
-    return { rows }
-  },
-  methods: {
-    press(key: DialKey) {
-      this.$emit('press', key)
-    },
-  },
-})
+const emit = defineEmits<{ press: [key: DialKey] }>()
+
+function press(key: DialKey) {
+  emit('press', key)
+}
 </script>
 
 <style scoped>

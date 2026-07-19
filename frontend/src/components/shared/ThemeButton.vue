@@ -9,37 +9,30 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+
+defineProps<{ idHide?: string }>()
 
 function getMediaPreference(): string {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
 }
 
-export default defineComponent({
-  props: ['idHide'],
-  mounted() {
-    this.setTheme(localStorage.getItem('user-theme') ?? getMediaPreference())
-  },
+const userTheme = ref('light-theme')
 
-  data() {
-    return {
-      userTheme: 'light-theme',
-    }
-  },
+function setTheme(theme: string) {
+  localStorage.setItem('user-theme', theme)
+  userTheme.value = theme
+  document.documentElement.className = theme
+}
 
-  methods: {
-    toggleTheme() {
-      const activeTheme = localStorage.getItem('user-theme')
-      this.setTheme(activeTheme === 'light-theme' ? 'dark-theme' : 'light-theme')
-    },
+function toggleTheme() {
+  const activeTheme = localStorage.getItem('user-theme')
+  setTheme(activeTheme === 'light-theme' ? 'dark-theme' : 'light-theme')
+}
 
-    setTheme(theme: string) {
-      localStorage.setItem('user-theme', theme)
-      this.userTheme = theme
-      document.documentElement.className = theme
-    },
-  },
+onMounted(() => {
+  setTheme(localStorage.getItem('user-theme') ?? getMediaPreference())
 })
 </script>
 

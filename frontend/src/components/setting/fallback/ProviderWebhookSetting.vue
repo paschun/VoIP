@@ -20,8 +20,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, type PropType } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref, watch } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, withMessage, httpUrl } from '@regle/rules'
 import { client, request } from '@/core/rpc.client.ts'
@@ -38,78 +38,74 @@ const toOrigin = (url: string): string => URL.parse(url)?.origin ?? url
  * Shared "webhook URL + fallback URL" settings form, used by the Telnyx
  * SIP/TeXML/Message and Twilio TwiML settings panels. Reads/patches the provider webhook config under `/api/provider`.
  */
-export default defineComponent({
-  name: 'ProviderWebhookSetting',
-  setup(props) {
-    const fallbackUrl = ref('')
-    const { r$ } = useRegle(fallbackUrl, {
-      required: withMessage(required, () => props.requiredMessage), // default: This field is required
-      // keyed `validUrl`, not `url`, so it doesn't collide with Regle's built-in `url` rule name
-      validUrl: withMessage(httpUrl, () => props.invalidMessage), // default: The value is not a valid http URL address
-    })
-    return { r$, fallbackUrl, profileStore: useProfileStore() }
-  },
-  props: {
+const props = withDefaults(
+  defineProps<{
     /** Which provider's webhook config to read/patch (selects the typed RPC route). */
-    provider: { type: String as PropType<'twilio' | 'telnyx'>, required: true },
+    provider: 'twilio' | 'telnyx'
     /** Toast text shown after a successful save. */
-    successMessage: { type: String, required: true },
-    mainLabel: { type: String, default: 'Webhook URL' },
-    fallbackLabel: { type: String, default: 'Webhook Fallback URL' },
-    fallbackPlaceholder: { type: String, default: 'Enter Webhook Fallback URL' },
-    requiredMessage: { type: String, default: 'URL Is Required' },
-    invalidMessage: { type: String, default: 'Please enter valid URL' },
+    successMessage: string
+    mainLabel?: string
+    fallbackLabel?: string
+    fallbackPlaceholder?: string
+    requiredMessage?: string
+    invalidMessage?: string
+  }>(),
+  {
+    mainLabel: 'Webhook URL',
+    fallbackLabel: 'Webhook Fallback URL',
+    fallbackPlaceholder: 'Enter Webhook Fallback URL',
+    requiredMessage: 'URL Is Required',
+    invalidMessage: 'Please enter valid URL',
   },
-  data() {
-    return {
-      mainUrl: '',
-    }
-  },
-  mounted() {
-    this.getCallSetting()
-  },
-  watch: {
-    // Re-fetch when the selected profile changes while this panel stays mounted, so the URLs don't go stale.
-    'profileStore.activeProfileId'() {
-      this.getCallSetting()
-    },
-  },
-  methods: {
-    async getCallSetting() {
-      const settingId = this.profileStore.activeProfileId
-      if (!settingId) return
+)
 
-      let main: string | null | undefined
-      let fallback: string | null | undefined
-      if (this.provider === 'twilio') {
-        const { data } = await request(client.api.provider.twilio.webhook[':settingId'].$get({ param: { settingId } }))
-        main = data.voiceUrl
-        fallback = data.voiceFallbackUrl
-      } else {
-        const { data } = await request(client.api.provider.telnyx.webhook[':settingId'].$get({ param: { settingId } }))
-        main = data.webhook_url
-        fallback = data.webhook_failover_url
-      }
-      this.mainUrl = main ? toOrigin(main) : ''
-      if (fallback) this.fallbackUrl = toOrigin(fallback)
-    },
-    async saveFallbackUrl() {
-      const { valid, data } = await this.r$.$validate()
-      const settingId = this.profileStore.activeProfileId
-      if (!valid || !settingId) return
-
-      const submitUrl = toOrigin(data)
-      const param = { settingId }
-      if (this.provider === 'twilio') {
-        await request(client.api.provider.twilio.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
-      } else {
-        await request(client.api.provider.telnyx.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
-      }
-      notifySuccess(this.successMessage)
-      this.getCallSetting()
-    },
-  },
+const profileStore = useProfileStore()
+const mainUrl = ref('')
+const fallbackUrl = ref('')
+const { r$ } = useRegle(fallbackUrl, {
+  required: withMessage(required, () => props.requiredMessage), // default: This field is required
+  // keyed `validUrl`, not `url`, so it doesn't collide with Regle's built-in `url` rule name
+  validUrl: withMessage(httpUrl, () => props.invalidMessage), // default: The value is not a valid http URL address
 })
+
+async function getCallSetting() {
+  const settingId = profileStore.activeProfileId
+  if (!settingId) return
+
+  let main: string | null | undefined
+  let fallback: string | null | undefined
+  if (props.provider === 'twilio') {
+    const { data } = await request(client.api.provider.twilio.webhook[':settingId'].$get({ param: { settingId } }))
+    main = data.voiceUrl
+    fallback = data.voiceFallbackUrl
+  } else {
+    const { data } = await request(client.api.provider.telnyx.webhook[':settingId'].$get({ param: { settingId } }))
+    main = data.webhook_url
+    fallback = data.webhook_failover_url
+  }
+  mainUrl.value = main ? toOrigin(main) : ''
+  if (fallback) fallbackUrl.value = toOrigin(fallback)
+}
+
+async function saveFallbackUrl() {
+  const { valid, data } = await r$.$validate()
+  const settingId = profileStore.activeProfileId
+  if (!valid || !settingId) return
+
+  const submitUrl = toOrigin(data)
+  const param = { settingId }
+  if (props.provider === 'twilio') {
+    await request(client.api.provider.twilio.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
+  } else {
+    await request(client.api.provider.telnyx.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
+  }
+  notifySuccess(props.successMessage)
+  getCallSetting()
+}
+
+onMounted(getCallSetting)
+// Re-fetch when the selected profile changes while this panel stays mounted, so the URLs don't go stale.
+watch(() => profileStore.activeProfileId, getCallSetting)
 </script>
 
 <style scoped>

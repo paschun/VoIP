@@ -63,9 +63,10 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
-import { defineComponent, useTemplateRef } from 'vue'
+import { onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import type { BOffcanvas } from 'bootstrap-vue-next'
 import CallView from '@/components/call/CallView.vue'
 import ChatThread from '@/components/chat/ChatThread.vue'
@@ -79,53 +80,42 @@ import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
 
-export default defineComponent({
-  name: 'DashboardView',
-  components: {
-    Sidebar,
-    ThemeButton,
-    CallView,
-    ChatThread,
-    MessageComposer,
-  },
-  setup() {
-    const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>('mobileSidebar')
-    return {
-      userStore: useUserStore(),
-      conversationStore: useConversationStore(),
-      contactStore: useContactStore(),
-      callStore: useCallStore(),
-      mobileSidebar,
-    }
-  },
-  mounted() {
-    if (!this.userStore.isLoggedIn) {
-      // Bounce to login inside the current directory (the appdirectory param is inherited from the current route).
-      this.$router.push({ name: 'login' })
-      return
-    }
-    connectSocket()
-  },
-  unmounted() {
-    disconnectSocket()
-  },
-  watch: {
-    // A conversation was opened: drop the mobile sidebar drawer to reveal the chat pane.
-    'conversationStore.activeRemoteNumber'(number: string) {
-      if (number) this.mobileSidebar?.hide()
-    },
-  },
-  methods: {
-    /** A send may have created the first thread for a number; drop the mobile sidebar to reveal it. */
-    onMessageSent() {
-      this.mobileSidebar?.hide()
-    },
-    async deleteChat() {
-      if (!(await confirmDelete('Do you want to delete this chat?', 'chat not deleted'))) return
-      await this.conversationStore.deleteActiveConversation()
-    },
-  },
+defineOptions({ name: 'DashboardView' })
+
+const router = useRouter()
+const userStore = useUserStore()
+const conversationStore = useConversationStore()
+const contactStore = useContactStore()
+const callStore = useCallStore()
+const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>('mobileSidebar')
+
+/** A send may have created the first thread for a number; drop the mobile sidebar to reveal it. */
+function onMessageSent() {
+  mobileSidebar.value?.hide()
+}
+async function deleteChat() {
+  if (!(await confirmDelete('Do you want to delete this chat?', 'chat not deleted'))) return
+  await conversationStore.deleteActiveConversation()
+}
+
+onMounted(() => {
+  if (!userStore.isLoggedIn) {
+    // Bounce to login inside the current directory (the appdirectory param is inherited from the current route).
+    router.push({ name: 'login' })
+    return
+  }
+  connectSocket()
 })
+onUnmounted(() => {
+  disconnectSocket()
+})
+// A conversation was opened: drop the mobile sidebar drawer to reveal the chat pane.
+watch(
+  () => conversationStore.activeRemoteNumber,
+  (number: string) => {
+    if (number) mobileSidebar.value?.hide()
+  },
+)
 </script>
 
 <style scoped>

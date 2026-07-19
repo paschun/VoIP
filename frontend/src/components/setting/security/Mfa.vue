@@ -52,7 +52,7 @@
         <input
           type="form-control"
           maxlength="6"
-          v-model="verification_code"
+          v-model="verificationCode"
           placeholder="000000"
           title="6 Digit Code"
           class="totp"
@@ -64,82 +64,79 @@
     <hardware-key />
   </div>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue'
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import Swal from 'sweetalert2'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/core/notify.ts'
 import HardwareKey from './HardwareKey.vue'
-export default defineComponent({
-  name: 'MfaSetting',
-  components: { HardwareKey },
-  data() {
-    return {
-      totpEnabled: false,
-      realTotp: false, // reflects totp value on server
-      qr: '',
-      verification_code: '',
-      secret: '',
-      secretCopied: false,
+
+defineOptions({ name: 'MfaSetting' })
+
+const totpEnabled = ref(false)
+const realTotp = ref(false) // reflects totp value on server
+const qr = ref('')
+const verificationCode = ref('')
+const secret = ref('')
+const secretCopied = ref(false)
+
+async function getTotpStatus() {
+  const enabled = (await request(client.api.auth.me.$get())).data.totp
+  realTotp.value = enabled
+  totpEnabled.value = enabled
+}
+
+async function totpStatusChange() {
+  if (!totpEnabled.value) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Software token will be deleted. You will have to reconfigure it!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, remove it!',
+    })
+    if (!result.isConfirmed) {
+      totpEnabled.value = true
+      return
     }
-  },
-  mounted() {
-    this.getTotpStatus()
-  },
-  methods: {
-    async totpStatusChange() {
-      if (!this.totpEnabled) {
-        const result = await Swal.fire({
-          title: 'Are you sure?',
-          text: 'Software token will be deleted. You will have to reconfigure it!',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Yes, remove it!',
-        })
-        if (!result.isConfirmed) {
-          this.totpEnabled = true
-          return
-        }
-        this.qr = ''
-        await request(client.api.auth.totp.$delete())
-        this.getTotpStatus()
-        return
-      }
-      const res = await request(client.api.auth.totp.qr.$post())
-      this.qr = res.data.image
-      this.secret = res.data.secret
-      this.secretCopied = false
-    },
-    async verifyStatusCode() {
-      if (this.verification_code === '') {
-        notifyError('Please enter verification code')
-        return
-      }
-      // Pass the secret back: the server never persisted it at the QR step, so it stores it only once this code verifies.
-      // If verification fails this will get a http 400 response and throw
-      await request(client.api.auth.totp.$post({ json: { secret: this.secret, code: this.verification_code } }))
-      this.qr = ''
-      this.verification_code = ''
-      this.secret = ''
-      this.getTotpStatus()
-    },
-    copySecret() {
-      try {
-        navigator.clipboard.writeText(this.secret)
-        this.secretCopied = true
-      } catch (err) {
-        console.error('Failed to copy!', err)
-      }
-    },
-    async getTotpStatus() {
-      const enabled = (await request(client.api.auth.me.$get())).data.totp
-      this.realTotp = enabled
-      this.totpEnabled = enabled
-    },
-  },
-})
+    qr.value = ''
+    await request(client.api.auth.totp.$delete())
+    getTotpStatus()
+    return
+  }
+  const res = await request(client.api.auth.totp.qr.$post())
+  qr.value = res.data.image
+  secret.value = res.data.secret
+  secretCopied.value = false
+}
+
+async function verifyStatusCode() {
+  if (verificationCode.value === '') {
+    notifyError('Please enter verification code')
+    return
+  }
+  // Pass the secret back: the server never persisted it at the QR step, so it stores it only once this code verifies.
+  // If verification fails this will get a http 400 response and throw
+  await request(client.api.auth.totp.$post({ json: { secret: secret.value, code: verificationCode.value } }))
+  qr.value = ''
+  verificationCode.value = ''
+  secret.value = ''
+  getTotpStatus()
+}
+
+function copySecret() {
+  try {
+    navigator.clipboard.writeText(secret.value)
+    secretCopied.value = true
+  } catch (err) {
+    console.error('Failed to copy!', err)
+  }
+}
+
+onMounted(getTotpStatus)
 </script>
 
 <style scoped>

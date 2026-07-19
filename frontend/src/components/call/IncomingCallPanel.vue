@@ -23,15 +23,9 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /** Ringing screen: caller name/number with accept + reject, all straight off the call store. */
-import { defineComponent } from 'vue'
 import { useCallStore } from '@/stores/call.ts'
 
-export default defineComponent({
-  name: 'IncomingCallPanel',
-  setup() {
-    return { callStore: useCallStore() }
-  },
-})
+const callStore = useCallStore()
 </script>

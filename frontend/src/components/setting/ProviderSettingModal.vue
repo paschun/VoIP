@@ -1,7 +1,7 @@
 <template>
   <div>
     <loading-spinner :show="isSavingProviderSetting" />
-    <b-modal ref="modal" size="lg" title="Settings" hide-footer>
+    <b-modal v-model="visible" size="lg" title="Settings" hide-footer>
       <theme-button id-hide="false" />
       <form @submit.prevent="saveProviderSetting" class="ml-2 mr-2">
         <b-form-radio-group
@@ -146,15 +146,15 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /**
- * The telnyx/twilio provider settings modal, opened from Setting.vue's "Profile Settings" entry via `open()`.
+ * The telnyx/twilio provider settings modal, opened from SettingsPanel's "Profile Settings" entry via `open()`
+ * (exposed because opening has a precondition: it toasts and bails when there's no active profile).
  * Configure-only: it edits the active profile's provider config; profile create/select lives in ProfileDropdown.
  */
-import { defineComponent, ref, useTemplateRef } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
 import { required, literal, withMessage } from '@regle/rules'
-import type { BModal } from 'bootstrap-vue-next'
 import Swal from 'sweetalert2'
 import FieldErrors from '@/components/shared/FieldErrors.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
@@ -182,208 +182,194 @@ type TelnyxNumber = Extract<ProviderNumbers, { type: 'telnyx' }>['numbers'][numb
 /** A purchasable Twilio number from the provider-numbers lookup. */
 type TwilioNumber = Extract<ProviderNumbers, { type: 'twilio' }>['numbers'][number]
 
-export default defineComponent({
-  name: 'ProviderSettingModal',
-  components: { LoadingSpinner, ThemeButton, CustomAutocompleteSelect, FieldErrors },
-  setup() {
-    const form = ref<ProviderSettingForm>({
-      type: 'telnyx',
-      api_key: '',
-      number: '',
-      twilio_sid: '',
-      twilio_token: '',
-      twilio_number: '',
-    })
-    const { r$ } = useRegle(form, () => {
-      const provider = createVariant(form, 'type', [
-        {
-          type: { literal: literal('telnyx') },
-          api_key: { required: withMessage(required, 'API Key is required') },
-          number: { required: withMessage(required, 'Number is required') },
-        },
-        {
-          type: { literal: literal('twilio') },
-          twilio_sid: { required: withMessage(required, 'Twilio sid is required') },
-          twilio_token: { required: withMessage(required, 'Twilio token is required') },
-          twilio_number: { required: withMessage(required, 'Number is required') },
-        },
-      ])
-      return { ...provider.value }
-    })
-    const modal = useTemplateRef<InstanceType<typeof BModal>>('modal')
-    return { r$, form, profileStore: useProfileStore(), modal }
-  },
-  data(): {
-    isSavingProviderSetting: boolean
-    telnyxNumbers: TelnyxNumber[]
-    twilioNumbers: TwilioNumber[]
-    options: { text: string; value: ProviderSettingForm['type'] }[]
-  } {
-    return {
-      isSavingProviderSetting: false, // covers both legs: the number-lookup and the save itself
-      telnyxNumbers: [],
-      twilioNumbers: [],
-      options: [
-        { text: 'Telnyx', value: 'telnyx' },
-        { text: 'Twilio', value: 'twilio' },
-      ],
-    }
-  },
-  computed: {
-    /** The active profile has provider creds saved, so the delete-key icon applies. */
-    showDelete(): boolean {
-      const p = this.profileStore.activeProfile
-      if (!p) return false
-      return p.type === 'telnyx' ? !!p.api_key : !!p.twilio_sid
-    },
-  },
-  watch: {
-    // Selection changed: reseed the form for the new profile. Gating on the id (not activeProfile) keeps a same-id
-    // detail refresh from clobbering in-progress form edits. immediate so a profile persisted in localStorage seeds
-    // on mount -- its id doesn't "change".
-    'profileStore.activeProfileId': {
-      immediate: true,
-      handler() {
-        this.seedFormFromActiveProfile()
-      },
-    },
-  },
-  methods: {
-    open() {
-      if (!this.profileStore.hasActiveProfile) {
-        void notifyInfo('Create a profile first')
-        return
-      }
-      this.modal?.show()
-    },
-    /** Copy the active profile's saved settings into the form and load its provider's purchasable numbers. */
-    seedFormFromActiveProfile() {
-      const profile = this.profileStore.activeProfile
-      if (!profile) return
-      this.form = {
-        type: profile.type,
-        api_key: profile.api_key ?? '',
-        number: profile.number ?? '',
-        twilio_sid: profile.twilio_sid ?? '',
-        twilio_token: profile.twilio_token ?? '',
-        twilio_number: profile.number ?? '',
-      }
-      this.loadProviderNumbers(profile.type)
-    },
-    async deleteProfile() {
-      if (!(await confirmDelete('Do you want to delete this Profile?', 'Profile not deleted'))) return
-      // Deletes, clears the selection, and reloads the profile list.
-      await this.profileStore.deleteActiveProfile()
-      notifySuccess('Profile deleted successfully!')
-      this.r$.$reset({ toOriginalState: true }) // reset to empty
-      this.telnyxNumbers = []
-      this.twilioNumbers = []
-      this.modal?.hide()
-      // deleteActiveProfile already reloaded the list, so the next selection is available now.
-      const next = this.profileStore.profiles[0]
-      if (next) this.profileStore.setActiveProfile(next)
-    },
-    async deleteApiKey() {
-      if (!(await confirmDelete('Do you want to delete this setting?', 'setting not deleted'))) return
-      await this.profileStore.deleteProviderSetting()
-      notifySuccess('Key deleted successfully!')
-      // The modal stays open on the (still-existing) profile, now with blank provider fields.
-      this.form = { ...this.form, api_key: '', number: '', twilio_sid: '', twilio_token: '', twilio_number: '' }
-      this.telnyxNumbers = []
-      this.twilioNumbers = []
-    },
-    /**
-     * Fetch the provider's available numbers into the matching autocomplete list, using the creds in the form.
-     * The route requires non-empty creds, so skip the call (leaving the list empty) until they're filled in.
-     */
-    async loadProviderNumbers(type: 'telnyx' | 'twilio') {
-      const v = this.r$.$value
-      if (type === 'telnyx') {
-        this.telnyxNumbers = []
-        if (!v.api_key) return
-        const data = await getProviderNumbers({ type: 'telnyx', api_key: v.api_key })
-        if (data.type !== 'telnyx') throw new Error('backend returned wrong number type')
-        this.telnyxNumbers = data.numbers
-      } else {
-        this.twilioNumbers = []
-        if (!v.twilio_sid || !v.twilio_token) return
-        const data = await getProviderNumbers({ type: 'twilio', twilio_sid: v.twilio_sid, twilio_token: v.twilio_token })
-        if (data.type !== 'twilio') throw new Error('backend returned wrong number type')
-        this.twilioNumbers = data.numbers
-      }
-    },
-    async saveProviderSetting() {
-      // dont use validated `data`: createVariant types its provider fields as MaybeOutput<string>, not string.
-      const { valid } = await this.r$.$validate()
-      if (!valid) return
-      const activeProfile = this.profileStore.activeProfile
-      if (!activeProfile) return // open() gates on this; re-checked for type narrowing
-      // r$.$value is reactive and the awaits below give the user a window to edit the form, so grab a snapshot
-      const { type, api_key, number, twilio_sid, twilio_token, twilio_number } = this.r$.$value
-      const base = { setting: this.profileStore.activeProfileId, profile: activeProfile.profile ?? '', override: true }
-      const providerSettingPayload: ProviderSettingPayload =
-        type === 'telnyx'
-          ? { ...base, type, api_key, number, sid: this.telnyxNumbers.find((n) => n.phone_number === number)?.id ?? '' }
-          : {
-              ...base,
-              type,
-              twilio_sid,
-              twilio_token,
-              twilio_number,
-              sid: this.twilioNumbers.find((n) => n.phoneNumber === twilio_number)?.sid ?? '',
-            }
-      this.isSavingProviderSetting = true
-      let isCall = false
-      try {
-        // a configured call webhook means call routing already exists, so we prompt before overriding it.
-        if (providerSettingPayload.type === 'telnyx') {
-          const data = await lookupNumber({
-            type: 'telnyx',
-            api_key: providerSettingPayload.api_key,
-            number: providerSettingPayload.number,
-            sid: providerSettingPayload.sid,
-          })
-          isCall = !!data.connection_id
-        } else {
-          const data = await lookupNumber({
-            type: 'twilio',
-            twilio_sid: providerSettingPayload.twilio_sid,
-            twilio_token: providerSettingPayload.twilio_token,
-            twilio_number: providerSettingPayload.twilio_number,
-            sid: providerSettingPayload.sid,
-          })
-          isCall = !!data.voiceApplicationSid || !!data.voiceUrl
-        }
-      } finally {
-        this.isSavingProviderSetting = false
-      }
-      // Prompt outside the loader block (matching the old fire-and-forget swal that ran after `finally`).
-      if (isCall) {
-        const result = await Swal.fire({
-          icon: 'warning',
-          title: 'Call Setting',
-          text: 'The call setting is already available. Do you want to override the call setting?',
-          showDenyButton: true,
-          confirmButtonText: 'Yes, override it',
-          denyButtonText: `No, Keep old`,
-        })
-        if (!result.isConfirmed && !result.isDenied) return
-        providerSettingPayload.override = result.isConfirmed
-      }
-      await this.createProviderSetting(providerSettingPayload)
-    },
-    async createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
-      this.isSavingProviderSetting = true
-      try {
-        await this.profileStore.saveProviderSetting(providerSettingPayload)
-        this.modal?.hide()
-        this.r$.$reset() // just-saved values are the new baseline
-      } finally {
-        this.isSavingProviderSetting = false
-      }
-    },
-  },
+const options: { text: string; value: ProviderSettingForm['type'] }[] = [
+  { text: 'Telnyx', value: 'telnyx' },
+  { text: 'Twilio', value: 'twilio' },
+]
+
+const profileStore = useProfileStore()
+const visible = ref(false)
+const form = ref<ProviderSettingForm>({
+  type: 'telnyx',
+  api_key: '',
+  number: '',
+  twilio_sid: '',
+  twilio_token: '',
+  twilio_number: '',
 })
+const { r$ } = useRegle(form, () => {
+  const provider = createVariant(form, 'type', [
+    {
+      type: { literal: literal('telnyx') },
+      api_key: { required: withMessage(required, 'API Key is required') },
+      number: { required: withMessage(required, 'Number is required') },
+    },
+    {
+      type: { literal: literal('twilio') },
+      twilio_sid: { required: withMessage(required, 'Twilio sid is required') },
+      twilio_token: { required: withMessage(required, 'Twilio token is required') },
+      twilio_number: { required: withMessage(required, 'Number is required') },
+    },
+  ])
+  return { ...provider.value }
+})
+
+const isSavingProviderSetting = ref(false) // covers both legs: the number-lookup and the save itself
+const telnyxNumbers = ref<TelnyxNumber[]>([])
+const twilioNumbers = ref<TwilioNumber[]>([])
+
+/** The active profile has provider creds saved, so the delete-key icon applies. */
+const showDelete = computed(() => {
+  const p = profileStore.activeProfile
+  if (!p) return false
+  return p.type === 'telnyx' ? !!p.api_key : !!p.twilio_sid
+})
+
+function open() {
+  if (!profileStore.hasActiveProfile) {
+    void notifyInfo('Create a profile first')
+    return
+  }
+  visible.value = true
+}
+defineExpose({ open })
+
+/** Copy the active profile's saved settings into the form and load its provider's purchasable numbers. */
+function seedFormFromActiveProfile() {
+  const profile = profileStore.activeProfile
+  if (!profile) return
+  form.value = {
+    type: profile.type,
+    api_key: profile.api_key ?? '',
+    number: profile.number ?? '',
+    twilio_sid: profile.twilio_sid ?? '',
+    twilio_token: profile.twilio_token ?? '',
+    twilio_number: profile.number ?? '',
+  }
+  loadProviderNumbers(profile.type)
+}
+
+async function deleteProfile() {
+  if (!(await confirmDelete('Do you want to delete this Profile?', 'Profile not deleted'))) return
+  // Deletes, clears the selection, and reloads the profile list.
+  await profileStore.deleteActiveProfile()
+  notifySuccess('Profile deleted successfully!')
+  r$.$reset({ toOriginalState: true }) // reset to empty
+  telnyxNumbers.value = []
+  twilioNumbers.value = []
+  visible.value = false
+  // deleteActiveProfile already reloaded the list, so the next selection is available now.
+  const next = profileStore.profiles[0]
+  if (next) profileStore.setActiveProfile(next)
+}
+
+async function deleteApiKey() {
+  if (!(await confirmDelete('Do you want to delete this setting?', 'setting not deleted'))) return
+  await profileStore.deleteProviderSetting()
+  notifySuccess('Key deleted successfully!')
+  // The modal stays open on the (still-existing) profile, now with blank provider fields.
+  form.value = { ...form.value, api_key: '', number: '', twilio_sid: '', twilio_token: '', twilio_number: '' }
+  telnyxNumbers.value = []
+  twilioNumbers.value = []
+}
+
+/**
+ * Fetch the provider's available numbers into the matching autocomplete list, using the creds in the form.
+ * The route requires non-empty creds, so skip the call (leaving the list empty) until they're filled in.
+ */
+async function loadProviderNumbers(type: 'telnyx' | 'twilio') {
+  const v = r$.$value
+  if (type === 'telnyx') {
+    telnyxNumbers.value = []
+    if (!v.api_key) return
+    const data = await getProviderNumbers({ type: 'telnyx', api_key: v.api_key })
+    if (data.type !== 'telnyx') throw new Error('backend returned wrong number type')
+    telnyxNumbers.value = data.numbers
+  } else {
+    twilioNumbers.value = []
+    if (!v.twilio_sid || !v.twilio_token) return
+    const data = await getProviderNumbers({ type: 'twilio', twilio_sid: v.twilio_sid, twilio_token: v.twilio_token })
+    if (data.type !== 'twilio') throw new Error('backend returned wrong number type')
+    twilioNumbers.value = data.numbers
+  }
+}
+
+async function saveProviderSetting() {
+  // dont use validated `data`: createVariant types its provider fields as MaybeOutput<string>, not string.
+  const { valid } = await r$.$validate()
+  if (!valid) return
+  const activeProfile = profileStore.activeProfile
+  if (!activeProfile) return // open() gates on this; re-checked for type narrowing
+  // r$.$value is reactive and the awaits below give the user a window to edit the form, so grab a snapshot
+  const { type, api_key, number, twilio_sid, twilio_token, twilio_number } = r$.$value
+  const base = { setting: profileStore.activeProfileId, profile: activeProfile.profile ?? '', override: true }
+  const providerSettingPayload: ProviderSettingPayload =
+    type === 'telnyx'
+      ? { ...base, type, api_key, number, sid: telnyxNumbers.value.find((n) => n.phone_number === number)?.id ?? '' }
+      : {
+          ...base,
+          type,
+          twilio_sid,
+          twilio_token,
+          twilio_number,
+          sid: twilioNumbers.value.find((n) => n.phoneNumber === twilio_number)?.sid ?? '',
+        }
+  isSavingProviderSetting.value = true
+  let isCall = false
+  try {
+    // a configured call webhook means call routing already exists, so we prompt before overriding it.
+    if (providerSettingPayload.type === 'telnyx') {
+      const data = await lookupNumber({
+        type: 'telnyx',
+        api_key: providerSettingPayload.api_key,
+        number: providerSettingPayload.number,
+        sid: providerSettingPayload.sid,
+      })
+      isCall = !!data.connection_id
+    } else {
+      const data = await lookupNumber({
+        type: 'twilio',
+        twilio_sid: providerSettingPayload.twilio_sid,
+        twilio_token: providerSettingPayload.twilio_token,
+        twilio_number: providerSettingPayload.twilio_number,
+        sid: providerSettingPayload.sid,
+      })
+      isCall = !!data.voiceApplicationSid || !!data.voiceUrl
+    }
+  } finally {
+    isSavingProviderSetting.value = false
+  }
+  // Prompt outside the loader block (matching the old fire-and-forget swal that ran after `finally`).
+  if (isCall) {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Call Setting',
+      text: 'The call setting is already available. Do you want to override the call setting?',
+      showDenyButton: true,
+      confirmButtonText: 'Yes, override it',
+      denyButtonText: `No, Keep old`,
+    })
+    if (!result.isConfirmed && !result.isDenied) return
+    providerSettingPayload.override = result.isConfirmed
+  }
+  await createProviderSetting(providerSettingPayload)
+}
+
+async function createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
+  isSavingProviderSetting.value = true
+  try {
+    await profileStore.saveProviderSetting(providerSettingPayload)
+    visible.value = false
+    r$.$reset() // just-saved values are the new baseline
+  } finally {
+    isSavingProviderSetting.value = false
+  }
+}
+
+// Selection changed: reseed the form for the new profile. Gating on the id (not activeProfile) keeps a same-id
+// detail refresh from clobbering in-progress form edits. immediate so a profile persisted in localStorage seeds
+// on mount -- its id doesn't "change".
+watch(() => profileStore.activeProfileId, seedFormFromActiveProfile, { immediate: true })
 </script>
 
 <style scoped>

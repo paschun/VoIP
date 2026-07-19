@@ -10,19 +10,12 @@
   </Teleport>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-
+<script setup lang="ts">
 // Translucent full-viewport overlay with a centered spinner, toggled via `show`.
 // Always teleports to `body` so it escapes any transformed ancestor, or getting clipped off with `overflow`
 // e.g. a floating `b-dropdown` menu, where floating-ui's has `transform`
 // A transformed ancestor becomes the containing block for position: fixed
-export default defineComponent({
-  name: 'LoadingSpinner',
-  props: {
-    show: { type: Boolean, default: false },
-  },
-})
+withDefaults(defineProps<{ show?: boolean }>(), { show: false })
 </script>
 
 <style scoped>

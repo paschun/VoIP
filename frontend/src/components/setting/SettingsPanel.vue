@@ -33,7 +33,7 @@
         <div class="m-2">
           <div class="form-group">
             <label>Password</label>
-            <input type="password" class="form-control" v-model="check_password" placeholder="Enter Password" @keyup.enter="checkPassword()" />
+            <input type="password" class="form-control" v-model="passwordInput" placeholder="Enter Password" @keyup.enter="checkPassword()" />
           </div>
           <div class="text-center">
             <button class="btn btn-success my-2 px-4" @click="checkPassword()">Verify</button>
@@ -44,8 +44,9 @@
     <provider-setting-modal ref="providerSettingModal" />
   </div>
 </template>
-<script lang="ts">
-import { defineComponent, useTemplateRef } from 'vue'
+
+<script setup lang="ts">
+import { ref, useTemplateRef } from 'vue'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
@@ -55,39 +56,29 @@ import ProviderSettingModal from './ProviderSettingModal.vue'
 import Mfa from './security/Mfa.vue'
 import SettingsSection from './SettingsSection.vue'
 
-export default defineComponent({
-  name: 'SettingsPanel',
-  components: { EmailSetting, AccountSetting, Mfa, SettingsSection, ProviderSettingModal },
-  setup() {
-    const providerSettingModal = useTemplateRef<InstanceType<typeof ProviderSettingModal>>('providerSettingModal')
-    return { meta: useServerMetaStore(), providerSettingModal }
-  },
-  data() {
-    return {
-      activeMenu: 'setting',
-      checkPasswordMenu: '',
-      check_password: '',
-    }
-  },
-  methods: {
-    enableMenu(menu: string) {
-      this.activeMenu = menu
-    },
-    passwordEnable(menu: string) {
-      this.checkPasswordMenu = menu
-      this.enableMenu('password')
-    },
-    async checkPassword() {
-      if (this.check_password === '') {
-        notifyError('please enter password')
-        return
-      }
-      await request(client.api.auth.password.verify.$post({ json: { password: this.check_password } }))
-      this.check_password = ''
-      this.enableMenu(this.checkPasswordMenu)
-    },
-  },
-})
+const meta = useServerMetaStore()
+const providerSettingModal = useTemplateRef<InstanceType<typeof ProviderSettingModal>>('providerSettingModal')
+
+const activeMenu = ref('setting')
+const checkPasswordMenu = ref('')
+const passwordInput = ref('')
+
+function enableMenu(menu: string) {
+  activeMenu.value = menu
+}
+function passwordEnable(menu: string) {
+  checkPasswordMenu.value = menu
+  enableMenu('password')
+}
+async function checkPassword() {
+  if (passwordInput.value === '') {
+    notifyError('please enter password')
+    return
+  }
+  await request(client.api.auth.password.verify.$post({ json: { password: passwordInput.value } }))
+  passwordInput.value = ''
+  enableMenu(checkPasswordMenu.value)
+}
 </script>
 
 <!-- BOffcanvas is teleported, so these rules target its rendered internals globally rather than scoped. -->

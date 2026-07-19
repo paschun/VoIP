@@ -15,17 +15,10 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /** In-call screen: remote name/number, running duration, hangup, all straight off the call store. */
-import { defineComponent } from 'vue'
 import { formatDuration } from '@/helper.ts'
 import { useCallStore } from '@/stores/call.ts'
 
-export default defineComponent({
-  name: 'ActiveCallPanel',
-  setup() {
-    return { callStore: useCallStore() }
-  },
-  methods: { formatDuration },
-})
+const callStore = useCallStore()
 </script>

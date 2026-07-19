@@ -36,12 +36,14 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /**
  * Full-screen call modal shell: the dialer (idle), IncomingCallPanel, or ActiveCallPanel, switched on the call
  * store's state. All SDK/provider logic lives in the store; the only local state is the number being typed.
+ * Kept template-ref imperative (not v-model): the modal is also opened by id via `v-b-modal.call-modal` in the
+ * sidebar, so BVN's id controller owns visibility and a competing v-model would fight it.
  */
-import { defineComponent, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import type { BModal } from 'bootstrap-vue-next'
 import ContactPicker from '@/components/shared/ContactPicker.vue'
 import ActiveCallPanel from './ActiveCallPanel.vue'
@@ -49,41 +51,35 @@ import DialerPad from './DialerPad.vue'
 import IncomingCallPanel from './IncomingCallPanel.vue'
 import { type CallState, type DialKey, useCallStore } from '@/stores/call.ts'
 
-export default defineComponent({
-  components: { ActiveCallPanel, ContactPicker, DialerPad, IncomingCallPanel },
-  setup() {
-    const callModal = useTemplateRef<InstanceType<typeof BModal>>('callModal')
-    return { callStore: useCallStore(), callModal }
-  },
-  data(): { dialInput: string } {
-    return { dialInput: '' }
-  },
-  mounted() {
-    void this.callStore.init()
-  },
-  beforeUnmount() {
-    this.callStore.destroy()
-  },
-  watch: {
-    // Pops the modal for incoming calls and store-driven dials (Dashboard's chat-header call button).
-    'callStore.state'(state: CallState) {
-      if (state !== 'idle') this.callModal?.show()
-    },
-  },
-  methods: {
-    setDialInput(number: string) {
-      this.dialInput = number
-    },
-    /** Keypad press: append while dialing, DTMF while on a call. */
-    onKey(key: DialKey) {
-      if (this.callStore.state === 'idle') this.dialInput += key
-      else this.callStore.sendDigit(key)
-    },
-    removeDigit() {
-      this.dialInput = this.dialInput.slice(0, -1)
-    },
-  },
+const callStore = useCallStore()
+const callModal = useTemplateRef<InstanceType<typeof BModal>>('callModal')
+const dialInput = ref('')
+
+function setDialInput(number: string) {
+  dialInput.value = number
+}
+/** Keypad press: append while dialing, DTMF while on a call. */
+function onKey(key: DialKey) {
+  if (callStore.state === 'idle') dialInput.value += key
+  else callStore.sendDigit(key)
+}
+function removeDigit() {
+  dialInput.value = dialInput.value.slice(0, -1)
+}
+
+onMounted(() => {
+  void callStore.init()
 })
+onBeforeUnmount(() => {
+  callStore.destroy()
+})
+// Pops the modal for incoming calls and store-driven dials (Dashboard's chat-header call button).
+watch(
+  () => callStore.state,
+  (state: CallState) => {
+    if (state !== 'idle') callModal.value?.show()
+  },
+)
 </script>
 
 <style scoped>

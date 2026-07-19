@@ -52,44 +52,34 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /** The open conversation's thread: SMS/MMS/call bubbles plus the image lightbox. Reads the conversation store and scrolls itself as messages arrive. */
-import { defineComponent, useTemplateRef } from 'vue'
+import { nextTick, ref, useTemplateRef, watch } from 'vue'
 import { formatDuration, formatTimestamp } from '@/helper.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 
-export default defineComponent({
-  name: 'ChatThread',
-  setup() {
-    const chatContainer = useTemplateRef<HTMLDivElement>('chatContainer')
-    return { conversationStore: useConversationStore(), chatContainer }
+const conversationStore = useConversationStore()
+const chatContainer = useTemplateRef<HTMLDivElement>('chatContainer')
+const zoomImage = ref('')
+
+function showImage(image: string) {
+  zoomImage.value = image
+}
+function hideImage() {
+  zoomImage.value = ''
+}
+
+// Scroll only after Vue has flushed the new messages into the DOM; before nextTick the thread isn't
+// rendered yet, so the container's scrollHeight is stale and we'd land mid-thread.
+watch(
+  () => conversationStore.messages,
+  async () => {
+    await nextTick()
+    const scroll = chatContainer.value
+    if (!scroll) return
+    scroll.scrollTop = scroll.scrollHeight
   },
-  data(): { zoomImage: string } {
-    return { zoomImage: '' }
-  },
-  watch: {
-    // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the thread isn't
-    // rendered yet, so the container's scrollHeight is stale and we'd land mid-thread.
-    'conversationStore.messages': {
-      async handler() {
-        await this.$nextTick()
-        const scroll = this.chatContainer
-        if (!scroll) return
-        scroll.scrollTop = scroll.scrollHeight
-      },
-    },
-  },
-  methods: {
-    formatTimestamp,
-    formatDuration,
-    showImage(image: string) {
-      this.zoomImage = image
-    },
-    hideImage() {
-      this.zoomImage = ''
-    },
-  },
-})
+)
 </script>
 
 <style scoped>

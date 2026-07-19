@@ -19,116 +19,85 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, type PropType } from 'vue'
-export default defineComponent({
-  props: {
-    options: {
-      type: Array as PropType<any[]>,
-      required: true,
-    },
-    value: {
-      // Optional for type-checking: vue-tsc models `v-model` as `modelValue` (Vue 3
-      // semantics) even at target 2.7, so a required `value` reads as "missing".
-      // The Vue 2 compiler still wires v-model to `value`/`input` at runtime.
-      // In Vue 3 migration, set this to required: true if possible
-      required: false,
-    },
-    labelProp: {
-      type: String,
-      default: 'label',
-    },
-    valueProp: {
-      type: String,
-      default: 'value',
-    },
-  },
-  data() {
-    return {
-      searchTerm: '',
-      filteredOptions: [] as any[],
-      showDropdown: false,
-      highlightedIndex: -1,
-    }
-  },
-  computed: {
-    selectedOption() {
-      return this.options.find((option) => option[this.valueProp] === this.value) ?? {}
-    },
-    selectedValue: {
-      get() {
-        return this.value
-      },
-      set(newValue: any) {
-        this.$emit('input', newValue)
-      },
-    },
-  },
-  methods: {
-    filterOptions() {
-      this.showDropdown = true
-      this.filteredOptions = this.options.filter((option) => option[this.labelProp].toLowerCase().includes(this.searchTerm.toLowerCase()))
-    },
-    showAllOptions() {
-      this.showDropdown = true
-      this.filteredOptions = this.options
-    },
-    hideOptions() {
-      setTimeout(() => {
-        this.showDropdown = false
-      }, 2000)
-    },
-    onSelectOption() {
-      this.searchTerm = ''
-      this.filterOptions()
-    },
-    selectOption(option: any) {
-      this.hideOptions()
+<script setup lang="ts">
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
-      this.searchTerm = option[this.labelProp]
-      this.selectedValue = option[this.labelProp]
-      // this.$emit("onSelectOption", option);
-    },
-    toggleDropdown() {
-      this.showDropdown = !this.showDropdown
-      if (this.showDropdown) {
-        this.$nextTick(() => (this.$refs.autocompleteInput as HTMLInputElement).focus())
-      }
-    },
-    handleKeyDown(event: KeyboardEvent) {
-      switch (event.key) {
-        case 'ArrowDown':
-          event.preventDefault()
-          this.highlightNextOption()
-          break
-        case 'ArrowUp':
-          event.preventDefault()
-          this.highlightPreviousOption()
-          break
-        case 'Enter':
-          event.preventDefault()
-          this.selectHighlightedOption()
-          break
-      }
-    },
-    highlightNextOption() {
-      if (this.highlightedIndex < this.filteredOptions.length - 1) {
-        this.highlightedIndex++
-      }
-    },
-    highlightPreviousOption() {
-      if (this.highlightedIndex > 0) {
-        this.highlightedIndex--
-      }
-    },
-    selectHighlightedOption() {
-      if (this.highlightedIndex >= 0 && this.highlightedIndex < this.filteredOptions.length) {
-        const option = this.filteredOptions[this.highlightedIndex]
-        this.selectOption(option)
-      }
-    },
-  },
+const props = withDefaults(
+  defineProps<{
+    options: any[]
+    // v-model here binds `value`/`input` (Vue 2 semantics), not `modelValue`; kept intentionally pending migration.
+    value?: any
+    labelProp?: string
+    valueProp?: string
+  }>(),
+  { labelProp: 'label', valueProp: 'value' },
+)
+const emit = defineEmits<{ input: [value: any] }>()
+
+const autocompleteInput = useTemplateRef<HTMLInputElement>('autocompleteInput')
+const searchTerm = ref('')
+const filteredOptions = ref<any[]>([])
+const showDropdown = ref(false)
+const highlightedIndex = ref(-1)
+
+const selectedOption = computed(() => props.options.find((option) => option[props.valueProp] === props.value) ?? {})
+const selectedValue = computed({
+  get: () => props.value,
+  set: (newValue: any) => emit('input', newValue),
 })
+
+function filterOptions() {
+  showDropdown.value = true
+  filteredOptions.value = props.options.filter((option) => option[props.labelProp].toLowerCase().includes(searchTerm.value.toLowerCase()))
+}
+function showAllOptions() {
+  showDropdown.value = true
+  filteredOptions.value = props.options
+}
+function hideOptions() {
+  setTimeout(() => {
+    showDropdown.value = false
+  }, 2000)
+}
+function selectOption(option: any) {
+  hideOptions()
+  searchTerm.value = option[props.labelProp]
+  selectedValue.value = option[props.labelProp]
+}
+function toggleDropdown() {
+  showDropdown.value = !showDropdown.value
+  if (showDropdown.value) {
+    void nextTick(() => autocompleteInput.value?.focus())
+  }
+}
+function highlightNextOption() {
+  if (highlightedIndex.value < filteredOptions.value.length - 1) highlightedIndex.value++
+}
+function highlightPreviousOption() {
+  if (highlightedIndex.value > 0) highlightedIndex.value--
+}
+function selectHighlightedOption() {
+  if (highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length) {
+    const option = filteredOptions.value[highlightedIndex.value]
+    selectOption(option)
+  }
+}
+function handleKeyDown(event: KeyboardEvent) {
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault()
+      highlightNextOption()
+      break
+    case 'ArrowUp':
+      event.preventDefault()
+      highlightPreviousOption()
+      break
+    case 'Enter':
+      event.preventDefault()
+      selectHighlightedOption()
+      break
+  }
+}
 </script>
 
 <style scoped>

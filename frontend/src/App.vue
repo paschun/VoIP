@@ -7,14 +7,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
-export default defineComponent({
-  name: 'App',
-  setup() {
-    return { meta: useServerMetaStore() }
-  },
-})
+const meta = useServerMetaStore()
 </script>

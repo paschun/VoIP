@@ -14,38 +14,32 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, minLength, lowercase } from '@regle/rules'
 import { DetailedError } from 'hono/client'
 import { notifySuccess } from '@/core/notify.ts'
 import { useUserStore } from '@/stores/user.ts'
 
-export default defineComponent({
-  setup() {
-    const userStore = useUserStore()
-    // A standalone ref is the whole single-field form; the username is snapshotted from the store (one-time copy, not a
-    // live binding).
-    const name = ref(userStore.userData?.name ?? '')
-    const { r$ } = useRegle(name, { required, minLength: minLength(2), lowercase })
-    return { r$, userStore }
-  },
-  methods: {
-    async changeUsername() {
-      const { valid, data } = await this.r$.$validate()
-      if (!valid) return
-      try {
-        await this.userStore.changeUsername(data)
-      } catch (err) {
-        if (err instanceof DetailedError) {
-          this.r$.$setExternalErrors([err.detail?.data?.message])
-        }
-        throw err // skips logic below
-      }
-      this.r$.$reset({ toState: data })
-      notifySuccess('Username updated successfully')
-    },
-  },
-})
+const userStore = useUserStore()
+// A standalone ref is the whole single-field form; the username is snapshotted from the store (one-time copy, not a
+// live binding).
+const name = ref(userStore.userData?.name ?? '')
+const { r$ } = useRegle(name, { required, minLength: minLength(2), lowercase })
+
+async function changeUsername() {
+  const { valid, data } = await r$.$validate()
+  if (!valid) return
+  try {
+    await userStore.changeUsername(data)
+  } catch (err) {
+    if (err instanceof DetailedError) {
+      r$.$setExternalErrors([err.detail?.data?.message])
+    }
+    throw err // skips logic below
+  }
+  r$.$reset({ toState: data })
+  notifySuccess('Username updated successfully')
+}
 </script>

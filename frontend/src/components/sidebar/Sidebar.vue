@@ -15,7 +15,7 @@
               <i-bi-telephone aria-hidden="true" class="m-2" title="Call" v-b-modal.call-modal style="cursor: pointer" />
             </div>
             <div class="bd-highlight">
-              <i-bi-pencil-square @click="composeModal?.open()" aria-hidden="true" class="m-2" title="Compose" style="cursor: pointer" />
+              <i-bi-pencil-square @click="composeOpen = true" aria-hidden="true" class="m-2" title="Compose" style="cursor: pointer" />
             </div>
           </div>
         </div>
@@ -25,14 +25,14 @@
     <conversation-list />
     <settings-panel></settings-panel>
     <contact-list></contact-list>
-    <compose-message-modal ref="composeModal" @sent="$emit('messageSent')" />
+    <compose-message-modal v-model="composeOpen" @sent="emit('messageSent')" />
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /** The sidebar column: header icon row (settings, contacts, call, compose), the profile dropdown, the inbox list, and
  * the settings/contacts offcanvas panels the icons toggle. */
-import { defineComponent, useTemplateRef } from 'vue'
+import { onMounted, ref } from 'vue'
 import ComposeMessageModal from '@/components/chat/ComposeMessageModal.vue'
 import ContactList from '@/components/contacts/ContactList.vue'
 import SettingsPanel from '@/components/setting/SettingsPanel.vue'
@@ -40,22 +40,13 @@ import { useContactStore } from '@/stores/contact.ts'
 import ConversationList from './ConversationList.vue'
 import ProfileDropdown from './ProfileDropdown.vue'
 
-export default defineComponent({
-  name: 'InboxSidebar',
-  emits: ['messageSent'],
-  components: {
-    ContactList,
-    SettingsPanel,
-    ComposeMessageModal,
-    ConversationList,
-    ProfileDropdown,
-  },
-  setup() {
-    const composeModal = useTemplateRef<InstanceType<typeof ComposeMessageModal>>('composeModal')
-    return { contactStore: useContactStore(), composeModal }
-  },
-  mounted() {
-    void this.contactStore.loadContacts()
-  },
+defineOptions({ name: 'InboxSidebar' })
+
+const emit = defineEmits<{ messageSent: [] }>()
+const contactStore = useContactStore()
+const composeOpen = ref(false)
+
+onMounted(() => {
+  void contactStore.loadContacts()
 })
 </script>

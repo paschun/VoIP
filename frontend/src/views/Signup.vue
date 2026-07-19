@@ -68,61 +68,58 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, reactive } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, sameAs, lowercase, withMessage } from '@regle/rules'
 import { DetailedError } from 'hono/client'
 import { client, request } from '@/core/rpc.client.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
-export default defineComponent({
-  name: 'SignupView',
-  setup() {
-    const form = reactive({ name: '', password: '', c_password: '' })
-    const { r$ } = useRegle(form, {
-      name: {
-        required: withMessage(required, 'Username is required'), // default: This field is required
-        minLength: minLength(2),
-        lowercase,
-      },
-      password: {
-        required: withMessage(required, 'Password is required'),
-        minLength: minLength(6),
-      },
-      // c_password is frontend-validation only. Field is not passed to backend.
-      c_password: {
-        required: required,
-        sameAs: sameAs(() => form.password),
-      },
-    })
-    return { r$, meta: useServerMetaStore() }
-  },
-  async mounted() {
-    await this.redirectIfSignupDisabled()
-  },
-  methods: {
-    async handleSubmit() {
-      const { valid, data } = await this.r$.$validate()
-      if (!valid) return
-      try {
-        await request(client.api.auth.register.$post({ json: { name: data.name, password: data.password } }))
-      } catch (err) {
-        // Duplicate username comes back as a 409
-        if (err instanceof DetailedError) {
-          this.r$.$setExternalErrors({ name: [err.detail?.data?.message] })
-        }
-        throw err // skips logic below
-      }
-      // pure-JS navigation, not a reload of the page; named locations inherit the current appdirectory param
-      this.$router.push({ name: 'login' })
-    },
+defineOptions({ name: 'SignupView' })
 
-    async redirectIfSignupDisabled() {
-      // todo: not the best security mechanism. should be blocked on the router level ideally
-      await this.meta.signupReady
-      if (!this.meta.signupEnabled) await this.$router.push({ name: 'login' })
-    },
+const router = useRouter()
+const meta = useServerMetaStore()
+const form = reactive({ name: '', password: '', c_password: '' })
+const { r$ } = useRegle(form, {
+  name: {
+    required: withMessage(required, 'Username is required'), // default: This field is required
+    minLength: minLength(2),
+    lowercase,
+  },
+  password: {
+    required: withMessage(required, 'Password is required'),
+    minLength: minLength(6),
+  },
+  // c_password is frontend-validation only. Field is not passed to backend.
+  c_password: {
+    required: required,
+    sameAs: sameAs(() => form.password),
   },
 })
+
+async function handleSubmit() {
+  const { valid, data } = await r$.$validate()
+  if (!valid) return
+  try {
+    await request(client.api.auth.register.$post({ json: { name: data.name, password: data.password } }))
+  } catch (err) {
+    // Duplicate username comes back as a 409
+    if (err instanceof DetailedError) {
+      r$.$setExternalErrors({ name: [err.detail?.data?.message] })
+    }
+    throw err // skips logic below
+  }
+  // pure-JS navigation, not a reload of the page; named locations inherit the current appdirectory param
+  router.push({ name: 'login' })
+}
+
+async function redirectIfSignupDisabled() {
+  // todo: not the best security mechanism. should be blocked on the router level ideally
+  await meta.signupReady
+  if (!meta.signupEnabled) await router.push({ name: 'login' })
+}
+
+onMounted(redirectIfSignupDisabled)
 </script>

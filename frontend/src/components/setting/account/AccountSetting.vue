@@ -23,8 +23,9 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import { client, request } from '@/core/rpc.client.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -33,56 +34,48 @@ import SettingsSection from '../SettingsSection.vue'
 import ChangePassword from './ChangePassword.vue'
 import ChangeUsername from './ChangeUsername.vue'
 
-export default defineComponent({
-  components: { ChangeUsername, ChangePassword, FallbackSetting, SettingsSection },
-  setup() {
-    return { userStore: useUserStore() }
-  },
-  data() {
-    return {
-      activeMenu: 'setting',
-    }
-  },
-  methods: {
-    enableMenu(menu: string) {
-      this.activeMenu = menu
+const userStore = useUserStore()
+const router = useRouter()
+const activeMenu = ref('setting')
+
+function enableMenu(menu: string) {
+  activeMenu.value = menu
+}
+
+async function deleteAccount() {
+  const result = await Swal.fire({
+    icon: 'warning',
+    text: 'Please enter your account password to delete account. This process is irreversible',
+    title: 'Delete Account',
+    input: 'password',
+    inputAttributes: {
+      autocapitalize: 'off',
     },
-    async deleteAccount() {
-      const result = await Swal.fire({
-        icon: 'warning',
-        text: 'Please enter your account password to delete account. This process is irreversible',
-        title: 'Delete Account',
-        input: 'password',
-        inputAttributes: {
-          autocapitalize: 'off',
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Submit',
-        showLoaderOnConfirm: true,
-        preConfirm: async (login) => {
-          try {
-            await request(client.api.auth.account.$delete({ json: { password: login } }))
-            return true
-          } catch {
-            return false
-          }
-        },
-        allowOutsideClick: () => !Swal.isLoading(),
-      })
-      // request() already toasted on failure; preConfirm returns false then, so gate on the value (a failed delete must
-      // not fall through to the success swal + logout).
-      if (!result.value) return
-      await Swal.fire({
-        icon: 'success',
-        title: 'Account Delete',
-        text: `Your account deleted successfully`,
-        showDenyButton: false,
-        showCancelButton: false,
-        confirmButtonText: 'Ok',
-      })
-      this.userStore.logout()
-      this.$router.push({ name: 'login' })
+    showCancelButton: true,
+    confirmButtonText: 'Submit',
+    showLoaderOnConfirm: true,
+    preConfirm: async (login) => {
+      try {
+        await request(client.api.auth.account.$delete({ json: { password: login } }))
+        return true
+      } catch {
+        return false
+      }
     },
-  },
-})
+    allowOutsideClick: () => !Swal.isLoading(),
+  })
+  // request() already toasted on failure; preConfirm returns false then, so gate on the value (a failed delete must
+  // not fall through to the success swal + logout).
+  if (!result.value) return
+  await Swal.fire({
+    icon: 'success',
+    title: 'Account Delete',
+    text: `Your account deleted successfully`,
+    showDenyButton: false,
+    showCancelButton: false,
+    confirmButtonText: 'Ok',
+  })
+  userStore.logout()
+  router.push({ name: 'login' })
+}
 </script>

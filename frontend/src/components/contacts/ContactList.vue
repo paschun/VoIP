@@ -62,45 +62,34 @@
     <ContactFormModal />
   </div>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
 import ContactFormModal from './ContactFormModal.vue'
 import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'
 import { confirmDelete } from '@/helper.ts'
 import { notifySuccess } from '@/core/notify.ts'
-import { useContactStore, type Contact } from '@/stores/contact.ts'
+import { useContactStore } from '@/stores/contact.ts'
 
-export default defineComponent({
-  components: { ContactFormModal },
-  setup() {
-    return { contactStore: useContactStore() }
-  },
-  data() {
-    return { query: '' }
-  },
-  computed: {
-    /** Contact rows filtered by the search box. */
-    searchContacts(): Contact[] {
-      const search = new RegExp(this.query, 'i')
-      return this.contactStore.contacts.filter((item) => search.test(item.first_name) || search.test(item.last_name) || search.test(item.number))
-    },
-  },
-  methods: {
-    exportContact() {
-      downloadContactsCsv(this.contactStore.contacts, 'contacts')
-    },
-    async deleteContact(id: string) {
-      if (!(await confirmDelete('Do you want to delete this contact?', 'contact not deleted'))) return
+const contactStore = useContactStore()
+const query = ref('')
 
-      await this.contactStore.deleteContact(id)
-      notifySuccess('Contact Deleted successfully!')
-    },
-    async deleteAll() {
-      if (!(await confirmDelete('Are you sure you want to delete ALL contacts?', 'contacts not deleted'))) return
-
-      await this.contactStore.deleteAllContacts()
-      notifySuccess('All contacts deleted successfully')
-    },
-  },
+/** Contact rows filtered by the search box. */
+const searchContacts = computed(() => {
+  const search = new RegExp(query.value, 'i')
+  return contactStore.contacts.filter((item) => search.test(item.first_name) || search.test(item.last_name) || search.test(item.number))
 })
+
+function exportContact() {
+  downloadContactsCsv(contactStore.contacts, 'contacts')
+}
+async function deleteContact(id: string) {
+  if (!(await confirmDelete('Do you want to delete this contact?', 'contact not deleted'))) return
+  await contactStore.deleteContact(id)
+  notifySuccess('Contact Deleted successfully!')
+}
+async function deleteAll() {
+  if (!(await confirmDelete('Are you sure you want to delete ALL contacts?', 'contacts not deleted'))) return
+  await contactStore.deleteAllContacts()
+  notifySuccess('All contacts deleted successfully')
+}
 </script>

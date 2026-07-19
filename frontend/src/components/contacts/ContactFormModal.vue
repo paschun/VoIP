@@ -60,8 +60,9 @@
   </b-modal>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent } from 'vue'
+<script setup lang="ts">
+/** The add/edit + CSV-import contact modal. Store-driven: opens via `contactStore.startCreate`/`startEdit`. */
+import { computed, ref } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'
 import { storeToRefs } from 'pinia'
@@ -75,76 +76,62 @@ const phonenumber = (value: unknown) => e164Phone.safeParse(value).success
 /** What the form binds to while no draft is open (the modal is hidden then, so it never sees real input). */
 const closedDraft: ContactDraft = { first_name: '', last_name: '', number: '', note: '' }
 
-/** The add/edit + CSV-import contact modal. Store-driven: opens via `contactStore.startCreate`/`startEdit`. */
-export default defineComponent({
-  name: 'ContactFormModal',
-  setup() {
-    const contactStore = useContactStore()
-    const { draft } = storeToRefs(contactStore)
-    // Regle needs a non-null object to bind, so fall back to a throwaway blank while the draft is closed.
-    const formState = computed({
-      get: () => draft.value ?? closedDraft,
-      set: (value: ContactDraft) => {
-        draft.value = value
-      },
-    })
-    const { r$ } = useRegle(formState, {
-      first_name: { required: withMessage(required, 'First Name is required') },
-      number: { required: withMessage(required, 'Number is required'), phonenumber: withMessage(phonenumber, 'Please enter valid number. ') },
-    })
-    return { r$, contactStore }
-  },
-  data() {
-    return {
-      csvFileName: '',
-      isParsingCsv: false,
-      parsedCsvContacts: [] as ContactDraft[],
-    }
-  },
-  computed: {
-    formVisible: {
-      get(): boolean {
-        return this.contactStore.drafting
-      },
-      set(open: boolean) {
-        if (!open) this.contactStore.discardDraft()
-      },
-    },
-  },
-  methods: {
-    downloadSampleCsv,
-    async onCsvFileChange(event: Event) {
-      const target = event.target as HTMLInputElement
-      const fileToRead = target?.files?.[0]
-      if (!fileToRead) return
-      this.csvFileName = fileToRead.name
-      // Clear before parsing so a mid-parse Import can't submit the previous file's rows.
-      this.parsedCsvContacts = []
-      this.isParsingCsv = true
-      try {
-        this.parsedCsvContacts = await parseCsvContacts(fileToRead)
-      } finally {
-        this.isParsingCsv = false
-      }
-    },
-    async saveContact() {
-      const { valid, data } = await this.r$.$validate()
-      if (!valid) return
-
-      await this.contactStore.submitDraft(data)
-    },
-    async importContactsCsv() {
-      if (this.parsedCsvContacts.length === 0) {
-        void notifyError('Please upload valid file!')
-        return
-      }
-      await this.contactStore.importContacts(this.parsedCsvContacts)
-      this.contactStore.discardDraft()
-      this.csvFileName = ''
-      this.parsedCsvContacts = []
-    },
+const contactStore = useContactStore()
+const { draft } = storeToRefs(contactStore)
+// Regle needs a non-null object to bind, so fall back to a throwaway blank while the draft is closed.
+const formState = computed({
+  get: () => draft.value ?? closedDraft,
+  set: (value: ContactDraft) => {
+    draft.value = value
   },
 })
+const { r$ } = useRegle(formState, {
+  first_name: { required: withMessage(required, 'First Name is required') },
+  number: { required: withMessage(required, 'Number is required'), phonenumber: withMessage(phonenumber, 'Please enter valid number. ') },
+})
+
+const csvFileName = ref('')
+const isParsingCsv = ref(false)
+const parsedCsvContacts = ref<ContactDraft[]>([])
+
+const formVisible = computed({
+  get: () => contactStore.drafting,
+  set: (open: boolean) => {
+    if (!open) contactStore.discardDraft()
+  },
+})
+
+async function onCsvFileChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const fileToRead = target?.files?.[0]
+  if (!fileToRead) return
+  csvFileName.value = fileToRead.name
+  // Clear before parsing so a mid-parse Import can't submit the previous file's rows.
+  parsedCsvContacts.value = []
+  isParsingCsv.value = true
+  try {
+    parsedCsvContacts.value = await parseCsvContacts(fileToRead)
+  } finally {
+    isParsingCsv.value = false
+  }
+}
+
+async function saveContact() {
+  const { valid, data } = await r$.$validate()
+  if (!valid) return
+  await contactStore.submitDraft(data)
+}
+
+async function importContactsCsv() {
+  if (parsedCsvContacts.value.length === 0) {
+    void notifyError('Please upload valid file!')
+    return
+  }
+  await contactStore.importContacts(parsedCsvContacts.value)
+  contactStore.discardDraft()
+  csvFileName.value = ''
+  parsedCsvContacts.value = []
+}
 </script>
 
 <style scoped>

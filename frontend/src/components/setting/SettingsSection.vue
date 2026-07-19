@@ -12,18 +12,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
 /**
- * Standard "section header with back arrow" layout used by the settings * sidebars. Slot is the section body.
+ * Standard "section header with back arrow" layout used by the settings sidebars. Slot is the section body.
  */
-export default defineComponent({
-  name: 'SettingsSection',
-  emits: ['back'],
-  props: {
-    title: { type: String, required: true },
-    titleTag: { type: String, default: 'h4' },
-    iconScale: { type: [String, Number], default: 2 },
-  },
-})
+withDefaults(defineProps<{ title: string; titleTag?: string; iconScale?: string | number }>(), { titleTag: 'h4', iconScale: 2 })
+defineEmits<{ back: [] }>() // back event has no payload
 </script>

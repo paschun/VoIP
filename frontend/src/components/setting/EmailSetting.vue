@@ -68,8 +68,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, email, requiredIf, withMessage } from '@regle/rules'
 import type { EmailCreateRequest } from '@shared/contracts/email.ts'
@@ -102,58 +102,50 @@ const toEmailForm = (data?: EmailDoc | null): EmailCreateRequest => {
   }
 }
 
-export default defineComponent({
-  setup() {
-    const formState = ref(toEmailForm())
-    const { r$ } = useRegle(formState, {
-      email: { required: withMessage(required, 'Email Is Required') },
-      sender_email: { required: withMessage(required, 'FROM Email is required'), email: withMessage(email, 'Enter Valid FROM Email') },
-      password: { required: withMessage(required, 'Password Is Required') },
-      to_email: { required: withMessage(required, 'TO Email is required'), email: withMessage(email, 'Enter Valid TO Email') },
-      host: { required: withMessage(required, 'Host Is Required') },
-      port: { required: withMessage(required, 'Port Is Required') },
-      // PGP key is required only when encryption is enabled -- mirrors the server (which rejects enabling PGP with
-      // no key), so submit blocks client-side instead of relying on the backend 400.
-      pgpPublicKey: {
-        required: withMessage(
-          requiredIf(() => formState.value.pgpEncryptEnabled),
-          'Public PGP Key Required',
-        ),
-      },
-    })
-    return { r$, formState, profileStore: useProfileStore() }
-  },
-  data(): { showProfile: boolean } {
-    return {
-      showProfile: false,
-    }
-  },
-  mounted() {
-    this.getEmailSetting()
-  },
-  methods: {
-    async saveEmailSetting() {
-      const { valid } = await this.r$.$validate()
-      if (!valid) return
-      // Send the full form (every field present) rather than $validate's output, which marks rule-less fields optional.
-      await request(client.api.email.$put({ json: this.formState }))
-      this.r$.$reset()
-      notifySuccess('Setting saved successfully', 'Email Setting')
-      this.showProfile = true
-    },
-    async getEmailSetting() {
-      const { data } = await request(client.api.email.$get())
-      this.formState = toEmailForm(data)
-      this.r$.$reset() // Re-baseline the loaded values as the form's initial state.
-      if (data) this.showProfile = true
-    },
-    async profileUpdate(value: CheckboxValue | undefined, id: string) {
-      // CheckboxValue is a wide union
-      await request(client.api.setting[':id'].notification.$patch({ param: { id }, json: { status: value === true } }))
-      // The checkbox is controlled by the store value, so refresh it -- otherwise it snaps back to the pre-toggle state.
-      // @update:model-value handler is fire-and-forget, not waiting for this promise so no need to await this
-      void this.profileStore.loadProfiles()
-    },
+const profileStore = useProfileStore()
+const formState = ref(toEmailForm())
+const showProfile = ref(false)
+const { r$ } = useRegle(formState, {
+  email: { required: withMessage(required, 'Email Is Required') },
+  sender_email: { required: withMessage(required, 'FROM Email is required'), email: withMessage(email, 'Enter Valid FROM Email') },
+  password: { required: withMessage(required, 'Password Is Required') },
+  to_email: { required: withMessage(required, 'TO Email is required'), email: withMessage(email, 'Enter Valid TO Email') },
+  host: { required: withMessage(required, 'Host Is Required') },
+  port: { required: withMessage(required, 'Port Is Required') },
+  // PGP key is required only when encryption is enabled -- mirrors the server (which rejects enabling PGP with
+  // no key), so submit blocks client-side instead of relying on the backend 400.
+  pgpPublicKey: {
+    required: withMessage(
+      requiredIf(() => formState.value.pgpEncryptEnabled),
+      'Public PGP Key Required',
+    ),
   },
 })
+
+async function saveEmailSetting() {
+  const { valid } = await r$.$validate()
+  if (!valid) return
+  // Send the full form (every field present) rather than $validate's output, which marks rule-less fields optional.
+  await request(client.api.email.$put({ json: formState.value }))
+  r$.$reset()
+  notifySuccess('Setting saved successfully', 'Email Setting')
+  showProfile.value = true
+}
+
+async function getEmailSetting() {
+  const { data } = await request(client.api.email.$get())
+  formState.value = toEmailForm(data)
+  r$.$reset() // Re-baseline the loaded values as the form's initial state.
+  if (data) showProfile.value = true
+}
+
+async function profileUpdate(value: CheckboxValue | undefined, id: string) {
+  // CheckboxValue is a wide union
+  await request(client.api.setting[':id'].notification.$patch({ param: { id }, json: { status: value === true } }))
+  // The checkbox is controlled by the store value, so refresh it -- otherwise it snaps back to the pre-toggle state.
+  // @update:model-value handler is fire-and-forget, not waiting for this promise so no need to await this
+  void profileStore.loadProfiles()
+}
+
+onMounted(getEmailSetting)
 </script>

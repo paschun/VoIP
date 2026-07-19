@@ -10,8 +10,6 @@
   />
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
 import ProviderWebhookSetting from './ProviderWebhookSetting.vue'
-export default defineComponent({ components: { ProviderWebhookSetting } })
 </script>

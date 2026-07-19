@@ -72,9 +72,11 @@
   </div>
 </template>
 
-<script lang="ts">
-/** The header profile dropdown: active-profile display + unread badge, profile selector, add-profile modal, logout. */
-import { defineComponent, useTemplateRef } from 'vue'
+<script setup lang="ts">
+/** The header profile dropdown: active-profile display + unread badge, profile selector, add-profile modal, logout.
+ * The add-profile modal opens by id via `v-b-modal.add-profile`, so it stays template-ref imperative for `hide()`. */
+import { computed, onMounted, useTemplateRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
@@ -84,66 +86,49 @@ import { notifySuccess } from '@/core/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
 
-export default defineComponent({
-  name: 'ProfileDropdown',
-  components: { LoadingSpinner },
-  setup() {
-    const { r$ } = useRegle('', {
-      required: withMessage(required, 'Profile is required'), // default: This field is required
-    })
-    // type inference on useTemplateRef works with composition API `<script setup> + Volar`
-    const addProfileModal = useTemplateRef<InstanceType<typeof BModal>>('add-profile')
-    return {
-      r$,
-      addProfileModal,
-      profileStore: useProfileStore(),
-      userStore: useUserStore(),
-    }
-  },
-  mounted() {
-    void this.profileStore.initSelection()
-  },
-  computed: {
-    // `totalCount` is a populated virtual present only on the detail (getOne/list) variant, not the create/delete one.
-    activeTotalCount(): number {
-      const p = this.profileStore.activeProfile
-      return p && 'totalCount' in p ? (p.totalCount ?? 0) : 0
-    },
-  },
-  watch: {
-    // Selection changed: pull the new profile's detail (unread counts). Gating on the id avoids a refetch loop,
-    // since refreshActiveProfile reassigns a same-id object. immediate so a profile persisted in localStorage
-    // loads on mount -- its id doesn't "change".
-    'profileStore.activeProfileId': {
-      immediate: true,
-      handler() {
-        void this.profileStore.refreshActiveProfile()
-      },
-    },
-  },
-  methods: {
-    async addProfile() {
-      const { valid, data } = await this.r$.$validate()
-      if (!valid) return
-      try {
-        await this.profileStore.createProfile(data) // loading state will also be `true` for subsequent loadProfiles
-        notifySuccess('Profile added successfully!')
-        this.addProfileModal?.hide() // ?. covers the null before mount
-        this.r$.$reset({ toState: '' })
-      } catch (err) {
-        // 409 "Profile already exists!"
-        if (err instanceof DetailedError) {
-          this.r$.$setExternalErrors([err.detail?.data?.message])
-        }
-        throw err
-      }
-    },
-    logout() {
-      this.userStore.logout()
-      this.$router.push({ name: 'login' })
-    },
-  },
+const profileStore = useProfileStore()
+const userStore = useUserStore()
+const router = useRouter()
+const { r$ } = useRegle('', {
+  required: withMessage(required, 'Profile is required'), // default: This field is required
 })
+const addProfileModal = useTemplateRef<InstanceType<typeof BModal>>('add-profile')
+
+// `totalCount` is a populated virtual present only on the detail (getOne/list) variant, not the create/delete one.
+const activeTotalCount = computed(() => {
+  const p = profileStore.activeProfile
+  return p && 'totalCount' in p ? (p.totalCount ?? 0) : 0
+})
+
+async function addProfile() {
+  const { valid, data } = await r$.$validate()
+  if (!valid) return
+  try {
+    await profileStore.createProfile(data) // loading state will also be `true` for subsequent loadProfiles
+    notifySuccess('Profile added successfully!')
+    addProfileModal.value?.hide() // ?. covers the null before mount
+    r$.$reset({ toState: '' })
+  } catch (err) {
+    // 409 "Profile already exists!"
+    if (err instanceof DetailedError) {
+      r$.$setExternalErrors([err.detail?.data?.message])
+    }
+    throw err
+  }
+}
+
+function logout() {
+  userStore.logout()
+  router.push({ name: 'login' })
+}
+
+onMounted(() => {
+  void profileStore.initSelection()
+})
+// Selection changed: pull the new profile's detail (unread counts). Gating on the id avoids a refetch loop,
+// since refreshActiveProfile reassigns a same-id object. immediate so a profile persisted in localStorage
+// loads on mount -- its id doesn't "change".
+watch(() => profileStore.activeProfileId, () => void profileStore.refreshActiveProfile(), { immediate: true })
 </script>
 
 <style scoped>

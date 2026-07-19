@@ -37,125 +37,113 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 /**
  * Composer for the open conversation: text input, image attachments (file picker or drag-and-drop with previews and
  * upload progress), send. Emits `sent` after a successful send.
  */
-import { defineComponent } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import { uploadMediaFiles } from '@/core/services/media.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
 
-export default defineComponent({
-  name: 'MessageComposer',
-  components: { LoadingSpinner },
-  emits: ['sent'],
-  setup() {
-    return { conversationStore: useConversationStore(), userStore: useUserStore() }
+const emit = defineEmits<{ sent: [] }>()
+
+const conversationStore = useConversationStore()
+const userStore = useUserStore()
+
+const isSendingMsg = ref(false)
+const isDragging = ref(false)
+const isUploading = ref(false)
+const uploadPercent = ref(0) // 0 to 100
+const uploadedImages = ref<string[]>([])
+const messageBody = ref('')
+
+// Staged attachments belong to the conversation they were staged in.
+watch(
+  () => conversationStore.activeRemoteNumber,
+  () => {
+    uploadedImages.value = []
   },
-  data(): {
-    isSendingMsg: boolean
-    isDragging: boolean
-    isUploading: boolean
-    uploadPercent: number // 0 to 100
-    uploadedImages: string[]
-    messageBody: string
-  } {
-    return {
-      isSendingMsg: false,
-      isDragging: false,
-      isUploading: false,
-      uploadPercent: 0,
-      uploadedImages: [],
-      messageBody: '',
-    }
-  },
-  watch: {
-    // Staged attachments belong to the conversation they were staged in.
-    'conversationStore.activeRemoteNumber'() {
-      this.uploadedImages = []
-    },
-  },
-  // Drag-and-drop listens on document so a drag anywhere over the app reaches the composer; preventDefault also
-  // stops the browser from navigating to a file dropped outside the drop zone.
-  mounted() {
-    document.addEventListener('dragenter', this.onDragOver)
-    document.addEventListener('dragover', this.onDragOver)
-    document.addEventListener('dragleave', this.onDragLeave)
-    document.addEventListener('drop', this.onDrop)
-  },
-  beforeUnmount() {
-    document.removeEventListener('dragenter', this.onDragOver)
-    document.removeEventListener('dragover', this.onDragOver)
-    document.removeEventListener('dragleave', this.onDragLeave)
-    document.removeEventListener('drop', this.onDrop)
-  },
-  methods: {
-    onDragOver(e: DragEvent) {
-      e.preventDefault()
-      if (this.conversationStore.hasActiveConversation) this.isDragging = true
-    },
-    onDragLeave(e: DragEvent) {
-      e.preventDefault()
-      this.isDragging = false
-    },
-    onDrop(e: DragEvent) {
-      e.preventDefault()
-      this.isDragging = false
-      if (!this.conversationStore.hasActiveConversation) return
-      const files = e.dataTransfer?.files
-      if (files?.length) void this.uploadFiles(files)
-    },
-    onFilesPick(e: Event) {
-      // v-model can't bind a file input (its value is read-only), so a change listener is required
-      const target = e.target as HTMLInputElement
-      // target.files will always be non-null, there is no way for to unselect files in a way that fires a change event.
-      // even if in code, we set `target.value = null`, it will not fire a change event
-      if (!target.files) return
-      void this.uploadFiles(target.files)
-    },
-    async uploadFiles(files: FileList) {
-      this.uploadPercent = 0
-      this.isUploading = true
-      try {
-        const urls = await uploadMediaFiles(files, this.userStore.token, (percent) => {
-          this.uploadPercent = percent
-        })
-        this.uploadedImages.push(...urls)
-      } finally {
-        this.isUploading = false
-      }
-    },
-    removeFromPreview(image: string) {
-      this.uploadedImages = this.uploadedImages.filter((img) => img !== image)
-    },
-    clearAttachments() {
-      this.uploadedImages = []
-    },
-    async sendSms() {
-      if (this.messageBody.trim() === '' && this.uploadedImages.length === 0) {
-        notifyError('Message or file required', 'Oops...')
-        return
-      }
-      if (!this.conversationStore.hasActiveConversation) return
-      this.isSendingMsg = true
-      try {
-        await this.conversationStore.sendMessage({
-          numbers: [this.conversationStore.activeRemoteNumber],
-          message: this.messageBody,
-          media: this.uploadedImages,
-        })
-        this.messageBody = ''
-        this.uploadedImages = []
-        this.$emit('sent')
-      } finally {
-        this.isSendingMsg = false
-      }
-    },
-  },
+)
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault()
+  if (conversationStore.hasActiveConversation) isDragging.value = true
+}
+function onDragLeave(e: DragEvent) {
+  e.preventDefault()
+  isDragging.value = false
+}
+function onDrop(e: DragEvent) {
+  e.preventDefault()
+  isDragging.value = false
+  if (!conversationStore.hasActiveConversation) return
+  const files = e.dataTransfer?.files
+  if (files?.length) void uploadFiles(files)
+}
+function onFilesPick(e: Event) {
+  // v-model can't bind a file input (its value is read-only), so a change listener is required
+  const target = e.target as HTMLInputElement
+  // target.files will always be non-null, there is no way for to unselect files in a way that fires a change event.
+  // even if in code, we set `target.value = null`, it will not fire a change event
+  if (!target.files) return
+  void uploadFiles(target.files)
+}
+async function uploadFiles(files: FileList) {
+  uploadPercent.value = 0
+  isUploading.value = true
+  try {
+    const urls = await uploadMediaFiles(files, userStore.token, (percent) => {
+      uploadPercent.value = percent
+    })
+    uploadedImages.value.push(...urls)
+  } finally {
+    isUploading.value = false
+  }
+}
+function removeFromPreview(image: string) {
+  uploadedImages.value = uploadedImages.value.filter((img) => img !== image)
+}
+function clearAttachments() {
+  uploadedImages.value = []
+}
+async function sendSms() {
+  if (messageBody.value.trim() === '' && uploadedImages.value.length === 0) {
+    notifyError('Message or file required', 'Oops...')
+    return
+  }
+  if (!conversationStore.hasActiveConversation) return
+  isSendingMsg.value = true
+  try {
+    await conversationStore.sendMessage({
+      numbers: [conversationStore.activeRemoteNumber],
+      message: messageBody.value,
+      media: uploadedImages.value,
+    })
+    messageBody.value = ''
+    uploadedImages.value = []
+    emit('sent')
+  } finally {
+    isSendingMsg.value = false
+  }
+}
+
+// Drag-and-drop listens on document so a drag anywhere over the app reaches the composer; preventDefault also
+// stops the browser from navigating to a file dropped outside the drop zone.
+onMounted(() => {
+  document.addEventListener('dragenter', onDragOver)
+  document.addEventListener('dragover', onDragOver)
+  document.addEventListener('dragleave', onDragLeave)
+  document.addEventListener('drop', onDrop)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('dragenter', onDragOver)
+  document.removeEventListener('dragover', onDragOver)
+  document.removeEventListener('dragleave', onDragLeave)
+  document.removeEventListener('drop', onDrop)
 })
 </script>
 

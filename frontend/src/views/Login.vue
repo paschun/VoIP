@@ -126,8 +126,9 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, withMessage } from '@regle/rules'
 import ThemeButton from '@/components/shared/ThemeButton.vue'
@@ -138,91 +139,82 @@ import { useUserStore } from '@/stores/user.ts'
 
 type Screen = 'login' | 'picker' | 'keys' | 'otp'
 
-export default defineComponent({
-  name: 'LoginView',
-  components: { ThemeButton },
-  setup() {
-    const formState = ref({ name: '', password: '' })
-    const { r$: loginR$ } = useRegle(formState, {
-      name: { required: withMessage(required, 'Username is required'), minLength: withMessage(minLength(2), 'Username too short') },
-      password: { required: withMessage(required, 'Password is required'), minLength: withMessage(minLength(6), 'Password too short') },
-    })
-    const { r$: otpR$ } = useRegle(
-      { otp: '' },
-      {
-        otp: { required: withMessage(required, 'Verification code is required') },
-      },
-    )
-    return {
-      loginR$,
-      otpR$,
-      userStore: useUserStore(),
-      loginStore: useLoginStore(),
-      meta: useServerMetaStore(),
-    }
-  },
-  data(): { screen: Screen } {
-    return { screen: 'login' }
-  },
-  async mounted() {
-    await this.redirectIfLoggedIn()
-  },
-  methods: {
-    // The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
-    // itself when the user is already signed in.
-    async redirectIfLoggedIn() {
-      if (this.userStore.isLoggedIn) await this.goToDashboard()
-    },
-    async goToDashboard() {
-      await this.$router.push({ name: 'dashboard' })
-    },
-    async submitLogin() {
-      const { valid, data } = await this.loginR$.$validate()
-      if (!valid) return
+defineOptions({ name: 'LoginView' })
 
-      await this.loginStore.passwordLogin(data)
-      // Which second factor to use is the client's choice: prefer a hardware key, then TOTP, else log straight in.
-      if (this.loginStore.hardwareKeys.length) this.screen = 'keys'
-      else if (this.loginStore.totpAvailable) this.screen = 'otp'
-      else this.goToDashboard()
-    },
-    async verifyKey(key: HardwareKey) {
-      const publicKey = await this.loginStore.hardwareKeyChallenge(key)
-      const requestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(publicKey)
-      let assertion: PublicKeyCredential | null
-      try {
-        assertion = (await navigator.credentials.get({ publicKey: requestOptions })) as PublicKeyCredential | null
-      } catch (error) {
-        console.error(error)
-        notifyError('Failed to get credentials from user', 'Key Error!')
-        return
-      }
-      if (!assertion) {
-        notifyError('No credential was returned', 'Key Error!')
-        return
-      }
-      // `navigator.credentials.get()` always yields an authentication assertion, but `toJSON()` is typed as the
-      // create()-or-get() union: `RegistrationResponseJSON | AuthenticationResponseJSON`.
-      // Narrow it to read the user handle the server resolves the key by.
-      const { userHandle } = (assertion.toJSON() as AuthenticationResponseJSON).response
-      await this.loginStore.verifyHardwareKey(userHandle)
-      this.goToDashboard()
-    },
-    async verifyOtp() {
-      const { valid, data } = await this.otpR$.$validate()
-      if (!valid) return
+const router = useRouter()
+const userStore = useUserStore()
+const loginStore = useLoginStore()
+const meta = useServerMetaStore()
 
-      // If verification fails this will get a http 400 response and throw
-      await this.loginStore.verifyTotp(data.otp)
-      this.goToDashboard()
-    },
-    showScreen(screen: Screen) {
-      if (screen === 'login') {
-        this.loginStore.reset()
-        this.loginR$.$reset({ toInitialState: true })
-      }
-      this.screen = screen
-    },
-  },
+const formState = ref({ name: '', password: '' })
+const { r$: loginR$ } = useRegle(formState, {
+  name: { required: withMessage(required, 'Username is required'), minLength: withMessage(minLength(2), 'Username too short') },
+  password: { required: withMessage(required, 'Password is required'), minLength: withMessage(minLength(6), 'Password too short') },
 })
+const { r$: otpR$ } = useRegle(
+  { otp: '' },
+  {
+    otp: { required: withMessage(required, 'Verification code is required') },
+  },
+)
+
+const screen = ref<Screen>('login')
+
+async function goToDashboard() {
+  await router.push({ name: 'dashboard' })
+}
+// The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
+// itself when the user is already signed in.
+async function redirectIfLoggedIn() {
+  if (userStore.isLoggedIn) await goToDashboard()
+}
+async function submitLogin() {
+  const { valid, data } = await loginR$.$validate()
+  if (!valid) return
+
+  await loginStore.passwordLogin(data)
+  // Which second factor to use is the client's choice: prefer a hardware key, then TOTP, else log straight in.
+  if (loginStore.hardwareKeys.length) screen.value = 'keys'
+  else if (loginStore.totpAvailable) screen.value = 'otp'
+  else goToDashboard()
+}
+async function verifyKey(key: HardwareKey) {
+  const publicKey = await loginStore.hardwareKeyChallenge(key)
+  const requestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(publicKey)
+  let assertion: PublicKeyCredential | null
+  try {
+    assertion = (await navigator.credentials.get({ publicKey: requestOptions })) as PublicKeyCredential | null
+  } catch (error) {
+    console.error(error)
+    notifyError('Failed to get credentials from user', 'Key Error!')
+    return
+  }
+  if (!assertion) {
+    notifyError('No credential was returned', 'Key Error!')
+    return
+  }
+  // `navigator.credentials.get()` always yields an authentication assertion, but `toJSON()` is typed as the
+  // create()-or-get() union: `RegistrationResponseJSON | AuthenticationResponseJSON`.
+  // Narrow it to read the user handle the server resolves the key by.
+  const { userHandle } = (assertion.toJSON() as AuthenticationResponseJSON).response
+  await loginStore.verifyHardwareKey(userHandle)
+  goToDashboard()
+}
+async function verifyOtp() {
+  const { valid, data } = await otpR$.$validate()
+  if (!valid) return
+
+  // If verification fails this will get a http 400 response and throw
+  await loginStore.verifyTotp(data.otp)
+  goToDashboard()
+}
+function showScreen(target: Screen) {
+  if (target === 'login') {
+    loginStore.reset()
+    loginR$.$reset({ toInitialState: true })
+  }
+  screen.value = target
+}
+
+onMounted(redirectIfLoggedIn)
 </script>
