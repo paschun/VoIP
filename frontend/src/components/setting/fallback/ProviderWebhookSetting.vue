@@ -3,11 +3,11 @@
     <form @submit.prevent="saveFallbackUrl" class="ml-2 mr-2">
       <div class="form-group mt-2">
         <label>{{ mainLabel }}</label>
-        <input class="form-control main-url-control" v-model="mainUrl" readonly />
+        <input class="form-control main-url-control" v-model="mainUrl" readonly >
       </div>
       <div class="form-group mt-2">
         <label>{{ fallbackLabel }}</label>
-        <input class="form-control" v-model="r$.$value" :placeholder="fallbackPlaceholder" :class="{ 'is-invalid': r$.$error }" />
+        <input class="form-control" v-model="r$.$value" :placeholder="fallbackPlaceholder" :class="{ 'is-invalid': r$.$error }" >
         <div v-if="r$.$error" class="invalid-feedback">
           <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
         </div>

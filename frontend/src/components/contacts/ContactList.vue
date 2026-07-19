@@ -38,7 +38,7 @@
               <div class="d-flex flex-row bd-highlight">
                 <div class="bd-highlight">&nbsp;&nbsp;<i-bi-search />&nbsp;&nbsp;</div>
                 <div class="bd-highlight">
-                  <input type="text" class="input-search" v-model="query" placeholder="Search" />
+                  <input type="text" class="input-search" v-model="query" placeholder="Search">
                 </div>
               </div>
             </div>

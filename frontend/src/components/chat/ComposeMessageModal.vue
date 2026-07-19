@@ -41,7 +41,7 @@
         <span class="form-control chat-input" :class="{ 'text-secondary': !selectedFileNames }">{{ selectedFileNames || 'Choose file' }}</span>
       </label>
       <div class="form-group mb-2 mt-4 d-none">
-        <input type="file" id="attachment-file-input" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick" />
+        <input type="file" id="attachment-file-input" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick" >
       </div>
 
       <div class="d-grid d-md-flex">

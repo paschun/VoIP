@@ -3,7 +3,7 @@
     <b-modal ref="callModal" id="call-modal" no-footer>
       <template #header="{ close }">
         <!-- Emulate built in modal header close button action; hidden while a call is ringing or up. -->
-        <b-button v-bind:class="{ 'd-none': callStore.state !== 'idle' }" size="sm" variant="outline-danger" @click="close()"> Close </b-button>
+        <b-button :class="{ 'd-none': callStore.state !== 'idle' }" size="sm" variant="outline-danger" @click="close()"> Close </b-button>
       </template>
       <template #default>
         <div class="d-flex justify-content-center">
@@ -32,7 +32,7 @@
       </template>
     </b-modal>
     <!-- used by the call store -->
-    <audio id="remoteMedia" autoplay="true" />
+    <audio id="remoteMedia" autoplay="true" ></audio>
   </div>
 </template>
 

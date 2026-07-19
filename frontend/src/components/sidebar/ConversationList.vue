@@ -3,7 +3,7 @@
     <div class="wrap-search">
       <div class="search">
         <i class="fa fa-search fa" aria-hidden="true"></i>
-        <input type="text" class="input-search" v-model="query" placeholder="Search" />
+        <input type="text" class="input-search" v-model="query" placeholder="Search" >
       </div>
     </div>
     <div class="contact-list">
@@ -13,17 +13,17 @@
           <h4 class="text line"></h4>
           <h4 class="text"></h4>
         </div>
-        <hr />
+        <hr >
         <div class="image">
           <div class="embed-responsive embed-responsive-16by9"></div>
         </div>
-        <hr />
+        <hr >
         <div class="excerpt p-4">
           <div class="text line"></div>
           <div class="text line"></div>
           <div class="text"></div>
         </div>
-        <hr />
+        <hr >
         <div class="excerpt p-4">
           <div class="text line"></div>
           <div class="text line"></div>

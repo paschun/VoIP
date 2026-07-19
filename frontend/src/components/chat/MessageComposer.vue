@@ -7,11 +7,11 @@
         <div class="text-center m-auto">
           <button type="button" class="btn btn-danger px-4" @click="clearAttachments()">Cancel</button>
         </div>
-        <input type="file" id="fileElem" class="d-none" multiple accept="image/*" @change="onFilesPick" />
+        <input type="file" id="fileElem" class="d-none" multiple accept="image/*" @change="onFilesPick">
       </form>
       <div class="row" id="gallery">
         <div class="col-lg-4" v-for="image in uploadedImages" :key="image">
-          <img style="width: 150px" :src="image" />
+          <img style="width: 150px" :src="image">
           <button type="button" class="btn p-0 border-0" @click="removeFromPreview(image)">
             <span class="start-100 translate-middle badge border border-light rounded-circle bg-danger">X</span>
           </button>
@@ -24,7 +24,7 @@
     <div class="col-md-12 wrap-container2">
       <div class="wrap-message" v-if="conversationStore.hasActiveConversation">
         <div class="message pl-2">
-          <input type="text" class="input-message" placeholder="Type message here" v-model="messageBody" @keyup.enter="sendSms" />
+          <input type="text" class="input-message" placeholder="Type message here" v-model="messageBody" @keyup.enter="sendSms">
           <label class="m-2" for="fileElem" style="cursor: pointer">
             <i-bi-paperclip style="transform: scale(2)" />
           </label>

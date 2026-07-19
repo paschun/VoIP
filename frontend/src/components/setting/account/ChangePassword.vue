@@ -8,12 +8,12 @@
           type="password"
           placeholder="Old Password"
           :class="{ 'is-invalid': r$.old_password.$error }"
-        />
+        >
         <FieldErrors :field="r$.old_password" />
       </div>
 
       <div class="form-group mb-2 mt-4">
-        <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }" />
+        <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }" >
         <FieldErrors :field="r$.password" />
       </div>
 
@@ -24,7 +24,7 @@
           type="password"
           placeholder="Confirm Password"
           :class="{ 'is-invalid': r$.c_password.$error }"
-        />
+        >
         <FieldErrors :field="r$.c_password" />
       </div>
       <div class="form-group">

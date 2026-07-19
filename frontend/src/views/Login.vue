@@ -16,7 +16,7 @@
               v-model="loginR$.$value.name"
               :class="{ 'is-invalid': loginR$.name.$error }"
               title="Enter Username"
-            />
+            >
           </b-input-group>
           <FieldErrors :field="loginR$.name" />
         </div>
@@ -32,7 +32,7 @@
               placeholder="Password"
               :class="{ 'is-invalid': loginR$.password.$error }"
               title="Enter Password"
-            />
+            >
           </b-input-group>
           <FieldErrors :field="loginR$.password" />
         </div>
@@ -53,7 +53,7 @@
             placeholder="000000"
             :class="{ 'is-invalid': otpR$.otp.$error }"
             @keyup.enter="verifyOtp"
-          />
+          >
           <FieldErrors :field="otpR$.otp" />
         </div>
         <div class="text-center">

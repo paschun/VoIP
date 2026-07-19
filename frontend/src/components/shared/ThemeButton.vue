@@ -1,6 +1,6 @@
 <template>
   <div>
-    <input @change="toggleTheme" id="checkbox" type="checkbox" class="switch-checkbox" />
+    <input @change="toggleTheme" id="checkbox" type="checkbox" class="switch-checkbox" >
     <label for="checkbox" class="switch-label switch-label-mode">
       <span>🌙</span>
       <span>☀️</span>

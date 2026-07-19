@@ -15,7 +15,7 @@
               v-model="r$.$value.name"
               :class="{ 'is-invalid': r$.name.$error }"
               title="Enter Username"
-            />
+            >
           </b-input-group>
           <FieldErrors :field="r$.name" />
         </div>
@@ -31,7 +31,7 @@
               placeholder="Password"
               :class="{ 'is-invalid': r$.password.$error }"
               title="Enter Password"
-            />
+            >
           </b-input-group>
           <FieldErrors :field="r$.password" />
         </div>
@@ -47,7 +47,7 @@
               placeholder="Confirm Password"
               :class="{ 'is-invalid': r$.c_password.$error }"
               title="Enter Password Again"
-            />
+            >
           </b-input-group>
           <FieldErrors :field="r$.c_password" />
         </div>

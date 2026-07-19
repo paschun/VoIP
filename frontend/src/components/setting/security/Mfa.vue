@@ -8,7 +8,7 @@
             <div class="row align-items-center">
               <div class="col-auto">
                 <div>
-                  <input @change="totpStatusChange" id="checkbox" type="checkbox" class="switch-checkbox" v-model="totpEnabled" />
+                  <input @change="totpStatusChange" id="checkbox" type="checkbox" class="switch-checkbox" v-model="totpEnabled" >
                   <label for="checkbox" class="switch-label switch-label-mode">
                     <span>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="#198754" width="23" height="23" viewBox="0 0 24 24">
@@ -34,11 +34,11 @@
         </div>
       </div>
     </div>
-    <hr />
+    <hr >
     <div v-if="qr" class="text-center">
       <div class="text-center">Scan this QR code</div>
       <div class="text-center">
-        <img class="mb-2 qr_image" :src="qr" />
+        <img class="mb-2 qr_image" :src="qr" >
       </div>
       <div class="text-danger text-center">Or Enter Key Manually</div>
       <div class="card">
@@ -57,7 +57,7 @@
           title="6 Digit Code"
           class="totp"
           @keyup.enter="verifyStatusCode()"
-        />
+        >
       </div>
       <button type="button" @click="verifyStatusCode()" class="btn btn-success m-2 px-4">Verify</button>
     </div>

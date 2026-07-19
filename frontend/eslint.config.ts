@@ -12,6 +12,7 @@ export default defineConfigWithVueTs(
   globalIgnores(['dist/**', 'node_modules/**', 'public/**', 'src/components.d.ts']),
 
   pluginVue.configs['flat/essential'],
+  // pluginVue.configs['flat/strongly-recommended'],
   // This wires vue-eslint-parser + the TS sub-parser for `<script lang="ts">` SFCs.
   vueTsConfigs.recommendedTypeChecked,
 
@@ -54,17 +55,10 @@ export default defineConfigWithVueTs(
   },
 
   {
-    // Vue Options API relies on fire-and-forget promises throughout (intentional,
-    // per AGENTS.md): `this.$post(...).then(...)` without await, `this.$router.push()`,
-    // `swal.fire()`, and async `@click` handlers. These type-aware rules conflict
-    // with that documented convention, so they're relaxed for SFCs only.
     files: ['**/*.vue'],
     rules: {
       '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      // Vue auto-binds Options-API methods to the instance, so passing
-      // `this.method` as a callback (EventBus.$on, addEventListener, …) is safe.
-      '@typescript-eslint/unbound-method': 'off',
+      'vue/html-self-closing': ['error', { html: { void: 'never', normal: 'never', component: 'any' } }],
     },
   },
 )

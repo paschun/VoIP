@@ -43,7 +43,7 @@
                 </label>
               </div>
               <div class="col-sm col-12 m-auto">
-                <input class="form-control" type="text" placeholder="Telnyx API Key" v-model="r$.$value.api_key" :class="{ 'is-invalid': r$.api_key.$error }" />
+                <input class="form-control" type="text" placeholder="Telnyx API Key" v-model="r$.$value.api_key" :class="{ 'is-invalid': r$.api_key.$error }" >
                 <field-errors :field="r$.api_key" />
               </div>
             </div>
@@ -89,7 +89,7 @@
                   placeholder="Twilio SID"
                   v-model="r$.$value.twilio_sid"
                   :class="{ 'is-invalid': r$.twilio_sid.$error }"
-                />
+                >
                 <field-errors :field="r$.twilio_sid" />
               </div>
             </div>
@@ -108,7 +108,7 @@
                   placeholder="Twilio Token"
                   v-model="r$.$value.twilio_token"
                   :class="{ 'is-invalid': r$.twilio_token.$error }"
-                />
+                >
                 <field-errors :field="r$.twilio_token" />
               </div>
             </div>
