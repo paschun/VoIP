@@ -23,6 +23,8 @@ import { mediaRoutes } from './routes/media.route.ts'
 import { profileRoutes } from './routes/profile.route.ts'
 import { providerRoutes } from './routes/provider.route.ts'
 import { settingRoutes } from './routes/setting.route.ts'
+// Branded static error page served by the backend for the HTTPS backstop and the app-directory gate's 404s.
+const errorPage = await readFile('./app/static/error.html', 'utf8')
 
 // `factory.createApp()` (not `new Hono()`) so the root app carries the factory's `Env` -- `c.get('user')` is typed
 // `AuthUser` on guarded routes without re-declaring the generic here (the same factory builds every group's handlers).
@@ -30,9 +32,6 @@ const app = factory.createApp()
 
 // Every uncaught error from any handler/sub-app funnels here and is rendered once as `{ message }` (see core/error.ts).
 app.onError(onError)
-
-// Branded static error page served by the backend for the HTTPS backstop and the app-directory gate's 404s.
-const errorPage = await readFile('./app/static/error.html', 'utf8')
 
 // First middleware, applied to every request
 app.use('*', rateLimit)
@@ -146,8 +145,6 @@ export type WsAppType = typeof wsRoutes
 app.use('*', appDirectoryGate(errorPage))
 
 // Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
-// Uploads are served without Content-Disposition: consumers that want a filename (e.g. Twilio fetching outbound MMS
-// media) fall back to the URL, whose generated name already carries the content-type-derived extension.
 app.use('/uploads/*', serveStatic({ root: './' }))
 app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
 app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallback
@@ -157,3 +154,8 @@ app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallbac
 await connectDB()
 serve({ fetch: app.fetch, port: env.PORT, websocket: { server: wss } })
 console.log('hono listening on PORT', env.PORT)
+
+// import { showRoutes } from 'hono/dev'
+// showRoutes(app, {
+//   verbose: true,
+// })

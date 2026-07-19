@@ -19,7 +19,8 @@ const app = createApp(App)
 // async ones: Vue attaches a `.catch` to the promise a handler/hook/watcher returns, so a rejection that propagates
 // up to that boundary (e.g. `async mounted() { await load() }`) lands here.
 app.config.errorHandler = (err, _instance, info) => {
-  console.error(`vue global error handler [${info}]:`, err)
+  const args = [`vue global error handler [${info}]:`, err]
+  console.error(...args)
 }
 
 // Rejections that never reach such a Vue-invoked promise surface here instead -- fire-and-forget chains where an async

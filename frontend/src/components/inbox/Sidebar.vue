@@ -3,10 +3,13 @@
     <div class="profile">
       <div class="d-flex flex-row bd-highlight align-items-center align-self-center">
         <div class="mt-2">
+          <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
           <div class="d-flex flex-row bd-highlight">
-            <setting></setting>
             <div class="bd-highlight">
-              <contact-list></contact-list>
+              <i-bi-gear-fill aria-hidden="true" class="m-2" title="Settings" v-b-toggle.sidebar-email-setting style="cursor: pointer" />
+            </div>
+            <div class="bd-highlight">
+              <i-bi-person-lines-fill aria-hidden="true" class="m-2" title="Contacts" v-b-toggle.sidebar-right style="cursor: pointer" />
             </div>
             <div class="bd-highlight">
               <i-bi-telephone aria-hidden="true" class="m-2" title="Call" v-b-modal.call-modal style="cursor: pointer" />
@@ -20,12 +23,15 @@
       </div>
     </div>
     <conversation-list />
+    <setting></setting>
+    <contact-list></contact-list>
     <compose-message-modal ref="composeModal" @sent="$emit('messageSent')" />
   </div>
 </template>
 
 <script lang="ts">
-/** The sidebar column: header icon row (settings, contacts, call, compose), the profile dropdown, and the inbox list. */
+/** The sidebar column: header icon row (settings, contacts, call, compose), the profile dropdown, the inbox list, and
+ * the settings/contacts offcanvas panels the icons toggle. */
 import { defineComponent, useTemplateRef } from 'vue'
 import ComposeMessageModal from '@/components/ComposeMessageModal.vue'
 import ContactList from '@/components/setting/ContactList.vue'

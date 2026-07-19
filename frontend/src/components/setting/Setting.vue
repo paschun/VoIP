@@ -1,6 +1,6 @@
 <template>
+  <!-- Pure panel: opened by the sidebar's gear icon via v-b-toggle.sidebar-email-setting -->
   <div>
-    <i-bi-gear-fill aria-hidden="true" class="m-2" title="Settings" style="cursor: pointer" v-b-toggle.sidebar-email-setting />
     <b-offcanvas id="sidebar-email-setting" title="Settings" backdrop>
       <div class="px-3 py-2" v-if="activeMenu == 'setting'">
         <ul class="list-group">

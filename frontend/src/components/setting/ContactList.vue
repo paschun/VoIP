@@ -1,6 +1,6 @@
 <template>
+  <!-- Pure panel: opened by the sidebar's contacts icon via v-b-toggle.sidebar-right -->
   <div>
-    <i-bi-person-lines-fill class="pointer-icon m-2" aria-hidden="true" title="Contacts" v-b-toggle.sidebar-right />
     <b-offcanvas id="sidebar-right" placement="end" shadow no-header>
       <template #default="{ hide }">
         <div class="d-flex flex-row mt-2 justify-content-between bd-highlight">
@@ -104,9 +104,3 @@ export default defineComponent({
   },
 })
 </script>
-
-<style scoped>
-.pointer-icon {
-  cursor: pointer;
-}
-</style>

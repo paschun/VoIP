@@ -24,22 +24,18 @@ declare module 'vue-router' {
 export default createRouter({
   history: createWebHistory(),
   routes: [
-    // i dont think it's possible to hit this /404 route
-    {
-      path: '/404',
-      name: 'error',
-      component: () => import('@/components/ErrorPage.vue'),
-    },
-    // this home route is only used in dev, because of APPDIRECTORY gating
+    // in dev, index.html is served by vite dev server on port 8080, so this is reachable
+    // in prod, index.html is served by node.js, which has appdir gating, so this route is unreachable
     {
       path: '/',
-      name: 'home',
-      component: () => import('@/components/Login.vue'),
+      name: 'root',
+      redirect: '/voip/',
     },
     // the client routing is directory-agnostic. the first directory is treated as :appdirectory
     {
-      path: '/:appdirectory',
+      path: '/:appdirectory/',
       name: 'login',
+      strict: true, // we know its appdir and not a typo when it has a trailing slash
       component: () => import('@/components/Login.vue'),
     },
     {
