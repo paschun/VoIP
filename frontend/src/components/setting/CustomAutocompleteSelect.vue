@@ -1,7 +1,8 @@
 <template>
   <div class="custom-select" @click="toggleDropdown">
+    <!-- potentially undefined as a result of the `.find` -->
     <div class="selected-option">
-      {{ selectedOption[labelProp] }}
+      {{ selectedOption?.[labelProp] }}
     </div>
     <div class="dropdown" v-if="showDropdown">
       <input v-model="searchTerm" @input="filterOptions" @focus="showAllOptions" @blur="hideOptions" @keydown="handleKeyDown" ref="autocompleteInput" />
@@ -19,32 +20,23 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+<script setup lang="ts" generic="T extends Record<string, string>, LK extends keyof T & string, VK extends keyof T & string">
+import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
 
-const props = withDefaults(
-  defineProps<{
-    options: any[]
-    // v-model here binds `value`/`input` (Vue 2 semantics), not `modelValue`; kept intentionally pending migration.
-    value?: any
-    labelProp?: string
-    valueProp?: string
-  }>(),
-  { labelProp: 'label', valueProp: 'value' },
-)
-const emit = defineEmits<{ input: [value: any] }>()
+const props = defineProps<{
+  options: T[]
+  labelProp: LK
+  valueProp: VK
+}>()
+const model = defineModel<T[VK]>()
 
 const autocompleteInput = useTemplateRef<HTMLInputElement>('autocompleteInput')
 const searchTerm = ref('')
-const filteredOptions = ref<any[]>([])
+const filteredOptions = shallowRef<T[]>([])
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
 
-const selectedOption = computed(() => props.options.find((option) => option[props.valueProp] === props.value) ?? {})
-const selectedValue = computed({
-  get: () => props.value,
-  set: (newValue: any) => emit('input', newValue),
-})
+const selectedOption = computed(() => props.options.find((option) => option[props.valueProp] === model.value))
 
 function filterOptions() {
   showDropdown.value = true
@@ -59,10 +51,10 @@ function hideOptions() {
     showDropdown.value = false
   }, 2000)
 }
-function selectOption(option: any) {
+function selectOption(option: T) {
   hideOptions()
   searchTerm.value = option[props.labelProp]
-  selectedValue.value = option[props.labelProp]
+  model.value = option[props.valueProp]
 }
 function toggleDropdown() {
   showDropdown.value = !showDropdown.value

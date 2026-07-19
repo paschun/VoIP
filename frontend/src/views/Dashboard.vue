@@ -1,7 +1,7 @@
 <template>
   <div class="wrap">
     <call-view></call-view>
-    <theme-button id-hide="true"></theme-button>
+    <!-- <theme-button /> -->
     <!--
       Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
       hamburger via v-b-toggle.sidebar-no-header); at/above `sm` Bootstrap renders it inline as the static
@@ -71,7 +71,6 @@ import type { BOffcanvas } from 'bootstrap-vue-next'
 import CallView from '@/components/call/CallView.vue'
 import ChatThread from '@/components/chat/ChatThread.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
-import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { connectSocket, disconnectSocket } from '@/core/socket.ts'
 import { confirmDelete } from '@/helper.ts'
 import { useCallStore } from '@/stores/call.ts'

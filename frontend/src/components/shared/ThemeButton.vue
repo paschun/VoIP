@@ -1,5 +1,5 @@
 <template>
-  <div v-if="idHide === 'false'">
+  <div>
     <input @change="toggleTheme" id="checkbox" type="checkbox" class="switch-checkbox" />
     <label for="checkbox" class="switch-label switch-label-mode">
       <span>🌙</span>
@@ -11,8 +11,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-
-defineProps<{ idHide?: string }>()
 
 function getMediaPreference(): string {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
