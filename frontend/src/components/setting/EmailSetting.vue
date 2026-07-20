@@ -128,7 +128,7 @@ async function saveEmailSetting() {
   // Send the full form (every field present) rather than $validate's output, which marks rule-less fields optional.
   await request(client.api.email.$put({ json: formState.value }))
   r$.$reset()
-  notifySuccess('Setting saved successfully', 'Email Setting')
+  void notifySuccess('Setting saved successfully', 'Email Setting')
   showProfile.value = true
 }
 

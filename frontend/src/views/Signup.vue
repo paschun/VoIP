@@ -112,7 +112,7 @@ async function handleSubmit() {
     throw err // skips logic below
   }
   // pure-JS navigation, not a reload of the page; named locations inherit the current appdirectory param
-  router.push({ name: 'login' })
+  await router.push({ name: 'login' })
 }
 
 async function redirectIfSignupDisabled() {

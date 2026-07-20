@@ -72,7 +72,7 @@ function passwordEnable(menu: string) {
 }
 async function checkPassword() {
   if (passwordInput.value === '') {
-    notifyError('please enter password')
+    void notifyError('please enter password')
     return
   }
   await request(client.api.auth.password.verify.$post({ json: { password: passwordInput.value } }))

@@ -73,6 +73,6 @@ async function changePassword() {
     throw err // skips logic below
   }
   r$.$reset({ toOriginalState: true })
-  notifySuccess('Password updated successfully')
+  void notifySuccess('Password updated successfully')
 }
 </script>

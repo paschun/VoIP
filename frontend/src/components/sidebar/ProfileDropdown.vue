@@ -105,8 +105,8 @@ async function addProfile() {
   if (!valid) return
   try {
     await profileStore.createProfile(data) // loading state will also be `true` for subsequent loadProfiles
-    notifySuccess('Profile added successfully!')
-    addProfileModal.value?.hide() // ?. covers the null before mount
+    void notifySuccess('Profile added successfully!')
+    void addProfileModal.value?.hide() // ?. covers the null before mount
     r$.$reset({ toState: '' })
   } catch (err) {
     // 409 "Profile already exists!"
@@ -119,7 +119,7 @@ async function addProfile() {
 
 function logout() {
   userStore.logout()
-  router.push({ name: 'login' })
+  void router.push({ name: 'login' })
 }
 
 onMounted(() => {

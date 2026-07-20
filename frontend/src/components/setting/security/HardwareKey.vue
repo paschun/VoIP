@@ -127,13 +127,13 @@ async function deleteKey(id: string) {
   })
   if (!result.isConfirmed) return
   await request(client.api.hardwarekey[':id'].$delete({ param: { id } }))
-  notifySuccess('Your key has been deleted.', 'Deleted!')
-  getHardwareKey()
+  void notifySuccess('Your key has been deleted.', 'Deleted!')
+  await getHardwareKey()
 }
 
 async function register() {
   if (title.value.trim() === '') {
-    notifyError('Please enter title')
+    void notifyError('Please enter title')
     return
   }
   await request(client.api.hardwarekey.registration.begin.$post({ json: { title: title.value.trim() } }))
@@ -150,11 +150,11 @@ async function register() {
   try {
     credential = (await navigator.credentials.create({ publicKey: creationOptions })) as PublicKeyCredential | null
   } catch (error) {
-    notifyError(String(error), 'Key Error!')
+    void notifyError(String(error), 'Key Error!')
     return
   }
   if (!credential) {
-    notifyError('No credential was created', 'Key Error!')
+    void notifyError('No credential was created', 'Key Error!')
     return
   }
 
@@ -163,14 +163,14 @@ async function register() {
   const attestationObject = cborDecode(new Uint8Array(attestation.attestationObject))
   const authData = parseAuthData(attestationObject.authData)
   if (!authData.aaguid) {
-    notifyError('Could not read the authenticator AAGUID', 'Key Error!')
+    void notifyError('Could not read the authenticator AAGUID', 'Key Error!')
     return
   }
   const aaguid = bufToHex(authData.aaguid)
   // `credential.id` is already the base64url credential id the server stores.
   await request(client.api.hardwarekey.registration.verify.$post({ json: { id: credential.id, aaguid } }))
-  notifySuccess('Your key added successfully.', 'Key!')
-  getHardwareKey()
+  void notifySuccess('Your key added successfully.', 'Key!')
+  await getHardwareKey()
   title.value = ''
 }
 

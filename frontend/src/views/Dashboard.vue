@@ -90,7 +90,7 @@ const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>('mobileSid
 
 /** A send may have created the first thread for a number; drop the mobile sidebar to reveal it. */
 function onMessageSent() {
-  mobileSidebar.value?.hide()
+  void mobileSidebar.value?.hide()
 }
 async function deleteChat() {
   if (!(await confirmDelete('Do you want to delete this chat?', 'chat not deleted'))) return
@@ -100,7 +100,7 @@ async function deleteChat() {
 onMounted(() => {
   if (!userStore.isLoggedIn) {
     // Bounce to login inside the current directory (the appdirectory param is inherited from the current route).
-    router.push({ name: 'login' })
+    void router.push({ name: 'login' })
     return
   }
   connectSocket()
@@ -112,7 +112,7 @@ onUnmounted(() => {
 watch(
   () => conversationStore.activeRemoteNumber,
   (number: string) => {
-    if (number) mobileSidebar.value?.hide()
+    if (number) void mobileSidebar.value?.hide()
   },
 )
 </script>

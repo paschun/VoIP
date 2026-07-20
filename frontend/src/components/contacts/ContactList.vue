@@ -85,11 +85,11 @@ function exportContact() {
 async function deleteContact(id: string) {
   if (!(await confirmDelete('Do you want to delete this contact?', 'contact not deleted'))) return
   await contactStore.deleteContact(id)
-  notifySuccess('Contact Deleted successfully!')
+  void notifySuccess('Contact Deleted successfully!')
 }
 async function deleteAll() {
   if (!(await confirmDelete('Are you sure you want to delete ALL contacts?', 'contacts not deleted'))) return
   await contactStore.deleteAllContacts()
-  notifySuccess('All contacts deleted successfully')
+  void notifySuccess('All contacts deleted successfully')
 }
 </script>

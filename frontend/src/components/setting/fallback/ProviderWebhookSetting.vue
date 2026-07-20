@@ -99,8 +99,8 @@ async function saveFallbackUrl() {
   } else {
     await request(client.api.provider.telnyx.webhook[':settingId'].$patch({ param, json: { fallbackUrl: submitUrl } }))
   }
-  notifySuccess(props.successMessage)
-  getCallSetting()
+  void notifySuccess(props.successMessage)
+  await getCallSetting()
 }
 
 onMounted(getCallSetting)

@@ -40,6 +40,6 @@ async function changeUsername() {
     throw err // skips logic below
   }
   r$.$reset({ toState: data })
-  notifySuccess('Username updated successfully')
+  void notifySuccess('Username updated successfully')
 }
 </script>

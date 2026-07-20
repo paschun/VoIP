@@ -57,7 +57,7 @@ export default defineConfigWithVueTs(
   {
     files: ['**/*.vue'],
     rules: {
-      '@typescript-eslint/no-floating-promises': 'off',
+      // '@typescript-eslint/no-floating-promises': 'off',
       'vue/html-self-closing': ['error', { html: { void: 'never', normal: 'never', component: 'any' } }],
     },
   },

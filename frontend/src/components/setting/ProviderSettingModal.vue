@@ -246,14 +246,14 @@ function seedFormFromActiveProfile() {
     twilio_token: profile.twilio_token ?? '',
     twilio_number: profile.number ?? '',
   }
-  loadProviderNumbers(profile.type)
+  void loadProviderNumbers(profile.type)
 }
 
 async function deleteProfile() {
   if (!(await confirmDelete('Do you want to delete this Profile?', 'Profile not deleted'))) return
   // Deletes, clears the selection, and reloads the profile list.
   await profileStore.deleteActiveProfile()
-  notifySuccess('Profile deleted successfully!')
+  void notifySuccess('Profile deleted successfully!')
   r$.$reset({ toOriginalState: true }) // reset to empty
   telnyxNumbers.value = []
   twilioNumbers.value = []
@@ -266,7 +266,7 @@ async function deleteProfile() {
 async function deleteApiKey() {
   if (!(await confirmDelete('Do you want to delete this setting?', 'setting not deleted'))) return
   await profileStore.deleteProviderSetting()
-  notifySuccess('Key deleted successfully!')
+  void notifySuccess('Key deleted successfully!')
   // The modal stays open on the (still-existing) profile, now with blank provider fields.
   form.value = { ...form.value, api_key: '', number: '', twilio_sid: '', twilio_token: '', twilio_number: '' }
   telnyxNumbers.value = []

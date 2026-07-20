@@ -104,7 +104,7 @@ async function totpStatusChange() {
     }
     qr.value = ''
     await request(client.api.auth.totp.$delete())
-    getTotpStatus()
+    await getTotpStatus()
     return
   }
   const res = await request(client.api.auth.totp.qr.$post())
@@ -115,7 +115,7 @@ async function totpStatusChange() {
 
 async function verifyStatusCode() {
   if (verificationCode.value === '') {
-    notifyError('Please enter verification code')
+    void notifyError('Please enter verification code')
     return
   }
   // Pass the secret back: the server never persisted it at the QR step, so it stores it only once this code verifies.
@@ -124,12 +124,12 @@ async function verifyStatusCode() {
   qr.value = ''
   verificationCode.value = ''
   secret.value = ''
-  getTotpStatus()
+  await getTotpStatus()
 }
 
-function copySecret() {
+async function copySecret() {
   try {
-    navigator.clipboard.writeText(secret.value)
+    await navigator.clipboard.writeText(secret.value)
     secretCopied.value = true
   } catch (err) {
     console.error('Failed to copy!', err)

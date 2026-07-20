@@ -176,7 +176,7 @@ async function submitLogin() {
   // Which second factor to use is the client's choice: prefer a hardware key, then TOTP, else log straight in.
   if (loginStore.hardwareKeys.length) screen.value = 'keys'
   else if (loginStore.totpAvailable) screen.value = 'otp'
-  else goToDashboard()
+  else await goToDashboard()
 }
 async function verifyKey(key: HardwareKey) {
   const publicKey = await loginStore.hardwareKeyChallenge(key)
@@ -186,11 +186,11 @@ async function verifyKey(key: HardwareKey) {
     assertion = (await navigator.credentials.get({ publicKey: requestOptions })) as PublicKeyCredential | null
   } catch (error) {
     console.error(error)
-    notifyError('Failed to get credentials from user', 'Key Error!')
+    void notifyError('Failed to get credentials from user', 'Key Error!')
     return
   }
   if (!assertion) {
-    notifyError('No credential was returned', 'Key Error!')
+    void notifyError('No credential was returned', 'Key Error!')
     return
   }
   // `navigator.credentials.get()` always yields an authentication assertion, but `toJSON()` is typed as the
@@ -198,7 +198,7 @@ async function verifyKey(key: HardwareKey) {
   // Narrow it to read the user handle the server resolves the key by.
   const { userHandle } = (assertion.toJSON() as AuthenticationResponseJSON).response
   await loginStore.verifyHardwareKey(userHandle)
-  goToDashboard()
+  await goToDashboard()
 }
 async function verifyOtp() {
   const { valid, data } = await otpR$.$validate()
@@ -206,7 +206,7 @@ async function verifyOtp() {
 
   // If verification fails this will get a http 400 response and throw
   await loginStore.verifyTotp(data.otp)
-  goToDashboard()
+  await goToDashboard()
 }
 function showScreen(target: Screen) {
   if (target === 'login') {

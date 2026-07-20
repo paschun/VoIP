@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
 watch(
   () => callStore.state,
   (state: CallState) => {
-    if (state !== 'idle') callModal.value?.show()
+    if (state !== 'idle') void callModal.value?.show()
   },
 )
 </script>

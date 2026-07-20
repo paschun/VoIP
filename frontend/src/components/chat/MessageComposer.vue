@@ -112,7 +112,7 @@ function clearAttachments() {
 }
 async function sendSms() {
   if (messageBody.value.trim() === '' && uploadedImages.value.length === 0) {
-    notifyError('Message or file required', 'Oops...')
+    void notifyError('Message or file required', 'Oops...')
     return
   }
   if (!conversationStore.hasActiveConversation) return
