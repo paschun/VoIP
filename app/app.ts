@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
@@ -146,8 +147,12 @@ app.use('*', appDirectoryGate(errorPage))
 
 // Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
 app.use('/uploads/*', serveStatic({ root: './' }))
-app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
-app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallback
+// Only mount the built-frontend handlers when a build exists; in dev the Vite server serves the SPA and proxies /api,
+// so skipping them here avoids serveStatic's "root path not found" warning on every request.
+if (existsSync('./frontend/dist')) {
+  app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
+  app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallback
+}
 
 // Startup
 // -------

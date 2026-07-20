@@ -3,7 +3,7 @@
     <form class="ml-2 mr-2" @submit.prevent="saveFallbackUrl">
       <div class="form-group mt-2">
         <label>{{ mainLabel }}</label>
-        <input v-model="mainUrl" class="form-control main-url-control" readonly>
+        <input v-model="mainUrl" class="form-control" readonly>
       </div>
       <div class="form-group mt-2">
         <label>{{ fallbackLabel }}</label>
@@ -71,6 +71,11 @@ const { r$ } = useRegle(fallbackUrl, {
 async function getCallSetting() {
   const settingId = profileStore.activeProfileId
   if (!settingId) return
+  // A profile's `type` defaults to 'telnyx' even when nothing is configured, so gate on the provider's primary
+  // credential -- otherwise the webhook GET 409s ("<provider> is not configured") for a never-set-up profile.
+  const profile = profileStore.activeProfile
+  const configured = props.provider === 'twilio' ? Boolean(profile?.twilio_sid) : Boolean(profile?.api_key)
+  if (!configured) return
 
   let main: string | null | undefined
   let fallback: string | null | undefined
@@ -107,9 +112,3 @@ onMounted(getCallSetting)
 // Re-fetch when the selected profile changes while this panel stays mounted, so the URLs don't go stale.
 watch(() => profileStore.activeProfileId, getCallSetting)
 </script>
-
-<style scoped>
-.main-url-control[readonly] {
-  background: white !important;
-}
-</style>

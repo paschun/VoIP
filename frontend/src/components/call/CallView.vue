@@ -18,14 +18,14 @@
             <active-call-panel v-else />
             <dialer-pad @press="onKey" />
             <div v-if="callStore.state === 'idle'" class="dialer-container">
-              <center class="mt-4">
+              <div class="mt-4 text-center">
                 <button v-b-tooltip.hover type="button" title="Call" class="btn btn-success m-1 px-5" @click="callStore.dial(dialInput)">
                   <i-bi-telephone-outbound aria-hidden="true" />
                 </button>
                 <button v-b-tooltip.hover type="button" title="Delete" class="btn btn-danger m-1 px-5" @click="removeDigit()">
                   <i-bi-backspace aria-hidden="true" />
                 </button>
-              </center>
+              </div>
             </div>
           </div>
         </div>

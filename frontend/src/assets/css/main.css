@@ -3,7 +3,7 @@
 /* Vendor stylesheets go in the `vendor` layer so app rules below win Bootstrap conflicts without !important -- layer
    order beats specificity. The tradeoff: a low-specificity app rule also beats Bootstrap's higher-specificity
    contextual rules, so where we want one of those (input-group corner squaring), re-apply it in the app layer (see
-   .chat-input below). vue3-tags-input injects its CSS at runtime (unlayered), so those overrides still need !important. */
+   .chat-input below). */
 @import 'bootstrap/dist/css/bootstrap.css' layer(vendor);
 @import 'bootstrap-vue-next/dist/bootstrap-vue-next.css' layer(vendor);
 @import 'sweetalert2/dist/sweetalert2.min.css' layer(vendor);
@@ -98,33 +98,6 @@ section {
   text-align: center;
   transition: 0.5s;
   font-family: 'Skia', sans-serif;
-}
-/* vue3-tags-input injects its styles at runtime (unlayered), so these overrides keep !important to win. */
-.vue-tags-input {
-  border: none !important;
-  background-color: var(--background-color-secondary) !important;
-  color: var(--text-primary-color) !important;
-  border-radius: 10px !important;
-  font-size: 14px !important;
-  transition: 0.5s !important;
-  display: inline-flex !important;
-  max-width: 100% !important;
-}
-.ti-new-tag-input-wrapper input {
-  background-color: var(--background-color-secondary) !important;
-  color: var(--text-primary-color) !important;
-  min-width: 120px !important;
-}
-.ti-input,
-.ti-tags {
-  border: none !important;
-  background-color: var(--background-color-secondary) !important;
-  color: var(--text-primary-color) !important;
-  border-radius: 10px !important;
-  font-size: 14px !important;
-  transition: 0.5s !important;
-  display: inline-flex !important;
-  max-width: 100% !important;
 }
 /* Round via Bootstrap's own token, not the border-radius property, so input-group corner squaring still wins. */
 .chat-input {
@@ -440,20 +413,6 @@ a {
   --bs-list-group-color: var(--text-primary-color);
 }
 
-/* these target the vue-select component's internal elements */
-.vs__dropdown-toggle {
-  background: var(--background-color-secondary);
-}
-.vs__dropdown-toggle input {
-  color: var(--text-primary-color);
-}
-.vs__selected {
-  color: var(--text-primary-color);
-}
-.vs__dropdown-menu {
-  background: var(--background-color-primary);
-  color: var(--text-primary-color);
-}
 
 /* .totp used in Login and Mfa */
 .totp {

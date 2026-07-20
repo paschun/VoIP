@@ -54,12 +54,15 @@
 <script setup lang="ts">
 /** Compose-SMS/MMS modal: pick recipients (contacts or free-typed numbers), attach images, send a bulk message. */
 import { computed, ref } from 'vue'
-import VueTagsInput from '@sipec/vue3-tags-input'
+import VueTagsInputModule from '@sipec/vue3-tags-input'
 import { e164Phone } from '@shared/contracts/phone.ts'
 import { notifyError } from '@/core/notify.ts'
 import { uploadMediaFiles } from '@/core/services/media.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
+// UMD build exposes the component on `.default`; default-import interop can hand back the module namespace instead, so
+// unwrap to the actual component (else Vue throws "missing template or render function").
+const VueTagsInput = VueTagsInputModule.default ?? VueTagsInputModule
 
 /** A vue3-tags-input tag (the library is untyped). */
 interface Tag {
@@ -137,6 +140,25 @@ function reset() {
 </script>
 
 <style scoped>
+/* vue3-tags-input injects its CSS at runtime (unlayered), so these overrides keep !important to win. The scope id
+   lands on the child's root (`.vue-tags-input`); `:deep()` reaches its internal elements. */
+.vue-tags-input,
+:deep(.ti-input),
+:deep(.ti-tags) {
+  border: none !important;
+  background-color: var(--background-color-secondary) !important;
+  color: var(--text-primary-color) !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  transition: 0.5s !important;
+  display: inline-flex !important;
+  max-width: 100% !important;
+}
+:deep(.ti-new-tag-input-wrapper input) {
+  background-color: var(--background-color-secondary) !important;
+  color: var(--text-primary-color) !important;
+  min-width: 120px !important;
+}
 .paperClip {
   border-radius: 0% !important;
   border-top-left-radius: 5px !important;
