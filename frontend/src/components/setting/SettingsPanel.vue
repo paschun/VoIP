@@ -4,14 +4,14 @@
     <b-offcanvas id="sidebar-email-setting" title="Settings" backdrop>
       <div v-if="activeMenu == 'setting'" class="px-3 py-2">
         <ul class="list-group">
-          <li class="list-group-item" style="cursor: pointer" @click="enableMenu('email')"><i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
-          <li class="list-group-item" style="cursor: pointer" @click="providerSettingModal?.open()">
+          <li class="list-group-item cursor-pointer" @click="enableMenu('email')"><i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
+          <li class="list-group-item cursor-pointer" @click="providerSettingModal?.open()">
             <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
           </li>
-          <li class="list-group-item" style="cursor: pointer" @click="enableMenu('account')">
+          <li class="list-group-item cursor-pointer" @click="enableMenu('account')">
             <i-bi-person aria-hidden="true" class="mx-2" />Account Settings
           </li>
-          <li class="list-group-item" style="cursor: pointer" @click="passwordEnable('mfa')">
+          <li class="list-group-item cursor-pointer" @click="passwordEnable('mfa')">
             <i-bi-shield-lock aria-hidden="true" class="mx-2" />MFA Settings
           </li>
         </ul>

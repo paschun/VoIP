@@ -8,10 +8,10 @@
       <template #default>
         <div class="d-flex justify-content-center">
           <incoming-call-panel v-if="callStore.state === 'incoming'" />
-          <div v-else style="max-width: 300px">
+          <div v-else class="dial-panel">
             <div v-if="callStore.state === 'idle'">
               <contact-picker class="mb-2" @select="setDialInput" />
-              <b-form-group style="margin-bottom: 0">
+              <b-form-group class="mb-0">
                 <b-form-input v-model="dialInput" class="chat-input" type="number" required></b-form-input>
               </b-form-group>
             </div>
@@ -83,6 +83,9 @@ watch(
 </script>
 
 <style scoped>
+.dial-panel {
+  max-width: 300px;
+}
 .dialer-container {
   display: block;
   width: 100%;

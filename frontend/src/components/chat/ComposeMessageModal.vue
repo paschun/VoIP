@@ -34,7 +34,7 @@
         </div>
       </div>
       <!-- send images over MMS -->
-      <label class="input-group mb-3" for="attachment-file-input" style="cursor: pointer">
+      <label class="input-group mb-3 cursor-pointer" for="attachment-file-input">
         <span class="input-group-text paperClip chat-input">
           <i-bi-paperclip />
         </span>

@@ -40,7 +40,7 @@
           @click="conversationStore.openConversation(item)"
         >
           <i-bi-person-bounding-box aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
-          <div class="d-flex justify-content-between" style="width: 100%">
+          <div class="d-flex justify-content-between w-100">
             <div class="contact-preview">
               <div class="contact-text">
                 <h1 v-if="item.contact" class="font-name">{{ item.contact.first_name }} {{ item.contact.last_name }}</h1>

@@ -50,8 +50,8 @@
                 <div class="bd-highlight">{{ contact.number }}</div>
               </div>
               <div>
-                <i-bi-pencil-square title="Update" style="cursor: pointer" @click="contactStore.startEdit(contact)" />
-                <i-bi-trash-fill title="Delete" style="cursor: pointer" @click="deleteContact(contact._id)" />
+                <i-bi-pencil-square title="Update" class="cursor-pointer" @click="contactStore.startEdit(contact)" />
+                <i-bi-trash-fill title="Delete" class="cursor-pointer" @click="deleteContact(contact._id)" />
               </div>
             </li>
           </ul>

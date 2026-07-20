@@ -26,7 +26,7 @@
                 <span class="form-control-plaintext">{{ profileStore.activeProfile?.profile }}</span>
               </div>
               <div class="col-1 m-auto">
-                <span class="float-right" style="cursor: pointer" title="Delete">
+                <span class="float-right cursor-pointer" title="Delete">
                   <i-bi-trash style="font-size: 1.5em" aria-hidden="true" @click="deleteProfile()" />
                 </span>
               </div>
@@ -66,7 +66,7 @@
                 </div>
               </div>
               <div class="col-auto m-auto">
-                <span v-if="showDelete" class="float-right" style="cursor: pointer" title="Delete" @click="deleteApiKey()">
+                <span v-if="showDelete" class="float-right cursor-pointer" title="Delete" @click="deleteApiKey()">
                   <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
@@ -131,7 +131,7 @@
                 </div>
               </div>
               <div class="col-auto m-auto">
-                <span v-if="showDelete" class="float-right" style="cursor: pointer" title="Delete" @click="deleteApiKey()">
+                <span v-if="showDelete" class="float-right cursor-pointer" title="Delete" @click="deleteApiKey()">
                   <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>

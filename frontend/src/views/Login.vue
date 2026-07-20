@@ -67,12 +67,12 @@
       <form v-if="screen === 'keys' || screen === 'picker'" class="ml-2 mr-2 text-center">
         <div v-if="screen === 'picker'">
           <div v-if="loginStore.hardwareKeys.length > 0" class="card my-4">
-            <div class="card-body" style="cursor: pointer" @click="showScreen('keys')">
+            <div class="card-body cursor-pointer" @click="showScreen('keys')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
                   <i-bi-key />
                 </div>
-                <div class="border-dark px-2" style="border-left: 1px solid">
+                <div class="border-dark border-start px-2">
                   <h4>Security Key</h4>
                   <p>Use a hardware security key that is paired with your account.</p>
                 </div>
@@ -80,12 +80,12 @@
             </div>
           </div>
           <div v-if="loginStore.totpAvailable" class="card">
-            <div class="card-body" style="cursor: pointer" @click="showScreen('otp')">
+            <div class="card-body cursor-pointer" @click="showScreen('otp')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
                   <i-bi-calculator-fill />
                 </div>
-                <div class="border-dark px-2" style="border-left: 1px solid">
+                <div class="border-dark border-start px-2">
                   <h4>TOTP Code</h4>
                   <p>Use a time-based one-time verification passcode.</p>
                 </div>

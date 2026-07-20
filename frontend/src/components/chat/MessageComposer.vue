@@ -1,7 +1,7 @@
 <template>
   <loading-spinner :show="isSendingMsg" />
   <div :class="!conversationStore.hasActiveConversation ? 'd-none' : ''">
-    <div v-show="isDragging || uploadedImages.length" id="drop-area" style="z-index: 1" :class="{ highlight: isDragging }">
+    <div v-show="isDragging || uploadedImages.length" id="drop-area" class="z-1" :class="{ highlight: isDragging }">
       <form class="upload-form">
         <p class="mt-0">Upload multiple files by dragging and dropping images inside this box</p>
         <div class="text-center m-auto">
@@ -11,7 +11,7 @@
       </form>
       <div id="gallery" class="row">
         <div v-for="image in uploadedImages" :key="image" class="col-lg-4">
-          <img style="width: 150px" :src="image">
+          <img class="preview-img" :src="image">
           <button type="button" class="btn p-0 border-0" @click="removeFromPreview(image)">
             <span class="start-100 translate-middle badge border border-light rounded-circle bg-danger">X</span>
           </button>
@@ -25,11 +25,11 @@
       <div v-if="conversationStore.hasActiveConversation" class="wrap-message">
         <div class="message pl-2">
           <input v-model="messageBody" type="text" class="input-message" placeholder="Type message here" @keyup.enter="sendSms">
-          <label class="m-2" for="fileElem" style="cursor: pointer">
-            <i-bi-paperclip style="transform: scale(2)" />
+          <label class="m-2 cursor-pointer" for="fileElem">
+            <i-bi-paperclip class="paperclip" />
           </label>
         </div>
-        <div class="btn btn-primary m-2" style="height: 36px" @click="sendSms()">
+        <div class="btn btn-primary m-2 send-btn" @click="sendSms()">
           <i-bi-arrow-right-circle-fill aria-hidden="true" />
         </div>
       </div>
@@ -168,6 +168,15 @@ onBeforeUnmount(() => {
   margin-top: 10px;
 }
 
+.preview-img {
+  width: 150px;
+}
+.paperclip {
+  transform: scale(2);
+}
+.send-btn {
+  height: 36px;
+}
 .wrap-message {
   width: auto;
   height: 60px;

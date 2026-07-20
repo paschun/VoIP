@@ -38,7 +38,7 @@
               &nbsp;&nbsp;&nbsp;
               <span
                 v-if="!conversationStore.activeConversation.contact"
-                style="cursor: copy"
+                class="cursor-copy"
                 title="Add Contact"
                 @click="contactStore.startCreate(conversationStore.activeRemoteNumber)"
               >
@@ -48,11 +48,11 @@
           </h1>
         </div>
         <div v-if="conversationStore.hasActiveConversation" class="d-flex m-auto">
-          <span style="cursor: pointer" title="Call" @click="callStore.dial(conversationStore.activeRemoteNumber)">
+          <span class="cursor-pointer" title="Call" @click="callStore.dial(conversationStore.activeRemoteNumber)">
             <i-bi-telephone aria-hidden="true" style="font-size: 2em" />
           </span>
           &nbsp;&nbsp;&nbsp;
-          <span style="cursor: pointer" title="Delete" @click="deleteChat()">
+          <span class="cursor-pointer" title="Delete" @click="deleteChat()">
             <i-bi-trash aria-hidden="true" style="font-size: 2em" />
           </span>
         </div>

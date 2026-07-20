@@ -6,16 +6,16 @@
           <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
           <div class="d-flex flex-row bd-highlight">
             <div class="bd-highlight">
-              <i-bi-gear-fill v-b-toggle.sidebar-email-setting aria-hidden="true" class="m-2" title="Settings" style="cursor: pointer" />
+              <i-bi-gear-fill v-b-toggle.sidebar-email-setting aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
             </div>
             <div class="bd-highlight">
-              <i-bi-person-lines-fill v-b-toggle.sidebar-right aria-hidden="true" class="m-2" title="Contacts" style="cursor: pointer" />
+              <i-bi-person-lines-fill v-b-toggle.sidebar-right aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
             </div>
             <div class="bd-highlight">
-              <i-bi-telephone v-b-modal.call-modal aria-hidden="true" class="m-2" title="Call" style="cursor: pointer" />
+              <i-bi-telephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />
             </div>
             <div class="bd-highlight">
-              <i-bi-pencil-square aria-hidden="true" class="m-2" title="Compose" style="cursor: pointer" @click="composeOpen = true" />
+              <i-bi-pencil-square aria-hidden="true" class="m-2 cursor-pointer" title="Compose" @click="composeOpen = true" />
             </div>
           </div>
         </div>

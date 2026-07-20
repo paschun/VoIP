@@ -56,6 +56,13 @@ body {
 section {
   background-color: var(--background-color-primary);
 }
+/* Bootstrap ships no cursor utilities; these fill the gap for the many clickable non-button elements. */
+.cursor-pointer {
+  cursor: pointer;
+}
+.cursor-copy {
+  cursor: copy;
+}
 .login-box {
   background: var(--background-color-primary);
   width: 50%;

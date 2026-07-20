@@ -5,7 +5,7 @@
         <component :is="titleTag">{{ title }}</component>
       </div>
       <div class="p-2 bd-highlight">
-        <i-bi-arrow-left :style="{ cursor: 'pointer', fontSize: iconScale + 'em' }" aria-hidden="true" @click="$emit('back')" />
+        <i-bi-arrow-left class="cursor-pointer back-icon" aria-hidden="true" @click="$emit('back')" />
       </div>
     </div>
     <slot></slot>
@@ -16,6 +16,19 @@
 /**
  * Standard "section header with back arrow" layout used by the settings sidebars. Slot is the section body.
  */
-withDefaults(defineProps<{ title: string; titleTag?: string; iconScale?: string | number }>(), { titleTag: 'h4', iconScale: 2 })
+import { computed } from 'vue'
+
+const props = withDefaults(defineProps<{ title: string; titleTag?: string; iconScale?: string | number }>(), {
+  titleTag: 'h4',
+  iconScale: 2,
+})
 defineEmits<{ back: [] }>() // back event has no payload
+
+const iconFontSize = computed(() => `${props.iconScale}em`)
 </script>
+
+<style scoped>
+.back-icon {
+  font-size: v-bind(iconFontSize);
+}
+</style>

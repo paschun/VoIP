@@ -46,7 +46,7 @@
     </div>
   </div>
   <div v-show="zoomImage" id="image-zoom-overlay" @click="hideImage()">
-    <div class="d-flex justify-content-center align-items-center" style="height: 100vh; width: 100vw">
+    <div class="d-flex justify-content-center align-items-center vh-100 vw-100">
       <img class="img-fluid" alt="Responsive image" :src="zoomImage">
     </div>
   </div>

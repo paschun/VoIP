@@ -39,7 +39,7 @@
             <div class="d-flex justify-content-end">
               <button class="btn btn-success mb-2 float-right" @click="downloadSampleCsv()">Sample File</button>
             </div>
-            <label class="input-group mb-3" for="csv-file-input" style="cursor: pointer">
+            <label class="input-group mb-3 cursor-pointer" for="csv-file-input">
               <span class="input-group-text paperClip chat-input"><i-bi-paperclip /></span>
               <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !csvFileName }">{{
                 csvFileName || 'Choose file'
