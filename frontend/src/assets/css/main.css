@@ -80,7 +80,7 @@ section {
   margin-top: 50px;
   padding-top: 10px;
   padding-bottom: 30px;
-  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transition: 0.5s;
   border-radius: 10px;
 }
@@ -166,7 +166,7 @@ section {
 .font-name {
   font-size: 1em;
   font-weight: inherit;
-  padding-bottom: 0px;
+  padding-bottom: 0;
   line-height: 0.5rem;
 }
 
@@ -283,7 +283,7 @@ section {
 .chat {
   background-color: var(--chat-background);
   width: 100%;
-  padding: 0px 10%;
+  padding: 0 10%;
   padding-top: 7px;
   overflow-y: auto;
 }
@@ -291,14 +291,14 @@ section {
 /* ------ CHAT ------ */
 .you {
   background: var(--chat-you);
-  margin: 0px auto 10px 0px;
+  margin: 0 auto 10px 0;
   text-align: left;
   width: max-content;
 }
 
 .me {
   background: var(--chat-me);
-  margin: 0px 0px 10px auto;
+  margin: 0 0 10px auto;
   text-align: right;
   width: max-content;
   color: whitesmoke;
@@ -346,10 +346,10 @@ body::-webkit-scrollbar-thumb,
   background-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Toggle button + wrapper keep an explicit fill (staying filled on hover is intentional); the menu and its items
+   theme natively via Bootstrap's --bs-dropdown-* tokens below. */
 .drop-down,
-.drop-down > button,
-.drop-down > .dropdown-menu,
-.dropdown-item {
+.drop-down > button {
   background-color: var(--background-color-secondary);
   border-color: var(--background-color-secondary);
   color: var(--text-primary-color);
@@ -357,8 +357,8 @@ body::-webkit-scrollbar-thumb,
 a {
   text-decoration: none;
 }
-.modal-content {
-  background-color: var(--background-color-primary);
+.modal {
+  --bs-modal-bg: var(--background-color-primary);
 }
 .close {
   padding: 1rem;
@@ -376,7 +376,7 @@ a {
 }
 .card {
   overflow: hidden;
-  background-color: var(--background-color-secondary);
+  --bs-card-bg: var(--background-color-secondary);
 }
 
 .badge {
@@ -422,20 +422,25 @@ a {
 .profile-name {
   max-width: 100px;
 }
-.dropdown-item:hover {
-  background-color: var(--contact-hover);
-}
+/* Theme the whole dropdown (menu bg/border + item color and hover) through Bootstrap's own tokens. */
 .dropdown-menu {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --bs-dropdown-bg: var(--background-color-secondary);
+  --bs-dropdown-border-color: var(--background-color-secondary);
+  --bs-dropdown-color: var(--text-primary-color);
+  --bs-dropdown-link-color: var(--text-primary-color);
+  --bs-dropdown-link-hover-color: var(--text-primary-color);
+  --bs-dropdown-link-hover-bg: var(--contact-hover);
+  --bs-dropdown-box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   max-height: 100vh;
   overflow-y: auto;
 }
 
-.list-group-item {
-  color: var(--text-primary-color);
-  background-color: transparent;
+.list-group {
+  --bs-list-group-bg: transparent;
+  --bs-list-group-color: var(--text-primary-color);
 }
 
+/* these target the vue-select component's internal elements */
 .vs__dropdown-toggle {
   background: var(--background-color-secondary);
 }

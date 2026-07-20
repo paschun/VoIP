@@ -19,7 +19,7 @@ const jsTargets = browserslistToEsbuild(pkg.browserslist)
 export default defineConfig({
   plugins: [
     vue(),
-    vueDevTools(),
+    vueDevTools({ launchEditor: 'codium' }),
 
     // Auto-imports the icon components used in templates (`<i-bi-x />`) via the
     // IconsResolver; no manual per-icon import needed. Replaces bootstrap-vue's
