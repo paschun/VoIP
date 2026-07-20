@@ -2,16 +2,16 @@
   <!-- Pure panel: opened by the sidebar's gear icon via v-b-toggle.sidebar-email-setting -->
   <div>
     <b-offcanvas id="sidebar-email-setting" title="Settings" backdrop>
-      <div class="px-3 py-2" v-if="activeMenu == 'setting'">
+      <div v-if="activeMenu == 'setting'" class="px-3 py-2">
         <ul class="list-group">
-          <li class="list-group-item" @click="enableMenu('email')" style="cursor: pointer"><i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
-          <li class="list-group-item" @click="providerSettingModal?.open()" style="cursor: pointer">
+          <li class="list-group-item" style="cursor: pointer" @click="enableMenu('email')"><i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
+          <li class="list-group-item" style="cursor: pointer" @click="providerSettingModal?.open()">
             <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
           </li>
-          <li class="list-group-item" @click="enableMenu('account')" style="cursor: pointer">
+          <li class="list-group-item" style="cursor: pointer" @click="enableMenu('account')">
             <i-bi-person aria-hidden="true" class="mx-2" />Account Settings
           </li>
-          <li class="list-group-item" @click="passwordEnable('mfa')" style="cursor: pointer">
+          <li class="list-group-item" style="cursor: pointer" @click="passwordEnable('mfa')">
             <i-bi-shield-lock aria-hidden="true" class="mx-2" />MFA Settings
           </li>
         </ul>
@@ -33,7 +33,7 @@
         <div class="m-2">
           <div class="form-group">
             <label>Password</label>
-            <input type="password" class="form-control" v-model="passwordInput" placeholder="Enter Password" @keyup.enter="checkPassword()">
+            <input v-model="passwordInput" type="password" class="form-control" placeholder="Enter Password" @keyup.enter="checkPassword()">
           </div>
           <div class="text-center">
             <button class="btn btn-success my-2 px-4" @click="checkPassword()">Verify</button>

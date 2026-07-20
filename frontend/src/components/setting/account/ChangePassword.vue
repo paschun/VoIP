@@ -1,10 +1,10 @@
 <template>
   <div class="p-1">
-    <form @submit.prevent="changePassword" class="ml-2 mr-2">
+    <form class="ml-2 mr-2" @submit.prevent="changePassword">
       <div class="form-group mb-2 mt-4">
         <input
-          class="form-control"
           v-model="r$.$value.old_password"
+          class="form-control"
           type="password"
           placeholder="Old Password"
           :class="{ 'is-invalid': r$.old_password.$error }"
@@ -13,14 +13,14 @@
       </div>
 
       <div class="form-group mb-2 mt-4">
-        <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }">
+        <input v-model="r$.$value.password" class="form-control" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }">
         <FieldErrors :field="r$.password" />
       </div>
 
       <div class="form-group mb-2 mt-2">
         <input
-          class="form-control"
           v-model="r$.$value.c_password"
+          class="form-control"
           type="password"
           placeholder="Confirm Password"
           :class="{ 'is-invalid': r$.c_password.$error }"

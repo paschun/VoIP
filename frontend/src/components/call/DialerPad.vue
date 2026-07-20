@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="d-flex justify-content-between" :class="{ 'mt-4': i === 0 }" v-for="(row, i) in rows" :key="i">
+    <div v-for="(row, i) in rows" :key="i" class="d-flex justify-content-between" :class="{ 'mt-4': i === 0 }">
       <div v-for="[key, alpha] in row" :key="key">
         <a class="btn btn-light-primary dialer-btn2" @click="press(key)">
           <p class="number font-weight-bolder mb-0">{{ key }}</p>

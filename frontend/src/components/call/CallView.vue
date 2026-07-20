@@ -1,6 +1,6 @@
 <template>
   <div>
-    <b-modal ref="callModal" id="call-modal" no-footer>
+    <b-modal id="call-modal" ref="callModal" no-footer>
       <template #header="{ close }">
         <!-- Emulate built in modal header close button action; hidden while a call is ringing or up. -->
         <b-button :class="{ 'd-none': callStore.state !== 'idle' }" size="sm" variant="outline-danger" @click="close()"> Close </b-button>
@@ -12,17 +12,17 @@
             <div v-if="callStore.state === 'idle'">
               <contact-picker class="mb-2" @select="setDialInput" />
               <b-form-group style="margin-bottom: 0">
-                <b-form-input class="chat-input" v-model="dialInput" type="number" required></b-form-input>
+                <b-form-input v-model="dialInput" class="chat-input" type="number" required></b-form-input>
               </b-form-group>
             </div>
             <active-call-panel v-else />
             <dialer-pad @press="onKey" />
-            <div class="dialer-container" v-if="callStore.state === 'idle'">
+            <div v-if="callStore.state === 'idle'" class="dialer-container">
               <center class="mt-4">
-                <button type="button" v-b-tooltip.hover title="Call" class="btn btn-success m-1 px-5" @click="callStore.dial(dialInput)">
+                <button v-b-tooltip.hover type="button" title="Call" class="btn btn-success m-1 px-5" @click="callStore.dial(dialInput)">
                   <i-bi-telephone-outbound aria-hidden="true" />
                 </button>
-                <button type="button" v-b-tooltip.hover title="Delete" class="btn btn-danger m-1 px-5" @click="removeDigit()">
+                <button v-b-tooltip.hover type="button" title="Delete" class="btn btn-danger m-1 px-5" @click="removeDigit()">
                   <i-bi-backspace aria-hidden="true" />
                 </button>
               </center>

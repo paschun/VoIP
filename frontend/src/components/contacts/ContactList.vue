@@ -12,17 +12,17 @@
           <div>
             <div class="d-flex justify-content-start">
               <div class="ml-1">
-                <b-button v-b-tooltip.hover title="Add Contact" @click="contactStore.startCreate()" class="float-left d-flex m-1" size="sm" variant="primary">
+                <b-button v-b-tooltip.hover title="Add Contact" class="float-left d-flex m-1" size="sm" variant="primary" @click="contactStore.startCreate()">
                   <i-bi-plus-circle />
                 </b-button>
               </div>
               <div class="ml-2">
-                <b-button v-b-tooltip.hover title="Export Contact" @click="exportContact()" class="float-left d-flex m-1" size="sm" variant="primary">
+                <b-button v-b-tooltip.hover title="Export Contact" class="float-left d-flex m-1" size="sm" variant="primary" @click="exportContact()">
                   <i-bi-cloud-download />
                 </b-button>
               </div>
               <div class="ml-2">
-                <b-button v-b-tooltip.hover title="Delete All Contact" @click="deleteAll()" class="float-left d-flex m-1" size="sm" variant="danger">
+                <b-button v-b-tooltip.hover title="Delete All Contact" class="float-left d-flex m-1" size="sm" variant="danger" @click="deleteAll()">
                   <i-bi-trash-fill />
                 </b-button>
               </div>
@@ -38,7 +38,7 @@
               <div class="d-flex flex-row bd-highlight">
                 <div class="bd-highlight">&nbsp;&nbsp;<i-bi-search />&nbsp;&nbsp;</div>
                 <div class="bd-highlight">
-                  <input type="text" class="input-search" v-model="query" placeholder="Search">
+                  <input v-model="query" type="text" class="input-search" placeholder="Search">
                 </div>
               </div>
             </div>

@@ -3,17 +3,17 @@
     <div class="login-box dark-mode p-3">
       <theme-button />
       <h1 class="dark-mode">Login</h1>
-      <form @submit.prevent="submitLogin" class="ml-2 mr-2" v-if="screen === 'login'">
+      <form v-if="screen === 'login'" class="ml-2 mr-2" @submit.prevent="submitLogin">
         <div class="form-group mt-4">
           <b-input-group>
             <b-input-group-text>
               <i-bi-person-fill />
             </b-input-group-text>
             <input
+              v-model="loginR$.$value.name"
               class="form-control chat-input"
               type="text"
               placeholder="Username"
-              v-model="loginR$.$value.name"
               :class="{ 'is-invalid': loginR$.name.$error }"
               title="Enter Username"
             >
@@ -26,8 +26,8 @@
               <i-bi-shield-lock />
             </b-input-group-text>
             <input
-              class="chat-input form-control"
               v-model="loginR$.$value.password"
+              class="chat-input form-control"
               type="password"
               placeholder="Password"
               :class="{ 'is-invalid': loginR$.password.$error }"
@@ -39,15 +39,15 @@
         <div class="d-grid">
           <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
         </div>
-        <div class="my-2 small" v-if="meta.signupEnabled">Don't have an account yet? <router-link :to="{ name: 'signup' }" class="mx-2"> Sign up</router-link></div>
-        <div class="d-grid d-md-flex mt-2 small" v-else>New registrations are disabled</div>
+        <div v-if="meta.signupEnabled" class="my-2 small">Don't have an account yet? <router-link :to="{ name: 'signup' }" class="mx-2"> Sign up</router-link></div>
+        <div v-else class="d-grid d-md-flex mt-2 small">New registrations are disabled</div>
       </form>
       <form class="ml-2 mr-2 text-center" :class="{ 'd-none': screen !== 'otp' }" @submit.prevent="verifyOtp">
         <div class="form-group my-4">
           <label>Enter Verification Code</label>
           <input
-            class="totp"
             v-model="otpR$.$value.otp"
+            class="totp"
             type="text"
             maxlength="6"
             placeholder="000000"
@@ -57,16 +57,16 @@
           <FieldErrors :field="otpR$.otp" />
         </div>
         <div class="text-center">
-          <button class="btn btn-success m-3 px-5" type="button" @click="verifyOtp" id="login-button2">Verify</button>
+          <button id="login-button2" class="btn btn-success m-3 px-5" type="button" @click="verifyOtp">Verify</button>
         </div>
         <div class="p-2">
           <button type="button" class="btn btn-link p-0" @click="showScreen('picker')">Choose A Different Verification Method</button>
         </div>
       </form>
 
-      <form class="ml-2 mr-2 text-center" v-if="screen === 'keys' || screen === 'picker'">
+      <form v-if="screen === 'keys' || screen === 'picker'" class="ml-2 mr-2 text-center">
         <div v-if="screen === 'picker'">
-          <div class="card my-4" v-if="loginStore.hardwareKeys.length > 0">
+          <div v-if="loginStore.hardwareKeys.length > 0" class="card my-4">
             <div class="card-body" style="cursor: pointer" @click="showScreen('keys')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
@@ -79,7 +79,7 @@
               </div>
             </div>
           </div>
-          <div class="card" v-if="loginStore.totpAvailable">
+          <div v-if="loginStore.totpAvailable" class="card">
             <div class="card-body" style="cursor: pointer" @click="showScreen('otp')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
@@ -97,14 +97,14 @@
           </div>
         </div>
         <div v-else>
-          <div class="card my-4" v-for="key in loginStore.hardwareKeys" :key="key._id">
+          <div v-for="key in loginStore.hardwareKeys" :key="key._id" class="card my-4">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <i-bi-key /><span class="mr-2"> {{ key.title }} </span>
                 </div>
                 <div>
-                  <button type="button" @click="verifyKey(key)" class="btn btn-success">Verify</button>
+                  <button type="button" class="btn btn-success" @click="verifyKey(key)">Verify</button>
                 </div>
               </div>
             </div>

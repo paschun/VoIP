@@ -23,11 +23,11 @@
     <section class="col col-md-8 pb-2">
       <div class="chat-head">
         <!-- hamburger / drawer-open icon hidden on larger screens (>= sm) where sidebar always visible -->
-        <i-bi-chevron-left aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" v-b-toggle.sidebar-no-header />
+        <i-bi-chevron-left v-b-toggle.sidebar-no-header aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" />
         <i-bi-person-bounding-box aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
         <div class="chat-name">
-          <h1 class="font-name" v-if="conversationStore.activeConversation">
-            <div class="d-flex align-items-start align-self-center" v-if="conversationStore.activeConversation.contact">
+          <h1 v-if="conversationStore.activeConversation" class="font-name">
+            <div v-if="conversationStore.activeConversation.contact" class="d-flex align-items-start align-self-center">
               <div class="mt-2 ml-4">
                 {{ conversationStore.activeConversation.contact.first_name }}
                 {{ conversationStore.activeConversation.contact.last_name }}
@@ -37,22 +37,22 @@
               <div class="mt-2 ml-4">{{ conversationStore.activeRemoteNumber }}</div>
               &nbsp;&nbsp;&nbsp;
               <span
+                v-if="!conversationStore.activeConversation.contact"
                 style="cursor: copy"
                 title="Add Contact"
                 @click="contactStore.startCreate(conversationStore.activeRemoteNumber)"
-                v-if="!conversationStore.activeConversation.contact"
               >
                 <i-bi-plus-circle aria-hidden="true" style="font-size: 1.5em" />
               </span>
             </div>
           </h1>
         </div>
-        <div class="d-flex m-auto" v-if="conversationStore.hasActiveConversation">
-          <span style="cursor: pointer" @click="callStore.dial(conversationStore.activeRemoteNumber)" title="Call">
+        <div v-if="conversationStore.hasActiveConversation" class="d-flex m-auto">
+          <span style="cursor: pointer" title="Call" @click="callStore.dial(conversationStore.activeRemoteNumber)">
             <i-bi-telephone aria-hidden="true" style="font-size: 2em" />
           </span>
           &nbsp;&nbsp;&nbsp;
-          <span style="cursor: pointer" @click="deleteChat()" title="Delete">
+          <span style="cursor: pointer" title="Delete" @click="deleteChat()">
             <i-bi-trash aria-hidden="true" style="font-size: 2em" />
           </span>
         </div>

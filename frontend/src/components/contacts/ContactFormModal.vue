@@ -8,27 +8,27 @@
               <div class="form-group m-auto mb-2">
                 <label>First Name</label>
                 <input
+                  v-model="r$.$value.first_name"
                   class="form-control"
                   type="text"
                   placeholder="First Name"
-                  v-model="r$.$value.first_name"
                   :class="{ 'is-invalid': r$.first_name.$error }"
                 >
                 <FieldErrors :field="r$.first_name" />
               </div>
               <div class="form-group m-auto mb-2">
                 <label>Last Name</label>
-                <input class="form-control" type="text" placeholder="Last Name" v-model="r$.$value.last_name">
+                <input v-model="r$.$value.last_name" class="form-control" type="text" placeholder="Last Name">
               </div>
               <div class="form-group m-auto mb-2">
                 <label>Number</label>
-                <input class="form-control" type="text" placeholder="Number" v-model="r$.$value.number" :class="{ 'is-invalid': r$.number.$error }">
+                <input v-model="r$.$value.number" class="form-control" type="text" placeholder="Number" :class="{ 'is-invalid': r$.number.$error }">
                 <FieldErrors :field="r$.number" />
               </div>
 
               <div class="form-group m-auto mb-2">
                 <label>Note</label>
-                <input class="form-control" type="text" placeholder="Note" v-model="r$.$value.note">
+                <input v-model="r$.$value.note" class="form-control" type="text" placeholder="Note">
               </div>
               <div class="d-flex justify-content-start bd-highlight">
                 <div class="bd-highlight"><button type="submit" class="btn btn-primary float-right">Save</button></div>
@@ -46,11 +46,11 @@
               }}</span>
             </label>
             <div class="form-group mb-2 mt-4 d-none">
-              <input type="file" id="csv-file-input" class="form-control chat-input" accept=".csv" @change="onCsvFileChange">
+              <input id="csv-file-input" type="file" class="form-control chat-input" accept=".csv" @change="onCsvFileChange">
             </div>
             <div class="d-flex justify-content-start bd-highlight">
               <div class="bd-highlight">
-                <button type="button" :disabled="isParsingCsv" @click="importContactsCsv()" class="btn btn-primary float-right">Save</button>
+                <button type="button" :disabled="isParsingCsv" class="btn btn-primary float-right" @click="importContactsCsv()">Save</button>
               </div>
             </div>
           </b-tab>

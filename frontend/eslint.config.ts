@@ -11,8 +11,7 @@ export default defineConfigWithVueTs(
 
   globalIgnores(['dist/**', 'node_modules/**', 'public/**', 'src/components.d.ts']),
 
-  // pluginVue.configs['flat/essential'],
-  pluginVue.configs['flat/strongly-recommended'],
+  pluginVue.configs['flat/recommended'],
   // This wires vue-eslint-parser + the TS sub-parser for `<script lang="ts">` SFCs.
   vueTsConfigs.recommendedTypeChecked,
 

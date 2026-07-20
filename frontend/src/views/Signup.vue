@@ -2,17 +2,17 @@
   <div>
     <div class="login-box dark-mode p-3">
       <h1 class="dark-mode">Signup</h1>
-      <form @submit.prevent="handleSubmit" class="ml-2 mr-2">
+      <form class="ml-2 mr-2" @submit.prevent="handleSubmit">
         <div class="form-group mt-4">
           <b-input-group>
             <b-input-group-text>
               <i-bi-person-fill />
             </b-input-group-text>
             <input
+              v-model="r$.$value.name"
               class="form-control chat-input"
               type="text"
               placeholder="Username"
-              v-model="r$.$value.name"
               :class="{ 'is-invalid': r$.name.$error }"
               title="Enter Username"
             >
@@ -25,8 +25,8 @@
               <i-bi-shield-lock />
             </b-input-group-text>
             <input
-              class="chat-input form-control"
               v-model="r$.$value.password"
+              class="chat-input form-control"
               type="password"
               placeholder="Password"
               :class="{ 'is-invalid': r$.password.$error }"
@@ -41,8 +41,8 @@
               <i-bi-shield-lock />
             </b-input-group-text>
             <input
-              class="chat-input form-control"
               v-model="r$.$value.c_password"
+              class="chat-input form-control"
               type="password"
               placeholder="Confirm Password"
               :class="{ 'is-invalid': r$.c_password.$error }"

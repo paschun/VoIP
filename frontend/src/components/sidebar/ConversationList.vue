@@ -3,11 +3,11 @@
     <div class="wrap-search">
       <div class="search">
         <i class="fa fa-search fa" aria-hidden="true"></i>
-        <input type="text" class="input-search" v-model="query" placeholder="Search">
+        <input v-model="query" type="text" class="input-search" placeholder="Search">
       </div>
     </div>
     <div class="contact-list">
-      <div class="box-placeholder" v-if="conversationStore.inboxIsLoading">
+      <div v-if="conversationStore.inboxIsLoading" class="box-placeholder">
         <div class="p-4">
           <span class="category text link"></span>
           <h4 class="text line"></h4>
@@ -33,22 +33,22 @@
       <template v-if="!conversationStore.inboxIsLoading">
         <div
           v-for="item in searchNumbers"
+          :id="`phone${item._id}`"
           :key="item._id"
           class="contact"
-          :id="`phone${item._id}`"
-          @click="conversationStore.openConversation(item)"
           :class="{ activeChat: conversationStore.activeRemoteNumber == item._id }"
+          @click="conversationStore.openConversation(item)"
         >
           <i-bi-person-bounding-box aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
           <div class="d-flex justify-content-between" style="width: 100%">
             <div class="contact-preview">
               <div class="contact-text">
-                <h1 class="font-name" v-if="item.contact">{{ item.contact.first_name }} {{ item.contact.last_name }}</h1>
+                <h1 v-if="item.contact" class="font-name">{{ item.contact.first_name }} {{ item.contact.last_name }}</h1>
                 <h1 v-else class="font-name">{{ item._id }}</h1>
-                <p class="font-preview" v-if="item.message">
+                <p v-if="item.message" class="font-preview">
                   {{ getValidString(item.message) }}
                 </p>
-                <p class="font-preview" v-else>
+                <p v-else class="font-preview">
                   <span v-if="item.message_type == 'call'">
                     <span v-if="item.type == 'send'"> Outbound </span>
                     <span v-else> Inbound </span>
@@ -61,7 +61,7 @@
             <div class="align-self-center text-end me-3">
               <span class="time">{{ formatTimestamp(item.created_at, false) }}</span>
               <!-- Jan 1, 2000 10:00 AM -->
-              <span class="badge message_count bg-success" :id="item._id" v-if="item.unread > 0">{{ item.unread }}</span>
+              <span v-if="item.unread > 0" :id="item._id" class="badge message_count bg-success">{{ item.unread }}</span>
             </div>
           </div>
         </div>

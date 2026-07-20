@@ -8,7 +8,7 @@
             <div class="row align-items-center">
               <div class="col-auto">
                 <div>
-                  <input @change="totpStatusChange" id="checkbox" type="checkbox" class="switch-checkbox" v-model="totpEnabled">
+                  <input id="checkbox" v-model="totpEnabled" type="checkbox" class="switch-checkbox" @change="totpStatusChange">
                   <label for="checkbox" class="switch-label switch-label-mode">
                     <span>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="#198754" width="23" height="23" viewBox="0 0 24 24">
@@ -50,16 +50,16 @@
       <div class="form-group mt-1">
         <label>Enter Verification Code</label>
         <input
+          v-model="verificationCode"
           type="form-control"
           maxlength="6"
-          v-model="verificationCode"
           placeholder="000000"
           title="6 Digit Code"
           class="totp"
           @keyup.enter="verifyStatusCode()"
         >
       </div>
-      <button type="button" @click="verifyStatusCode()" class="btn btn-success m-2 px-4">Verify</button>
+      <button type="button" class="btn btn-success m-2 px-4" @click="verifyStatusCode()">Verify</button>
     </div>
     <hardware-key />
   </div>

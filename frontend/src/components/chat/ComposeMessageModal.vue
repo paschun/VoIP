@@ -5,12 +5,12 @@
       >Input (+) and country code followed by the 10 digit phone number. If no country code is provided (+1) is assumed. Multiple numbers will be sent as Bulk
       SMS (individual sms's to recipients). <span class="small text-center">[Telnyx does not support group texting]</span></span
     >
-    <form @submit.prevent="sendComposedMessage" class="ml-2 mr-2">
+    <form class="ml-2 mr-2" @submit.prevent="sendComposedMessage">
       <contact-picker class="mt-4" @select="addRecipient" />
       <div class="form-group mt-4">
         <vue-tags-input
-          class="form-control chat-input"
           v-model="tagInput"
+          class="form-control chat-input"
           :tags="recipientTags"
           placeholder="Enter phone number"
           @tags-changed="onTagsChanged"
@@ -21,12 +21,12 @@
       </div>
       <div class="form-group mb-2 mt-4">
         <textarea
+          v-model="composeMessage"
           rows="8"
           class="form-control chat-input"
-          v-model="composeMessage"
           placeholder="Type Message here"
-          @blur="touched.message = true"
           :class="{ 'is-invalid': touched.message && composeContentMissing }"
+          @blur="touched.message = true"
         >
         </textarea>
         <div v-if="touched.message && composeContentMissing" class="invalid-feedback d-block">
@@ -41,7 +41,7 @@
         <span class="form-control chat-input" :class="{ 'text-secondary': !selectedFileNames }">{{ selectedFileNames || 'Choose file' }}</span>
       </label>
       <div class="form-group mb-2 mt-4 d-none">
-        <input type="file" id="attachment-file-input" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick">
+        <input id="attachment-file-input" type="file" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick">
       </div>
 
       <div class="d-grid d-md-flex">

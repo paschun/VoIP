@@ -3,7 +3,7 @@
     <loading-spinner :show="isSavingProviderSetting" />
     <b-modal v-model="visible" size="lg" title="Settings" hide-footer>
       <theme-button />
-      <form @submit.prevent="saveProviderSetting" class="ml-2 mr-2">
+      <form class="ml-2 mr-2" @submit.prevent="saveProviderSetting">
         <b-form-radio-group
           id="provider-type-radios"
           v-model="r$.$value.type"
@@ -27,13 +27,13 @@
               </div>
               <div class="col-1 m-auto">
                 <span class="float-right" style="cursor: pointer" title="Delete">
-                  <i-bi-trash @click="deleteProfile()" style="font-size: 1.5em" aria-hidden="true" />
+                  <i-bi-trash style="font-size: 1.5em" aria-hidden="true" @click="deleteProfile()" />
                 </span>
               </div>
             </div>
           </div>
         </div>
-        <div class="card form-group mt-4 overflow-visible-card" v-if="r$.$value.type === 'telnyx'">
+        <div v-if="r$.$value.type === 'telnyx'" class="card form-group mt-4 overflow-visible-card">
           <div class="card-body">
             <div class="row mb-2">
               <div class="col-auto m-auto">
@@ -43,13 +43,13 @@
                 </label>
               </div>
               <div class="col-sm col-12 m-auto">
-                <input class="form-control" type="text" placeholder="Telnyx API Key" v-model="r$.$value.api_key" :class="{ 'is-invalid': r$.api_key.$error }">
+                <input v-model="r$.$value.api_key" class="form-control" type="text" placeholder="Telnyx API Key" :class="{ 'is-invalid': r$.api_key.$error }">
                 <field-errors :field="r$.api_key" />
               </div>
             </div>
             <div class="row mb-2">
               <div class="col-auto m-auto">
-                <button class="dark-mode btn btn-secondary btn-sm" type="button" id="get-number" @click="loadProviderNumbers('telnyx')">
+                <button id="get-number" class="dark-mode btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('telnyx')">
                   <i-bi-telephone-plus aria-hidden="true" />
                   Get Number
                 </button>
@@ -66,14 +66,14 @@
                 </div>
               </div>
               <div class="col-auto m-auto">
-                <span class="float-right" style="cursor: pointer" @click="deleteApiKey()" title="Delete" v-if="showDelete">
+                <span v-if="showDelete" class="float-right" style="cursor: pointer" title="Delete" @click="deleteApiKey()">
                   <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
             </div>
           </div>
         </div>
-        <div class="card form-group mt-4 overflow-visible-card" v-if="r$.$value.type === 'twilio'">
+        <div v-if="r$.$value.type === 'twilio'" class="card form-group mt-4 overflow-visible-card">
           <div class="card-body">
             <div class="row mb-2">
               <div class="col-auto col-lg-3 m-auto">
@@ -84,10 +84,10 @@
               </div>
               <div class="col-12 col-sm col-lg-9 m-auto">
                 <input
+                  v-model="r$.$value.twilio_sid"
                   class="form-control"
                   type="text"
                   placeholder="Twilio SID"
-                  v-model="r$.$value.twilio_sid"
                   :class="{ 'is-invalid': r$.twilio_sid.$error }"
                 >
                 <field-errors :field="r$.twilio_sid" />
@@ -103,10 +103,10 @@
               </div>
               <div class="col-12 col-sm col-lg-9 m-auto">
                 <input
+                  v-model="r$.$value.twilio_token"
                   class="form-control"
                   type="text"
                   placeholder="Twilio Token"
-                  v-model="r$.$value.twilio_token"
                   :class="{ 'is-invalid': r$.twilio_token.$error }"
                 >
                 <field-errors :field="r$.twilio_token" />
@@ -114,7 +114,7 @@
             </div>
             <div class="row mb-2">
               <div class="col-auto m-auto">
-                <button class="dark-mode btn btn-secondary btn-sm" type="button" id="get-number-twilio" @click="loadProviderNumbers('twilio')">
+                <button id="get-number-twilio" class="dark-mode btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('twilio')">
                   <i-bi-telephone-plus aria-hidden="true" />
                   Get Number
                 </button>
@@ -131,7 +131,7 @@
                 </div>
               </div>
               <div class="col-auto m-auto">
-                <span class="float-right" style="cursor: pointer" @click="deleteApiKey()" title="Delete" v-if="showDelete">
+                <span v-if="showDelete" class="float-right" style="cursor: pointer" title="Delete" @click="deleteApiKey()">
                   <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>

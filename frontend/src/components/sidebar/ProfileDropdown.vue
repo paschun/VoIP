@@ -50,11 +50,11 @@
         Add New Profile
       </b-dropdown-item-button>
       <b-dropdown-divider></b-dropdown-divider>
-      <b-modal ref="add-profile" id="add-profile" size="lg" title="Add Profile" no-footer>
+      <b-modal id="add-profile" ref="add-profile" size="lg" title="Add Profile" no-footer>
         <span class="small text-secondary">Profile</span>
-        <form @submit.prevent="addProfile" class="ml-2 mr-2">
+        <form class="ml-2 mr-2" @submit.prevent="addProfile">
           <div class="form-group mt-2">
-            <input class="form-control chat-input" v-model="r$.$value" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
+            <input v-model="r$.$value" class="form-control chat-input" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
             <div v-if="r$.$error" class="invalid-feedback">
               <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
             </div>

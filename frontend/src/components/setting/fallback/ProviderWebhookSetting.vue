@@ -1,13 +1,13 @@
 <template>
   <div class="py-1 px-2">
-    <form @submit.prevent="saveFallbackUrl" class="ml-2 mr-2">
+    <form class="ml-2 mr-2" @submit.prevent="saveFallbackUrl">
       <div class="form-group mt-2">
         <label>{{ mainLabel }}</label>
-        <input class="form-control main-url-control" v-model="mainUrl" readonly>
+        <input v-model="mainUrl" class="form-control main-url-control" readonly>
       </div>
       <div class="form-group mt-2">
         <label>{{ fallbackLabel }}</label>
-        <input class="form-control" v-model="r$.$value" :placeholder="fallbackPlaceholder" :class="{ 'is-invalid': r$.$error }">
+        <input v-model="r$.$value" class="form-control" :placeholder="fallbackPlaceholder" :class="{ 'is-invalid': r$.$error }">
         <div v-if="r$.$error" class="invalid-feedback">
           <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
         </div>

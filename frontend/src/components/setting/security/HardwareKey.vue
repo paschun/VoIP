@@ -1,7 +1,7 @@
 <template>
   <div>
     <h6 class="border-bottom mx-1 pb-1">Hardware Key</h6>
-    <div class="card m-1" v-for="key in keys" :key="key._id">
+    <div v-for="key in keys" :key="key._id" class="card m-1">
       <div class="card-body">
         <div class="d-flex justify-content-between">
           <div class="pr-1 mr-2">
@@ -22,7 +22,7 @@
             <div class="col-auto">
               <div class="d-flex justify-content-between">
                 <div class="p-2">
-                  <input type="text" class="form-control" v-model="title">
+                  <input v-model="title" type="text" class="form-control">
                 </div>
                 <div class="p-2">
                   <button class="btn btn-success" @click="register()">

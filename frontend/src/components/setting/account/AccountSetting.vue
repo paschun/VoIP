@@ -2,10 +2,10 @@
   <div class="p-2">
     <div v-if="activeMenu == 'setting'">
       <ul class="list-group">
-        <li class="list-group-item" @click="enableMenu('username')" style="cursor: pointer"><i-bi-person aria-hidden="true" class="mx-2" />Change Username</li>
-        <li class="list-group-item" @click="enableMenu('password')" style="cursor: pointer"><i-bi-key aria-hidden="true" class="mx-2" />Change Password</li>
-        <li class="list-group-item" @click="deleteAccount()" style="cursor: pointer"><i-bi-trash aria-hidden="true" class="mx-2" />Delete Account</li>
-        <li class="list-group-item" @click="enableMenu('fallback')" style="cursor: pointer">
+        <li class="list-group-item" style="cursor: pointer" @click="enableMenu('username')"><i-bi-person aria-hidden="true" class="mx-2" />Change Username</li>
+        <li class="list-group-item" style="cursor: pointer" @click="enableMenu('password')"><i-bi-key aria-hidden="true" class="mx-2" />Change Password</li>
+        <li class="list-group-item" style="cursor: pointer" @click="deleteAccount()"><i-bi-trash aria-hidden="true" class="mx-2" />Delete Account</li>
+        <li class="list-group-item" style="cursor: pointer" @click="enableMenu('fallback')">
           <i-bi-exclamation-circle aria-hidden="true" class="mx-2" />Fallback Setting
         </li>
       </ul>

@@ -1,6 +1,6 @@
 <template>
   <div class="wrap-chat">
-    <div class="loading-bar" v-if="conversationStore.threadIsLoading">
+    <div v-if="conversationStore.threadIsLoading" class="loading-bar">
       <div class="blue-bar"></div>
     </div>
     <div ref="chatContainer" class="chat" :class="{ 'opacity-0': conversationStore.threadIsLoading }">
@@ -45,7 +45,7 @@
       </div>
     </div>
   </div>
-  <div id="image-zoom-overlay" v-show="zoomImage" @click="hideImage()">
+  <div v-show="zoomImage" id="image-zoom-overlay" @click="hideImage()">
     <div class="d-flex justify-content-center align-items-center" style="height: 100vh; width: 100vw">
       <img class="img-fluid" alt="Responsive image" :src="zoomImage">
     </div>
