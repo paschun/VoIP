@@ -75,13 +75,14 @@
 <script setup lang="ts">
 /** The header profile dropdown: active-profile display + unread badge, profile selector, add-profile modal, logout.
  * The add-profile modal opens by id via `v-b-modal.add-profile`, so it stays template-ref imperative for `hide()`. */
-import { computed, onMounted, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
-import { DetailedError } from 'hono/client'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import { useActiveProfileChange } from '@/composables/useActiveProfileChange.ts'
+import { setServerErrors } from '@/core/handle-error.ts'
 import { notifySuccess } from '@/core/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -110,9 +111,7 @@ async function addProfile() {
     r$.$reset({ toState: '' })
   } catch (err) {
     // 409 "Profile already exists!"
-    if (err instanceof DetailedError) {
-      r$.$setExternalErrors([err.detail?.data?.message])
-    }
+    setServerErrors(r$, err, (message) => [message])
     throw err
   }
 }
@@ -125,10 +124,8 @@ function logout() {
 onMounted(() => {
   void profileStore.initSelection()
 })
-// Selection changed: pull the new profile's detail (unread counts). Gating on the id avoids a refetch loop,
-// since refreshActiveProfile reassigns a same-id object. immediate so a profile persisted in localStorage
-// loads on mount -- its id doesn't "change".
-watch(() => profileStore.activeProfileId, () => void profileStore.refreshActiveProfile(), { immediate: true })
+// Selection changed: pull the new profile's detail (unread counts).
+useActiveProfileChange(() => profileStore.refreshActiveProfile())
 </script>
 
 <style scoped>

@@ -72,8 +72,9 @@
 
 <script setup lang="ts">
 /** The inbox sidebar: search box, loading skeleton, and conversation rows. Selection is a pure store call. */
-import { computed, onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import PullToRefresh from 'pulltorefreshjs'
+import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { formatTimestamp } from '@/helper.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'
@@ -84,16 +85,12 @@ function getValidString(str: string): string {
 
 const conversationStore = useConversationStore()
 const profileStore = useProfileStore()
-const query = ref('')
 
 // Inbox rows filtered by the search box. Derives from the store list so it tracks loads/socket refreshes.
-const searchNumbers = computed(() => {
-  const search = new RegExp(query.value, 'i')
-  return conversationStore.conversations.filter(
-    (item) =>
-      search.test(item._id) || search.test(item.contact?.first_name ?? '') || search.test(item.contact?.last_name ?? '') || search.test(item.message ?? ''),
-  )
-})
+const { query, results: searchNumbers } = useSearchFilter(
+  () => conversationStore.conversations,
+  ({ _id, contact, message }) => [_id, contact?.first_name, contact?.last_name, message],
+)
 
 function pullRefreshFunction() {
   void conversationStore.reloadInbox()

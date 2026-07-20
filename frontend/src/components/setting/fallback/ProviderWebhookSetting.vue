@@ -21,9 +21,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, withMessage, httpUrl } from '@regle/rules'
+import { useActiveProfileChange } from '@/composables/useActiveProfileChange.ts'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifySuccess } from '@/core/notify.ts'
 import { useProfileStore } from '@/stores/profile.ts'
@@ -107,7 +108,6 @@ async function saveFallbackUrl() {
   await getCallSetting()
 }
 
-onMounted(getCallSetting)
 // Re-fetch when the selected profile changes while this panel stays mounted, so the URLs don't go stale.
-watch(() => profileStore.activeProfileId, getCallSetting)
+useActiveProfileChange(getCallSetting)
 </script>

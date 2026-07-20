@@ -67,8 +67,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import Swal from 'sweetalert2'
+import { useClipboard } from '@vueuse/core'
 import { client, request } from '@/core/rpc.client.ts'
+import { confirmWarning } from '@/helper.ts'
 import { notifyError } from '@/core/notify.ts'
 import HardwareKey from './HardwareKey.vue'
 
@@ -79,7 +80,8 @@ const realTotp = ref(false) // reflects totp value on server
 const qr = ref('')
 const verificationCode = ref('')
 const secret = ref('')
-const secretCopied = ref(false)
+// `secretCopied` flips the "Click On Key To Copy" hint to "Copied!" and auto-resets shortly after.
+const { copy: copySecret, copied: secretCopied } = useClipboard({ source: secret })
 
 async function getTotpStatus() {
   const enabled = (await request(client.api.auth.me.$get())).data.totp
@@ -89,16 +91,7 @@ async function getTotpStatus() {
 
 async function totpStatusChange() {
   if (!totpEnabled.value) {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'Software token will be deleted. You will have to reconfigure it!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, remove it!',
-    })
-    if (!result.isConfirmed) {
+    if (!(await confirmWarning('Software token will be deleted. You will have to reconfigure it!'))) {
       totpEnabled.value = true
       return
     }
@@ -110,7 +103,6 @@ async function totpStatusChange() {
   const res = await request(client.api.auth.totp.qr.$post())
   qr.value = res.data.image
   secret.value = res.data.secret
-  secretCopied.value = false
 }
 
 async function verifyStatusCode() {
@@ -125,15 +117,6 @@ async function verifyStatusCode() {
   verificationCode.value = ''
   secret.value = ''
   await getTotpStatus()
-}
-
-async function copySecret() {
-  try {
-    await navigator.clipboard.writeText(secret.value)
-    secretCopied.value = true
-  } catch (err) {
-    console.error('Failed to copy!', err)
-  }
 }
 
 onMounted(getTotpStatus)

@@ -1,4 +1,5 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status'
+import { DetailedError } from 'hono/client'
 import Swal from 'sweetalert2'
 import router from '@/router/routes.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -25,7 +26,7 @@ const swalError = ({ title, text }: { title?: string | number; text?: string }) 
  * Central reaction to a failed API call, keyed on the HTTP status and the server `{ message }`. `request`
  * (rpc.client) calls it for the side effects before re-throwing. Always notifies (no opt-out yet).
  *
- * TODO: notification is mixed here with removing cookies/navigating. Separate those concerns.
+ * TODO: notification is mixed here with navigating. Separate those concerns.
  */
 export function notifyApiError(status?: ApiErrorStatus, message?: string): void {
   console.error(`HTTP error status:`, status, '- message:', message)
@@ -53,4 +54,16 @@ export function notifyApiError(status?: ApiErrorStatus, message?: string): void 
   } else {
     void swalError({ title: status, text: message })
   }
+}
+
+/**
+ * In a form submit's `catch`: copy the server's `{ message }` onto Regle external errors, shaped by `toErrors`
+ * (`(m) => ({ name: [m] })`, or `(m) => [m]` for a single-ref form). Non-HTTP errors are ignored; caller rethrows.
+ */
+export function setServerErrors<E>(
+  r$: { $setExternalErrors: (errors: E) => void },
+  err: unknown,
+  toErrors: (message: string) => E,
+): void {
+  if (err instanceof DetailedError) r$.$setExternalErrors(toErrors(err.detail?.data?.message))
 }

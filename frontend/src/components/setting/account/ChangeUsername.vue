@@ -18,7 +18,7 @@
 import { ref } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, minLength, lowercase } from '@regle/rules'
-import { DetailedError } from 'hono/client'
+import { setServerErrors } from '@/core/handle-error.ts'
 import { notifySuccess } from '@/core/notify.ts'
 import { useUserStore } from '@/stores/user.ts'
 
@@ -34,9 +34,7 @@ async function changeUsername() {
   try {
     await userStore.changeUsername(data)
   } catch (err) {
-    if (err instanceof DetailedError) {
-      r$.$setExternalErrors([err.detail?.data?.message])
-    }
+    setServerErrors(r$, err, (message) => [message])
     throw err // skips logic below
   }
   r$.$reset({ toState: data })

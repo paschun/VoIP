@@ -73,8 +73,8 @@ import { onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, sameAs, lowercase, withMessage } from '@regle/rules'
-import { DetailedError } from 'hono/client'
 import { client, request } from '@/core/rpc.client.ts'
+import { setServerErrors } from '@/core/handle-error.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
 defineOptions({ name: 'SignupView' })
@@ -106,9 +106,7 @@ async function handleSubmit() {
     await request(client.api.auth.register.$post({ json: { name: data.name, password: data.password } }))
   } catch (err) {
     // Duplicate username comes back as a 409
-    if (err instanceof DetailedError) {
-      r$.$setExternalErrors({ name: [err.detail?.data?.message] })
-    }
+    setServerErrors(r$, err, (message) => ({ name: [message] }))
     throw err // skips logic below
   }
   // pure-JS navigation, not a reload of the page; named locations inherit the current appdirectory param

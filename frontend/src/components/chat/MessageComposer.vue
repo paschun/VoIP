@@ -42,32 +42,25 @@
  * Composer for the open conversation: text input, image attachments (file picker or drag-and-drop with previews and
  * upload progress), send. Emits `sent` after a successful send.
  */
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
-import { uploadMediaFiles } from '@/core/services/media.ts'
+import { useBusy } from '@/composables/useBusy.ts'
+import { useMediaUpload } from '@/composables/useMediaUpload.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
-import { useUserStore } from '@/stores/user.ts'
 
 const emit = defineEmits<{ sent: [] }>()
 
 const conversationStore = useConversationStore()
-const userStore = useUserStore()
 
-const isSendingMsg = ref(false)
+const { busy: isSendingMsg, run: runSend } = useBusy()
 const isDragging = ref(false)
-const isUploading = ref(false)
-const uploadPercent = ref(0) // 0 to 100
-const uploadedImages = ref<string[]>([])
+const { uploadedImages, isUploading, uploadPercent, uploadFiles, clearAttachments } = useMediaUpload()
 const messageBody = ref('')
 
 // Staged attachments belong to the conversation they were staged in.
-watch(
-  () => conversationStore.activeRemoteNumber,
-  () => {
-    uploadedImages.value = []
-  },
-)
+watch(() => conversationStore.activeRemoteNumber, clearAttachments)
 
 function onDragOver(e: DragEvent) {
   e.preventDefault()
@@ -92,23 +85,8 @@ function onFilesPick(e: Event) {
   if (!target.files) return
   void uploadFiles(target.files)
 }
-async function uploadFiles(files: FileList) {
-  uploadPercent.value = 0
-  isUploading.value = true
-  try {
-    const urls = await uploadMediaFiles(files, userStore.token, (percent) => {
-      uploadPercent.value = percent
-    })
-    uploadedImages.value.push(...urls)
-  } finally {
-    isUploading.value = false
-  }
-}
 function removeFromPreview(image: string) {
   uploadedImages.value = uploadedImages.value.filter((img) => img !== image)
-}
-function clearAttachments() {
-  uploadedImages.value = []
 }
 async function sendSms() {
   if (messageBody.value.trim() === '' && uploadedImages.value.length === 0) {
@@ -116,35 +94,24 @@ async function sendSms() {
     return
   }
   if (!conversationStore.hasActiveConversation) return
-  isSendingMsg.value = true
-  try {
+  await runSend(async () => {
     await conversationStore.sendMessage({
       numbers: [conversationStore.activeRemoteNumber],
       message: messageBody.value,
       media: uploadedImages.value,
     })
     messageBody.value = ''
-    uploadedImages.value = []
+    clearAttachments()
     emit('sent')
-  } finally {
-    isSendingMsg.value = false
-  }
+  })
 }
 
 // Drag-and-drop listens on document so a drag anywhere over the app reaches the composer; preventDefault also
 // stops the browser from navigating to a file dropped outside the drop zone.
-onMounted(() => {
-  document.addEventListener('dragenter', onDragOver)
-  document.addEventListener('dragover', onDragOver)
-  document.addEventListener('dragleave', onDragLeave)
-  document.addEventListener('drop', onDrop)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('dragenter', onDragOver)
-  document.removeEventListener('dragover', onDragOver)
-  document.removeEventListener('dragleave', onDragLeave)
-  document.removeEventListener('drop', onDrop)
-})
+useEventListener(document, 'dragenter', onDragOver) // calls removeEventListener automatically on unmount
+useEventListener(document, 'dragover', onDragOver)
+useEventListener(document, 'dragleave', onDragLeave)
+useEventListener(document, 'drop', onDrop)
 </script>
 
 <style scoped>

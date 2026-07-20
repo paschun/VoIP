@@ -40,11 +40,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import Swal from 'sweetalert2'
 import { decode as cborDecode } from 'cbor-x/decode'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { client, request } from '@/core/rpc.client.ts'
+import { confirmWarning } from '@/helper.ts'
 import { notifySuccess, notifyError } from '@/core/notify.ts'
 
 type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, SuccessStatusCode>['data']
@@ -116,16 +116,7 @@ async function getHardwareKey() {
 }
 
 async function deleteKey(id: string) {
-  const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: 'Hardware key will be deleted. You will have to set it up again!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, remove it!',
-  })
-  if (!result.isConfirmed) return
+  if (!(await confirmWarning('Hardware key will be deleted. You will have to set it up again!'))) return
   await request(client.api.hardwarekey[':id'].$delete({ param: { id } }))
   void notifySuccess('Your key has been deleted.', 'Deleted!')
   await getHardwareKey()

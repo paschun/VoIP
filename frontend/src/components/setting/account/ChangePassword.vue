@@ -38,8 +38,8 @@
 import { reactive } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, minLength, sameAs, withMessage } from '@regle/rules'
-import { DetailedError } from 'hono/client'
 import { client, request } from '@/core/rpc.client.ts'
+import { setServerErrors } from '@/core/handle-error.ts'
 import { notifySuccess } from '@/core/notify.ts'
 
 const form = reactive({ old_password: '', password: '', c_password: '' })
@@ -67,9 +67,7 @@ async function changePassword() {
     await request(client.api.auth.password.$put({ json: data }))
   } catch (err) {
     // The only field-level server error is a wrong old password (400)
-    if (err instanceof DetailedError) {
-      r$.$setExternalErrors({ old_password: [err.detail?.data?.message] })
-    }
+    setServerErrors(r$, err, (message) => ({ old_password: [message] }))
     throw err // skips logic below
   }
   r$.$reset({ toOriginalState: true })

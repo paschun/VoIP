@@ -151,12 +151,14 @@
  * (exposed because opening has a precondition: it toasts and bails when there's no active profile).
  * Configure-only: it edits the active profile's provider config; profile create/select lives in ProfileDropdown.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRegle, createVariant } from '@regle/core'
 import { required, literal, withMessage } from '@regle/rules'
 import Swal from 'sweetalert2'
 import FieldErrors from '@/components/shared/FieldErrors.vue'
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
+import { useActiveProfileChange } from '@/composables/useActiveProfileChange.ts'
+import { useBusy } from '@/composables/useBusy.ts'
 import { getProviderNumbers, lookupNumber, type ProviderNumbers } from '@/core/services/provider.ts'
 import { confirmDelete } from '@/helper.ts'
 import { notifyInfo, notifySuccess } from '@/core/notify.ts'
@@ -212,7 +214,8 @@ const { r$ } = useRegle(form, () => {
   return { ...provider.value }
 })
 
-const isSavingProviderSetting = ref(false) // covers both legs: the number-lookup and the save itself
+// Covers both legs: the number-lookup and the save itself.
+const { busy: isSavingProviderSetting, run: runSaving } = useBusy()
 const telnyxNumbers = ref<TelnyxNumber[]>([])
 const twilioNumbers = ref<TwilioNumber[]>([])
 
@@ -312,9 +315,8 @@ async function saveProviderSetting() {
           twilio_number,
           sid: twilioNumbers.value.find((n) => n.phoneNumber === twilio_number)?.sid ?? '',
         }
-  isSavingProviderSetting.value = true
   let isCall = false
-  try {
+  await runSaving(async () => {
     // a configured call webhook means call routing already exists, so we prompt before overriding it.
     if (providerSettingPayload.type === 'telnyx') {
       const data = await lookupNumber({
@@ -334,9 +336,7 @@ async function saveProviderSetting() {
       })
       isCall = !!data.voiceApplicationSid || !!data.voiceUrl
     }
-  } finally {
-    isSavingProviderSetting.value = false
-  }
+  })
   // Prompt outside the loader block (matching the old fire-and-forget swal that ran after `finally`).
   if (isCall) {
     const result = await Swal.fire({
@@ -354,20 +354,16 @@ async function saveProviderSetting() {
 }
 
 async function createProviderSetting(providerSettingPayload: ProviderSettingPayload) {
-  isSavingProviderSetting.value = true
-  try {
+  await runSaving(async () => {
     await profileStore.saveProviderSetting(providerSettingPayload)
     visible.value = false
     r$.$reset() // just-saved values are the new baseline
-  } finally {
-    isSavingProviderSetting.value = false
-  }
+  })
 }
 
-// Selection changed: reseed the form for the new profile. Gating on the id (not activeProfile) keeps a same-id
-// detail refresh from clobbering in-progress form edits. immediate so a profile persisted in localStorage seeds
-// on mount -- its id doesn't "change".
-watch(() => profileStore.activeProfileId, seedFormFromActiveProfile, { immediate: true })
+// Selection changed: reseed the form for the new profile (id-gating keeps a same-id detail refresh from
+// clobbering in-progress form edits).
+useActiveProfileChange(seedFormFromActiveProfile)
 </script>
 
 <style scoped>

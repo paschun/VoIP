@@ -22,6 +22,20 @@ export async function confirmDelete(title: string, denyMessage = 'Not deleted'):
   return result.isConfirmed
 }
 
+/** Warning-styled "Are you sure?" confirm ("Yes, remove it!" / cancel). Resolves `true` only on confirm. */
+export async function confirmWarning(text: string): Promise<boolean> {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, remove it!',
+  })
+  return result.isConfirmed
+}
+
 /**
  * Format a `created_at` timestamp for display (an inbox row or a thread entry).
  *

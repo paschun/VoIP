@@ -63,21 +63,20 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import ContactFormModal from './ContactFormModal.vue'
+import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'
 import { confirmDelete } from '@/helper.ts'
 import { notifySuccess } from '@/core/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
 
 const contactStore = useContactStore()
-const query = ref('')
 
 /** Contact rows filtered by the search box. */
-const searchContacts = computed(() => {
-  const search = new RegExp(query.value, 'i')
-  return contactStore.contacts.filter((item) => search.test(item.first_name) || search.test(item.last_name) || search.test(item.number))
-})
+const { query, results: searchContacts } = useSearchFilter(
+  () => contactStore.contacts,
+  ({ first_name, last_name, number }) => [first_name, last_name, number],
+)
 
 function exportContact() {
   downloadContactsCsv(contactStore.contacts, 'contacts')

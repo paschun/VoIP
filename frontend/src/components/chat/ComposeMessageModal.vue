@@ -56,10 +56,10 @@
 import { computed, ref } from 'vue'
 import VueTagsInputModule from '@sipec/vue3-tags-input'
 import { e164Phone } from '@shared/contracts/phone.ts'
+import { useBusy } from '@/composables/useBusy.ts'
+import { useMediaUpload } from '@/composables/useMediaUpload.ts'
 import { notifyError } from '@/core/notify.ts'
-import { uploadMediaFiles } from '@/core/services/media.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
-import { useUserStore } from '@/stores/user.ts'
 // UMD build exposes the component on `.default`; default-import interop can hand back the module namespace instead, so
 // unwrap to the actual component (else Vue throws "missing template or render function").
 const VueTagsInput = VueTagsInputModule.default ?? VueTagsInputModule
@@ -74,14 +74,13 @@ const visible = defineModel<boolean>()
 const emit = defineEmits<{ sent: [] }>()
 
 const conversationStore = useConversationStore()
-const userStore = useUserStore()
 
-const isLoading = ref(false)
+const { busy: isLoading, run } = useBusy()
 const recipients = ref<string[]>([])
 const tagInput = ref('')
 const composeMessage = ref('')
 const touched = ref({ recipients: false, message: false }) // mimics regle
-const uploadedImages = ref<string[]>([])
+const { uploadedImages, uploadFiles, clearAttachments } = useMediaUpload()
 const selectedFileNames = ref('')
 
 /** No text and no attached image -- a send needs at least one. */
@@ -109,13 +108,12 @@ async function onFilesPick(e: Event) {
   const target = e.target as HTMLInputElement
   if (!target.files) return
   selectedFileNames.value = [...target.files].map((f) => f.name).join()
-  uploadedImages.value.push(...(await uploadMediaFiles(target.files, userStore.token)))
+  await uploadFiles(target.files)
 }
 
 async function sendComposedMessage() {
   if (!recipients.value.length || composeContentMissing.value) return
-  isLoading.value = true
-  try {
+  await run(async () => {
     await conversationStore.sendMessage({
       numbers: recipients.value,
       message: composeMessage.value,
@@ -124,9 +122,7 @@ async function sendComposedMessage() {
     reset()
     visible.value = false
     emit('sent')
-  } finally {
-    isLoading.value = false
-  }
+  })
 }
 
 function reset() {
@@ -134,7 +130,7 @@ function reset() {
   tagInput.value = ''
   composeMessage.value = ''
   touched.value = { recipients: false, message: false }
-  uploadedImages.value = []
+  clearAttachments()
   selectedFileNames.value = ''
 }
 </script>

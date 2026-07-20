@@ -67,6 +67,7 @@ import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'
 import { storeToRefs } from 'pinia'
 import { e164Phone } from '@shared/contracts/phone.ts'
+import { useBusy } from '@/composables/useBusy.ts'
 import { downloadSampleCsv, parseCsvContacts } from '@/core/services/contacts-csv.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useContactStore, type ContactDraft } from '@/stores/contact.ts'
@@ -91,7 +92,7 @@ const { r$ } = useRegle(formState, {
 })
 
 const csvFileName = ref('')
-const isParsingCsv = ref(false)
+const { busy: isParsingCsv, run: runCsvParse } = useBusy()
 const parsedCsvContacts = ref<ContactDraft[]>([])
 
 const formVisible = computed({
@@ -108,12 +109,9 @@ async function onCsvFileChange(event: Event) {
   csvFileName.value = fileToRead.name
   // Clear before parsing so a mid-parse Import can't submit the previous file's rows.
   parsedCsvContacts.value = []
-  isParsingCsv.value = true
-  try {
+  await runCsvParse(async () => {
     parsedCsvContacts.value = await parseCsvContacts(fileToRead)
-  } finally {
-    isParsingCsv.value = false
-  }
+  })
 }
 
 async function saveContact() {
