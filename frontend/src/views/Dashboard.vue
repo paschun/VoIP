@@ -17,7 +17,7 @@
             </b-button>
           </div>
         </div>
-        <sidebar @messageSent="onMessageSent" />
+        <sidebar @message-sent="onMessageSent" />
       </template>
     </b-offcanvas>
     <section class="col col-md-8 pb-2">

@@ -30,7 +30,7 @@
                 <span v-for="image in message.media" :key="image">
                   <!-- d-block w-100 keeps the img's 100% width resolving against the bubble -->
                   <button type="button" class="btn d-block w-100 p-0 border-0" @click="showImage(image)">
-                    <img :src="image" alt="Image" >
+                    <img :src="image" alt="Image">
                   </button>
                 </span>
                 <span> {{ message.message }} </span>
@@ -47,7 +47,7 @@
   </div>
   <div id="image-zoom-overlay" v-show="zoomImage" @click="hideImage()">
     <div class="d-flex justify-content-center align-items-center" style="height: 100vh; width: 100vw">
-      <img class="img-fluid" alt="Responsive image" :src="zoomImage" >
+      <img class="img-fluid" alt="Responsive image" :src="zoomImage">
     </div>
   </div>
 </template>

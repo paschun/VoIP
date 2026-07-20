@@ -13,7 +13,7 @@
       </div>
 
       <div class="form-group mb-2 mt-4">
-        <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }" >
+        <input class="form-control" v-model="r$.$value.password" type="password" placeholder="New Password" :class="{ 'is-invalid': r$.password.$error }">
         <FieldErrors :field="r$.password" />
       </div>
 

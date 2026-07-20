@@ -54,7 +54,7 @@
         <span class="small text-secondary">Profile</span>
         <form @submit.prevent="addProfile" class="ml-2 mr-2">
           <div class="form-group mt-2">
-            <input class="form-control chat-input" v-model="r$.$value" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }" >
+            <input class="form-control chat-input" v-model="r$.$value" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
             <div v-if="r$.$error" class="invalid-feedback">
               <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
             </div>

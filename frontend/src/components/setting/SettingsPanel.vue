@@ -33,7 +33,7 @@
         <div class="m-2">
           <div class="form-group">
             <label>Password</label>
-            <input type="password" class="form-control" v-model="passwordInput" placeholder="Enter Password" @keyup.enter="checkPassword()" >
+            <input type="password" class="form-control" v-model="passwordInput" placeholder="Enter Password" @keyup.enter="checkPassword()">
           </div>
           <div class="text-center">
             <button class="btn btn-success my-2 px-4" @click="checkPassword()">Verify</button>

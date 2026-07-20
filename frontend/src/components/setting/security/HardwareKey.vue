@@ -22,7 +22,7 @@
             <div class="col-auto">
               <div class="d-flex justify-content-between">
                 <div class="p-2">
-                  <input type="text" class="form-control" v-model="title" >
+                  <input type="text" class="form-control" v-model="title">
                 </div>
                 <div class="p-2">
                   <button class="btn btn-success" @click="register()">

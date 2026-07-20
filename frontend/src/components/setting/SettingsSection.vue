@@ -8,7 +8,7 @@
         <i-bi-arrow-left :style="{ cursor: 'pointer', fontSize: iconScale + 'em' }" aria-hidden="true" @click="$emit('back')" />
       </div>
     </div>
-    <slot ></slot>
+    <slot></slot>
   </div>
 </template>
 

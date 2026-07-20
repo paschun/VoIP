@@ -2,7 +2,7 @@
   <div class="p-1">
     <form @submit.prevent="changeUsername" class="ml-2 mr-2">
       <div class="form-group mt-2">
-        <input class="form-control" v-model="r$.$value" placeholder="Enter Username" :class="{ 'is-invalid': r$.$error }" >
+        <input class="form-control" v-model="r$.$value" placeholder="Enter Username" :class="{ 'is-invalid': r$.$error }">
         <div v-if="r$.$error" class="invalid-feedback">
           <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
         </div>

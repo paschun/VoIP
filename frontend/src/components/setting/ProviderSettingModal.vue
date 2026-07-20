@@ -43,7 +43,7 @@
                 </label>
               </div>
               <div class="col-sm col-12 m-auto">
-                <input class="form-control" type="text" placeholder="Telnyx API Key" v-model="r$.$value.api_key" :class="{ 'is-invalid': r$.api_key.$error }" >
+                <input class="form-control" type="text" placeholder="Telnyx API Key" v-model="r$.$value.api_key" :class="{ 'is-invalid': r$.api_key.$error }">
                 <field-errors :field="r$.api_key" />
               </div>
             </div>
@@ -59,8 +59,8 @@
                   <custom-autocomplete-select
                     v-model="r$.$value.number"
                     :options="telnyxNumbers"
-                    labelProp="phone_number"
-                    valueProp="phone_number"
+                    label-prop="phone_number"
+                    value-prop="phone_number"
                   ></custom-autocomplete-select>
                   <field-errors :field="r$.number" />
                 </div>
@@ -124,8 +124,8 @@
                   <custom-autocomplete-select
                     v-model="r$.$value.twilio_number"
                     :options="twilioNumbers"
-                    labelProp="phoneNumber"
-                    valueProp="phoneNumber"
+                    label-prop="phoneNumber"
+                    value-prop="phoneNumber"
                   ></custom-autocomplete-select>
                   <field-errors :field="r$.twilio_number" />
                 </div>

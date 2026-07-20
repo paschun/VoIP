@@ -5,7 +5,7 @@
       {{ selectedOption?.[labelProp] }}
     </div>
     <div class="dropdown" v-if="showDropdown">
-      <input v-model="searchTerm" @input="filterOptions" @focus="showAllOptions" @blur="hideOptions" @keydown="handleKeyDown" ref="autocompleteInput" >
+      <input v-model="searchTerm" @input="filterOptions" @focus="showAllOptions" @blur="hideOptions" @keydown="handleKeyDown" ref="autocompleteInput">
       <ul class="form-group">
         <li
           v-for="(option, index) in filteredOptions"

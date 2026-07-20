@@ -11,8 +11,8 @@ export default defineConfigWithVueTs(
 
   globalIgnores(['dist/**', 'node_modules/**', 'public/**', 'src/components.d.ts']),
 
-  pluginVue.configs['flat/essential'],
-  // pluginVue.configs['flat/strongly-recommended'],
+  // pluginVue.configs['flat/essential'],
+  pluginVue.configs['flat/strongly-recommended'],
   // This wires vue-eslint-parser + the TS sub-parser for `<script lang="ts">` SFCs.
   vueTsConfigs.recommendedTypeChecked,
 
@@ -57,8 +57,11 @@ export default defineConfigWithVueTs(
   {
     files: ['**/*.vue'],
     rules: {
-      // '@typescript-eslint/no-floating-promises': 'off',
       'vue/html-self-closing': ['error', { html: { void: 'never', normal: 'never', component: 'any' } }],
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+      'vue/html-indent': 'off',
     },
   },
 )

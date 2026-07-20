@@ -32,7 +32,7 @@
       </template>
     </b-modal>
     <!-- used by the call store -->
-    <audio id="remoteMedia" autoplay="true" ></audio>
+    <audio id="remoteMedia" autoplay="true"></audio>
   </div>
 </template>
 
