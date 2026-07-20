@@ -1,37 +1,19 @@
 <template>
   <div>
-    <input id="checkbox" type="checkbox" class="switch-checkbox" @change="toggleTheme">
+    <input id="checkbox" type="checkbox" class="switch-checkbox" :checked="isDark" @change="toggleColorMode">
     <label for="checkbox" class="switch-label switch-label-mode">
       <span>🌙</span>
       <span>☀️</span>
-      <div class="switch-toggle" :class="{ 'switch-toggle-checked': userTheme === 'dark-theme' }"></div>
+      <div class="switch-toggle" :class="{ 'switch-toggle-checked': isDark }"></div>
     </label>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
+import { colorMode, toggleColorMode } from '@/core/theme.ts'
 
-function getMediaPreference(): string {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-theme' : 'light-theme'
-}
-
-const userTheme = ref('light-theme')
-
-function setTheme(theme: string) {
-  localStorage.setItem('user-theme', theme)
-  userTheme.value = theme
-  document.documentElement.className = theme
-}
-
-function toggleTheme() {
-  const activeTheme = localStorage.getItem('user-theme')
-  setTheme(activeTheme === 'light-theme' ? 'dark-theme' : 'light-theme')
-}
-
-onMounted(() => {
-  setTheme(localStorage.getItem('user-theme') ?? getMediaPreference())
-})
+const isDark = computed(() => colorMode.state.value === 'dark')
 </script>
 
 <style scoped>

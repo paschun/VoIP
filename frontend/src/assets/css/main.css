@@ -33,7 +33,7 @@
   --background-image-opacity: 0.8;
   --text-button: #1c282f;
 }
-:root.dark-theme {
+[data-bs-theme='dark'] {
   --background-color-primary: rgb(18, 18, 18);
   --background-color-secondary: rgb(46, 46, 46);
   --background-color-info: #0b1419;

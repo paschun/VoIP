@@ -1,7 +1,7 @@
 <template>
   <div class="wrap">
     <call-view></call-view>
-    <!-- todo: replace <theme-button /> here -->
+    <theme-button />
     <!--
       Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
       hamburger via v-b-toggle.sidebar-no-header); at/above `sm` Bootstrap renders it inline as the static
@@ -78,6 +78,7 @@ import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
+import ThemeButton from '@/components/shared/ThemeButton.vue'
 
 defineOptions({ name: 'DashboardView' })
 

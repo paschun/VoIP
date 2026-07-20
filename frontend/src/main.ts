@@ -2,9 +2,10 @@ import { createApp } from 'vue'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 // Global plugins
 import { createPinia } from 'pinia'
-// Global styles. main.css pulls the vendor stylesheets into a `vendor` cascade layer via @import, so app rules
-// override them without !important; keep it the single CSS entry point.
+// Global styles. main.css pulls the vendor stylesheets into a `vendor` cascade layer via @import, this is the single CSS entry point.
 import '@/assets/css/main.css'
+// Apply the persisted/OS color mode to <html> at startup, independent of where the theme toggle renders.
+import '@/core/theme.ts'
 
 import App from './App.vue'
 import router from './router/routes.ts'
