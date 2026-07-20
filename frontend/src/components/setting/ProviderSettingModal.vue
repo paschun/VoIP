@@ -49,7 +49,7 @@
             </div>
             <div class="row mb-2">
               <div class="col-auto m-auto">
-                <button id="get-number" class="dark-mode btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('telnyx')">
+                <button id="get-number" class="btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('telnyx')">
                   <i-bi-telephone-plus aria-hidden="true" />
                   Get Number
                 </button>
@@ -114,7 +114,7 @@
             </div>
             <div class="row mb-2">
               <div class="col-auto m-auto">
-                <button id="get-number-twilio" class="dark-mode btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('twilio')">
+                <button id="get-number-twilio" class="btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('twilio')">
                   <i-bi-telephone-plus aria-hidden="true" />
                   Get Number
                 </button>

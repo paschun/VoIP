@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="login-box dark-mode p-3">
+    <div class="login-box p-3">
       <theme-button />
-      <h1 class="dark-mode">Login</h1>
+      <h1>Login</h1>
       <form v-if="screen === 'login'" class="ml-2 mr-2" @submit.prevent="submitLogin">
         <div class="form-group mt-4">
           <b-input-group>

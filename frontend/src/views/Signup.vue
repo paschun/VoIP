@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="login-box dark-mode p-3">
-      <h1 class="dark-mode">Signup</h1>
+    <div class="login-box p-3">
+      <h1>Signup</h1>
       <form class="ml-2 mr-2" @submit.prevent="handleSubmit">
         <div class="form-group mt-4">
           <b-input-group>

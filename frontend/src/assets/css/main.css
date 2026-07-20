@@ -49,7 +49,6 @@ section {
 .switch-label-mode {
   height: 38px !important;
   width: 80px !important;
-  /* top:5px !important ; */
   right: 0 !important;
   float: right !important;
 }
@@ -85,7 +84,6 @@ section {
   background-color: var(--background-color-secondary) !important;
   color: var(--text-primary-color) !important;
   border-radius: 10px !important;
-  /* padding: 10px; */
   font-size: 14px !important;
   transition: 0.5s !important;
   display: inline-flex !important;
@@ -102,7 +100,6 @@ section {
   background-color: var(--background-color-secondary) !important;
   color: var(--text-primary-color) !important;
   border-radius: 10px !important;
-  /* padding: 10px; */
   font-size: 14px !important;
   transition: 0.5s !important;
   display: inline-flex !important;
@@ -371,7 +368,6 @@ a {
   border-radius: 0.5rem;
 }
 
-.box,
 .box-placeholder {
   display: inline-block;
   background-color: var(--contact-list);
@@ -379,26 +375,12 @@ a {
   box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.1);
   max-width: 300px;
   vertical-align: top;
-  /* width: 100%; */
+  font-size: 0;
+  line-height: 0;
 }
-.box hr,
 .box-placeholder hr {
   margin: 0;
   border-color: #f3f3f3;
-}
-.box {
-  display: none;
-}
-.box .category {
-  display: block;
-  margin-bottom: 10px;
-}
-.box img {
-  max-width: 100%;
-}
-.box-placeholder {
-  font-size: 0;
-  line-height: 0;
 }
 .box-placeholder .text {
   display: inline-block;

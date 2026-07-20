@@ -1,7 +1,7 @@
 <template>
   <div class="wrap">
     <call-view></call-view>
-    <!-- <theme-button /> -->
+    <!-- todo: replace <theme-button /> here -->
     <!--
       Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
       hamburger via v-b-toggle.sidebar-no-header); at/above `sm` Bootstrap renders it inline as the static
