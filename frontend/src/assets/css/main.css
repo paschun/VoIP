@@ -1,3 +1,12 @@
+@layer vendor, app;
+
+/* Vendor stylesheets go in the `vendor` layer so app rules below win without !important -- layer order beats
+   specificity. vue3-tags-input injects its CSS at runtime (unlayered), so those few overrides still need !important. */
+@import 'bootstrap/dist/css/bootstrap.css' layer(vendor);
+@import 'bootstrap-vue-next/dist/bootstrap-vue-next.css' layer(vendor);
+@import 'sweetalert2/dist/sweetalert2.min.css' layer(vendor);
+@import 'vue3-select-component/styles.css' layer(vendor);
+
 @font-face {
   font-family: 'Skia';
   font-style: normal;
@@ -5,6 +14,7 @@
   src: url('../fonts/skia.woff') format('woff');
 }
 
+@layer app {
 :root {
   --background-color-primary: #ffffff;
   --background-color-secondary: rgb(246, 246, 246);
@@ -46,12 +56,6 @@ body {
 section {
   background-color: var(--background-color-primary);
 }
-.switch-label-mode {
-  height: 38px !important;
-  width: 80px !important;
-  right: 0 !important;
-  float: right !important;
-}
 .login-box {
   background: var(--background-color-primary);
   width: 50%;
@@ -79,6 +83,7 @@ section {
   transition: 0.5s;
   font-family: 'Skia', sans-serif;
 }
+/* vue3-tags-input injects its styles at runtime (unlayered), so these overrides keep !important to win. */
 .vue-tags-input {
   border: none !important;
   background-color: var(--background-color-secondary) !important;
@@ -116,12 +121,12 @@ section {
 }
 .form-control:disabled,
 .form-control[readonly] {
-  background-color: var(--background-color-secondary) !important;
+  background-color: var(--background-color-secondary);
   opacity: 1;
 }
 .form-control:focus {
-  box-shadow: none !important;
-  border-color: transparent !important;
+  box-shadow: none;
+  border-color: transparent;
 }
 .chat-input:focus {
   outline: none;
@@ -335,12 +340,12 @@ body::-webkit-scrollbar-thumb,
 .dropDown > button,
 .dropDown > .dropdown-menu,
 .dropdown-item {
-  background-color: var(--background-color-secondary) !important;
-  border-color: var(--background-color-secondary) !important;
-  color: var(--text-primary-color) !important;
+  background-color: var(--background-color-secondary);
+  border-color: var(--background-color-secondary);
+  color: var(--text-primary-color);
 }
 a {
-  text-decoration: none !important;
+  text-decoration: none;
 }
 .modal-content {
   background-color: var(--background-color-primary);
@@ -444,18 +449,18 @@ a {
   color: var(--accent-color);
 }
 .dropDown .dropdown-toggle::after {
-  display: none !important;
+  display: none;
 }
 .dropDown .btn {
-  padding: 0 0.75rem !important;
-  font-size: 15px !important;
+  padding: 0 0.75rem;
+  font-size: 15px;
 }
 .profileNum {
   font-size: 12px;
   color: var(--theme-orange);
 }
 .dropdown-item {
-  line-height: 18px !important;
+  line-height: 18px;
 }
 .dropdown-item > div > div > div > div,
 .profileName {
@@ -468,17 +473,17 @@ a {
   max-width: 100px;
 }
 .dropdown-item:hover {
-  background-color: var(--contact-hover) !important;
+  background-color: var(--contact-hover);
 }
 .dropdown-menu {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   max-height: 100vh;
   overflow-y: auto;
 }
 
 .list-group-item {
-  color: var(--text-primary-color) !important;
-  background-color: transparent !important;
+  color: var(--text-primary-color);
+  background-color: transparent;
 }
 
 .dialer-btn2 {
@@ -499,11 +504,11 @@ a {
   color: var(--text-primary-color);
 }
 .vs__selected {
-  color: var(--text-primary-color) !important;
+  color: var(--text-primary-color);
 }
 .vs__dropdown-menu {
   background: var(--background-color-primary);
-  color: var(--text-primary-color) !important;
+  color: var(--text-primary-color);
 }
 
 .update_ribbon {
@@ -520,7 +525,7 @@ a {
   font-size: 8px;
   text-transform: uppercase;
   font-weight: 600;
-  color: wheat !important;
+  color: wheat;
   line-height: 11px;
   -webkit-transform: rotate(45deg);
   transform: rotate(0deg);
@@ -542,4 +547,5 @@ a {
 .clickcopy:hover {
   border-color: var(--accent-color);
   background: var(--contact-hover);
+}
 }

@@ -176,10 +176,12 @@ onMounted(getTotpStatus)
 }
 
 .switch-toggle-checked {
-  transform: translateX(calc(var(--element-size) * 0.6)) !important;
+  transform: translateX(calc(var(--element-size) * 0.6));
 }
 .switch-label-mode {
-  float: left !important;
+  height: 38px;
+  width: 80px;
+  float: left;
 }
 .qr_image {
   width: auto;

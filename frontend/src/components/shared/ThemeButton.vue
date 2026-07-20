@@ -39,6 +39,12 @@ onMounted(() => {
   display: none;
 }
 
+.switch-label-mode {
+  height: 38px;
+  width: 80px;
+  float: right;
+}
+
 .switch-label {
   align-items: center;
   background: var(--text-primary-color);
@@ -71,6 +77,6 @@ onMounted(() => {
 }
 
 .switch-toggle-checked {
-  transform: translateX(calc(var(--element-size) * 0.6)) !important;
+  transform: translateX(calc(var(--element-size) * 0.6));
 }
 </style>

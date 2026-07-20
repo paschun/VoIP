@@ -2,11 +2,8 @@ import { createApp } from 'vue'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 // Global plugins
 import { createPinia } from 'pinia'
-// Global styles (order matters)
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue-next/dist/bootstrap-vue-next.css'
-import 'sweetalert2/dist/sweetalert2.min.css'
-import 'vue3-select-component/styles.css'
+// Global styles. main.css pulls the vendor stylesheets into a `vendor` cascade layer via @import, so app rules
+// override them without !important; keep it the single CSS entry point.
 import '@/assets/css/main.css'
 
 import App from './App.vue'
