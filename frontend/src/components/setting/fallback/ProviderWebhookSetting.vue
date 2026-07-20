@@ -3,7 +3,7 @@
     <form class="ml-2 mr-2" @submit.prevent="saveFallbackUrl">
       <div class="form-group mt-2">
         <label>{{ mainLabel }}</label>
-        <input v-model="mainUrl" class="form-control" readonly>
+        <input v-model="mainUrl" class="form-control" disabled>
       </div>
       <div class="form-group mt-2">
         <label>{{ fallbackLabel }}</label>
@@ -71,8 +71,7 @@ const { r$ } = useRegle(fallbackUrl, {
 async function getCallSetting() {
   const settingId = profileStore.activeProfileId
   if (!settingId) return
-  // A profile's `type` defaults to 'telnyx' even when nothing is configured, so gate on the provider's primary
-  // credential -- otherwise the webhook GET 409s ("<provider> is not configured") for a never-set-up profile.
+  // Dont make remote request for webhook setting if localstorage profile doesnt have API key.
   const profile = profileStore.activeProfile
   const configured = props.provider === 'twilio' ? Boolean(profile?.twilio_sid) : Boolean(profile?.api_key)
   if (!configured) return

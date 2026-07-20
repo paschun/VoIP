@@ -39,7 +39,7 @@ function onContactSelected(option: SelectOptionData<string>) {
   const parsed = e164Phone.safeParse(option.value)
   if (!parsed.success) void notifyError('Contact has an invalid phone number')
   else emit('select', parsed.data)
-  selectedContact.value = null // clear so it acts as a picker, not a bound value
+  selectedContact.value = null
 }
 </script>
 
