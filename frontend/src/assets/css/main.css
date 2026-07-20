@@ -1,7 +1,9 @@
-@layer vendor, app;
+@layer reset, vendor, app;
 
-/* Vendor stylesheets go in the `vendor` layer so app rules below win without !important -- layer order beats
-   specificity. vue3-tags-input injects its CSS at runtime (unlayered), so those few overrides still need !important. */
+/* Vendor stylesheets go in the `vendor` layer so app rules below win Bootstrap conflicts without !important -- layer
+   order beats specificity. The tradeoff: a low-specificity app rule also beats Bootstrap's higher-specificity
+   contextual rules, so where we want one of those (input-group corner squaring), re-apply it in the app layer (see
+   .chat-input below). vue3-tags-input injects its CSS at runtime (unlayered), so those overrides still need !important. */
 @import 'bootstrap/dist/css/bootstrap.css' layer(vendor);
 @import 'bootstrap-vue-next/dist/bootstrap-vue-next.css' layer(vendor);
 @import 'sweetalert2/dist/sweetalert2.min.css' layer(vendor);
@@ -12,6 +14,15 @@
   font-style: normal;
   font-weight: normal;
   src: url('../fonts/skia.woff') format('woff');
+}
+
+/* Floor for our custom markup only; Bootstrap Reboot (vendor layer) already handles box-sizing and element margins.
+   Sits before `vendor` so component/utility styles override it -- a reset must be the weakest layer, not the strongest. */
+@layer reset {
+  * {
+    margin: 0;
+    padding: 0;
+  }
 }
 
 @layer app {
@@ -115,11 +126,12 @@ section {
   display: inline-flex !important;
   max-width: 100% !important;
 }
+/* Round via Bootstrap's own token, not the border-radius property, so input-group corner squaring still wins. */
 .chat-input {
   border: none;
   background-color: var(--background-color-secondary);
   color: var(--text-primary-color);
-  border-radius: 10px;
+  --bs-border-radius: 0.625rem; /* default is .375rem */
   font-size: 14px;
   transition: 0.5s;
   display: inline-flex;
@@ -148,13 +160,6 @@ section {
   font-weight: bold;
   color: white;
   transition: 0.5s;
-}
-
-* {
-  font-family: 'Roboto', sans-serif;
-  margin: 0px;
-  padding: 0px;
-  box-sizing: border-box;
 }
 
 /* ------ FONTS ------ */

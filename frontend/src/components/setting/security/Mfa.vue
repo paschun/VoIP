@@ -178,7 +178,8 @@ onMounted(getTotpStatus)
 .switch-toggle-checked {
   transform: translateX(calc(var(--element-size) * 0.6));
 }
-.switch-label-mode {
+/* Compound selector so the fixed pill size beats `.switch-label`'s var-based width/height by specificity. */
+.switch-label.switch-label-mode {
   height: 38px;
   width: 80px;
   float: left;

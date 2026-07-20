@@ -26,7 +26,7 @@
         <FieldErrors :field="r$.port" />
       </div>
       <div class="form-group mt-2">
-        <b-form-checkbox v-model="r$.$value.secure" v-b-tooltip.hover.bottomright="'for 465 only'" plain> Secure </b-form-checkbox>
+        <b-form-checkbox v-model="r$.$value.secure" v-b-tooltip.hover.bottomright="'for 465 only'"> Secure </b-form-checkbox>
       </div>
       <div class="form-group mt-2">
         <textarea
@@ -39,7 +39,7 @@
         <FieldErrors :field="r$.pgpPublicKey" />
       </div>
       <div class="form-group mt-2">
-        <b-form-checkbox v-model="r$.$value.pgpEncryptEnabled" v-b-tooltip.hover.bottomright="'for PGP encrypted emails'" plain>
+        <b-form-checkbox v-model="r$.$value.pgpEncryptEnabled" v-b-tooltip.hover.bottomright="'for PGP encrypted emails'">
           Encrypt with PGP
         </b-form-checkbox>
       </div>

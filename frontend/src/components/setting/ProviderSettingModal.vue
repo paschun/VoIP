@@ -2,7 +2,6 @@
   <div>
     <loading-spinner :show="isSavingProviderSetting" />
     <b-modal v-model="visible" size="lg" title="Settings" hide-footer>
-      <theme-button />
       <form class="ml-2 mr-2" @submit.prevent="saveProviderSetting">
         <b-form-radio-group
           id="provider-type-radios"
