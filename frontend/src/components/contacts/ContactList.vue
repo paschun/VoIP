@@ -4,7 +4,7 @@
     <b-offcanvas id="sidebar-right" placement="end" shadow no-header>
       <template #default="{ hide }">
         <div class="d-flex flex-row mt-2 justify-content-between bd-highlight">
-          <div class="bd-highlight dropDown">
+          <div class="bd-highlight drop-down">
             <b-button class="float-left d-flex m-1" size="sm" variant="primary">
               <i-bi-x @click="hide()" />
             </b-button>

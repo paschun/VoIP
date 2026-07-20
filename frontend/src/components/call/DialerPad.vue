@@ -2,7 +2,7 @@
   <div>
     <div v-for="(row, i) in rows" :key="i" class="d-flex justify-content-between" :class="{ 'mt-4': i === 0 }">
       <div v-for="[key, alpha] in row" :key="key">
-        <a class="btn btn-light-primary dialer-btn2" @click="press(key)">
+        <a class="btn btn-light-primary dialer-btn" @click="press(key)">
           <p class="number font-weight-bolder mb-0">{{ key }}</p>
           <p v-if="alpha !== undefined" class="alpha" :class="{ hide: !alpha }">{{ alpha }}</p>
         </a>
@@ -53,5 +53,15 @@ function press(key: DialKey) {
 }
 .alpha.hide {
   visibility: hidden;
+}
+.dialer-btn {
+  color: var(--text-button);
+  margin: 1rem;
+}
+.dialer-btn:hover {
+  color: var(--text-button);
+}
+.dialer-btn:active {
+  color: #212529;
 }
 </style>

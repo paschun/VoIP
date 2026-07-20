@@ -189,4 +189,8 @@ onMounted(getTotpStatus)
   margin: auto;
   border-radius: 0;
 }
+.clickcopy:hover {
+  border-color: var(--accent-color);
+  background: var(--contact-hover);
+}
 </style>

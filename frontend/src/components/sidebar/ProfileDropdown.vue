@@ -1,11 +1,11 @@
 <template>
   <div class="icons mt-2">
-    <b-dropdown class="dropDown" variant="primary">
+    <b-dropdown class="drop-down" variant="primary">
       <template #button-content>
         <div class="d-flex flex-row align-items-center bd-highlight">
           <div v-if="profileStore.activeProfile" class="d-flex flex-column bd-highlight">
-            <div class="profileName">{{ profileStore.activeProfile.profile }}</div>
-            <div class="profileNum">{{ profileStore.activeProfile.number }}</div>
+            <div class="profile-name">{{ profileStore.activeProfile.profile }}</div>
+            <div class="profile-num">{{ profileStore.activeProfile.number }}</div>
             <span
               v-if="activeTotalCount > 0"
               class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
@@ -32,7 +32,7 @@
                   {{ profile.profile }}
                 </div>
                 <div>
-                  <span v-if="profile.number && profile.number !== ''" class="profileNum">({{ profile.number }})</span>
+                  <span v-if="profile.number && profile.number !== ''" class="profile-num">({{ profile.number }})</span>
                 </div>
               </div>
             </div>

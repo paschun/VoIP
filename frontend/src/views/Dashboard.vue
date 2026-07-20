@@ -11,7 +11,7 @@
       <template #default="{ hide }">
         <!-- .d-sm-none hides this row >= sm breakpoint -->
         <div class="d-flex flex-row-reverse bd-highlight d-sm-none">
-          <div class="bd-highlight dropDown">
+          <div class="bd-highlight drop-down">
             <b-button class="float-right d-flex" size="sm" variant="primary">
               <i-bi-x @click="hide()" />
             </b-button>
