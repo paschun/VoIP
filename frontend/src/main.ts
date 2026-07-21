@@ -4,8 +4,8 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import { createPinia } from 'pinia'
 // Global styles. main.css pulls the vendor stylesheets into a `vendor` cascade layer via @import, this is the single CSS entry point.
 import '@/assets/css/main.css'
-// Apply the persisted/OS color mode to <html> at startup, independent of where the theme toggle renders.
-import '@/core/theme.ts'
+// Importing applies the persisted/OS color mode to <html> at startup, independent of where the theme toggle renders.
+import { initThemeMetaSync } from '@/core/theme.ts'
 
 import App from './App.vue'
 import router from './router/routes.ts'
@@ -31,5 +31,6 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(createBootstrap())
+initThemeMetaSync()
 
 app.mount('#app')

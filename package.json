@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc",
     "oxlint": "oxlint --ignore-pattern 'frontend/**'",
+    "lint": "pnpm run typecheck; pnpm run oxlint",
     "spec:texml": "openapi-typescript app/spec/texml-calls.yml -o app/spec/texml-calls.d.ts"
   },
   "packageManager": "pnpm@11.8.0",

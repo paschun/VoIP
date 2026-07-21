@@ -9,9 +9,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint --cache",
+    "eslint": "eslint --cache",
     "oxlint": "oxlint",
     "typecheck": "vue-tsc --build",
+    "lint": "pnpm run typecheck; pnpm run eslint; pnpm run oxlint",
+    "eslint-inspect": "config-inspector",
     "test": "vitest"
   },
   "dependencies": {
@@ -26,7 +28,6 @@
     "bootstrap-vue-next": "<1",
     "cbor-x": "^1.6.4",
     "hono": "^4.12.25",
-    "js-cookie": "^3.0.8",
     "papaparse": "^5.5.3",
     "pinia": "^3.0.4",
     "pulltorefreshjs": "<1",
@@ -37,9 +38,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/config-inspector": "^3.1.0",
     "@iconify-json/bi": "^1.2.7",
     "@tsconfig/node26": "^26.0.0",
-    "@types/js-cookie": "^3.0.6",
     "@types/node": "^26.0.0",
     "@types/papaparse": "^5.5.2",
     "@types/pulltorefreshjs": "<1",
