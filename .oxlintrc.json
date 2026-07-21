@@ -20,11 +20,14 @@
     "import/no-cycle": "warn", // restriction
     "no-redeclare": "error", // pedantic
     "no-param-reassign": "error", // restriction
+    // oxlint-tsgolint doesn't seem to automatically make error in catch as unknown, like tsc does with `useUnknownInCatchVariables`
+    "typescript/use-unknown-in-catch-callback-variable": "error", // restriction
 
     "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "never" }], // style
     "typescript/no-explicit-any": "warn", // restriction
     "typescript/no-non-null-assertion": "warn", // restriction
 
+    // migrated from eslint:
     "no-var": "error", // restriction
     "no-array-constructor": "error", // pedantic
     "prefer-const": "error", // style
@@ -51,7 +54,5 @@
     "typescript/require-await": "error", // pedantic
     "typescript/restrict-plus-operands": "error", // pedantic
 
-    // oxlint-tsgolint doesn't seem to automatically make error in catch as unknown, like tsc does with `useUnknownInCatchVariables`
-    "typescript/use-unknown-in-catch-callback-variable": "error" // restriction
   }
 }

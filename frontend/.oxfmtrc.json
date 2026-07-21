@@ -9,7 +9,7 @@
     "newlinesBetween": false,
     "customGroups": [
       { "groupName": "vitest", "elementNamePattern": ["vitest"] },
-      { "groupName": "vue", "elementNamePattern": ["vue*"] },
+      { "groupName": "vue", "elementNamePattern": ["vue*"] }
     ],
     "groups": [
       "builtin",
