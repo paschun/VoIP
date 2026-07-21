@@ -63,12 +63,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import ContactFormModal from './ContactFormModal.vue'
 import { useSearchFilter } from '@/composables/useSearchFilter.ts'
+import { notifySuccess } from '@/core/notify.ts'
 import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'
 import { confirmDelete } from '@/helper.ts'
-import { notifySuccess } from '@/core/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
+import ContactFormModal from './ContactFormModal.vue'
 
 const contactStore = useContactStore()
 
@@ -92,3 +92,13 @@ async function deleteAll() {
   void notifySuccess('All contacts deleted successfully')
 }
 </script>
+
+<style scoped>
+.drop-down,
+.drop-down > button {
+  background-color: var(--bs-offcanvas-bg);
+}
+.drop-down > button {
+  border-color: var(--bs-offcanvas-bg);
+}
+</style>
