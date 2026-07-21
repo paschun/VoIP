@@ -1,6 +1,7 @@
 <template>
   <div>
     <div class="profile">
+      <ThemeButton />
       <div class="d-flex flex-row bd-highlight align-items-center align-self-center">
         <div class="mt-2">
           <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
@@ -36,6 +37,7 @@ import { onMounted, ref } from 'vue'
 import ComposeMessageModal from '@/components/chat/ComposeMessageModal.vue'
 import ContactList from '@/components/contacts/ContactList.vue'
 import SettingsPanel from '@/components/setting/SettingsPanel.vue'
+import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { useContactStore } from '@/stores/contact.ts'
 import ConversationList from './ConversationList.vue'
 import ProfileDropdown from './ProfileDropdown.vue'

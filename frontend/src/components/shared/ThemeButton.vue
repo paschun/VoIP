@@ -25,7 +25,7 @@ const isDark = computed(() => colorMode.state.value === 'dark')
 .switch-label.switch-label-mode {
   height: 38px;
   width: 80px;
-  float: right;
+  float: right; /* used for login page */
 }
 
 .switch-label {

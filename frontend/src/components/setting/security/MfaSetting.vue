@@ -163,7 +163,6 @@ onMounted(getTotpStatus)
 .switch-label.switch-label-mode {
   height: 38px;
   width: 80px;
-  float: left;
 }
 .qr_image {
   width: auto;

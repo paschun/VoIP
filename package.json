@@ -54,6 +54,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.4",
     "@standard-schema/spec": "^1.1.0",
     "@types/node": "^26.0.1",
     "@types/nodemailer": "^8.0.1",
