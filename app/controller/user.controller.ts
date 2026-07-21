@@ -49,8 +49,10 @@ const octokit = new Octokit()
 
 /** Only the field we need off the GitHub "list commits" response; extra keys are ignored.
  * Mandates an array of objects that all have the same shape: `{ sha: "a" }`, but there is at least one element in the arr.
+ * https://github.com/colinhacks/zod/blob/v4.4.3/packages/zod/src/v4/core/regexes.ts#L173
+ * https://github.com/colinhacks/zod/blob/v4.4.3/packages/zod/src/v4/classic/schemas.ts#L948
  */
-const commitsSchema = z.tuple([z.object({ sha: z.string() })]).rest(z.object({ sha: z.string() }))
+const commitsSchema = z.tuple([z.object({ sha: z.hash('sha1') })]).rest(z.object({ sha: z.hash('sha1') }))
 
 /** Project a user doc onto the client-facing {@link UserData}: strips secrets; `totp` = secret present.
  * 
