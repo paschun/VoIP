@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordInfo } from 'vue-router'
+import { authToken } from '@/core/auth-token.ts'
 
 // Manually-typed route map (vue-router "typed routes"). Each entry pairs a route
 // name with its path + raw params (what you pass to router.push) + normalized
@@ -21,7 +22,7 @@ declare module 'vue-router' {
 }
 
 // dynamic imports for bundle splitting: https://router.vuejs.org/guide/advanced/lazy-loading.html
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes: [
     // in dev, index.html is served by vite dev server on port 8080, so this is reachable
@@ -56,3 +57,10 @@ export default createRouter({
     },
   ],
 })
+
+// Protected routes require a token; an expired/absent session lands on login, keeping the appdirectory param.
+router.beforeEach((to) => {
+  if (to.name === 'dashboard' && !authToken.value) return { name: 'login', params: to.params }
+})
+
+export default router

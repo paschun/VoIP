@@ -76,7 +76,6 @@
 /** The header profile dropdown: active-profile display + unread badge, profile selector, add-profile modal, logout.
  * The add-profile modal opens by id via `v-b-modal.add-profile`, so it stays template-ref imperative for `hide()`. */
 import { computed, onMounted, useTemplateRef } from 'vue'
-import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'
 import type { BModal } from 'bootstrap-vue-next'
@@ -89,7 +88,6 @@ import { useUserStore } from '@/stores/user.ts'
 
 const profileStore = useProfileStore()
 const userStore = useUserStore()
-const router = useRouter()
 const { r$ } = useRegle('', {
   required: withMessage(required, 'Profile is required'), // default: This field is required
 })
@@ -117,8 +115,7 @@ async function addProfile() {
 }
 
 function logout() {
-  userStore.logout()
-  void router.push({ name: 'login' })
+  userStore.logout() // clears the session; the Dashboard watcher reacts to the auth-state change and bounces to login.
 }
 
 onMounted(() => {

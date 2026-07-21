@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useLocalStorage, StorageSerializers } from '@vueuse/core'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
@@ -14,6 +14,9 @@ export const useUserStore = defineStore('user', () => {
   const userData = useLocalStorage<UserData | null>('user-data', null, { serializer: StorageSerializers.object })
 
   const isLoggedIn = computed(() => token.value.length > 0)
+
+  // userData follows the token: a 401 (handle-error) clears the token, and the persisted user goes with it.
+  watch(token, (t) => { if (!t) userData.value = null })
 
   /** Persist user + token together (login, key/OTP verify). */
   function login(data: UserData, accessToken: string) {
@@ -32,9 +35,8 @@ export const useUserStore = defineStore('user', () => {
     setUser(data)
   }
 
-  /** Clear user + token (logout, 401). */
+  /** Clear the session; the watcher above drops userData when the token empties. */
   function logout() {
-    userData.value = null
     token.value = ''
   }
 

@@ -98,12 +98,16 @@ async function deleteChat() {
   await conversationStore.deleteActiveConversation()
 }
 
+// A 401 mid-session clears the token; bounce to login (the appdirectory param is inherited from the current route).
+// Entry while logged out is already blocked by the router's beforeEach guard.
+watch(
+  () => userStore.isLoggedIn, // Pinia unwraps refs/computeds when you access them on the store instance
+  (loggedIn) => {
+    if (!loggedIn) void router.push({ name: 'login' })
+  },
+)
+
 onMounted(() => {
-  if (!userStore.isLoggedIn) {
-    // Bounce to login inside the current directory (the appdirectory param is inherited from the current route).
-    void router.push({ name: 'login' })
-    return
-  }
   connectSocket()
 })
 onUnmounted(() => {

@@ -69,6 +69,10 @@ export function request<T extends ClientResponse<unknown>>(req: T | Promise<T>) 
       // DetailedError from parseResponse only carries `.{name,message,statusCode,detail.{data,statusText}}`; our backend
       // always sends a `{ message }` body, reachable at `.detail.data.message` (see serverError, which types the `any`s).
       const { status, message } = serverError(err)
+      // A 401 on a live session means the token is dead: clear it (the mirror of attaching it in `headers` above). The
+      // user store drops its data and the router bounces to login, both reacting to this auth state. Gate on a present
+      // token so a failed login (no token yet) just notifies and lets the user retry in place.
+      if (status === 401 && authToken.value) authToken.value = ''
       notifyApiError(status, message)
     } else if (err instanceof Error) {
       notifyApiError(undefined, err.toString())

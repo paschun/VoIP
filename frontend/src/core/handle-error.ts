@@ -1,8 +1,6 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status'
 import { DetailedError } from 'hono/client'
 import Swal from 'sweetalert2'
-import router from '@/router/routes.ts'
-import { useUserStore } from '@/stores/user.ts'
 
 /**
  * Every HTTP error status the hono RPC surface can return: the 4xx client + 5xx server codes from hono's own status
@@ -38,8 +36,6 @@ const swalError = ({ title, text }: { title?: string | number; text?: string }) 
 /**
  * Central reaction to a failed API call, keyed on the HTTP status and the server `{ message }`. `request`
  * (rpc.client) calls it for the side effects before re-throwing. Always notifies (no opt-out yet).
- *
- * TODO: notification is mixed here with navigating. Separate those concerns.
  */
 export function notifyApiError(status?: ApiErrorStatus, message?: string): void {
   console.error(`HTTP error status:`, status, '- message:', message)
@@ -47,18 +43,10 @@ export function notifyApiError(status?: ApiErrorStatus, message?: string): void 
   if (!status) {
     void swalError({ title: 'Unknown', text: message })
 
-    // 401 Unauthorized: a logged-in session's token is missing/expired/invalid, OR a login attempt failed. Only the
-    // former should log out + bounce to login -- gate that on an actual session cookie, so a failed login (no token yet,
-    // e.g. a wrong security key) just notifies and lets the user retry in place.
+    // 401 Unauthorized: a logged-in session's token is missing/expired/invalid, OR a login attempt failed. `request`
+    // (rpc.client) invalidates the token on the session case; here we only notify.
   } else if (status === 401) {
     void swalError({ title: status, text: message })
-    const user = useUserStore()
-    if (user.isLoggedIn) {
-      user.logout()
-      // we aren't awaitng the redirect, because its a side effect and shouldn't gate error propagation. Awaiting it
-      // up the chain (into request()) would hold the API-error rejection until navigation settles
-      void router.push({ name: 'login' })
-    }
     // 400 Bad Request (malformed/invalid input)
     // 403 Forbidden (authenticated but not allowed / called out of order),
     // 409 Conflict (duplicate, e.g. a name/number that already exists)
