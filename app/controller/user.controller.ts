@@ -1,6 +1,8 @@
 import { execSync } from 'node:child_process'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import { Octokit, RequestError } from 'octokit'
+import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import QRCode from 'qrcode'
 import Speakeasy from 'speakeasy'
@@ -41,7 +43,14 @@ import Setting from '../model/setting.model.ts'
 import User from '../model/user.model.ts'
 
 const saltRounds = 10
-const remoteVersionURL = 'https://api.github.com/repos/paschun/VoIP/commits?per_page=1'
+const upstreamRepo = { owner: 'paschun', repo: 'VoIP' } as const
+// github has abandoned octokit : https://github.com/octokit/openapi-types.ts/issues/494#issuecomment-4185069938
+const octokit = new Octokit()
+
+/** Only the field we need off the GitHub "list commits" response; extra keys are ignored.
+ * Mandates an array of objects that all have the same shape: `{ sha: "a" }`, but there is at least one element in the arr.
+ */
+const commitsSchema = z.tuple([z.object({ sha: z.string() })]).rest(z.object({ sha: z.string() }))
 
 /** Project a user doc onto the client-facing {@link UserData}: strips secrets; `totp` = secret present.
  * 
@@ -120,22 +129,34 @@ function readVersion(c: Context<Env>) {
   return c.json({ data: currentVersion } satisfies Ok<string>, 200)
 }
 
-/** Whether a newer build than the running one exists upstream; any lookup failure reports `'false'`. */
-async function readUpdateAvailable(c: Context<Env>) {
-  let updateAvailable = false
+// GitHub's unauthenticated REST limit is 60 req/hr per IP
+const DAY_MS = 24 * 60 * 60 * 1000
+// `at: 0` is stale forever-ago, so the first read always fetches.
+const updateCache = { isUpdateAvailable: false, at: 0 }
+/** Latest upstream short commit, or `null` if GitHub is unreachable or returns an unexpected shape. */
+async function fetchRemoteVersion() {
   try {
-    // todo: could cache this value once per day
-    const response = await fetch(remoteVersionURL)
-    if (response.ok) {
-      // TODO: zod-validate the GitHub "commits" API schema rather than trusting the shape.
-      const commits = (await response.json()) as Array<{ sha: string }>
-      const remoteVersion = commits[0]?.sha.slice(0, 7)
-      updateAvailable = currentVersion !== remoteVersion
-    }
+    // https://github.com/octokit/plugin-rest-endpoint-methods.js/blob/main/docs/repos/listCommits.md
+    const { data } = await octokit.rest.repos.listCommits({ ...upstreamRepo, per_page: 1 })
+    const [latest] = commitsSchema.parse(data)
+    // if (!latest) throw
+    return latest.sha.slice(0, 7)
   } catch (err) {
-    console.error(err)
+    if (err instanceof RequestError || err instanceof z.ZodError) console.error(err)
+    else throw err
+    return null
   }
-  return c.json({ data: updateAvailable } satisfies Ok<boolean>, 200)
+}
+
+/** Whether a newer build than the running one exists upstream; the result is cached for a day, and any lookup
+ * failure reports `false`. */
+async function readUpdateAvailable(c: Context<Env>) {
+  if (Date.now() - updateCache.at > DAY_MS) {
+    const remoteVersion = await fetchRemoteVersion()
+    updateCache.isUpdateAvailable = remoteVersion !== null && currentVersion !== remoteVersion
+    updateCache.at = Date.now()
+  }
+  return c.json({ data: updateCache.isUpdateAvailable } satisfies Ok<boolean>, 200)
 }
 
 /** Rename the caller; reject if the new username is taken by another account. */
