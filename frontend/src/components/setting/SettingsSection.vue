@@ -1,10 +1,10 @@
 <template>
   <div>
     <div class="d-flex justify-content-between">
-      <div class="p-2 bd-highlight">
+      <div class="p-2">
         <component :is="titleTag">{{ title }}</component>
       </div>
-      <div class="p-2 bd-highlight">
+      <div class="p-2">
         <IBiArrowLeft class="cursor-pointer back-icon" aria-hidden="true" @click="$emit('back')" />
       </div>
     </div>

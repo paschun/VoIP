@@ -1,8 +1,7 @@
 <template>
-  <!-- float-end is used for Login.vue -->
+  <!-- Fallthrough attrs (e.g. size) land on ToggleSwitch and bind as its props. -->
   <ToggleSwitch
     v-model="isDark"
-    class="float-end"
     track-color="var(--text-primary-color)"
     knob-color="var(--background-color-primary)"
   >

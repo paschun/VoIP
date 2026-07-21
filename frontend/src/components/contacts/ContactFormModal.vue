@@ -30,8 +30,8 @@
                 <label>Note</label>
                 <input v-model="r$.$value.note" class="form-control" type="text" placeholder="Note">
               </div>
-              <div class="d-flex justify-content-start bd-highlight">
-                <div class="bd-highlight"><button type="submit" class="btn btn-primary float-right">Save</button></div>
+              <div class="d-flex justify-content-start">
+                <div><button type="submit" class="btn btn-primary float-right">Save</button></div>
               </div>
             </form>
           </BTab>
@@ -48,8 +48,8 @@
             <div class="form-group mb-2 mt-4 d-none">
               <input id="csv-file-input" type="file" class="form-control chat-input" accept=".csv" @change="onCsvFileChange">
             </div>
-            <div class="d-flex justify-content-start bd-highlight">
-              <div class="bd-highlight">
+            <div class="d-flex justify-content-start">
+              <div>
                 <button type="button" :disabled="isParsingCsv" class="btn btn-primary float-right" @click="importContactsCsv()">Save</button>
               </div>
             </div>

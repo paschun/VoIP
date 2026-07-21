@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="login-box p-3">
-      <ThemeButton />
+      <ThemeButton class="float-end" />
       <h1>Login</h1>
       <form v-if="screen === 'login'" class="ml-2 mr-2" @submit.prevent="submitLogin">
         <div class="form-group mt-4">

@@ -9,8 +9,8 @@
     <BOffcanvas id="mobile-sidebar" ref="mobileSidebar" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
       <template #default="{ hide }">
         <!-- .d-sm-none hides this row >= sm breakpoint -->
-        <div class="d-flex flex-row-reverse bd-highlight d-sm-none">
-          <div class="bd-highlight drop-down">
+        <div class="d-flex flex-row-reverse d-sm-none">
+          <div class="drop-down">
             <BButton class="float-right d-flex" size="sm" variant="primary">
               <IBiX @click="hide()" />
             </BButton>

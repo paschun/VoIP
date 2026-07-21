@@ -1,75 +1,71 @@
 <template>
-  <div class="icons mt-2">
-    <BDropdown class="drop-down" variant="primary">
-      <template #button-content>
-        <div class="d-flex flex-row align-items-center bd-highlight">
-          <div v-if="profileStore.activeProfile" class="d-flex flex-column bd-highlight">
-            <div class="profile-name">{{ profileStore.activeProfile.profile }}</div>
-            <div class="profile-num">{{ profileStore.activeProfile.number }}</div>
-            <span
-              v-if="activeTotalCount > 0"
-              class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
+  <BDropdown class="drop-down" variant="primary">
+    <template #button-content>
+      <div class="d-flex flex-row align-items-center">
+        <div v-if="profileStore.activeProfile" class="d-flex flex-column">
+          <div class="profile-name">{{ profileStore.activeProfile.profile }}</div>
+          <div class="profile-num">{{ profileStore.activeProfile.number }}</div>
+          <span v-if="activeTotalCount > 0" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
+            ><span class="visually-hidden">unread messages</span></span
+          >
+        </div>
+        <div v-else>
+          <span v-if="userStore.userData">{{ userStore.userData.name }}</span>
+        </div>
+        <div>
+          <IBiPersonBadge aria-hidden="true" class="mx-2 my-auto" title="Profiles" />
+        </div>
+        <div class="dropdownAdd"></div>
+      </div>
+    </template>
+    <BDropdownDivider></BDropdownDivider>
+    <LoadingSpinner :show="profileStore.profileIsLoading" />
+    <div v-for="profile in profileStore.profiles" :key="profile._id">
+      <BDropdownItemButton @click="profileStore.setActiveProfile(profile)">
+        <div class="d-flex flex-row">
+          <div>
+            <div class="d-flex flex-column">
+              <div>
+                {{ profile.profile }}
+              </div>
+              <div>
+                <span v-if="profile.number && profile.number !== ''" class="profile-num">({{ profile.number }})</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <span v-if="(profile.messageCount ?? 0) > 0" class="start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
               ><span class="visually-hidden">unread messages</span></span
             >
           </div>
-          <div v-else>
-            <span v-if="userStore.userData">{{ userStore.userData.name }}</span>
-          </div>
-          <div>
-            <IBiPersonBadge aria-hidden="true" class="mx-2 my-auto" title="Profiles" />
-          </div>
-          <div class="dropdownAdd"></div>
         </div>
-      </template>
-      <BDropdownDivider></BDropdownDivider>
-      <LoadingSpinner :show="profileStore.profileIsLoading" />
-      <div v-for="profile in profileStore.profiles" :key="profile._id">
-        <BDropdownItemButton @click="profileStore.setActiveProfile(profile)">
-          <div class="d-flex flex-row">
-            <div>
-              <div class="d-flex flex-column">
-                <div>
-                  {{ profile.profile }}
-                </div>
-                <div>
-                  <span v-if="profile.number && profile.number !== ''" class="profile-num">({{ profile.number }})</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <span v-if="(profile.messageCount ?? 0) > 0" class="start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
-                ><span class="visually-hidden">unread messages</span></span
-              >
-            </div>
-          </div>
-        </BDropdownItemButton>
-        <BDropdownDivider></BDropdownDivider>
-      </div>
-      <BDropdownItemButton v-b-modal.add-profile>
-        <IBiPersonPlusFill aria-hidden="true" />
-        Add New Profile
       </BDropdownItemButton>
       <BDropdownDivider></BDropdownDivider>
-      <BModal id="add-profile" ref="add-profile" size="lg" title="Add Profile" no-footer>
-        <span class="small text-secondary">Profile</span>
-        <form class="ml-2 mr-2" @submit.prevent="addProfile">
-          <div class="form-group mt-2">
-            <input v-model="r$.$value" class="form-control chat-input" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
-            <div v-if="r$.$error" class="invalid-feedback">
-              <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
-            </div>
+    </div>
+    <BDropdownItemButton v-b-modal.add-profile>
+      <IBiPersonPlusFill aria-hidden="true" />
+      Add New Profile
+    </BDropdownItemButton>
+    <BDropdownDivider></BDropdownDivider>
+    <BModal id="add-profile" ref="add-profile" size="lg" title="Add Profile" no-footer>
+      <span class="small text-secondary">Profile</span>
+      <form class="ml-2 mr-2" @submit.prevent="addProfile">
+        <div class="form-group mt-2">
+          <input v-model="r$.$value" class="form-control chat-input" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
+          <div v-if="r$.$error" class="invalid-feedback">
+            <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
           </div>
-          <div class="d-grid d-md-flex mt-3">
-            <button class="btn btn-primary" type="submit" :disabled="!r$.$correct">Save</button>
-          </div>
-        </form>
-      </BModal>
-      <BDropdownItemButton @click="logout()">
-        <IBiPower aria-hidden="true" />
-        Logout
-      </BDropdownItemButton>
-    </BDropdown>
-  </div>
+        </div>
+        <div class="d-grid d-md-flex mt-3">
+          <button class="btn btn-primary" type="submit" :disabled="!r$.$correct">Save</button>
+        </div>
+      </form>
+    </BModal>
+    <BDropdownItemButton @click="logout()">
+      <IBiPower aria-hidden="true" />
+      Logout
+    </BDropdownItemButton>
+  </BDropdown>
 </template>
 
 <script setup lang="ts">
@@ -126,9 +122,6 @@ useActiveProfileChange(() => profileStore.refreshActiveProfile())
 </script>
 
 <style scoped>
-.icons {
-  font-size: 30px;
-}
 .dropdownAdd {
   margin-left: 0.255em;
   vertical-align: 0.255em;

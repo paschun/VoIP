@@ -18,10 +18,10 @@
               <div class="col-auto m-auto mb-1 mb-sm-auto">
                 <label>
                   <IBiPersonFill aria-hidden="true" />
-                  Profile
+                  Profile :
                 </label>
               </div>
-              <div class="col-sm m-auto col-10">
+              <div class="col-sm m-auto col-10 border border-2">
                 <span class="form-control-plaintext">{{ profileStore.activeProfile?.profile }}</span>
               </div>
               <div class="col-1 m-auto">

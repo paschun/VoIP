@@ -1,27 +1,15 @@
 <template>
-  <div>
-    <div class="profile">
-      <ThemeButton />
-      <div class="d-flex flex-row bd-highlight align-items-center align-self-center">
-        <div class="mt-2">
-          <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
-          <div class="d-flex flex-row bd-highlight">
-            <div class="bd-highlight">
-              <IBiGearFill v-b-toggle.sidebar-settings aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
-            </div>
-            <div class="bd-highlight">
-              <IBiPersonLinesFill v-b-toggle.sidebar-contacts aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
-            </div>
-            <div class="bd-highlight">
-              <IBiTelephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />
-            </div>
-            <div class="bd-highlight">
-              <IBiPencilSquare aria-hidden="true" class="m-2 cursor-pointer" title="Compose" @click="composeOpen = true" />
-            </div>
-          </div>
-        </div>
-        <ProfileDropdown />
+  <div class="w-100">
+    <div class="sidebar-header">
+      <div class="flex-grow-1">
+      <ThemeButton size="50px" />
       </div>
+      <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
+      <IBiGearFill v-b-toggle.sidebar-settings aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
+      <IBiPersonLinesFill v-b-toggle.sidebar-contacts aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
+      <IBiTelephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />
+      <IBiPencilSquare aria-hidden="true" class="m-2 cursor-pointer" title="Compose" @click="composeOpen = true" />
+      <ProfileDropdown />
     </div>
     <ConversationList />
     <SettingsPanel></SettingsPanel>
@@ -50,3 +38,16 @@ onMounted(() => {
   void contactStore.loadContacts()
 })
 </script>
+
+<style scoped>
+.sidebar-header {
+  width: 100%;
+  height: 60px;
+  background: var(--background-color-secondary);
+  border-right: 1px solid #444444;
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  padding-left: 10px;
+}
+</style>

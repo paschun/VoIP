@@ -3,8 +3,8 @@
   <div>
     <BOffcanvas id="sidebar-contacts" placement="end" shadow no-header>
       <template #default="{ hide }">
-        <div class="d-flex flex-row mt-2 justify-content-between bd-highlight">
-          <div class="bd-highlight drop-down">
+        <div class="d-flex mt-2 justify-content-between">
+          <div class="drop-down">
             <BButton class="float-left d-flex m-1" size="sm" variant="primary">
               <IBiX @click="hide()" />
             </BButton>
@@ -35,9 +35,9 @@
         <div>
           <div class="wrap-search">
             <div class="search">
-              <div class="d-flex flex-row bd-highlight">
-                <div class="bd-highlight">&nbsp;&nbsp;<IBiSearch />&nbsp;&nbsp;</div>
-                <div class="bd-highlight">
+              <div class="d-flex flex-row">
+                <div>&nbsp;&nbsp;<IBiSearch />&nbsp;&nbsp;</div>
+                <div>
                   <input v-model="query" type="text" class="input-search" placeholder="Search">
                 </div>
               </div>
@@ -45,9 +45,9 @@
           </div>
           <ul class="list-group">
             <li v-for="contact in searchContacts" :key="contact._id" class="list-group-item d-flex justify-content-between align-items-center">
-              <div class="d-flex flex-column bd-highlight">
-                <div class="bd-highlight">{{ contact.first_name }} {{ contact.last_name }}</div>
-                <div class="bd-highlight">{{ contact.number }}</div>
+              <div class="d-flex flex-column">
+                <div>{{ contact.first_name }} {{ contact.last_name }}</div>
+                <div>{{ contact.number }}</div>
               </div>
               <div>
                 <IBiPencilSquare title="Update" class="cursor-pointer" @click="contactStore.startEdit(contact)" />
