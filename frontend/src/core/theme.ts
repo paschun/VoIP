@@ -13,11 +13,6 @@ export const colorMode = useColorMode({
   storageKey: 'color-mode',
 })
 
-/** Flip to the opposite of the currently-rendered mode (`state` resolves `auto` via the OS preference first). */
-export function toggleColorMode() {
-  colorMode.value = colorMode.state.value === 'dark' ? 'light' : 'dark'
-}
-
 /** Sync the browser-chrome tint (mobile address bar, PWA title bar) with the page background of the current mode.
  * The moment the page is up, the in-document <meta name="theme-color"> overrides the theme_color in PWA webmanifest.
  */

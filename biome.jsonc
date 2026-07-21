@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["**", "!!**/dist"]
+  },
+  "assist": { "actions": { "source": { "organizeImports": "off" } } },
+  "linter": {
+    "rules": {
+      "style": {
+        "useTemplate": "off"
+      },
+      "correctness": {
+        "useUniqueElementIds": "error"
+      },
+      "complexity": {
+        "noImportantStyles": "off"
+      },
+      "a11y": "off"
+    }
+  },
+  "html": { "experimentalFullSupportEnabled": true },
+  "javascript": { "experimentalEmbeddedSnippetsEnabled": true }
+}

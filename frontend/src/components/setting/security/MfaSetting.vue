@@ -7,26 +7,18 @@
           <div class="card-body">
             <div class="row align-items-center">
               <div class="col-auto">
-                <div>
-                  <input id="checkbox" v-model="totpEnabled" type="checkbox" class="switch-checkbox" @change="totpStatusChange">
-                  <label for="checkbox" class="switch-label switch-label-mode">
-                    <span>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="#198754" width="23" height="23" viewBox="0 0 24 24">
-                        <path
-                          d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.393 7.5l-5.643 5.784-2.644-2.506-1.856 1.858 4.5 4.364 7.5-7.643-1.857-1.857z"
-                        />
-                      </svg>
-                    </span>
-                    <span>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="#fd3545" width="23" height="23" viewBox="0 0 24 24">
-                        <path
-                          d="M14 12h-4v-12h4v12zm4.213-10.246l-1.213 1.599c2.984 1.732 5 4.955 5 8.647 0 5.514-4.486 10-10 10s-10-4.486-10-10c0-3.692 2.016-6.915 5-8.647l-1.213-1.599c-3.465 2.103-5.787 5.897-5.787 10.246 0 6.627 5.373 12 12 12s12-5.373 12-12c0-4.349-2.322-8.143-5.787-10.246z"
-                        />
-                      </svg>
-                    </span>
-                    <div class="switch-toggle" :class="{ 'switch-toggle-checked': totpEnabled }"></div>
-                  </label>
-                </div>
+                <ToggleSwitch v-model="totpEnabled" @change="totpStatusChange">
+                  <template #on>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" fill="#198754" viewBox="0 0 24 24">
+                      <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10S2 17.514 2 12 6.486 2 12 2m0-2C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0m4.393 7.5-5.643 5.784-2.644-2.506-1.856 1.858L10.75 17l7.5-7.643z" />
+                    </svg>
+                  </template>
+                  <template #off>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" fill="#fd3545" viewBox="0 0 24 24">
+                      <path d="M14 12h-4V0h4zm4.213-10.246L17 3.353c2.984 1.732 5 4.955 5 8.647 0 5.514-4.486 10-10 10S2 17.514 2 12c0-3.692 2.016-6.915 5-8.647L5.787 1.754C2.322 3.857 0 7.651 0 12c0 6.627 5.373 12 12 12s12-5.373 12-12c0-4.349-2.322-8.143-5.787-10.246" />
+                    </svg>
+                  </template>
+                </ToggleSwitch>
               </div>
               <div class="col-auto">Status: <span v-if="realTotp">Active</span><span v-else>Inactive</span></div>
             </div>
@@ -72,6 +64,7 @@ import { client, request } from '@/core/rpc.client.ts'
 import { confirmWarning } from '@/helper.ts'
 import { notifyError } from '@/core/notify.ts'
 import HardwareKey from './HardwareKey.vue'
+import ToggleSwitch from '@/components/shared/ToggleSwitch.vue'
 
 const totpEnabled = ref(false)
 const realTotp = ref(false) // reflects totp value on server
@@ -121,49 +114,6 @@ onMounted(getTotpStatus)
 </script>
 
 <style scoped>
-.switch-checkbox {
-  display: none;
-}
-
-.switch-label {
-  align-items: center;
-  background: var(--background-color-secondary);
-  border: calc(var(--element-size) * 0.025) solid var(--accent-color);
-  border-radius: var(--element-size);
-  cursor: pointer;
-  display: flex;
-  font-size: calc(var(--element-size) * 0.3);
-  height: calc(var(--element-size) * 0.35);
-  position: relative;
-  padding: calc(var(--element-size) * 0.1);
-  transition: background 0.5s ease;
-  justify-content: space-between;
-  width: var(--element-size);
-  z-index: 1;
-}
-
-.switch-toggle {
-  position: absolute;
-  background-color: var(--contact-highlighted);
-  border-radius: 50%;
-  /* top: calc(var(--element-size) * 0.07); */
-  left: calc(var(--element-size) * 0.07);
-  height: calc(var(--element-size) * 0.45);
-  width: calc(var(--element-size) * 0.45);
-  transform: translateX(0);
-  transition:
-    transform 0.3s ease,
-    background-color 0.5s ease;
-}
-
-.switch-toggle-checked {
-  transform: translateX(calc(var(--element-size) * 0.6));
-}
-/* Compound selector so the fixed pill size beats `.switch-label`'s var-based width/height by specificity. */
-.switch-label.switch-label-mode {
-  height: 38px;
-  width: 80px;
-}
 .qr_image {
   width: auto;
   height: auto;

@@ -42,7 +42,6 @@
   --text-button: light-dark(#1c282f, #cacaca);
   --background-image-opacity: 0.8;
 
-  --element-size: 4rem;
   --theme-orange: #ff5821;
 }
 /* color-scheme must be re-declared here: the app-layer `:root` light above would otherwise beat Bootstrap's
