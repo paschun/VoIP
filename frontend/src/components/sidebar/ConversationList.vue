@@ -33,7 +33,6 @@
       <template v-if="!conversationStore.inboxIsLoading">
         <div
           v-for="item in searchNumbers"
-          :id="`phone${item._id}`"
           :key="item._id"
           class="contact"
           :class="{ 'active-chat': conversationStore.activeRemoteNumber === item._id }"
@@ -61,7 +60,7 @@
             <div class="align-self-center text-end me-3">
               <span class="time">{{ formatTimestamp(item.created_at, false) }}</span>
               <!-- Jan 1, 2000 10:00 AM -->
-              <span v-if="item.unread > 0" :id="item._id" class="badge message_count bg-success">{{ item.unread }}</span>
+              <span v-if="item.unread > 0" class="badge message_count bg-success">{{ item.unread }}</span>
             </div>
           </div>
         </div>

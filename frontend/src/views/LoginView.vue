@@ -57,7 +57,7 @@
           <FieldErrors :field="otpR$.otp" />
         </div>
         <div class="text-center">
-          <button id="login-button2" class="btn btn-success m-3 px-5" type="button" @click="verifyOtp">Verify</button>
+          <button class="btn btn-success m-3 px-5" type="button" @click="verifyOtp">Verify</button>
         </div>
         <div class="p-2">
           <button type="button" class="btn btn-link p-0" @click="showScreen('picker')">Choose A Different Verification Method</button>

@@ -1,4 +1,5 @@
 <template>
+  <!-- float-end is used for Login.vue -->
   <ToggleSwitch
     v-model="isDark"
     class="float-end"
