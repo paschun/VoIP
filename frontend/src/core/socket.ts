@@ -1,4 +1,4 @@
-import type { SocketMessage } from '@shared/contracts/socket.ts'
+import { socketMessage, type SocketMessage } from '@shared/contracts/socket.ts'
 import { authToken } from '@/core/auth-token.ts'
 import { showMessageNotification } from '@/core/notify.ts'
 import { wsClient } from '@/core/rpc.client.ts'
@@ -25,9 +25,14 @@ function open() {
   ws.addEventListener('open', () => {
     attempts = 0
   })
-  ws.addEventListener('message', (evt) => {
-    const msg: SocketMessage = JSON.parse(evt.data)
-    if (msg.event !== 'user_message') return
+  ws.addEventListener('message', (evt: MessageEvent<string>) => {
+    let msg: SocketMessage
+    try {
+      msg = socketMessage.parse(JSON.parse(evt.data))
+    } catch (e) {
+      console.error('Ignoring malformed socket message', e)
+      return
+    }
     const conversationStore = useConversationStore()
     if (conversationStore.hasActiveConversation) {
       void conversationStore.refreshMessages()
