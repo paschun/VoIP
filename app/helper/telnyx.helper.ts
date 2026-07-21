@@ -98,7 +98,7 @@ const updateTexmlApp = async (apiKey: string, twimlid: string) => {
  * Creates the credential connection that backs browser WebRTC calling (`@telnyx/webrtc` logs in with its
  * username/password) -- not SIP trunking, despite the name.
  */
-const createSIPApp = async (apiKey: string, userid: string, outboundProfileid: string) => {
+const createSIPApp = async (apiKey: string, outboundProfileid: string) => {
   try {
     const client = new Telnyx({ apiKey })
     const password = crypto.randomBytes(16).toString('hex')

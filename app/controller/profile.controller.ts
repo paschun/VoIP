@@ -159,7 +159,7 @@ async function saveTelnyxConfig(
       if (setting.sip_id) {
         await telnyxHelper.updateSIPApp(api_key, setting.sip_id, setting.telnyx_outbound ?? '')
       } else {
-        const sip = await telnyxHelper.createSIPApp(api_key, userId, setting.telnyx_outbound ?? '')
+        const sip = await telnyxHelper.createSIPApp(api_key, setting.telnyx_outbound ?? '')
         setting.sip_id = sip.data?.id ?? null
         setting.sip_username = sip.data?.user_name ?? null
         setting.sip_password = sip.data?.password ?? null

@@ -15,9 +15,8 @@ const rateHits = new Map<string, { count: number; resetAt: number }>()
 // in dev there's no proxy, so use the socket peer. Trusting XFF only behind a known proxy avoids client IP spoofing.
 const clientIp = (c: Context): string => {
   if (env.HTTPS) {
-    const forwarded = c.req.header('x-forwarded-for')
-    // todo: dont use `!`, validate? `sValidator('header', schema)`
-    if (forwarded) return forwarded.split(',')[0]!.trim()
+    const firstHop = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+    if (firstHop) return firstHop
   }
   return getConnInfo(c).remote.address ?? 'unknown'
 }
