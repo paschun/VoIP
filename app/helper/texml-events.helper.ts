@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js'
+import { Ajv2020, type AnySchema, type ValidateFunction } from 'ajv/dist/2020.js'
 import { parse } from 'yaml'
 import type { components } from '../spec/texml-calls.d.ts'
 
@@ -28,7 +28,10 @@ export type TexmlStatusEvent =
 // - The twilio callback field is RFC-2822, Telnyx supposedly mirrors it
 // - haven't observed live payload, too conflicting to reject on, so disable validate
 const ajv = new Ajv2020({ strict: false, allErrors: true, coerceTypes: true, validateFormats: false })
-ajv.addSchema(parse(readFileSync(new URL('../spec/texml-calls.yml', import.meta.url), 'utf8')), 'texml-calls')
+const isSchemaObject = (value: unknown): value is AnySchema => typeof value === 'object' && value !== null
+const texmlCallsSpec: unknown = parse(readFileSync(new URL('../spec/texml-calls.yml', import.meta.url), 'utf8'))
+if (!isSchemaObject(texmlCallsSpec)) throw new Error('texml-calls.yml did not parse to a schema object')
+ajv.addSchema(texmlCallsSpec, 'texml-calls')
 
 const compile = <K extends keyof Schemas>(component: K) =>
   ajv.compile<Schemas[K]>({ $ref: `texml-calls#/components/schemas/${component}` })

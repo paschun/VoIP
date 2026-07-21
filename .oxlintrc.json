@@ -24,8 +24,8 @@
     "typescript/use-unknown-in-catch-callback-variable": "error", // restriction
 
     "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "never" }], // style
-    "typescript/no-explicit-any": "warn", // restriction
-    "typescript/no-non-null-assertion": "warn", // restriction
+    "typescript/no-explicit-any": "error", // restriction
+    "typescript/no-non-null-assertion": "error", // restriction
 
     // migrated from eslint:
     "no-var": "error", // restriction

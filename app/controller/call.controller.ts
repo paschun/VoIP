@@ -202,7 +202,7 @@ async function dialIncoming(c: FormCtx<TwilioInboundWebhook>) {
 /** Telnyx inbound (TeXML): bridge the call to the owner's SIP client. */
 async function dialTelnyxSip(c: FormCtx<TexmlInboundWebhook>) {
   const body = c.req.valid('form')
-  const setting = await Setting.findOne({ number: { $eq: body.To } }).catch((e) => console.error(e))
+  const setting = await Setting.findOne({ number: { $eq: body.To } }).catch((e: unknown) => console.error(e))
   if (!setting?.sip_username) return emptyTwimlReply(c)
   await recordCall({
     sid: body.CallSid,
@@ -211,7 +211,7 @@ async function dialTelnyxSip(c: FormCtx<TexmlInboundWebhook>) {
     direction: 'receive',
     number: body.From,
     providerNumber: body.To,
-  }).catch((e) => console.error(e))
+  }).catch((e: unknown) => console.error(e))
   return xmlResponse(
     c,
     `<?xml version="1.0" encoding="UTF-8"?><Response><Dial><Sip>sip:${setting.sip_username}@sip.telnyx.com</Sip></Dial></Response>`,

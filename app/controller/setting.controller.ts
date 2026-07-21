@@ -73,7 +73,10 @@ type EmailSettings = Pick<
 /** PGP-encrypt a UTF-8 string against an armored public key, returning ASCII-armored ciphertext. */
 async function pgpEncrypt(text: string, armoredKey: string): Promise<string> {
   const encryptionKeys = await readKey({ armoredKey })
-  return encrypt({ message: await createMessage({ text }), encryptionKeys })
+  // openpgp's `encrypt` overloads resolve to `any` here; narrow the armored ('armored' format) result to string.
+  const armored: unknown = await encrypt({ message: await createMessage({ text }), encryptionKeys })
+  if (typeof armored !== 'string') throw new Error('openpgp encrypt returned non-armored output')
+  return armored
 }
 
 /** Send an SMTP (optionally PGP-encrypted) email notification. Best-effort: resolves false instead of rejecting. */
@@ -306,7 +309,7 @@ async function persistInboundSms(input: InboundSms) {
 }
 
 /** Twilio inbound SMS/MMS (form). Replies empty TwiML immediately; media download + persistence run afterward. */
-async function receiveTwilioSms(c: FormCtx<TwilioInboundSms>) {
+function receiveTwilioSms(c: FormCtx<TwilioInboundSms>) {
   const form = c.req.valid('form')
   const attachments = Array.from({ length: form.NumMedia }, (_, i) => ({
     url: form[`MediaUrl${i}`] ?? '',
@@ -322,7 +325,7 @@ async function receiveTwilioSms(c: FormCtx<TwilioInboundSms>) {
 }
 
 /** Telnyx inbound SMS/MMS (JSON). Same as Twilio; the empty-TwiML reply is just a 2xx to Telnyx. */
-async function receiveTelnyxSms(c: JsonCtx<TelnyxInboundData>) {
+function receiveTelnyxSms(c: JsonCtx<TelnyxInboundData>) {
   const { payload } = c.req.valid('json')
   void processInboundSms(payload.media ?? [], {
     toNumber: payload.to[0].phone_number,

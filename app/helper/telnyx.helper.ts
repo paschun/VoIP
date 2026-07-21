@@ -55,7 +55,8 @@ const requestCurl = async (
   }
   if (!response.ok) throw new ProviderError('telnyx', op, { status: response.status })
   const text = await response.text()
-  return text ? JSON.parse(text) : null
+  const parsed: unknown = text ? JSON.parse(text) : null
+  return parsed
 }
 
 // === Setup / GET / fallback helpers: THROW ProviderError on failure (onError renders 502). See file header. ===
