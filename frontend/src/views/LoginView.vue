@@ -139,8 +139,6 @@ import { useUserStore } from '@/stores/user.ts'
 
 type Screen = 'login' | 'picker' | 'keys' | 'otp'
 
-defineOptions({ name: 'LoginView' })
-
 const router = useRouter()
 const userStore = useUserStore()
 const loginStore = useLoginStore()

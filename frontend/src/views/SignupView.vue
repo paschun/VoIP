@@ -77,8 +77,6 @@ import { client, request } from '@/core/rpc.client.ts'
 import { setServerErrors } from '@/core/handle-error.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
-defineOptions({ name: 'SignupView' })
-
 const router = useRouter()
 const meta = useServerMetaStore()
 const form = reactive({ name: '', password: '', c_password: '' })

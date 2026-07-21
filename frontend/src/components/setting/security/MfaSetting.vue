@@ -73,8 +73,6 @@ import { confirmWarning } from '@/helper.ts'
 import { notifyError } from '@/core/notify.ts'
 import HardwareKey from './HardwareKey.vue'
 
-defineOptions({ name: 'MfaSetting' })
-
 const totpEnabled = ref(false)
 const realTotp = ref(false) // reflects totp value on server
 const qr = ref('')

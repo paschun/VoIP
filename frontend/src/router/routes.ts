@@ -37,17 +37,17 @@ const router = createRouter({
       path: '/:appdirectory/',
       name: 'login',
       strict: true, // we know its appdir and not a typo when it has a trailing slash
-      component: () => import('@/views/Login.vue'),
+      component: () => import('@/views/LoginView.vue'),
     },
     {
       path: '/:appdirectory/signup',
       name: 'signup',
-      component: () => import('@/views/Signup.vue'),
+      component: () => import('@/views/SignupView.vue'),
     },
     {
       path: '/:appdirectory/dashboard',
       name: 'dashboard',
-      component: () => import('@/views/Dashboard.vue'),
+      component: () => import('@/views/DashboardView.vue'),
     },
     {
       // https://router.vuejs.org/guide/essentials/dynamic-matching.html#Catch-all-404-Not-found-Route

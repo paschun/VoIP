@@ -40,8 +40,6 @@ import { useContactStore } from '@/stores/contact.ts'
 import ConversationList from './ConversationList.vue'
 import ProfileDropdown from './ProfileDropdown.vue'
 
-defineOptions({ name: 'InboxSidebar' })
-
 const emit = defineEmits<{ messageSent: [] }>()
 const contactStore = useContactStore()
 const composeOpen = ref(false)

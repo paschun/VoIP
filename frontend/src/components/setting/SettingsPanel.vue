@@ -26,7 +26,7 @@
       </SettingsSection>
 
       <SettingsSection v-if="activeMenu == 'mfa'" title="MFA Settings" @back="enableMenu('setting')">
-        <mfa />
+        <MfaSetting />
       </SettingsSection>
 
       <SettingsSection v-if="activeMenu == 'password'" title="Password Verification" @back="enableMenu('setting')">
@@ -53,7 +53,7 @@ import { useServerMetaStore } from '@/stores/server-meta.ts'
 import AccountSetting from './account/AccountSetting.vue'
 import EmailSetting from './EmailSetting.vue'
 import ProviderSettingModal from './ProviderSettingModal.vue'
-import Mfa from './security/Mfa.vue'
+import MfaSetting from './security/MfaSetting.vue'
 import SettingsSection from './SettingsSection.vue'
 
 const meta = useServerMetaStore()

@@ -17,7 +17,7 @@
             </BButton>
           </div>
         </div>
-        <sidebar @message-sent="onMessageSent" />
+        <SidebarPanel @message-sent="onMessageSent" />
       </template>
     </BOffcanvas>
     <section class="col col-md-8 pb-2">
@@ -77,10 +77,9 @@ import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
-import Sidebar from '@/components/sidebar/Sidebar.vue'
+import SidebarPanel from '@/components/sidebar/SidebarPanel.vue'
 import ThemeButton from '@/components/shared/ThemeButton.vue'
 
-defineOptions({ name: 'DashboardView' })
 
 const router = useRouter()
 const userStore = useUserStore()
