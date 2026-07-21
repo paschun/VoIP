@@ -7,10 +7,10 @@
           <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
           <div class="d-flex flex-row bd-highlight">
             <div class="bd-highlight">
-              <IBiGearFill v-b-toggle.sidebar-email-setting aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
+              <IBiGearFill v-b-toggle.sidebar-settings aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
             </div>
             <div class="bd-highlight">
-              <IBiPersonLinesFill v-b-toggle.sidebar-right aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
+              <IBiPersonLinesFill v-b-toggle.sidebar-contacts aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
             </div>
             <div class="bd-highlight">
               <IBiTelephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />

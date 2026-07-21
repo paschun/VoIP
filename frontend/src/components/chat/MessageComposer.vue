@@ -7,7 +7,7 @@
         <div class="text-center m-auto">
           <button type="button" class="btn btn-danger px-4" @click="clearAttachments()">Cancel</button>
         </div>
-        <input id="fileElem" type="file" class="d-none" multiple accept="image/*" @change="onFilesPick">
+        <input id="composer-file-input" type="file" class="d-none" multiple accept="image/*" @change="onFilesPick">
       </form>
       <div id="gallery" class="row">
         <div v-for="image in uploadedImages" :key="image" class="col-lg-4">
@@ -25,7 +25,7 @@
       <div v-if="conversationStore.hasActiveConversation" class="wrap-message">
         <div class="message pl-2">
           <input v-model="messageBody" type="text" class="input-message" placeholder="Type message here" @keyup.enter="sendSms">
-          <label class="m-2 cursor-pointer" for="fileElem">
+          <label class="m-2 cursor-pointer" for="composer-file-input">
             <IBiPaperclip class="paperclip" />
           </label>
         </div>

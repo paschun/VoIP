@@ -1,7 +1,7 @@
 <template>
-  <!-- Pure panel: opened by the sidebar's contacts icon via v-b-toggle.sidebar-right -->
+  <!-- Pure panel: opened by the sidebar's contacts icon via v-b-toggle.sidebar-contacts -->
   <div>
-    <BOffcanvas id="sidebar-right" placement="end" shadow no-header>
+    <BOffcanvas id="sidebar-contacts" placement="end" shadow no-header>
       <template #default="{ hide }">
         <div class="d-flex flex-row mt-2 justify-content-between bd-highlight">
           <div class="bd-highlight drop-down">

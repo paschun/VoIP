@@ -1,7 +1,7 @@
 <template>
-  <!-- Pure panel: opened by the sidebar's gear icon via v-b-toggle.sidebar-email-setting -->
+  <!-- Pure panel: opened by the sidebar's gear icon via v-b-toggle.sidebar-settings -->
   <div>
-    <BOffcanvas id="sidebar-email-setting" title="Settings" backdrop>
+    <BOffcanvas id="sidebar-settings" title="Settings" backdrop>
       <div v-if="activeMenu === 'setting'" class="px-3 py-2">
         <ul class="list-group">
           <li class="list-group-item cursor-pointer" @click="enableMenu('email')"><IBiEnvelope aria-hidden="true" class="mx-2" />Email Settings</li>
@@ -83,8 +83,8 @@ async function checkPassword() {
 
 <!-- BOffcanvas is teleported, so these rules target its rendered internals globally rather than scoped. -->
 <style>
-#sidebar-email-setting .offcanvas-header,
-#sidebar-email-setting .offcanvas-body {
+#sidebar-settings .offcanvas-header,
+#sidebar-settings .offcanvas-body {
   background-color: var(--contact-list);
   color: var(--text-primary-color);
 }

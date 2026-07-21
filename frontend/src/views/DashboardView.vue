@@ -3,10 +3,10 @@
     <CallView></CallView>
     <!--
       Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
-      hamburger via v-b-toggle.sidebar-no-header); at/above `sm` Bootstrap renders it inline as the static
+      hamburger via v-b-toggle.mobile-sidebar); at/above `sm` Bootstrap renders it inline as the static
       sidebar column
     -->
-    <BOffcanvas id="sidebar-no-header" ref="mobileSidebar" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
+    <BOffcanvas id="mobile-sidebar" ref="mobileSidebar" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
       <template #default="{ hide }">
         <!-- .d-sm-none hides this row >= sm breakpoint -->
         <div class="d-flex flex-row-reverse bd-highlight d-sm-none">
@@ -22,7 +22,7 @@
     <section class="col col-md-8 pb-2">
       <div class="chat-head">
         <!-- hamburger / drawer-open icon hidden on larger screens (>= sm) where sidebar always visible -->
-        <IBiChevronLeft v-b-toggle.sidebar-no-header aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" />
+        <IBiChevronLeft v-b-toggle.mobile-sidebar aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" />
         <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
         <div class="chat-name">
           <h1 v-if="conversationStore.activeConversation" class="font-name">

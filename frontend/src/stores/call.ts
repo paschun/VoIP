@@ -21,7 +21,7 @@ export type DialKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' 
 /**
  * The calling state machine. Owns the Twilio/Telnyx SDK lifecycle (token fetch, device build/teardown, profile-change
  * re-init) and the in-call state (`state`/`remoteNumber`/`remoteName`/`duration`); all provider branching lives here.
- * CallView calls `init()`/`destroy()` around its mount; the Telnyx client plays into CallView's `#remoteMedia` element.
+ * CallView calls `init()`/`destroy()` around its mount; the Telnyx client plays into CallView's `#remote-media` element.
  */
 export const useCallStore = defineStore('call', () => {
   const profileStore = useProfileStore()
@@ -113,7 +113,7 @@ export const useCallStore = defineStore('call', () => {
         password: tokenData.setting.sip_password,
       })
       void rtc.connect()
-      rtc.remoteElement = 'remoteMedia'
+      rtc.remoteElement = 'remote-media'
       rtc
         .on('telnyx.ready', () => console.log('telnyx rtc client, ready to call'))
         .on('telnyx.error', () => console.error('telnyx rtc client, error'))
