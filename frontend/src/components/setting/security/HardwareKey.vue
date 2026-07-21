@@ -63,24 +63,25 @@ const getEndian = (): 'little' | 'big' => {
 
 const readBE16 = (buffer: Uint8Array): number => {
   if (buffer.length !== 2) throw new Error('Only 2byte buffer allowed!')
-  if (getEndian() !== 'big') buffer = buffer.reverse()
-  return new Uint16Array(buffer.buffer)[0]
+  const bytes = getEndian() !== 'big' ? buffer.reverse() : buffer
+  return new Uint16Array(bytes.buffer)[0]
 }
 
 const readBE32 = (buffer: Uint8Array): number => {
   if (buffer.length !== 4) throw new Error('Only 4byte buffers allowed!')
-  if (getEndian() !== 'big') buffer = buffer.reverse()
-  return new Uint32Array(buffer.buffer)[0]
+  const bytes = getEndian() !== 'big' ? buffer.reverse() : buffer
+  return new Uint32Array(bytes.buffer)[0]
 }
 
 const bufToHex = (buffer: Uint8Array): string => Array.prototype.map.call(new Uint8Array(buffer), (x: number) => x.toString(16).padStart(2, '0')).join('')
 
 /** Parse a WebAuthn authData buffer. https://gist.github.com/herrjemand/dbeb2c2b76362052e5268224660b6fbc */
 const parseAuthData = (buffer: Uint8Array) => {
-  const rpIdHash = buffer.slice(0, 32)
-  buffer = buffer.slice(32)
-  const flagsBuf = buffer.slice(0, 1)
-  buffer = buffer.slice(1)
+  let rest = buffer
+  const rpIdHash = rest.slice(0, 32)
+  rest = rest.slice(32)
+  const flagsBuf = rest.slice(0, 1)
+  rest = rest.slice(1)
   const flagsInt = flagsBuf[0]
   const flags = {
     up: !!(flagsInt & 0x01),
@@ -89,20 +90,20 @@ const parseAuthData = (buffer: Uint8Array) => {
     ed: !!(flagsInt & 0x80),
     flagsInt,
   }
-  const counterBuf = buffer.slice(0, 4)
-  buffer = buffer.slice(4)
+  const counterBuf = rest.slice(0, 4)
+  rest = rest.slice(4)
   const counter = readBE32(counterBuf)
 
   let aaguid, credID, COSEPublicKey
   if (flags.at) {
-    aaguid = buffer.slice(0, 16)
-    buffer = buffer.slice(16)
-    const lenBuf = buffer.slice(0, 2)
-    buffer = buffer.slice(2)
+    aaguid = rest.slice(0, 16)
+    rest = rest.slice(16)
+    const lenBuf = rest.slice(0, 2)
+    rest = rest.slice(2)
     const credIDLen = readBE16(lenBuf)
-    credID = buffer.slice(0, credIDLen)
-    buffer = buffer.slice(credIDLen)
-    COSEPublicKey = buffer
+    credID = rest.slice(0, credIDLen)
+    rest = rest.slice(credIDLen)
+    COSEPublicKey = rest
   }
   return { rpIdHash, flagsBuf, flags, counter, counterBuf, aaguid, credID, COSEPublicKey }
 }

@@ -10,6 +10,7 @@ import { initThemeMetaSync } from '@/core/theme.ts'
 import App from './App.vue'
 import router from './router/routes.ts'
 
+// oxlint-disable-next-line typescript/no-unsafe-argument : a .vue module-resolution limitation in tsgolint
 const app = createApp(App)
 
 // Errors in Vue-tracked execution -- render, watchers, lifecycle hooks, and event handlers Vue invokes -- including

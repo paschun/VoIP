@@ -12,6 +12,19 @@ import { useUserStore } from '@/stores/user.ts'
  */
 export type ApiErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode
 
+/**
+ * Pull our server `{ message }` and status off a hono {@link DetailedError}. Its `.detail`/`.statusCode` are `any`, so
+ * we restate the shape we rely on in the parameter type -- assignable from `DetailedError` without a cast or unsafe access.
+ *
+ * Dont type arg as DetailedError, because its properties are typed as error. Restate the concrete shape.
+ */
+export function serverError(err: { statusCode?: ApiErrorStatus; detail?: { data?: { message?: string } } }): {
+  status: ApiErrorStatus | undefined
+  message: string | undefined
+} {
+  return { status: err.statusCode, message: err.detail?.data?.message }
+}
+
 /** promise is resolved when user dismisses the alert */
 const swalError = ({ title, text }: { title?: string | number; text?: string }) =>
   Swal.fire({
@@ -65,5 +78,5 @@ export function setServerErrors<E>(
   err: unknown,
   toErrors: (message: string) => E,
 ): void {
-  if (err instanceof DetailedError) r$.$setExternalErrors(toErrors(err.detail?.data?.message))
+  if (err instanceof DetailedError) r$.$setExternalErrors(toErrors(serverError(err).message ?? ''))
 }

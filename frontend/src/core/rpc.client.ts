@@ -1,7 +1,7 @@
 import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import { authToken } from '@/core/auth-token.ts'
-import { notifyApiError } from '@/core/handle-error.ts'
+import { notifyApiError, serverError } from '@/core/handle-error.ts'
 import type { AppType, WsAppType } from '../../../app/app.ts'
 
 // The API is same-origin on both dev + prod
@@ -66,9 +66,10 @@ export function request<T extends ClientResponse<unknown>>(req: T | Promise<T>) 
   return parseResponse(req).catch((err: unknown) => {
     console.error(err)
     if (err instanceof DetailedError) {
-      // DetailedError from parseResponse will only have `.{name,message,statusCode,detail.{data,statusText}}
-      // Our error from backend always sends a response body with `{ message }`, which will be `.detail.data.message` on DetailedError
-      notifyApiError(err.statusCode, err.detail?.data?.message)
+      // DetailedError from parseResponse only carries `.{name,message,statusCode,detail.{data,statusText}}`; our backend
+      // always sends a `{ message }` body, reachable at `.detail.data.message` (see serverError, which types the `any`s).
+      const { status, message } = serverError(err)
+      notifyApiError(status, message)
     } else if (err instanceof Error) {
       notifyApiError(undefined, err.toString())
     }

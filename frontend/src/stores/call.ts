@@ -157,7 +157,7 @@ export const useCallStore = defineStore('call', () => {
     } finally {
       twilioDevice = null
     }
-    telnyxClient?.disconnect().catch((e) => console.error(e))
+    telnyxClient?.disconnect().catch((e: unknown) => console.error(e))
     telnyxClient = null
     callType = ''
   }
