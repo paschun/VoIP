@@ -1,36 +1,36 @@
 <template>
   <div>
-    <b-modal id="call-modal" ref="callModal" no-footer>
+    <BModal id="call-modal" ref="callModal" no-footer>
       <template #header="{ close }">
         <!-- Emulate built in modal header close button action; hidden while a call is ringing or up. -->
-        <b-button :class="{ 'd-none': callStore.state !== 'idle' }" size="sm" variant="outline-danger" @click="close()"> Close </b-button>
+        <BButton :class="{ 'd-none': callStore.state !== 'idle' }" size="sm" variant="outline-danger" @click="close()"> Close </BButton>
       </template>
       <template #default>
         <div class="d-flex justify-content-center">
-          <incoming-call-panel v-if="callStore.state === 'incoming'" />
+          <IncomingCallPanel v-if="callStore.state === 'incoming'" />
           <div v-else class="dial-panel">
             <div v-if="callStore.state === 'idle'">
-              <contact-picker class="mb-2" @select="setDialInput" />
-              <b-form-group class="mb-0">
-                <b-form-input v-model="dialInput" class="chat-input" type="number" required></b-form-input>
-              </b-form-group>
+              <ContactPicker class="mb-2" @select="setDialInput" />
+              <BFormGroup class="mb-0">
+                <BFormInput v-model="dialInput" class="chat-input" type="number" required></BFormInput>
+              </BFormGroup>
             </div>
-            <active-call-panel v-else />
-            <dialer-pad @press="onKey" />
+            <ActiveCallPanel v-else />
+            <DialerPad @press="onKey" />
             <div v-if="callStore.state === 'idle'" class="dialer-container">
               <div class="mt-4 text-center">
                 <button v-b-tooltip.hover type="button" title="Call" class="btn btn-success m-1 px-5" @click="callStore.dial(dialInput)">
-                  <i-bi-telephone-outbound aria-hidden="true" />
+                  <IBiTelephoneOutbound aria-hidden="true" />
                 </button>
                 <button v-b-tooltip.hover type="button" title="Delete" class="btn btn-danger m-1 px-5" @click="removeDigit()">
-                  <i-bi-backspace aria-hidden="true" />
+                  <IBiBackspace aria-hidden="true" />
                 </button>
               </div>
             </div>
           </div>
         </div>
       </template>
-    </b-modal>
+    </BModal>
     <!-- used by the call store -->
     <audio id="remoteMedia" autoplay="true"></audio>
   </div>

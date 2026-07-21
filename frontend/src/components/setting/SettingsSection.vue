@@ -5,7 +5,7 @@
         <component :is="titleTag">{{ title }}</component>
       </div>
       <div class="p-2 bd-highlight">
-        <i-bi-arrow-left class="cursor-pointer back-icon" aria-hidden="true" @click="$emit('back')" />
+        <IBiArrowLeft class="cursor-pointer back-icon" aria-hidden="true" @click="$emit('back')" />
       </div>
     </div>
     <slot></slot>

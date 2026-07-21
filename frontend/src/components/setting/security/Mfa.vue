@@ -61,7 +61,7 @@
       </div>
       <button type="button" class="btn btn-success m-2 px-4" @click="verifyStatusCode()">Verify</button>
     </div>
-    <hardware-key />
+    <HardwareKey />
   </div>
 </template>
 

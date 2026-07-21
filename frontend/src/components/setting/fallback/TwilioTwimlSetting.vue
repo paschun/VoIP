@@ -1,5 +1,5 @@
 <template>
-  <provider-webhook-setting
+  <ProviderWebhookSetting
     provider="twilio"
     main-label="Request URL"
     fallback-label="Fallback URL"

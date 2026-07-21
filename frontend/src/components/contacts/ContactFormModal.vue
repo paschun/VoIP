@@ -1,9 +1,9 @@
 <template>
-  <b-modal v-model="formVisible" title="Contact" no-footer @hidden="r$.$reset()">
+  <BModal v-model="formVisible" title="Contact" no-footer @hidden="r$.$reset()">
     <div class="card mt-4">
       <div class="card-body">
-        <b-tabs content-class="mt-3">
-          <b-tab title="Add Contact" active>
+        <BTabs content-class="mt-3">
+          <BTab title="Add Contact" active>
             <form @submit.prevent="saveContact">
               <div class="form-group m-auto mb-2">
                 <label>First Name</label>
@@ -34,13 +34,13 @@
                 <div class="bd-highlight"><button type="submit" class="btn btn-primary float-right">Save</button></div>
               </div>
             </form>
-          </b-tab>
-          <b-tab title="Add Multiple">
+          </BTab>
+          <BTab title="Add Multiple">
             <div class="d-flex justify-content-end">
               <button class="btn btn-success mb-2 float-right" @click="downloadSampleCsv()">Sample File</button>
             </div>
             <label class="input-group mb-3 cursor-pointer" for="csv-file-input">
-              <span class="input-group-text paperClip chat-input"><i-bi-paperclip /></span>
+              <span class="input-group-text paperClip chat-input"><IBiPaperclip /></span>
               <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !csvFileName }">{{
                 csvFileName || 'Choose file'
               }}</span>
@@ -53,11 +53,11 @@
                 <button type="button" :disabled="isParsingCsv" class="btn btn-primary float-right" @click="importContactsCsv()">Save</button>
               </div>
             </div>
-          </b-tab>
-        </b-tabs>
+          </BTab>
+        </BTabs>
       </div>
     </div>
-  </b-modal>
+  </BModal>
 </template>
 
 <script setup lang="ts">

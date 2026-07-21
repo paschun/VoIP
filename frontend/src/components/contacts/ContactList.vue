@@ -1,30 +1,30 @@
 <template>
   <!-- Pure panel: opened by the sidebar's contacts icon via v-b-toggle.sidebar-right -->
   <div>
-    <b-offcanvas id="sidebar-right" placement="end" shadow no-header>
+    <BOffcanvas id="sidebar-right" placement="end" shadow no-header>
       <template #default="{ hide }">
         <div class="d-flex flex-row mt-2 justify-content-between bd-highlight">
           <div class="bd-highlight drop-down">
-            <b-button class="float-left d-flex m-1" size="sm" variant="primary">
-              <i-bi-x @click="hide()" />
-            </b-button>
+            <BButton class="float-left d-flex m-1" size="sm" variant="primary">
+              <IBiX @click="hide()" />
+            </BButton>
           </div>
           <div>
             <div class="d-flex justify-content-start">
               <div class="ml-1">
-                <b-button v-b-tooltip.hover title="Add Contact" class="float-left d-flex m-1" size="sm" variant="primary" @click="contactStore.startCreate()">
-                  <i-bi-plus-circle />
-                </b-button>
+                <BButton v-b-tooltip.hover title="Add Contact" class="float-left d-flex m-1" size="sm" variant="primary" @click="contactStore.startCreate()">
+                  <IBiPlusCircle />
+                </BButton>
               </div>
               <div class="ml-2">
-                <b-button v-b-tooltip.hover title="Export Contact" class="float-left d-flex m-1" size="sm" variant="primary" @click="exportContact()">
-                  <i-bi-cloud-download />
-                </b-button>
+                <BButton v-b-tooltip.hover title="Export Contact" class="float-left d-flex m-1" size="sm" variant="primary" @click="exportContact()">
+                  <IBiCloudDownload />
+                </BButton>
               </div>
               <div class="ml-2">
-                <b-button v-b-tooltip.hover title="Delete All Contact" class="float-left d-flex m-1" size="sm" variant="danger" @click="deleteAll()">
-                  <i-bi-trash-fill />
-                </b-button>
+                <BButton v-b-tooltip.hover title="Delete All Contact" class="float-left d-flex m-1" size="sm" variant="danger" @click="deleteAll()">
+                  <IBiTrashFill />
+                </BButton>
               </div>
               <div>
                 <h4 class="pr-3 m-1">Contacts</h4>
@@ -36,7 +36,7 @@
           <div class="wrap-search">
             <div class="search">
               <div class="d-flex flex-row bd-highlight">
-                <div class="bd-highlight">&nbsp;&nbsp;<i-bi-search />&nbsp;&nbsp;</div>
+                <div class="bd-highlight">&nbsp;&nbsp;<IBiSearch />&nbsp;&nbsp;</div>
                 <div class="bd-highlight">
                   <input v-model="query" type="text" class="input-search" placeholder="Search">
                 </div>
@@ -50,14 +50,14 @@
                 <div class="bd-highlight">{{ contact.number }}</div>
               </div>
               <div>
-                <i-bi-pencil-square title="Update" class="cursor-pointer" @click="contactStore.startEdit(contact)" />
-                <i-bi-trash-fill title="Delete" class="cursor-pointer" @click="deleteContact(contact._id)" />
+                <IBiPencilSquare title="Update" class="cursor-pointer" @click="contactStore.startEdit(contact)" />
+                <IBiTrashFill title="Delete" class="cursor-pointer" @click="deleteContact(contact._id)" />
               </div>
             </li>
           </ul>
         </div>
       </template>
-    </b-offcanvas>
+    </BOffcanvas>
 
     <ContactFormModal />
   </div>

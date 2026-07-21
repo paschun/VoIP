@@ -22,8 +22,8 @@
             <div class="content">
               <!-- Narrow the discriminated union: the call branch has `duration`, the text branch has `media`/`message`. -->
               <span v-if="message.datatype === 'call'">
-                <span v-if="message.type === 'send'"> <i-bi-telephone-outbound-fill />&nbsp;&nbsp; Outbound</span>
-                <span v-else><i-bi-telephone-inbound-fill />&nbsp;&nbsp; Inbound</span>
+                <span v-if="message.type === 'send'"> <IBiTelephoneOutboundFill />&nbsp;&nbsp; Outbound</span>
+                <span v-else><IBiTelephoneInboundFill />&nbsp;&nbsp; Inbound</span>
                 Call( {{ formatDuration(message.duration ?? 0) }} )
               </span>
               <template v-else>

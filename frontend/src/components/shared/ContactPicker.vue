@@ -4,14 +4,14 @@
        - searchable=false: the searchable trigger's inner <input> opens the menu on focus; toggling it closed blurs
          focus to <body>, and the modal's focus trap immediately refocuses the input -> the menu reopens. A plain
          button trigger has no input to fight the trap over. -->
-  <v-select
+  <VSelect
     v-model="selectedContact"
     :options="contactSelectOptions"
     :teleport="false"
     :searchable="false"
     placeholder="Select contacts"
     @option-selected="onContactSelected"
-  ></v-select>
+  ></VSelect>
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,5 @@
 <template>
-  <loading-spinner :show="isSendingMsg" />
+  <LoadingSpinner :show="isSendingMsg" />
   <div :class="!conversationStore.hasActiveConversation ? 'd-none' : ''">
     <div v-show="isDragging || uploadedImages.length" id="drop-area" class="z-1" :class="{ highlight: isDragging }">
       <form class="upload-form">
@@ -26,11 +26,11 @@
         <div class="message pl-2">
           <input v-model="messageBody" type="text" class="input-message" placeholder="Type message here" @keyup.enter="sendSms">
           <label class="m-2 cursor-pointer" for="fileElem">
-            <i-bi-paperclip class="paperclip" />
+            <IBiPaperclip class="paperclip" />
           </label>
         </div>
         <div class="btn btn-primary m-2 send-btn" @click="sendSms()">
-          <i-bi-arrow-right-circle-fill aria-hidden="true" />
+          <IBiArrowRightCircleFill aria-hidden="true" />
         </div>
       </div>
     </div>

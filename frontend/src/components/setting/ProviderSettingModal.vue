@@ -1,9 +1,9 @@
 <template>
   <div>
-    <loading-spinner :show="isSavingProviderSetting" />
-    <b-modal v-model="visible" size="lg" title="Settings" hide-footer>
+    <LoadingSpinner :show="isSavingProviderSetting" />
+    <BModal v-model="visible" size="lg" title="Settings" hide-footer>
       <form class="ml-2 mr-2" @submit.prevent="saveProviderSetting">
-        <b-form-radio-group
+        <BFormRadioGroup
           id="provider-type-radios"
           v-model="r$.$value.type"
           :options="options"
@@ -11,13 +11,13 @@
           size="lg"
           name="radio-btn-outline"
           buttons
-        ></b-form-radio-group>
+        ></BFormRadioGroup>
         <div class="card form-group mt-4">
           <div class="card-body">
             <div class="row m-auto">
               <div class="col-auto m-auto mb-1 mb-sm-auto">
                 <label>
-                  <i-bi-person-fill aria-hidden="true" />
+                  <IBiPersonFill aria-hidden="true" />
                   Profile
                 </label>
               </div>
@@ -26,7 +26,7 @@
               </div>
               <div class="col-1 m-auto">
                 <span class="float-right cursor-pointer" title="Delete">
-                  <i-bi-trash style="font-size: 1.5em" aria-hidden="true" @click="deleteProfile()" />
+                  <IBiTrash style="font-size: 1.5em" aria-hidden="true" @click="deleteProfile()" />
                 </span>
               </div>
             </div>
@@ -37,36 +37,36 @@
             <div class="row mb-2">
               <div class="col-auto m-auto">
                 <label>
-                  <i-bi-key aria-hidden="true" />
+                  <IBiKey aria-hidden="true" />
                   <b>Telnyx</b> API Key
                 </label>
               </div>
               <div class="col-sm col-12 m-auto">
                 <input v-model="r$.$value.api_key" class="form-control" type="text" placeholder="Telnyx API Key" :class="{ 'is-invalid': r$.api_key.$error }">
-                <field-errors :field="r$.api_key" />
+                <FieldErrors :field="r$.api_key" />
               </div>
             </div>
             <div class="row mb-2">
               <div class="col-auto m-auto">
                 <button id="get-number" class="btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('telnyx')">
-                  <i-bi-telephone-plus aria-hidden="true" />
+                  <IBiTelephonePlus aria-hidden="true" />
                   Get Number
                 </button>
               </div>
               <div class="col col-lg-6 m-auto">
                 <div class="form-group">
-                  <custom-autocomplete-select
+                  <CustomAutocompleteSelect
                     v-model="r$.$value.number"
                     :options="telnyxNumbers"
                     label-prop="phone_number"
                     value-prop="phone_number"
-                  ></custom-autocomplete-select>
-                  <field-errors :field="r$.number" />
+                  ></CustomAutocompleteSelect>
+                  <FieldErrors :field="r$.number" />
                 </div>
               </div>
               <div class="col-auto m-auto">
                 <span v-if="showDelete" class="float-right cursor-pointer" title="Delete" @click="deleteApiKey()">
-                  <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
+                  <IBiTrash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
             </div>
@@ -77,7 +77,7 @@
             <div class="row mb-2">
               <div class="col-auto col-lg-3 m-auto">
                 <label>
-                  <i-bi-key aria-hidden="true" />
+                  <IBiKey aria-hidden="true" />
                   <b>Twilio</b> SID
                 </label>
               </div>
@@ -89,14 +89,14 @@
                   placeholder="Twilio SID"
                   :class="{ 'is-invalid': r$.twilio_sid.$error }"
                 >
-                <field-errors :field="r$.twilio_sid" />
+                <FieldErrors :field="r$.twilio_sid" />
               </div>
             </div>
 
             <div class="row mb-2">
               <div class="col-auto col-lg-3 m-auto">
                 <label>
-                  <i-bi-key aria-hidden="true" />
+                  <IBiKey aria-hidden="true" />
                   <b>Twilio</b> Token
                 </label>
               </div>
@@ -108,30 +108,30 @@
                   placeholder="Twilio Token"
                   :class="{ 'is-invalid': r$.twilio_token.$error }"
                 >
-                <field-errors :field="r$.twilio_token" />
+                <FieldErrors :field="r$.twilio_token" />
               </div>
             </div>
             <div class="row mb-2">
               <div class="col-auto m-auto">
                 <button id="get-number-twilio" class="btn btn-secondary btn-sm" type="button" @click="loadProviderNumbers('twilio')">
-                  <i-bi-telephone-plus aria-hidden="true" />
+                  <IBiTelephonePlus aria-hidden="true" />
                   Get Number
                 </button>
               </div>
               <div class="col col-lg-6 m-auto">
                 <div class="form-group">
-                  <custom-autocomplete-select
+                  <CustomAutocompleteSelect
                     v-model="r$.$value.twilio_number"
                     :options="twilioNumbers"
                     label-prop="phoneNumber"
                     value-prop="phoneNumber"
-                  ></custom-autocomplete-select>
-                  <field-errors :field="r$.twilio_number" />
+                  ></CustomAutocompleteSelect>
+                  <FieldErrors :field="r$.twilio_number" />
                 </div>
               </div>
               <div class="col-auto m-auto">
                 <span v-if="showDelete" class="float-right cursor-pointer" title="Delete" @click="deleteApiKey()">
-                  <i-bi-trash style="font-size: 1.5em" aria-hidden="true" />
+                  <IBiTrash style="font-size: 1.5em" aria-hidden="true" />
                 </span>
               </div>
             </div>
@@ -141,7 +141,7 @@
           <button class="btn btn-success mt-4 submit-btn" type="submit">Save</button>
         </div>
       </form>
-    </b-modal>
+    </BModal>
   </div>
 </template>
 

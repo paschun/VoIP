@@ -6,26 +6,26 @@
           <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
           <div class="d-flex flex-row bd-highlight">
             <div class="bd-highlight">
-              <i-bi-gear-fill v-b-toggle.sidebar-email-setting aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
+              <IBiGearFill v-b-toggle.sidebar-email-setting aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
             </div>
             <div class="bd-highlight">
-              <i-bi-person-lines-fill v-b-toggle.sidebar-right aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
+              <IBiPersonLinesFill v-b-toggle.sidebar-right aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
             </div>
             <div class="bd-highlight">
-              <i-bi-telephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />
+              <IBiTelephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />
             </div>
             <div class="bd-highlight">
-              <i-bi-pencil-square aria-hidden="true" class="m-2 cursor-pointer" title="Compose" @click="composeOpen = true" />
+              <IBiPencilSquare aria-hidden="true" class="m-2 cursor-pointer" title="Compose" @click="composeOpen = true" />
             </div>
           </div>
         </div>
-        <profile-dropdown />
+        <ProfileDropdown />
       </div>
     </div>
-    <conversation-list />
-    <settings-panel></settings-panel>
-    <contact-list></contact-list>
-    <compose-message-modal v-model="composeOpen" @sent="emit('messageSent')" />
+    <ConversationList />
+    <SettingsPanel></SettingsPanel>
+    <ContactList></ContactList>
+    <ComposeMessageModal v-model="composeOpen" @sent="emit('messageSent')" />
   </div>
 </template>
 

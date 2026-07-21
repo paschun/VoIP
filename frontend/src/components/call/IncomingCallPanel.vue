@@ -3,7 +3,7 @@
     <center class="mt-3 pt-3">
       <div class="pt-4 pb-2">
         <button type="button" class="btn btn-success m-1">
-          <i-bi-person-fill aria-hidden="true" />
+          <IBiPersonFill aria-hidden="true" />
         </button>
         <p class="font-weight-bold mt-2 mb-0 caller-name">
           {{ callStore.remoteName }}
@@ -14,10 +14,10 @@
       </div>
       <h4 class="mb-4">Incoming call</h4>
       <button type="button" class="btn btn-success m-1" @click="callStore.accept()">
-        <i-bi-telephone-fill aria-hidden="true" />
+        <IBiTelephoneFill aria-hidden="true" />
       </button>
       <button type="button" class="btn btn-danger m-1" @click="callStore.reject()">
-        <i-bi-x-circle aria-hidden="true" />
+        <IBiXCircle aria-hidden="true" />
       </button>
     </center>
   </div>

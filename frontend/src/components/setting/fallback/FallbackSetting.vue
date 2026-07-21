@@ -1,7 +1,7 @@
 <template>
   <div>
-    <twilio-twiml-setting v-if="profileStore.activeProfileType === 'twilio'" />
-    <telnyx-message-setting v-if="profileStore.activeProfileType === 'telnyx'" />
+    <TwilioTwimlSetting v-if="profileStore.activeProfileType === 'twilio'" />
+    <TelnyxMessageSetting v-if="profileStore.activeProfileType === 'telnyx'" />
   </div>
 </template>
 

@@ -1,14 +1,14 @@
 <template>
   <div>
     <div class="login-box p-3">
-      <theme-button />
+      <ThemeButton />
       <h1>Login</h1>
       <form v-if="screen === 'login'" class="ml-2 mr-2" @submit.prevent="submitLogin">
         <div class="form-group mt-4">
-          <b-input-group>
-            <b-input-group-text>
-              <i-bi-person-fill />
-            </b-input-group-text>
+          <BInputGroup>
+            <BInputGroupText>
+              <IBiPersonFill />
+            </BInputGroupText>
             <input
               v-model="loginR$.$value.name"
               class="form-control chat-input"
@@ -17,14 +17,14 @@
               :class="{ 'is-invalid': loginR$.name.$error }"
               title="Enter Username"
             >
-          </b-input-group>
+          </BInputGroup>
           <FieldErrors :field="loginR$.name" />
         </div>
         <div class="form-group mb-2 mt-4">
-          <b-input-group>
-            <b-input-group-text>
-              <i-bi-shield-lock />
-            </b-input-group-text>
+          <BInputGroup>
+            <BInputGroupText>
+              <IBiShieldLock />
+            </BInputGroupText>
             <input
               v-model="loginR$.$value.password"
               class="chat-input form-control"
@@ -33,13 +33,13 @@
               :class="{ 'is-invalid': loginR$.password.$error }"
               title="Enter Password"
             >
-          </b-input-group>
+          </BInputGroup>
           <FieldErrors :field="loginR$.password" />
         </div>
         <div class="d-grid">
           <button class="btn btn-success mt-3 submit-btn" type="submit">Login</button>
         </div>
-        <div v-if="meta.signupEnabled" class="my-2 small">Don't have an account yet? <router-link :to="{ name: 'signup' }" class="mx-2"> Sign up</router-link></div>
+        <div v-if="meta.signupEnabled" class="my-2 small">Don't have an account yet? <RouterLink :to="{ name: 'signup' }" class="mx-2"> Sign up</RouterLink></div>
         <div v-else class="d-grid d-md-flex mt-2 small">New registrations are disabled</div>
       </form>
       <form class="ml-2 mr-2 text-center" :class="{ 'd-none': screen !== 'otp' }" @submit.prevent="verifyOtp">
@@ -70,7 +70,7 @@
             <div class="card-body cursor-pointer" @click="showScreen('keys')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
-                  <i-bi-key />
+                  <IBiKey />
                 </div>
                 <div class="border-dark border-start px-2">
                   <h4>Security Key</h4>
@@ -83,7 +83,7 @@
             <div class="card-body cursor-pointer" @click="showScreen('otp')">
               <div class="d-flex justify-content-between align-items-center">
                 <div class="px-4">
-                  <i-bi-calculator-fill />
+                  <IBiCalculatorFill />
                 </div>
                 <div class="border-dark border-start px-2">
                   <h4>TOTP Code</h4>
@@ -101,7 +101,7 @@
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <i-bi-key /><span class="mr-2"> {{ key.title }} </span>
+                  <IBiKey /><span class="mr-2"> {{ key.title }} </span>
                 </div>
                 <div>
                   <button type="button" class="btn btn-success" @click="verifyKey(key)">Verify</button>
@@ -115,10 +115,10 @@
 
       <div class="d-flex my-4 justify-content-center">
         <a href="https://www.twitter.com/0perationP" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
-          <i-bi-twitter class="mx-2 text-secondary" style="font-size: 2em" />
+          <IBiTwitter class="mx-2 text-secondary" style="font-size: 2em" />
         </a>
         <a href="https://github.com/0perationPrivacy/" target="_blank" rel="noopener noreferrer" aria-label="Github" title="Github">
-          <i-bi-github class="mx-2 text-secondary" style="font-size: 2em" />
+          <IBiGithub class="mx-2 text-secondary" style="font-size: 2em" />
         </a>
       </div>
     </div>

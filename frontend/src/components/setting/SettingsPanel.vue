@@ -1,35 +1,35 @@
 <template>
   <!-- Pure panel: opened by the sidebar's gear icon via v-b-toggle.sidebar-email-setting -->
   <div>
-    <b-offcanvas id="sidebar-email-setting" title="Settings" backdrop>
+    <BOffcanvas id="sidebar-email-setting" title="Settings" backdrop>
       <div v-if="activeMenu == 'setting'" class="px-3 py-2">
         <ul class="list-group">
-          <li class="list-group-item cursor-pointer" @click="enableMenu('email')"><i-bi-envelope aria-hidden="true" class="mx-2" />Email Settings</li>
+          <li class="list-group-item cursor-pointer" @click="enableMenu('email')"><IBiEnvelope aria-hidden="true" class="mx-2" />Email Settings</li>
           <li class="list-group-item cursor-pointer" @click="providerSettingModal?.open()">
-            <i-bi-person-badge aria-hidden="true" class="mx-2" />Profile Settings
+            <IBiPersonBadge aria-hidden="true" class="mx-2" />Profile Settings
           </li>
           <li class="list-group-item cursor-pointer" @click="enableMenu('account')">
-            <i-bi-person aria-hidden="true" class="mx-2" />Account Settings
+            <IBiPerson aria-hidden="true" class="mx-2" />Account Settings
           </li>
           <li class="list-group-item cursor-pointer" @click="passwordEnable('mfa')">
-            <i-bi-shield-lock aria-hidden="true" class="mx-2" />MFA Settings
+            <IBiShieldLock aria-hidden="true" class="mx-2" />MFA Settings
           </li>
         </ul>
         <div class="version">{{ meta.version }}</div>
       </div>
-      <settings-section v-if="activeMenu == 'email'" title="Email Settings" @back="enableMenu('setting')">
-        <email-setting></email-setting>
-      </settings-section>
+      <SettingsSection v-if="activeMenu == 'email'" title="Email Settings" @back="enableMenu('setting')">
+        <EmailSetting></EmailSetting>
+      </SettingsSection>
 
-      <settings-section v-if="activeMenu == 'account'" title="Account Settings" @back="enableMenu('setting')">
-        <account-setting></account-setting>
-      </settings-section>
+      <SettingsSection v-if="activeMenu == 'account'" title="Account Settings" @back="enableMenu('setting')">
+        <AccountSetting></AccountSetting>
+      </SettingsSection>
 
-      <settings-section v-if="activeMenu == 'mfa'" title="MFA Settings" @back="enableMenu('setting')">
+      <SettingsSection v-if="activeMenu == 'mfa'" title="MFA Settings" @back="enableMenu('setting')">
         <mfa />
-      </settings-section>
+      </SettingsSection>
 
-      <settings-section v-if="activeMenu == 'password'" title="Password Verification" @back="enableMenu('setting')">
+      <SettingsSection v-if="activeMenu == 'password'" title="Password Verification" @back="enableMenu('setting')">
         <div class="m-2">
           <div class="form-group">
             <label>Password</label>
@@ -39,9 +39,9 @@
             <button class="btn btn-success my-2 px-4" @click="checkPassword()">Verify</button>
           </div>
         </div>
-      </settings-section>
-    </b-offcanvas>
-    <provider-setting-modal ref="providerSettingModal" />
+      </SettingsSection>
+    </BOffcanvas>
+    <ProviderSettingModal ref="providerSettingModal" />
   </div>
 </template>
 

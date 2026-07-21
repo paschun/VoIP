@@ -1,30 +1,30 @@
 <template>
   <div class="wrap">
-    <call-view></call-view>
-    <theme-button />
+    <CallView></CallView>
+    <ThemeButton />
     <!--
       Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
       hamburger via v-b-toggle.sidebar-no-header); at/above `sm` Bootstrap renders it inline as the static
       sidebar column
     -->
-    <b-offcanvas id="sidebar-no-header" ref="mobileSidebar" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
+    <BOffcanvas id="sidebar-no-header" ref="mobileSidebar" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
       <template #default="{ hide }">
         <!-- .d-sm-none hides this row >= sm breakpoint -->
         <div class="d-flex flex-row-reverse bd-highlight d-sm-none">
           <div class="bd-highlight drop-down">
-            <b-button class="float-right d-flex" size="sm" variant="primary">
-              <i-bi-x @click="hide()" />
-            </b-button>
+            <BButton class="float-right d-flex" size="sm" variant="primary">
+              <IBiX @click="hide()" />
+            </BButton>
           </div>
         </div>
         <sidebar @message-sent="onMessageSent" />
       </template>
-    </b-offcanvas>
+    </BOffcanvas>
     <section class="col col-md-8 pb-2">
       <div class="chat-head">
         <!-- hamburger / drawer-open icon hidden on larger screens (>= sm) where sidebar always visible -->
-        <i-bi-chevron-left v-b-toggle.sidebar-no-header aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" />
-        <i-bi-person-bounding-box aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
+        <IBiChevronLeft v-b-toggle.sidebar-no-header aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" />
+        <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
         <div class="chat-name">
           <h1 v-if="conversationStore.activeConversation" class="font-name">
             <div v-if="conversationStore.activeConversation.contact" class="d-flex align-items-start align-self-center">
@@ -42,23 +42,23 @@
                 title="Add Contact"
                 @click="contactStore.startCreate(conversationStore.activeRemoteNumber)"
               >
-                <i-bi-plus-circle aria-hidden="true" style="font-size: 1.5em" />
+                <IBiPlusCircle aria-hidden="true" style="font-size: 1.5em" />
               </span>
             </div>
           </h1>
         </div>
         <div v-if="conversationStore.hasActiveConversation" class="d-flex m-auto">
           <span class="cursor-pointer" title="Call" @click="callStore.dial(conversationStore.activeRemoteNumber)">
-            <i-bi-telephone aria-hidden="true" style="font-size: 2em" />
+            <IBiTelephone aria-hidden="true" style="font-size: 2em" />
           </span>
           &nbsp;&nbsp;&nbsp;
           <span class="cursor-pointer" title="Delete" @click="deleteChat()">
-            <i-bi-trash aria-hidden="true" style="font-size: 2em" />
+            <IBiTrash aria-hidden="true" style="font-size: 2em" />
           </span>
         </div>
       </div>
-      <chat-thread />
-      <message-composer @sent="onMessageSent" />
+      <ChatThread />
+      <MessageComposer @sent="onMessageSent" />
     </section>
   </div>
 </template>

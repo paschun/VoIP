@@ -4,10 +4,10 @@
       <h1>Signup</h1>
       <form class="ml-2 mr-2" @submit.prevent="handleSubmit">
         <div class="form-group mt-4">
-          <b-input-group>
-            <b-input-group-text>
-              <i-bi-person-fill />
-            </b-input-group-text>
+          <BInputGroup>
+            <BInputGroupText>
+              <IBiPersonFill />
+            </BInputGroupText>
             <input
               v-model="r$.$value.name"
               class="form-control chat-input"
@@ -16,14 +16,14 @@
               :class="{ 'is-invalid': r$.name.$error }"
               title="Enter Username"
             >
-          </b-input-group>
+          </BInputGroup>
           <FieldErrors :field="r$.name" />
         </div>
         <div class="form-group mb-2 mt-4">
-          <b-input-group>
-            <b-input-group-text>
-              <i-bi-shield-lock />
-            </b-input-group-text>
+          <BInputGroup>
+            <BInputGroupText>
+              <IBiShieldLock />
+            </BInputGroupText>
             <input
               v-model="r$.$value.password"
               class="chat-input form-control"
@@ -32,14 +32,14 @@
               :class="{ 'is-invalid': r$.password.$error }"
               title="Enter Password"
             >
-          </b-input-group>
+          </BInputGroup>
           <FieldErrors :field="r$.password" />
         </div>
         <div class="form-group mb-2 mt-2">
-          <b-input-group>
-            <b-input-group-text>
-              <i-bi-shield-lock />
-            </b-input-group-text>
+          <BInputGroup>
+            <BInputGroupText>
+              <IBiShieldLock />
+            </BInputGroupText>
             <input
               v-model="r$.$value.c_password"
               class="chat-input form-control"
@@ -48,20 +48,20 @@
               :class="{ 'is-invalid': r$.c_password.$error }"
               title="Enter Password Again"
             >
-          </b-input-group>
+          </BInputGroup>
           <FieldErrors :field="r$.c_password" />
         </div>
         <div class="d-grid">
           <button class="btn btn-primary mt-3" type="submit" :disabled="!r$.$correct">Sign Up</button>
         </div>
-        <div class="my-2 small">Already have an account? <router-link :to="{ name: 'login' }" class="mx-2">Login</router-link></div>
+        <div class="my-2 small">Already have an account? <RouterLink :to="{ name: 'login' }" class="mx-2">Login</RouterLink></div>
       </form>
       <div class="d-flex my-4 justify-content-center">
         <a href="https://www.twitter.com/0perationP" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
-          <i-bi-twitter class="mx-2 text-secondary" style="font-size: 2em" />
+          <IBiTwitter class="mx-2 text-secondary" style="font-size: 2em" />
         </a>
         <a href="https://github.com/0perationPrivacy/" target="_blank" rel="noopener noreferrer" aria-label="Github" title="Github">
-          <i-bi-github class="mx-2 text-secondary" style="font-size: 2em" />
+          <IBiGithub class="mx-2 text-secondary" style="font-size: 2em" />
         </a>
       </div>
     </div>

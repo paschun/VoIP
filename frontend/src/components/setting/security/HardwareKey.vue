@@ -5,11 +5,11 @@
       <div class="card-body">
         <div class="d-flex justify-content-between">
           <div class="pr-1 mr-2">
-            <i-bi-key /><span class="mr-2"> {{ key.title }} </span>
+            <IBiKey /><span class="mr-2"> {{ key.title }} </span>
           </div>
           <div class="pl-1 ml-2">
             <a href="javascript:void(0);" class="text-danger" @click="deleteKey(key._id)">
-              <i-bi-trash />
+              <IBiTrash />
             </a>
           </div>
         </div>
@@ -26,7 +26,7 @@
                 </div>
                 <div class="p-2">
                   <button class="btn btn-success" @click="register()">
-                    <i-bi-plus />
+                    <IBiPlus />
                   </button>
                 </div>
               </div>

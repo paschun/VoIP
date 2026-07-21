@@ -1,6 +1,6 @@
 <template>
   <div class="icons mt-2">
-    <b-dropdown class="drop-down" variant="primary">
+    <BDropdown class="drop-down" variant="primary">
       <template #button-content>
         <div class="d-flex flex-row align-items-center bd-highlight">
           <div v-if="profileStore.activeProfile" class="d-flex flex-column bd-highlight">
@@ -16,15 +16,15 @@
             <span v-if="userStore.userData">{{ userStore.userData.name }}</span>
           </div>
           <div>
-            <i-bi-person-badge aria-hidden="true" class="mx-2 my-auto" title="Profiles" />
+            <IBiPersonBadge aria-hidden="true" class="mx-2 my-auto" title="Profiles" />
           </div>
           <div class="dropdownAdd"></div>
         </div>
       </template>
-      <b-dropdown-divider></b-dropdown-divider>
-      <loading-spinner :show="profileStore.profileIsLoading" />
+      <BDropdownDivider></BDropdownDivider>
+      <LoadingSpinner :show="profileStore.profileIsLoading" />
       <div v-for="profile in profileStore.profiles" :key="profile._id">
-        <b-dropdown-item-button @click="profileStore.setActiveProfile(profile)">
+        <BDropdownItemButton @click="profileStore.setActiveProfile(profile)">
           <div class="d-flex flex-row">
             <div>
               <div class="d-flex flex-column">
@@ -42,15 +42,15 @@
               >
             </div>
           </div>
-        </b-dropdown-item-button>
-        <b-dropdown-divider></b-dropdown-divider>
+        </BDropdownItemButton>
+        <BDropdownDivider></BDropdownDivider>
       </div>
-      <b-dropdown-item-button v-b-modal.add-profile>
-        <i-bi-person-plus-fill aria-hidden="true" />
+      <BDropdownItemButton v-b-modal.add-profile>
+        <IBiPersonPlusFill aria-hidden="true" />
         Add New Profile
-      </b-dropdown-item-button>
-      <b-dropdown-divider></b-dropdown-divider>
-      <b-modal id="add-profile" ref="add-profile" size="lg" title="Add Profile" no-footer>
+      </BDropdownItemButton>
+      <BDropdownDivider></BDropdownDivider>
+      <BModal id="add-profile" ref="add-profile" size="lg" title="Add Profile" no-footer>
         <span class="small text-secondary">Profile</span>
         <form class="ml-2 mr-2" @submit.prevent="addProfile">
           <div class="form-group mt-2">
@@ -63,12 +63,12 @@
             <button class="btn btn-primary" type="submit" :disabled="!r$.$correct">Save</button>
           </div>
         </form>
-      </b-modal>
-      <b-dropdown-item-button @click="logout()">
-        <i-bi-power aria-hidden="true" />
+      </BModal>
+      <BDropdownItemButton @click="logout()">
+        <IBiPower aria-hidden="true" />
         Logout
-      </b-dropdown-item-button>
-    </b-dropdown>
+      </BDropdownItemButton>
+    </BDropdown>
   </div>
 </template>
 

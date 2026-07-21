@@ -1,14 +1,14 @@
 <template>
-  <b-modal v-model="visible" size="lg" title="Compose Message" no-footer>
-    <loading-spinner :show="isLoading" />
+  <BModal v-model="visible" size="lg" title="Compose Message" no-footer>
+    <LoadingSpinner :show="isLoading" />
     <span class="small text-secondary"
       >Input (+) and country code followed by the 10 digit phone number. If no country code is provided (+1) is assumed. Multiple numbers will be sent as Bulk
       SMS (individual sms's to recipients). <span class="small text-center">[Telnyx does not support group texting]</span></span
     >
     <form class="ml-2 mr-2" @submit.prevent="sendComposedMessage">
-      <contact-picker class="mt-4" @select="addRecipient" />
+      <ContactPicker class="mt-4" @select="addRecipient" />
       <div class="form-group mt-4">
-        <vue-tags-input
+        <VueTagsInput
           v-model="tagInput"
           class="form-control chat-input"
           :tags="recipientTags"
@@ -36,7 +36,7 @@
       <!-- send images over MMS -->
       <label class="input-group mb-3 cursor-pointer" for="attachment-file-input">
         <span class="input-group-text paperClip chat-input">
-          <i-bi-paperclip />
+          <IBiPaperclip />
         </span>
         <span class="form-control chat-input" :class="{ 'text-secondary': !selectedFileNames }">{{ selectedFileNames || 'Choose file' }}</span>
       </label>
@@ -48,7 +48,7 @@
         <button class="btn btn-primary submit-btn" type="submit" :disabled="!canSend">Send Message</button>
       </div>
     </form>
-  </b-modal>
+  </BModal>
 </template>
 
 <script setup lang="ts">

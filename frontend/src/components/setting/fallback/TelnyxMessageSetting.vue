@@ -1,5 +1,5 @@
 <template>
-  <provider-webhook-setting
+  <ProviderWebhookSetting
     provider="telnyx"
     main-label="Primary Webhook URL"
     success-message=" Profile updated successfully!"

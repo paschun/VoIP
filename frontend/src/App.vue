@@ -3,7 +3,7 @@
     <span v-if="meta.updateAvailable" class="update-ribbon"
       ><a href="https://github.com/paschun/VoIP" target="_blank" rel="noopener noreferrer">update</a></span
     >
-    <router-view />
+    <RouterView />
   </div>
 </template>
 

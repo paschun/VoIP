@@ -26,7 +26,7 @@
         <FieldErrors :field="r$.port" />
       </div>
       <div class="form-group mt-2">
-        <b-form-checkbox v-model="r$.$value.secure" v-b-tooltip.hover.bottomright="'for 465 only'"> Secure </b-form-checkbox>
+        <BFormCheckbox v-model="r$.$value.secure" v-b-tooltip.hover.bottomright="'for 465 only'"> Secure </BFormCheckbox>
       </div>
       <div class="form-group mt-2">
         <textarea
@@ -39,9 +39,9 @@
         <FieldErrors :field="r$.pgpPublicKey" />
       </div>
       <div class="form-group mt-2">
-        <b-form-checkbox v-model="r$.$value.pgpEncryptEnabled" v-b-tooltip.hover.bottomright="'for PGP encrypted emails'">
+        <BFormCheckbox v-model="r$.$value.pgpEncryptEnabled" v-b-tooltip.hover.bottomright="'for PGP encrypted emails'">
           Encrypt with PGP
-        </b-form-checkbox>
+        </BFormCheckbox>
       </div>
       <div class="form-group">
         <!-- Disable until valid AND actually changed: $invalid checks validity, $anyEdited checks change vs the
@@ -54,7 +54,7 @@
     <hr>
     <div v-if="showProfile">
       <div class="form-group mt-2">
-        <b-form-checkbox
+        <BFormCheckbox
           v-for="profile in profileStore.profiles"
           :key="profile._id"
           :name="'checkbox-' + profile._id"
@@ -62,7 +62,7 @@
           @update:model-value="profileUpdate($event, profile._id)"
         >
           <span class="pr-2">&nbsp;&nbsp;{{ profile.profile }}</span>
-        </b-form-checkbox>
+        </BFormCheckbox>
       </div>
     </div>
   </div>

@@ -39,7 +39,7 @@
           :class="{ 'active-chat': conversationStore.activeRemoteNumber == item._id }"
           @click="conversationStore.openConversation(item)"
         >
-          <i-bi-person-bounding-box aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
+          <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
           <div class="d-flex justify-content-between w-100">
             <div class="contact-preview">
               <div class="contact-text">
