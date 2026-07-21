@@ -27,36 +27,29 @@
 
 @layer app {
 :root {
-  --background-color-primary: #ffffff;
-  --background-color-secondary: rgb(246, 246, 246);
-  --background-color-info: #dcd4cc;
-  --accent-color: #cacaca;
-  --text-primary-color: #222;
-  --element-size: 4rem;
-  --chat-you: rgb(233, 233, 233);
+  color-scheme: light;
+  --background-color-primary: light-dark(#ffffff, rgb(18, 18, 18));
+  --background-color-secondary: light-dark(rgb(246, 246, 246), rgb(46, 46, 46));
+  --background-color-info: light-dark(#dcd4cc, #0b1419);
+  --accent-color: light-dark(#cacaca, #3f3f3f);
+  --text-primary-color: light-dark(#222, #ddd);
+  --chat-you: light-dark(rgb(233, 233, 233), rgb(59, 59, 59));
   --chat-me: rgb(50, 105, 230);
-  --theme-orange: #ff5821;
-  --chat-background: white;
-  --contact-list: rgb(246, 246, 246);
-  --contact-highlighted: rgb(222, 222, 222);
-  --contact-hover: rgb(233, 233, 233);
+  --chat-background: light-dark(white, rgb(18, 18, 18));
+  --contact-list: light-dark(rgb(246, 246, 246), rgb(46, 46, 46));
+  --contact-highlighted: light-dark(rgb(222, 222, 222), rgb(74, 74, 74));
+  --contact-hover: light-dark(rgb(233, 233, 233), rgb(59, 59, 59));
+  --text-button: light-dark(#1c282f, #cacaca);
   --background-image-opacity: 0.8;
-  --text-button: #1c282f;
+
+  --element-size: 4rem;
+  --theme-orange: #ff5821;
 }
+/* color-scheme must be re-declared here: the app-layer `:root` light above would otherwise beat Bootstrap's
+   vendor-layer `[data-bs-theme=dark] { color-scheme: dark }`. Non-color vars can't use light-dark(). */
 [data-bs-theme='dark'] {
-  --background-color-primary: rgb(18, 18, 18);
-  --background-color-secondary: rgb(46, 46, 46);
-  --background-color-info: #0b1419;
-  --accent-color: #3f3f3f;
-  --text-primary-color: #ddd;
-  --chat-you: rgb(59, 59, 59);
-  --chat-me: rgb(50, 105, 230);
-  --chat-background: rgb(18, 18, 18);
-  --contact-list: rgb(46, 46, 46);
-  --contact-highlighted: rgb(74, 74, 74);
-  --contact-hover: rgb(59, 59, 59);
+  color-scheme: dark;
   --background-image-opacity: 0.4;
-  --text-button: #cacaca;
 }
 body {
   background: var(--background-color-secondary);
