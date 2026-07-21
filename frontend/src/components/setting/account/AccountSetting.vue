@@ -1,6 +1,6 @@
 <template>
   <div class="p-2">
-    <div v-if="activeMenu == 'setting'">
+    <div v-if="activeMenu === 'setting'">
       <ul class="list-group">
         <li class="list-group-item cursor-pointer" @click="enableMenu('username')"><IBiPerson aria-hidden="true" class="mx-2" />Change Username</li>
         <li class="list-group-item cursor-pointer" @click="enableMenu('password')"><IBiKey aria-hidden="true" class="mx-2" />Change Password</li>
@@ -10,14 +10,14 @@
         </li>
       </ul>
     </div>
-    <SettingsSection v-if="activeMenu == 'username'" title="Change Username" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
+    <SettingsSection v-if="activeMenu === 'username'" title="Change Username" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
       <ChangeUsername></ChangeUsername>
     </SettingsSection>
-    <SettingsSection v-if="activeMenu == 'password'" title="Change Password" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
+    <SettingsSection v-if="activeMenu === 'password'" title="Change Password" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
       <ChangePassword></ChangePassword>
     </SettingsSection>
     <!-- TODO: provider webhook fallback settings arguably belong under the profile/provider settings UI, not Account Settings. -->
-    <SettingsSection v-if="activeMenu == 'fallback'" title="Fallback Setting" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
+    <SettingsSection v-if="activeMenu === 'fallback'" title="Fallback Setting" title-tag="h6" :icon-scale="1" @back="enableMenu('setting')">
       <FallbackSetting></FallbackSetting>
     </SettingsSection>
   </div>

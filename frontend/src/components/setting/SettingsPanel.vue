@@ -2,7 +2,7 @@
   <!-- Pure panel: opened by the sidebar's gear icon via v-b-toggle.sidebar-email-setting -->
   <div>
     <BOffcanvas id="sidebar-email-setting" title="Settings" backdrop>
-      <div v-if="activeMenu == 'setting'" class="px-3 py-2">
+      <div v-if="activeMenu === 'setting'" class="px-3 py-2">
         <ul class="list-group">
           <li class="list-group-item cursor-pointer" @click="enableMenu('email')"><IBiEnvelope aria-hidden="true" class="mx-2" />Email Settings</li>
           <li class="list-group-item cursor-pointer" @click="providerSettingModal?.open()">
@@ -17,19 +17,19 @@
         </ul>
         <div class="version">{{ meta.version }}</div>
       </div>
-      <SettingsSection v-if="activeMenu == 'email'" title="Email Settings" @back="enableMenu('setting')">
+      <SettingsSection v-if="activeMenu === 'email'" title="Email Settings" @back="enableMenu('setting')">
         <EmailSetting></EmailSetting>
       </SettingsSection>
 
-      <SettingsSection v-if="activeMenu == 'account'" title="Account Settings" @back="enableMenu('setting')">
+      <SettingsSection v-if="activeMenu === 'account'" title="Account Settings" @back="enableMenu('setting')">
         <AccountSetting></AccountSetting>
       </SettingsSection>
 
-      <SettingsSection v-if="activeMenu == 'mfa'" title="MFA Settings" @back="enableMenu('setting')">
+      <SettingsSection v-if="activeMenu === 'mfa'" title="MFA Settings" @back="enableMenu('setting')">
         <MfaSetting />
       </SettingsSection>
 
-      <SettingsSection v-if="activeMenu == 'password'" title="Password Verification" @back="enableMenu('setting')">
+      <SettingsSection v-if="activeMenu === 'password'" title="Password Verification" @back="enableMenu('setting')">
         <div class="m-2">
           <div class="form-group">
             <label>Password</label>

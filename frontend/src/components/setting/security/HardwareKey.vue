@@ -8,9 +8,9 @@
             <IBiKey /><span class="mr-2"> {{ key.title }} </span>
           </div>
           <div class="pl-1 ml-2">
-            <a href="javascript:void(0);" class="text-danger" @click="deleteKey(key._id)">
+            <button type="button" class="btn btn-link p-0 text-danger" @click="deleteKey(key._id)">
               <IBiTrash />
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@ const parseAuthData = (buffer: Uint8Array) => {
   rest = rest.slice(4)
   const counter = readBE32(counterBuf)
 
-  let aaguid, credID, COSEPublicKey
+  let aaguid: Uint8Array | undefined, credID: Uint8Array | undefined, COSEPublicKey: Uint8Array | undefined
   if (flags.at) {
     aaguid = rest.slice(0, 16)
     rest = rest.slice(16)

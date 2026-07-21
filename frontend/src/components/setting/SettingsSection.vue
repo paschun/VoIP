@@ -18,7 +18,7 @@
  */
 import { computed } from 'vue'
 
-const props = withDefaults(defineProps<{ title: string; titleTag?: string; iconScale?: string | number }>(), {
+const props = withDefaults(defineProps<{ title: string; titleTag?: string; iconScale?: number }>(), {
   titleTag: 'h4',
   iconScale: 2,
 })

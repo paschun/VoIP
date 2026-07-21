@@ -36,7 +36,7 @@
           :id="`phone${item._id}`"
           :key="item._id"
           class="contact"
-          :class="{ 'active-chat': conversationStore.activeRemoteNumber == item._id }"
+          :class="{ 'active-chat': conversationStore.activeRemoteNumber === item._id }"
           @click="conversationStore.openConversation(item)"
         >
           <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
@@ -49,8 +49,8 @@
                   {{ getValidString(item.message) }}
                 </p>
                 <p v-else class="font-preview">
-                  <span v-if="item.message_type == 'call'">
-                    <span v-if="item.type == 'send'"> Outbound </span>
+                  <span v-if="item.message_type === 'call'">
+                    <span v-if="item.type === 'send'"> Outbound </span>
                     <span v-else> Inbound </span>
                     Call
                   </span>
