@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["eslint", "typescript", "unicorn", "oxc", "promise", "import"],
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "promise", "import", "vitest"],
   "options": {
     "typeAware": true
   },
@@ -9,46 +9,49 @@
     // "suspicious": "warn"
   },
   "rules": {
-    "eqeqeq": "error",
+    "eqeqeq": "error", // pedantic
     // `Number.isNaN`/`Number.isFinite` don't coerce their argument.
     "no-restricted-globals": [
       "error",
       { "name": "isNaN", "message": "Use Number.isNaN instead." },
       { "name": "isFinite", "message": "Use Number.isFinite instead." }
-    ],
-    "no-shadow": "error",
-    "import/no-cycle": "warn",
-    "no-redeclare": "error",
-    "no-param-reassign": "error",
+    ], // restriction
+    "no-shadow": "error", // suspicious
+    "import/no-cycle": "warn", // restriction
+    "no-redeclare": "error", // pedantic
+    "no-param-reassign": "error", // restriction
 
-    "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "never" }],
-    "typescript/no-explicit-any": "warn",
-    "typescript/no-non-null-assertion": "warn",
+    "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "never" }], // style
+    "typescript/no-explicit-any": "warn", // restriction
+    "typescript/no-non-null-assertion": "warn", // restriction
 
-    "no-var": "error",
-    "no-array-constructor": "error",
-    "prefer-const": "error",
-    "prefer-rest-params": "error",
-    "prefer-spread": "error",
-    "typescript/ban-ts-comment": "error",
-    "typescript/no-empty-object-type": "error",
-    "typescript/no-import-type-side-effects": "error",
-    "typescript/no-misused-promises": "error",
-    "typescript/no-namespace": "error",
-    "typescript/no-require-imports": "error",
-    "typescript/no-unnecessary-type-assertion": "error",
-    "typescript/no-unnecessary-type-constraint": "error",
-    "typescript/no-unsafe-argument": "error",
-    "typescript/no-unsafe-assignment": "error",
-    "typescript/no-unsafe-call": "error",
-    "typescript/no-unsafe-enum-comparison": "error",
-    "typescript/no-unsafe-function-type": "error",
-    "typescript/no-unsafe-member-access": "error",
-    "typescript/no-unsafe-return": "error",
-    "typescript/only-throw-error": "error",
-    "typescript/prefer-optional-chain": "error",
-    "typescript/prefer-promise-reject-errors": "error",
-    "typescript/require-await": "error",
-    "typescript/restrict-plus-operands": "error"
+    "no-var": "error", // restriction
+    "no-array-constructor": "error", // pedantic
+    "prefer-const": "error", // style
+    "prefer-rest-params": "error", // style
+    "prefer-spread": "error", // style
+    "typescript/ban-ts-comment": "error", // pedantic
+    "typescript/no-empty-object-type": "error", // restriction
+    "typescript/no-import-type-side-effects": "error", // restriction
+    "typescript/no-misused-promises": "error", // pedantic
+    "typescript/no-namespace": "error", // restriction
+    "typescript/no-require-imports": "error", // restriction
+    "typescript/no-unnecessary-type-assertion": "error", // suspicious
+    "typescript/no-unnecessary-type-constraint": "error", // suspicious
+    "typescript/no-unsafe-argument": "error", // pedantic
+    "typescript/no-unsafe-assignment": "error", // pedantic
+    "typescript/no-unsafe-call": "error", // pedantic
+    "typescript/no-unsafe-enum-comparison": "error", // suspicious
+    "typescript/no-unsafe-function-type": "error", // pedantic
+    "typescript/no-unsafe-member-access": "error", // pedantic
+    "typescript/no-unsafe-return": "error", // pedantic
+    "typescript/only-throw-error": "error", // pedantic
+    "typescript/prefer-optional-chain": "error", // nursery
+    "typescript/prefer-promise-reject-errors": "error", // pedantic
+    "typescript/require-await": "error", // pedantic
+    "typescript/restrict-plus-operands": "error", // pedantic
+
+    // oxlint-tsgolint doesn't seem to automatically make error in catch as unknown, like tsc does with `useUnknownInCatchVariables`
+    "typescript/use-unknown-in-catch-callback-variable": "error" // restriction
   }
 }

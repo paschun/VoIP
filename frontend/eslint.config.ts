@@ -41,6 +41,7 @@ export default defineConfigWithVueTs(
     name: 'custom vue/',
     files: ['**/*.vue'],
     rules: {
+      // many vue rules are not implemented in oxlint so we keep all vue in eslint for now.
       'vue/html-self-closing': ['error', { html: { void: 'never', normal: 'never', component: 'any' } }],
       'vue/max-attributes-per-line': 'off',
       'vue/singleline-html-element-content-newline': 'off',
