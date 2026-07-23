@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node --env-file=.env app/app.ts",
     "build": "npm run build -w frontend",
-    "start": "NODE_ENV=production node --env-file=.env app/app.ts",
+    "start": "node --env-file=.env app/app.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc",
@@ -15,7 +15,6 @@
     "lint": "pnpm run typecheck; pnpm run oxlint",
     "spec:texml": "openapi-typescript app/spec/texml-calls.yml -o app/spec/texml-calls.d.ts"
   },
-  "packageManager": "pnpm@11.8.0",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
