@@ -1,11 +1,17 @@
 import { describe, test, expectTypeOf } from 'vitest'
-import type { ContactDoc } from '../shared/schema/contact.ts'
+import type { WireDoc } from '../shared/schema/wire.ts'
 import type { EmailDoc } from '../shared/schema/email.ts'
-import type { MediaDoc } from '../shared/schema/media.ts'
-import type { SettingDoc } from '../shared/schema/setting.ts'
+import { contactSchema } from '../app/model/contact.model.ts'
+import { mediaSchema } from '../app/model/media.model.ts'
+import { settingSchema } from '../app/model/setting.model.ts'
 
 // Compile-time checks that `WireDoc` mirrors what `c.json` emits: ObjectId/Date -> string, booleans/`__v` preserved,
 // and no virtuals leak in (it derives from the raw doc) -- hence no `id`. Pure type assertions; `npx tsc` verifies them.
+// `EmailDoc` is a real wire type used across the app; the other three exist only here, so build them inline from their
+// schema. `SettingDoc` adds its populate-only count virtuals (optional numbers) on top of the raw wire shape.
+type ContactDoc = WireDoc<typeof contactSchema>
+type MediaDoc = WireDoc<typeof mediaSchema>
+type SettingDoc = WireDoc<typeof settingSchema> & { messageCount?: number; totalCount?: number }
 
 describe('EmailDoc wire shape', () => {
   test('ObjectId/Date -> string, booleans preserved, __v present, no phantom id', () => {

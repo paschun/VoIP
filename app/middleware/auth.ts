@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { sign, verify } from 'hono/jwt'
 import { z } from 'zod'
-import type { ApiError } from '../../shared/api-contracts.ts'
+import type { ApiError } from '../contracts/envelope.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env } from '../core/factory.ts'

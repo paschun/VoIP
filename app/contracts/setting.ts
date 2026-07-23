@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import type { Ok } from '../api-contracts.ts'
+import type { Ok } from './envelope.ts'
 import { OUTBOUND_MMS_MAX_ATTACHMENTS, TWILIO_INBOUND_CONTENT_TYPES } from './media.ts'
-import { e164Phone } from './phone.ts'
+import { e164Phone } from '../../shared/phone.ts'
 import { profileIdParam, type ProfileIdParam } from './profile.ts'
 
 // --- requests ---
@@ -130,8 +130,3 @@ export type MessageListRequest = z.infer<typeof messageListBody>
 /** A conversation is identified by the other party's phone number (the `conversations` group key), URL-encoded in the path. */
 export const conversationParam = z.object({ number: z.string().min(1) })
 export type ConversationParam = z.infer<typeof conversationParam>
-
-// --- responses ---
-
-/** `get-number` is a provider-shaped passthrough: Telnyx nests `{ data }`, Twilio returns a flat list. */
-export type ProviderNumbersResponse = Ok<{ data: unknown[] } | unknown[]>

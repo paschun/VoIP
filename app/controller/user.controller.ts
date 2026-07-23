@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs'
 import QRCode from 'qrcode'
 import Speakeasy from 'speakeasy'
 import pkg from '../../package.json' with { type: 'json' }
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   loginBody,
   type LoginRequest,
@@ -25,7 +25,7 @@ import {
   type EnableTotpRequest,
   type UserData,
   type TotpQrInfo,
-} from '../../shared/contracts/auth.ts'
+} from '../contracts/auth.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx } from '../core/factory.ts'

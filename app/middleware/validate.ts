@@ -3,7 +3,7 @@ import { sValidator } from '@hono/standard-validator'
 import { validator } from 'hono/validator'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import type { ApiError } from '../../shared/api-contracts.ts'
+import type { ApiError } from '../contracts/envelope.ts'
 import { ack, ok } from '../helper/respond.helper.ts'
 
 // 422 Unprocessable Content (RFC 9110): the body parsed fine but failed schema validation.

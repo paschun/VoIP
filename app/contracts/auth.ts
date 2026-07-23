@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { Ok } from '../api-contracts.ts'
 
 export const loginBody = z.object({ name: z.string().min(1), password: z.string().min(1) })
 export type LoginRequest = z.infer<typeof loginBody>
@@ -32,9 +31,6 @@ export type EnableTotpRequest = z.infer<typeof enableTotpBody>
 /** The user projection echoed back on auth/profile actions (also stored in the `userdata` cookie). The auth token is
  * not part of it -- it's stateless and returned separately, only by login. */
 export type UserData = { _id: string; name: string; totp: boolean }
-export type UserResponse = Ok<UserData>
-// todo: is UserData ever actually used by the clients?
 
 /** `POST /totp/qr`: the enrollment QR data-URL + base32 secret to display (and pass back on enable). Not persisted. */
 export type TotpQrInfo = { image: string; secret: string }
-export type TotpQrResponse = Ok<TotpQrInfo>

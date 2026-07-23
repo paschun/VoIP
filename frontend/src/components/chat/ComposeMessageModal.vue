@@ -55,7 +55,7 @@
 /** Compose-SMS/MMS modal: pick recipients (contacts or free-typed numbers), attach images, send a bulk message. */
 import { computed, ref } from 'vue'
 import VueTagsInputModule from '@sipec/vue3-tags-input'
-import { e164Phone } from '@shared/contracts/phone.ts'
+import { e164Phone } from '@shared/phone.ts'
 import { useBusy } from '@/composables/useBusy.ts'
 import { useMediaUpload } from '@/composables/useMediaUpload.ts'
 import { notifyError } from '@/core/notify.ts'

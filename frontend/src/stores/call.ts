@@ -4,7 +4,7 @@ import { Device as TwilioDevice, type Call as TwilioCall } from '@twilio/voice-s
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
-import { e164Phone } from '@shared/contracts/phone.ts'
+import { e164Phone } from '@shared/phone.ts'
 import { client, request } from '@/core/rpc.client.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'

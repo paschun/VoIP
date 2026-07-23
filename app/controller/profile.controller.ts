@@ -2,14 +2,14 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import Telnyx from 'telnyx'
 import twilio from 'twilio'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   profileCreateBody,
   type CreateProfileRequest,
   profileIdParam,
   type ProfileIdParam,
-} from '../../shared/contracts/profile.ts'
-import { createSettingBody, type CreateSettingRequest } from '../../shared/contracts/setting.ts'
+} from '../contracts/profile.ts'
+import { createSettingBody, type CreateSettingRequest } from '../contracts/setting.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'

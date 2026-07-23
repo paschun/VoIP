@@ -5,13 +5,13 @@ import nodemailer, { type SendMailOptions } from 'nodemailer'
 import { createMessage, encrypt, readKey } from 'openpgp'
 import Telnyx from 'telnyx'
 import twilio from 'twilio'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   displayableMediaContentType,
   type DisplayableMediaContentType,
   OUTBOUND_MMS_TOTAL_BYTES,
   CONTENT_TYPE_TO_EXT,
-} from '../../shared/contracts/media.ts'
+} from '../contracts/media.ts'
 import {
   getNumberBody,
   type GetNumberRequest,
@@ -32,7 +32,7 @@ import {
   type TwilioInboundSms,
   twilioSmsStatus,
   type TwilioSmsStatus,
-} from '../../shared/contracts/setting.ts'
+} from '../contracts/setting.ts'
 import type { EmailDoc } from '../../shared/schema/email.ts'
 import { env } from '../core/env.ts'
 import { ProviderError } from '../core/error.ts'

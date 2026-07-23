@@ -21,7 +21,7 @@
  */
 import { computed, ref } from 'vue'
 import { Select as VSelect, type SelectOptionData } from 'vue3-select-component'
-import { e164Phone } from '@shared/contracts/phone.ts'
+import { e164Phone } from '@shared/phone.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useContactStore, type Contact } from '@/stores/contact.ts'
 

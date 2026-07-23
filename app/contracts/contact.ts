@@ -1,7 +1,5 @@
 import * as z from 'zod'
-import type { Ok } from '../api-contracts.ts'
-import type { ContactDoc } from '../schema/contact.ts'
-import { e164Phone } from './phone.ts'
+import { e164Phone } from '../../shared/phone.ts'
 
 // Create / full-update body: first_name + number required, the rest optional. The model fields are plain (unvalidated)
 // Strings, so these required-field constraints live only here, not in the schema.
@@ -25,8 +23,3 @@ export type ContactBulkRequest = z.infer<typeof contactBulkBody>
 
 export const contactIdParam = z.object({ id: z.string().min(1) })
 export type ContactIdParam = z.infer<typeof contactIdParam>
-
-export type ContactResponse = Ok<ContactDoc>
-export type ContactListResponse = Ok<ContactDoc[]>
-export type ContactBulkResponse = Ok<{ created: number }>
-export type ContactDeleteResponse = Ok<null>

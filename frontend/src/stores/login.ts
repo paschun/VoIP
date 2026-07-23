@@ -1,10 +1,11 @@
 import { ref } from 'vue'
-import type { InferResponseType } from 'hono/client'
+import type { InferRequestType, InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
 import { client, request } from '@/core/rpc.client.ts'
 import { useUserStore, type UserData } from '@/stores/user.ts'
-import type { LoginRequest } from '@shared/contracts/auth.ts'
+
+type LoginRequest = InferRequestType<typeof client.api.auth.login.$post>['json']
 
 /** A registered hardware key offered as a second factor at login. */
 export type HardwareKey = InferResponseType<typeof client.api.auth.login.$post, SuccessStatusCode>['data']['hardwareKeys'][number]

@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import mongoose from 'mongoose'
-import type { ApiError } from '../../shared/api-contracts.ts'
+import type { ApiError } from '../contracts/envelope.ts'
 
 /**
  * Raised when an upstream telephony provider (Twilio/Telnyx) request fails, so `onError` can surface it as a 502 (Bad

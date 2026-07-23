@@ -1,9 +1,8 @@
 /**
- * API contracts shared between the VoIP frontend and the Hono backend.
- *
- * The frontend imports these via the `@shared` alias (see vite.config.js / tsconfig.json); the backend imports the same
- * files directly. Per-endpoint request/response contracts live in `shared/contracts/*`; the data model in
- * `shared/schema/*`.
+ * The cross-cutting response envelope every backend handler sends and the frontend `request()` wrapper reads:
+ * `Ok<T>` on success, `ApiError` on failure, `ApiResult<T>` as the discriminated union of the two. The frontend gets
+ * these shapes through RPC inference (`AppType`), so it never imports this file directly. Per-endpoint request/response
+ * contracts live alongside it in `app/contracts/*`.
  */
 /** HTTP verbs used across the app -- the frontend `request()` wrapper and the backend's Telnyx REST caller. */
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'

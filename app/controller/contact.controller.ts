@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   contactBody,
   type ContactRequest,
@@ -8,7 +8,7 @@ import {
   type ContactBulkRequest,
   contactIdParam,
   type ContactIdParam,
-} from '../../shared/contracts/contact.ts'
+} from '../contracts/contact.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { ack, created } from '../helper/respond.helper.ts'

@@ -2,7 +2,7 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Types } from 'mongoose'
 import twilio from 'twilio'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   getTokenBody,
   type GetTokenRequest,
@@ -14,7 +14,7 @@ import {
   type TwilioInboundWebhook,
   texmlInboundWebhook,
   type TexmlInboundWebhook,
-} from '../../shared/contracts/call.ts'
+} from '../contracts/call.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, FormCtx, JsonCtx } from '../core/factory.ts'
 import { sendToUser } from '../core/socket.ts'

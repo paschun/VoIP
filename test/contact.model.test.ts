@@ -2,7 +2,7 @@ import { test, expect, assert } from 'vitest'
 import mongoose from 'mongoose'
 import Contact from '../app/model/contact.model.ts'
 
-// The contact schema's string fields use the custom `EmptyString` SchemaType (shared/schema/contact.ts)
+// The contact schema's string fields use the custom `EmptyString` SchemaType (app/model/contact.model.ts)
 // its `checkRequired` returns true for any string, accepting empty string '', triggered on `required`
 // a plain `required: String` rejects empty string
 const userId = new mongoose.Types.ObjectId()

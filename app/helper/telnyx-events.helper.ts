@@ -8,7 +8,7 @@ import type {
   DeliveryUpdateWebhookEvent,
 } from 'telnyx/resources/webhooks'
 import type { SetRequiredDeep } from 'type-fest'
-import { TELNYX_INBOUND_CONTENT_TYPES } from '../../shared/contracts/media.ts'
+import { TELNYX_INBOUND_CONTENT_TYPES } from '../contracts/media.ts'
 
 // Telnyx JSON webhook validation (Call Control voice events + messaging events): AJV validates against the event
 // schemas in Telnyx's own OpenAPI spec, tightened with `required` for exactly the fields the handlers read.

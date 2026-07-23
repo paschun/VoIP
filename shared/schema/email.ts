@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose'
-import type { WireDoc } from '../wire.ts'
+import type { WireDoc } from './wire.ts'
 
 /**
  * SMTP / PGP email-notification settings, one document per user. Source of truth for both the Mongoose model

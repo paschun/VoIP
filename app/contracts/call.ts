@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { e164Phone } from './phone.ts'
+import { e164Phone } from '../../shared/phone.ts'
 
 // `/token` issues a provider access token for the caller's chosen profile (setting). The 200 body (a Twilio JWT, or the
 // Telnyx Setting carrying SIP creds) is RPC-inferred at the call site, not hand-typed here.

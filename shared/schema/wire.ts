@@ -5,10 +5,18 @@ import type { Schema, InferRawDocTypeFromSchema } from 'mongoose'
 export type WireDoc<S extends Schema> = JSONParsed<InferRawDocTypeFromSchema<S> & { __v: number }>
 
 /*
-for converting schemas to wire types:
-it just needs to handle:
-- primitives - string, number, bool, null, etc
-- ObjectId - turn it into string
-- NativeDate - into string as well
-- virtual numbers messageCount + totalCount
+Converting a schema to its wire type just needs to handle: 
+- primitives (string/number/bool/null)
+- ObjectId -> string,
+- NativeDate -> string
+- and virtual numbers (messageCount/totalCount).
+
+Helpers tried:
+- InferRawDocTypeFromSchema<S> (mongoose): raw shape from a Schema instance; adds `_id` (Require_id), no virtuals.
+  Basis of WireDoc. USED.
+- InferRawDocType<Def,Opts>: same but takes the bare definition object, not the instance. We have the instance, so
+  ...FromSchema (which wraps this) fits. Not used directly.
+- InferSchemaType<S>: paths only, no `_id`. Superseded by ...FromSchema.
+- JSONParsed<T> (hono): exact `c.json` transform, shallow. USED. (type-fest Jsonify is deep -> TS2589, rejected.)
+- ObtainSchemaGeneric<S,'TVirtuals'>: baked a phantom `id` + typed counts as `unknown` (-> TS2589). Rejected.
 */

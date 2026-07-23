@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import { e164Phone } from '@shared/contracts/phone.ts'
+import { e164Phone } from '@shared/phone.ts'
 import { notifyError } from '@/core/notify.ts'
 import type { ContactDraft } from '@/stores/contact.ts'
 

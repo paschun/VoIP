@@ -1,5 +1,5 @@
 import { HTTPException } from 'hono/http-exception'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   settingIdParam,
   type SettingIdParam,
@@ -7,7 +7,7 @@ import {
   type WebhookFallbackRequest,
   numberLookupBody,
   type NumberLookupRequest,
-} from '../../shared/contracts/provider.ts'
+} from '../contracts/provider.ts'
 import { factory } from '../core/factory.ts'
 import type { JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { combineURLs, requireConfigured } from '../helper/common.helper.ts'

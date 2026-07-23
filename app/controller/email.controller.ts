@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { readKey } from 'openpgp'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import { emailCreateBody, type EmailCreateRequest } from '../../shared/contracts/email.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx } from '../core/factory.ts'

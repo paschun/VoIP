@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { Ok } from '../api-contracts.ts'
 
 // Which Setting (profile) the provider config belongs to; carried in the path.
 export const settingIdParam = z.object({ settingId: z.string().min(1) })
@@ -29,8 +28,3 @@ export const numberLookupBody = z.discriminatedUnion('type', [
   }),
 ])
 export type NumberLookupRequest = z.infer<typeof numberLookupBody>
-
-// Provider passthrough payloads (Twilio/Telnyx SDK or REST shapes); the frontend reads them via dotted paths, so they
-// stay loose here rather than mirroring each SDK's response type.
-export type WebhookConfigResponse = Ok<unknown>
-export type NumberLookupResponse = Ok<unknown>

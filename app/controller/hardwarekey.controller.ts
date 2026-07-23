@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import type { Ok } from '../../shared/api-contracts.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import {
   registerKeyBody,
   type RegisterKeyRequest,
@@ -15,7 +15,7 @@ import {
   type AuthVerifyRequest,
   deleteKeyParams,
   type DeleteKeyParams,
-} from '../../shared/contracts/hardwarekey.ts'
+} from '../contracts/hardwarekey.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx, PathParamCtx } from '../core/factory.ts'
 import { ack } from '../helper/respond.helper.ts'

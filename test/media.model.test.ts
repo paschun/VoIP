@@ -1,9 +1,8 @@
 import { test, expect, assert } from 'vitest'
 import mongoose from 'mongoose'
-import Media from '../app/model/media.model.ts'
-import { mediaSchema } from '../shared/schema/media.ts'
+import Media, { mediaSchema } from '../app/model/media.model.ts'
 
-// The Media schema now lives in `shared/schema/media.ts` (single source of truth) and both fields are `required`,
+// Both fields are `required`,
 // since the controller always sets them on `Media.create({ media, user })`. These tests pin that contract.
 
 test('media and user are both required', async () => {
