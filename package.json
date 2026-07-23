@@ -54,7 +54,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.4",
+    "@biomejs/biome": "~2.5.4",
     "@standard-schema/spec": "^1.1.0",
     "@types/node": "^26.0.1",
     "@types/nodemailer": "^8.0.1",
@@ -65,7 +65,7 @@
     "openapi-typescript": "^7.13.0",
     "oxfmt": "<1",
     "oxlint": "^1.72.0",
-    "oxlint-tsgolint": "<1",
+    "oxlint-tsgolint": "^7.0.2001",
     "type-fest": "^5.7.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"

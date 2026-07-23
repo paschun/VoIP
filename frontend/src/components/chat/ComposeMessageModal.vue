@@ -105,8 +105,8 @@ function addRecipient(number: string) {
 }
 
 async function onFilesPick(e: Event) {
-  const target = e.target as HTMLInputElement
-  if (!target.files) return
+  const { target } = e
+  if (!(target instanceof HTMLInputElement) || !target.files) return
   selectedFileNames.value = [...target.files].map((f) => f.name).join()
   await uploadFiles(target.files)
 }

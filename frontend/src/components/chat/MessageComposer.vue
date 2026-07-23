@@ -79,10 +79,10 @@ function onDrop(e: DragEvent) {
 }
 function onFilesPick(e: Event) {
   // v-model can't bind a file input (its value is read-only), so a change listener is required
-  const target = e.target as HTMLInputElement
+  const { target } = e
   // target.files will always be non-null, there is no way for to unselect files in a way that fires a change event.
   // even if in code, we set `target.value = null`, it will not fire a change event
-  if (!target.files) return
+  if (!(target instanceof HTMLInputElement) || !target.files) return
   void uploadFiles(target.files)
 }
 function removeFromPreview(image: string) {

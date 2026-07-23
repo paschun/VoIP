@@ -30,7 +30,8 @@ async function uploadMedia(file: File, token: string, onProgress: (loaded: numbe
     body: file.stream().pipeThrough(progress),
     duplex: 'half',
   }
-  return request(fetch(client.api.media.uploads.$url(), init) as unknown as Promise<UploadResponse>)
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- raw fetch is the only untyped hc boundary
+  return request(fetch(client.api.media.uploads.$url(), init) as Promise<UploadResponse>)
 }
 
 /**

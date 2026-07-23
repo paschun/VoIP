@@ -46,6 +46,7 @@ import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { client, request } from '@/core/rpc.client.ts'
 import { confirmWarning } from '@/helper.ts'
 import { notifySuccess, notifyError } from '@/core/notify.ts'
+import { requestPublicKeyCredential } from '@/core/webauthn.ts'
 
 type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, SuccessStatusCode>['data']
 
@@ -138,21 +139,15 @@ async function register() {
   }
   const creationOptions = PublicKeyCredential.parseCreationOptionsFromJSON(optionsJSON)
 
-  let credential: PublicKeyCredential | null
-  try {
-    credential = (await navigator.credentials.create({ publicKey: creationOptions })) as PublicKeyCredential | null
-  } catch (error) {
-    void notifyError(String(error), 'Key Error!')
-    return
-  }
-  if (!credential) {
+  const credential = await requestPublicKeyCredential(() => navigator.credentials.create({ publicKey: creationOptions }))
+  if (!credential) return
+  if (!(credential.response instanceof AuthenticatorAttestationResponse)) {
     void notifyError('No credential was created', 'Key Error!')
     return
   }
 
   // WebAuthn's attestationObject is an ArrayBuffer; cbor-x requires Uint8Array.
-  const attestation = credential.response as AuthenticatorAttestationResponse
-  const attestationObject = cborDecode(new Uint8Array(attestation.attestationObject))
+  const attestationObject = cborDecode(new Uint8Array(credential.response.attestationObject))
   const authData = parseAuthData(attestationObject.authData)
   if (!authData.aaguid) {
     void notifyError('Could not read the authenticator AAGUID', 'Key Error!')

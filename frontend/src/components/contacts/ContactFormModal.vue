@@ -103,8 +103,9 @@ const formVisible = computed({
 })
 
 async function onCsvFileChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  const fileToRead = target?.files?.[0]
+  const { target } = event
+  if (!(target instanceof HTMLInputElement)) return
+  const fileToRead = target.files?.[0]
   if (!fileToRead) return
   csvFileName.value = fileToRead.name
   // Clear before parsing so a mid-parse Import can't submit the previous file's rows.

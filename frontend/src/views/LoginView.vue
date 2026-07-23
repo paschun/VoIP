@@ -132,7 +132,7 @@ import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, withMessage } from '@regle/rules'
 import ThemeButton from '@/components/shared/ThemeButton.vue'
-import { notifyError } from '@/core/notify.ts'
+import { requestPublicKeyCredential } from '@/core/webauthn.ts'
 import { useLoginStore, type HardwareKey } from '@/stores/login.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -179,23 +179,12 @@ async function submitLogin() {
 async function verifyKey(key: HardwareKey) {
   const publicKey = await loginStore.hardwareKeyChallenge(key)
   const requestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(publicKey)
-  let assertion: PublicKeyCredential | null
-  try {
-    assertion = (await navigator.credentials.get({ publicKey: requestOptions })) as PublicKeyCredential | null
-  } catch (error) {
-    console.error(error)
-    void notifyError('Failed to get credentials from user', 'Key Error!')
-    return
-  }
-  if (!assertion) {
-    void notifyError('No credential was returned', 'Key Error!')
-    return
-  }
-  // `navigator.credentials.get()` always yields an authentication assertion, but `toJSON()` is typed as the
-  // create()-or-get() union: `RegistrationResponseJSON | AuthenticationResponseJSON`.
-  // Narrow it to read the user handle the server resolves the key by.
-  const { userHandle } = (assertion.toJSON() as AuthenticationResponseJSON).response
-  await loginStore.verifyHardwareKey(userHandle)
+  const assertion = await requestPublicKeyCredential(() => navigator.credentials.get({ publicKey: requestOptions }))
+  if (!assertion) return
+  const { response } = assertion.toJSON()
+  // we want the `AuthenticationResponseJSON` side of `toJSON()`s union
+  // The `in` check narrows `response`'s union to `AuthenticatorAssertionResponseJSON`, the only member with a `userHandle`.
+  await loginStore.verifyHardwareKey('userHandle' in response ? response.userHandle : null)
   await goToDashboard()
 }
 async function verifyOtp() {
