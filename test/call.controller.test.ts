@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach, vi, assert } from 'vitest'
+import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach, vi, assert, type MockInstance } from 'vitest'
 import mongoose, { type Types } from 'mongoose'
 import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 
@@ -10,8 +10,8 @@ import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts
 // route's success shape.
 
 // intercept the websocket push without changing the impl
-const sendToUser = vi.hoisted(() => vi.fn())
-vi.mock('../app/core/socket.ts', () => ({ sendToUser }))
+const sendToUser = vi.hoisted(() => vi.fn<typeof import('../app/core/socket.ts').sendToUser>())
+vi.mock(import('../app/core/socket.ts'), () => ({ sendToUser }))
 
 const { callRoutes } = await import('../app/routes/call.route.ts')
 const { settingRoutes } = await import('../app/routes/setting.route.ts')
@@ -88,7 +88,7 @@ const seedSetting = () => Setting.create({ user: userId, profile: 'Main', type: 
 const seedCall = (sid: string, setting: Types.ObjectId) =>
   Call.create({ sid, user: userId, number: TO, telnyx_number: FROM, type: 'send', setting, isview: true })
 
-let errorSpy: ReturnType<typeof vi.spyOn>
+let errorSpy: MockInstance<typeof console.error>
 
 beforeAll(connectMemoryDb)
 afterAll(disconnectMemoryDb)

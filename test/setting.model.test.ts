@@ -1,4 +1,4 @@
-import { test, expect, afterAll, afterEach, beforeAll, describe } from 'vitest'
+import { test, expect, assert, afterAll, beforeAll, describe } from 'vitest'
 import mongoose from 'mongoose'
 import { profilesWithUnread, profileWithUnread } from '../app/controller/profile.controller.ts'
 import { TextMessage } from '../app/model/message.model.ts'
@@ -6,23 +6,16 @@ import Setting from '../app/model/setting.model.ts'
 import { clearDb, connectMemoryDb, disconnectMemoryDb } from './helpers/mongo.ts'
 
 test('toObject handles ObjectId', () => {
-  const doc = new Setting()
-  // const obj = doc.toObject()
-  const pojo = doc.toObject({ flattenObjectIds: true })
-  // const datejson = pojo.created_at.toJSON()
-  // const stringified = JSON.stringify(doc)
-
+  const pojo = new Setting().toObject({ flattenObjectIds: true })
   expect(pojo.type).toBe('telnyx')
   expect(pojo._id).toBeTypeOf('string')
   expect(pojo._id).toHaveLength(24)
-  // expect(pojo.created_at)
+})
 
-  // const parsed = JSON.parse(stringified)
-  // console.log('setting.toObject', pojo)
-  // console.log(typeof pojo.created_at)
-  // console.log(pojo.created_at.toJSON())
-  // console.log(pojo.created_at instanceof Date)
-  // console.log('JSON.stringify(setting):', stringified)
+test.fails('toObject doesnt handle native Date', () => {
+  const pojo = new Setting().toObject({ flattenObjectIds: true })
+  expect.soft(pojo.created_at).toBeTypeOf('string')
+  expect.soft(pojo.created_at).not.toBeInstanceOf(Date)
 })
 
 describe('toObject handles virtuals', () => {
@@ -58,12 +51,26 @@ describe('toObject handles virtuals', () => {
     await disconnectMemoryDb()
   })
 
-  test('one', async () => {
+  test('one populates unread messageCount and user-wide totalCount', async () => {
     const profile = await profileWithUnread(userObjId.toString(), profileObjId.toString())
-    // const b = profile.populated('messageCount')
+    expect(profile.messageCount).toBe(2) // Work has 2 unread (the 3rd Work message is read)
+    expect(profile.totalCount).toBe(3) // 3 unread across the user's profiles (2 Work + 1 Home)
+
+    const pojo = profile.toObject({ flattenObjectIds: true })
+    expect(pojo.messageCount).toBe(2)
+    expect(pojo.totalCount).toBe(3)
   })
-  test('many', async () => {
+  test('many populates counts per profile', async () => {
     const hydratedProfiles = await profilesWithUnread(userObjId.toString())
     const pojos = hydratedProfiles.map((d) => d.toObject({ flattenObjectIds: true }))
+    expect(pojos).toHaveLength(2)
+
+    const work = pojos.find((p) => p.profile === 'Work')
+    const home = pojos.find((p) => p.profile === 'Home')
+    assert(work && home)
+    expect(work.messageCount).toBe(2)
+    expect(home.messageCount).toBe(1)
+    expect(work.totalCount).toBe(3)
+    expect(home.totalCount).toBe(3)
   })
 })

@@ -1,9 +1,9 @@
-import { test, expect, describe, vi, expectTypeOf, assert, chai } from 'vitest'
+import { test, expect, describe, vi, expectTypeOf, assert } from 'vitest'
 import { Context, Hono } from 'hono'
 import { sValidator } from '@hono/standard-validator'
 import type { HTTPResponseError } from 'hono/types'
 import { validator } from 'hono/validator'
-import { model, Schema, Types, Error as MongooseError, type Require_id, type InferRawDocType } from 'mongoose'
+import { model, Schema, Types, Error as MongooseError } from 'mongoose'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import z from 'zod'
 import { pathParams } from '../app/middleware/validate.ts'
@@ -33,12 +33,22 @@ declare module 'mongoose' {
 const thrw = (e: Error | HTTPResponseError) => {
   throw e
 }
+
+/** Await a request expected to reject and return the rejection value; fails if it resolves. */
+const rejection = async (p: unknown): Promise<unknown> => {
+  try {
+    await p
+  } catch (e) {
+    return e
+  }
+  expect.unreachable('expected the request to reject')
+}
 // const idSchema = User.schema.pick(['_id'])
 // const idSchema = userSchema.pick(['name'])
 //   ProfileValidator as unknown as StandardSchemaV1<{ profile: string }, { profile: string }>,
 
 describe('mongoose Id path param validator', () => {
-  const Id = model('IdValidator', new Schema({ id: { type: Schema.Types.ObjectId, required: true } }))
+  const Id = model('IdValidator', new Schema({ id: { type: Schema.Types.ObjectId, required: true } }, { _id: false, versionKey: false }))
 
   describe('hono standard validator sValidator', () => {
     describe('with mongoose model', () => {
@@ -46,7 +56,7 @@ describe('mongoose Id path param validator', () => {
         const app = new Hono()
         // rethrow errors so hono doesnt swallow them
         app.onError(thrw)
-        const spyHook = vi.fn()
+        const spyHook = vi.fn<(...args: unknown[]) => void>()
         app.get('/:id', sValidator('param', Id, spyHook))
 
         const id = '2'.repeat(24)
@@ -58,7 +68,7 @@ describe('mongoose Id path param validator', () => {
       test('pathParams - sValidator wrapper works', async () => {
         const app = new Hono()
         app.onError(thrw)
-        const handler = vi.fn((c: Context) => c.json({ ok: true }))
+        const handler = vi.fn<(c: Context) => Response>((c) => c.json({ ok: true }))
         app.get('/:id', pathParams(Id), handler)
 
         const id = 'f'.repeat(24)
@@ -71,8 +81,9 @@ describe('mongoose Id path param validator', () => {
 
     test.skip("standard schema type inference doesn't work", () => {
       type Output = StandardSchemaV1.InferOutput<typeof Id>
-      expectTypeOf<Output>().not.toEqualTypeOf<unknown>()
+      // its close, just needs to support _id: false
       // expectTypeOf<Output>().toEqualTypeOf<{ id: Types.ObjectId }>()
+      expectTypeOf<Output>().not.toEqualTypeOf<unknown>()
     })
   })
 
@@ -105,15 +116,11 @@ describe('mongoose Id path param validator', () => {
     expect(good.status).toBe(200)
     expect(await good.json()).toEqual({ id })
 
-    try {
-      await app.request(`/${null}`)
-      expect.unreachable()
-    } catch (e) {
-      assert.instanceOf(e, MongooseError.ValidationError)
-      expect(e).toMatchInlineSnapshot(
-        `[ValidationError: Validation failed: id: Cast to ObjectId failed for value "null" (type string) at path "id"]`,
-      )
-    }
+    const err = await rejection(app.request(`/${null}`))
+    assert.instanceOf(err, MongooseError.ValidationError)
+    expect(err).toMatchInlineSnapshot(
+      `[ValidationError: Validation failed: id: Cast to ObjectId failed for value "null" (type string) at path "id"]`,
+    )
   })
 })
 
@@ -148,7 +155,7 @@ describe('Profile Validator', () => {
     app.onError(thrw)
     app.post(
       '/post',
-      validator('json', async (value) => {
+      validator('json', async (value: Record<string, unknown>) => {
         // https://github.com/Automattic/mongoose/blob/9.7.1/lib/model.js#L4339
         // validate is actually just schemaType.doValidate on each schema.path
         const validated = await ProfileValidator.validate(value)
@@ -196,45 +203,41 @@ describe('Profile Validator', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
-    try {
-      await app.request(badReq)
-      expect.unreachable('validator should have failed')
-    } catch (e) {
-      assert.instanceOf(e, Error)
-      if (e instanceof chai.AssertionError) throw e // expect.unreachable throws AssertionError from chai
-      assert.instanceOf(e, MongooseError.ValidationError)
-      assert.instanceOf(e.errors.profile, MongooseError.CastError)
-      expect(e).toMatchInlineSnapshot(
-        `[ValidationError: Validation failed: profile: Cast to ObjectId failed for value "abcd" (type string) at path "profile"]`,
-      )
-      expect(e.errors.profile).toMatchInlineSnapshot(
-        `[CastError: Cast to ObjectId failed for value "abcd" (type string) at path "profile"]`,
-      )
-      expect(e.errors.profile.reason).toMatchInlineSnapshot(
-        `[BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer]`,
-      )
+    // app.request returns `Response | Promise<Response>`
+    const err = await rejection(app.request(badReq))
+    assert.instanceOf(err, Error)
+    assert.instanceOf(err, MongooseError.ValidationError)
+    assert.instanceOf(err.errors.profile, MongooseError.CastError)
+    expect(err).toMatchInlineSnapshot(
+      `[ValidationError: Validation failed: profile: Cast to ObjectId failed for value "abcd" (type string) at path "profile"]`,
+    )
+    expect(err.errors.profile).toMatchInlineSnapshot(
+      `[CastError: Cast to ObjectId failed for value "abcd" (type string) at path "profile"]`,
+    )
+    expect(err.errors.profile.reason).toMatchInlineSnapshot(
+      `[BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer]`,
+    )
 
-      // https://github.com/Automattic/mongoose/blob/9.7.1/lib/error/validation.js#L20
-      expect(e).toMatchObject({
-        name: 'ValidationError',
-        message: 'Validation failed: profile: Cast to ObjectId failed for value "abcd" (type string) at path "profile"',
-        errors: {
-          profile: {
-            name: 'CastError',
-            message: 'Cast to ObjectId failed for value "abcd" (type string) at path "profile"',
-            path: 'profile',
-            kind: 'ObjectId',
-            value: 'abcd',
-            stringValue: '"abcd"',
-            valueType: 'string',
-            reason: {
-              name: 'BSONError',
-              message: 'input must be a 24 character hex string, 12 byte Uint8Array, or an integer',
-            },
+    // https://github.com/Automattic/mongoose/blob/9.7.1/lib/error/validation.js#L20
+    expect(err).toMatchObject({
+      name: 'ValidationError',
+      message: 'Validation failed: profile: Cast to ObjectId failed for value "abcd" (type string) at path "profile"',
+      errors: {
+        profile: {
+          name: 'CastError',
+          message: 'Cast to ObjectId failed for value "abcd" (type string) at path "profile"',
+          path: 'profile',
+          kind: 'ObjectId',
+          value: 'abcd',
+          stringValue: '"abcd"',
+          valueType: 'string',
+          reason: {
+            name: 'BSONError',
+            message: 'input must be a 24 character hex string, 12 byte Uint8Array, or an integer',
           },
         },
-      })
-    }
+      },
+    })
 
     await expect(
       app.request('/post', {
@@ -362,7 +365,7 @@ describe('Profile Validator', () => {
 
       const app = new Hono()
       app.onError(thrw)
-      const hook = vi.fn()
+      const hook = vi.fn<(...args: unknown[]) => void>()
       app.post('/post', sValidator('json', ProfileValidator, hook))
 
       await app.request('/post', {
@@ -414,7 +417,7 @@ describe('Profile Validator', () => {
             expect(result.success).toBe(true)
             expect(result.data).toEqual(payload)
             // hook's `result.data` is typed to validator input, not output:
-            // https://github.com/honojs/middleware/blob/%40hono/standard-validator%400.2.2/packages/standard-validator/src/index.ts#L151
+            // https://github.com/honojs/middleware/blob/main/packages/standard-validator/src/index.ts#L140
             expectTypeOf(result.data).not.toEqualTypeOf<{ profile: string }>()
             // expectTypeOf(result.data).toEqualTypeOf<{ profile: Types.ObjectId }>()
             expectTypeOf(result.data).not.toEqualTypeOf<unknown>()

@@ -1,4 +1,4 @@
-import { test, expect } from 'vitest'
+import { test, expect, assert } from 'vitest'
 import mongoose from 'mongoose'
 import Media from '../app/model/media.model.ts'
 import { mediaSchema } from '../shared/schema/media.ts'
@@ -8,10 +8,11 @@ import { mediaSchema } from '../shared/schema/media.ts'
 
 test('media and user are both required', async () => {
   const mediaDoc = new Media({ media: '' })
-  const err = await mediaDoc.validate().catch((e) => e)
-  expect(err?.errors?.media).toBeDefined()
-  expect(err?.errors?.media?.kind).toBe('required')
-  expect(err?.errors?.user).toBeDefined()
+  const err = await mediaDoc.validate().then(() => undefined, (e: unknown) => e)
+  assert.instanceOf(err, mongoose.Error.ValidationError)
+  expect(err.errors.media).toBeDefined()
+  expect(err.errors.media?.kind).toBe('required')
+  expect(err.errors.user).toBeDefined()
 })
 
 test('casts a string user id to an ObjectId and keeps media as a string', async () => {
