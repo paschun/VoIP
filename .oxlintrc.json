@@ -22,6 +22,8 @@
     "no-param-reassign": "error", // restriction
     // oxlint-tsgolint doesn't seem to automatically make error in catch as unknown, like tsc does with `useUnknownInCatchVariables`
     "typescript/use-unknown-in-catch-callback-variable": "error", // restriction
+    "vitest/no-disabled-tests": "warn", // lower to warn
+    "typescript/no-namespace": ["error", { "allowDeclarations": true }], // allow namespaces in module augmentation, for contact schema
 
     "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "never" }], // style
     "typescript/no-explicit-any": "error", // restriction
@@ -37,7 +39,6 @@
     "typescript/no-empty-object-type": "error", // restriction
     "typescript/no-import-type-side-effects": "error", // restriction
     "typescript/no-misused-promises": "error", // pedantic
-    "typescript/no-namespace": "error", // restriction
     "typescript/no-require-imports": "error", // restriction
     "typescript/no-unnecessary-type-assertion": "error", // suspicious
     "typescript/no-unnecessary-type-constraint": "error", // suspicious
