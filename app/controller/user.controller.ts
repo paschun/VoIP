@@ -260,7 +260,7 @@ async function deleteAllAccountData(userid: string) {
   await Contact.deleteMany({ user: userid })
   await Email.deleteMany({ user: userid })
   await Message.deleteMany({ user: userid })
-  const settings = await Setting.find({ user: { $eq: userid } })
+  const settings = env.DEV ? [] : await Setting.find({ user: { $eq: userid } })
   for (const s of settings) {
     // Destructure first so the truthiness guards narrow these (a doc property's narrowing would reset across `await`).
     const { api_key, sid, sip_id, telnyx_outbound, telnyx_twiml, setting } = s

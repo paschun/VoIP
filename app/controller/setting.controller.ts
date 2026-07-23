@@ -175,7 +175,9 @@ async function handleSendSms(c: JsonCtx<SendSmsRequest>) {
   const messageRecords: OutgoingText[] = []
   for (const toNumber of numbers) {
     let sid: string | undefined
-    if (twilioClient) {
+    if (env.DEV) {
+      sid = `dev-${crypto.randomUUID()}`
+    } else if (twilioClient) {
       try {
         const sent = await twilioClient.messages.create({
           body: message,

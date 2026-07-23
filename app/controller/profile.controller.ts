@@ -145,7 +145,7 @@ async function saveTelnyxConfig(
     setting.sid = sid
     setting.profile = body.profile
     setting.type = 'telnyx'
-    if (body.override) {
+    if (body.override && !env.DEV) {
       if (setting.telnyx_twiml) {
         await telnyxHelper.updateTexmlApp(api_key, setting.telnyx_twiml)
       } else {
@@ -172,29 +172,31 @@ async function saveTelnyxConfig(
     provisionMessagingProfile = true
   }
 
-  const client = new Telnyx({ apiKey: api_key })
-  let messagingProfileId: string
-  if (provisionMessagingProfile) {
-    const created = await client.messagingProfiles.create({
-      name: 'VoIP sms Web Application',
-      enabled: true,
-      webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
-      webhook_api_version: '2', // v2 is the default
-      whitelisted_destinations: ['*'],
-    })
-    messagingProfileId = created.data?.id ?? ''
-  } else {
-    await client.messagingProfiles.update(setting.setting ?? '', {
-      webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
-      webhook_api_version: '2',
-    })
-    messagingProfileId = setting.setting ?? ''
-  }
-  setting.setting = messagingProfileId
-  await setting.save()
-  await client.phoneNumbers.messaging.update(sid, { messaging_profile_id: messagingProfileId })
-  if (body.override) {
-    await client.phoneNumbers.update(sid, { connection_id: setting.telnyx_twiml ?? '' })
+  if (!env.DEV) {
+    const client = new Telnyx({ apiKey: api_key })
+    let messagingProfileId: string
+    if (provisionMessagingProfile) {
+      const created = await client.messagingProfiles.create({
+        name: 'VoIP sms Web Application',
+        enabled: true,
+        webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
+        webhook_api_version: '2', // v2 is the default
+        whitelisted_destinations: ['*'],
+      })
+      messagingProfileId = created.data?.id ?? ''
+    } else {
+      await client.messagingProfiles.update(setting.setting ?? '', {
+        webhook_url: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.telnyx),
+        webhook_api_version: '2',
+      })
+      messagingProfileId = setting.setting ?? ''
+    }
+    setting.setting = messagingProfileId
+    await setting.save()
+    await client.phoneNumbers.messaging.update(sid, { messaging_profile_id: messagingProfileId })
+    if (body.override) {
+      await client.phoneNumbers.update(sid, { connection_id: setting.telnyx_twiml ?? '' })
+    }
   }
   const data = setting.toObject({ flattenObjectIds: true })
   return c.json({ data } satisfies Ok, 200)
@@ -218,7 +220,7 @@ async function saveTwilioConfig(
     setting.twilio_token = twilio_token
     setting.profile = body.profile
     setting.type = 'twilio'
-    if (body.override) {
+    if (body.override && !env.DEV) {
       if (setting.twiml_app) {
         await twilioHelper.updateTwiml(twilio_sid, twilio_token, setting.twiml_app)
       } else {
@@ -244,16 +246,18 @@ async function saveTwilioConfig(
     })
   }
 
-  const client = twilio(twilio_sid, twilio_token)
-  const update = body.override
-    ? {
-        smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio),
-        voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioIncoming.full),
-        statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioStatus.full),
-        voiceApplicationSid: '',
-      }
-    : { smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio) }
-  await client.incomingPhoneNumbers(sid).update(update)
+  if (!env.DEV) {
+    const client = twilio(twilio_sid, twilio_token)
+    const update = body.override
+      ? {
+          smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio),
+          voiceUrl: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioIncoming.full),
+          statusCallback: combineURLs(env.BASE_URL, WEBHOOKS.call.twilioStatus.full),
+          voiceApplicationSid: '',
+        }
+      : { smsUrl: combineURLs(env.BASE_URL, WEBHOOKS.sms.receiveSms.full.twilio) }
+    await client.incomingPhoneNumbers(sid).update(update)
+  }
   const data = setting.toObject({ flattenObjectIds: true })
   return c.json({ data } satisfies Ok, 200)
 }

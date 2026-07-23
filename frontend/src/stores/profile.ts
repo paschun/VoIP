@@ -1,8 +1,9 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 import type { InferRequestType, InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
+import { authToken as token } from '@/core/auth-token.ts'
 import { client, request } from '@/core/rpc.client.ts'
 
 // getProfile and getAllProfiles routes include virtual counts
@@ -38,6 +39,14 @@ export const useProfileStore = defineStore('profile', () => {
 
   const profiles = ref<ProfileWithUnread[]>([])
   const profileIsLoading = ref(false) // used in ProfileDropdown
+
+  // profile selection is per-user, so it must follow the user token which is cleared on logout
+  watch(token, (t) => {
+    if (!t) {
+      activeProfile.value = null
+      profiles.value = []
+    }
+  })
 
   // these are refs inside here, but on the outside they are unwrapped by store proxy. use `storeToRefs` to get refs on the outside.
   const activeProfileId = computed(() => activeProfile.value?._id ?? '')

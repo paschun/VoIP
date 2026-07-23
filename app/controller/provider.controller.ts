@@ -8,6 +8,7 @@ import {
   numberLookupBody,
   type NumberLookupRequest,
 } from '../contracts/provider.ts'
+import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { JsonCtx, PathParamCtx, PathParamJsonCtx } from '../core/factory.ts'
 import { combineURLs, requireConfigured } from '../helper/common.helper.ts'
@@ -46,21 +47,23 @@ async function patchTwilioWebhook(c: PathParamJsonCtx<SettingIdParam, WebhookFal
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)
 
-  const sid = requireConfigured(setting.twilio_sid, 'twilio')
-  const token = requireConfigured(setting.twilio_token, 'twilio')
-  await twilioHelper.twimlFallbackUpdate({
-    sid,
-    token,
-    twimlsid: requireConfigured(setting.twiml_app, 'twilio'),
-    url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioVoice.full),
-  })
-  await twilioHelper.numberFallbackUpdate({
-    sid,
-    token,
-    numbersid: requireConfigured(setting.sid, 'twilio'),
-    voice_url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioIncoming.full),
-    sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
-  })
+  if (!env.DEV) {
+    const sid = requireConfigured(setting.twilio_sid, 'twilio')
+    const token = requireConfigured(setting.twilio_token, 'twilio')
+    await twilioHelper.twimlFallbackUpdate({
+      sid,
+      token,
+      twimlsid: requireConfigured(setting.twiml_app, 'twilio'),
+      url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioVoice.full),
+    })
+    await twilioHelper.numberFallbackUpdate({
+      sid,
+      token,
+      numbersid: requireConfigured(setting.sid, 'twilio'),
+      voice_url: combineURLs(fallbackUrl, WEBHOOKS.call.twilioIncoming.full),
+      sms_url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.twilio),
+    })
+  }
 
   return ack(c)
 }
@@ -85,22 +88,24 @@ async function patchTelnyxWebhook(c: PathParamJsonCtx<SettingIdParam, WebhookFal
   const { fallbackUrl } = c.req.valid('json')
   const setting = await ownSetting(c.get('user').id, settingId)
 
-  const apiKey = requireConfigured(setting.api_key, 'telnyx')
-  await telnyxHelper.messageProfileFallback({
-    apiKey,
-    setting: requireConfigured(setting.setting, 'telnyx'),
-    url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.telnyx),
-  })
-  await telnyxHelper.texmlAppFallback({
-    apiKey,
-    twimlid: requireConfigured(setting.telnyx_twiml, 'telnyx'),
-    url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxVoice.full),
-  })
-  await telnyxHelper.sipAppFallback({
-    apiKey,
-    uuid: requireConfigured(setting.sip_id, 'telnyx'),
-    url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
-  })
+  if (!env.DEV) {
+    const apiKey = requireConfigured(setting.api_key, 'telnyx')
+    await telnyxHelper.messageProfileFallback({
+      apiKey,
+      setting: requireConfigured(setting.setting, 'telnyx'),
+      url: combineURLs(fallbackUrl, WEBHOOKS.sms.receiveSms.full.telnyx),
+    })
+    await telnyxHelper.texmlAppFallback({
+      apiKey,
+      twimlid: requireConfigured(setting.telnyx_twiml, 'telnyx'),
+      url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxVoice.full),
+    })
+    await telnyxHelper.sipAppFallback({
+      apiKey,
+      uuid: requireConfigured(setting.sip_id, 'telnyx'),
+      url: combineURLs(fallbackUrl, WEBHOOKS.call.telnyxStatus.full),
+    })
+  }
 
   return ack(c)
 }

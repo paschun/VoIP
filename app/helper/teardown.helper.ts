@@ -1,5 +1,6 @@
 import Telnyx from 'telnyx'
 import twilio from 'twilio'
+import { env } from '../core/env.ts'
 import type Setting from '../model/setting.model.ts'
 import * as telnyxHelper from './telnyx.helper.ts'
 import * as twilioHelper from './twilio.helper.ts'
@@ -15,6 +16,7 @@ type SettingDocument = InstanceType<typeof Setting>
  * provider's phone-number id) gates only the calls that target the number.
  */
 export async function teardownProvider(setting: SettingDocument): Promise<void> {
+  if (env.DEV) return
   if (setting.type === 'telnyx') {
     const apiKey = setting.api_key
     if (!apiKey) return

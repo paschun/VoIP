@@ -75,9 +75,9 @@ watch(
   () => conversationStore.messages,
   async () => {
     await nextTick()
-    const scroll = chatContainer.value
-    if (!scroll) return
-    scroll.scrollTop = scroll.scrollHeight
+    const container = chatContainer.value
+    if (!container) return
+    container.scroll({ top: container.scrollHeight })
   },
 )
 </script>

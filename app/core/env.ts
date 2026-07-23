@@ -19,7 +19,7 @@ const schema = z.object({
   BASE_URL: z.string().trim().min(1),
   COOKIE_KEY: z.string().min(32), // 32 chars == 32 bytes == 256 bits, for HS256 JWT algo
   PORT: z.coerce.number().int().min(1).max(65535).default(3000), // render.com sets this to 10000
-  HTTPS: z.stringbool().default(false), // false implies dev mode
+  HTTPS: z.stringbool().default(false), // prod/dev signal; env.DEV is its inverse
   // Parsed as a bool string (true/false/on/off/1/0/...). Absent → false (signups disabled).
   SIGNUPS: z.stringbool().default(false),
   // Secret subdirectory the app's SPA entry is gated behind (see .env notes). Left optional (no default) so the gate
@@ -33,4 +33,15 @@ if (!parsed.success) {
   throw new Error(`Invalid environment configuration:\n${z.prettifyError(parsed.error)}`)
 }
 
-export const env = parsed.data
+// DEV gates provider provisioning off, so prod must set HTTPS=true to register. Routes whose provider writes it
+// skips (each still persists to Mongo / returns normally):
+//   POST   /api/profile/provider          save provider config (create/update apps, webhooks, messaging profile)
+//   DELETE /api/profile/:id                delete profile     -> teardownProvider
+//   DELETE /api/profile/:id/provider       reset provider     -> teardownProvider
+//   PATCH  /api/provider/twilio/webhook/:settingId   register fallback webhook URLs
+//   PATCH  /api/provider/telnyx/webhook/:settingId   register fallback webhook URLs
+//   DELETE /api/auth/account               delete account     -> provider teardown
+//   POST   /api/setting/messages          send SMS/MMS (skips the send, stores a synthetic sid)
+// Provider READS stay live (number list, webhook-config get, number lookup): they touch the real account but mutate
+// nothing.
+export const env = { ...parsed.data, DEV: !parsed.data.HTTPS }

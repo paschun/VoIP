@@ -125,7 +125,7 @@ watch(
   display: flex;
   flex-grow: 1;
   height: 100dvh;
-  max-width: 1200px;
+  max-width: 1400px;
   border-radius: 10px;
   overflow: hidden;
   margin: auto;
