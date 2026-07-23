@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 // Global plugins
 import { createPinia } from 'pinia'
 // Global styles. main.css pulls the vendor stylesheets into a `vendor` cascade layer via @import, this is the single CSS entry point.
@@ -31,7 +30,6 @@ window.addEventListener('unhandledrejection', (event) => {
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)
-app.use(createBootstrap())
 initThemeMetaSync()
 
 app.mount('#app')

@@ -1,6 +1,7 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["src/**/*", "src/**/*.vue", "src/components.d.ts", "../shared/**/*.ts"],
+  // include is the "root set" of files that typescript compiles. Can still import other files from them not included in this root set.
+  "include": ["src/**/*", "src/**/*.vue", "src/components.d.ts", "../shared/**/*.ts", "../app/app.ts"],
   "compilerOptions": {
     // ESNext needed for Uint8Array base64 methods
     "lib": ["ESNext", "DOM"],
@@ -20,7 +21,8 @@
     // Path mapping for cleaner imports (mirrors vite `resolve.alias`).
     "paths": {
       "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["../shared/*"],
+      "@backend/app.ts": ["../app/app.ts"]
     },
 
     // Extra safety for array and object lookups, but may have false positives.

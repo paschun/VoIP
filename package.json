@@ -4,9 +4,6 @@
   "main": "app/app.ts",
   "type": "module",
   "private": true,
-  "workspaces": [
-    "frontend"
-  ],
   "scripts": {
     "dev": "node --env-file=.env app/app.ts",
     "build": "npm run build -w frontend",

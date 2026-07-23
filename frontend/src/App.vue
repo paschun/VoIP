@@ -1,13 +1,16 @@
 <template>
-  <div id="app">
-    <span v-if="meta.updateAvailable" class="update-ribbon"
-      ><a href="https://github.com/paschun/VoIP" target="_blank" rel="noopener noreferrer">update</a></span
-    >
-    <RouterView />
-  </div>
+  <BApp>
+    <div id="app">
+      <span v-if="meta.updateAvailable" class="update-ribbon"
+        ><a href="https://github.com/paschun/VoIP" target="_blank" rel="noopener noreferrer">update</a></span
+      >
+      <RouterView />
+    </div>
+  </BApp>
 </template>
 
 <script setup lang="ts">
+import { BApp } from 'bootstrap-vue-next'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
 const meta = useServerMetaStore()

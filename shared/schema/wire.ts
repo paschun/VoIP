@@ -9,7 +9,7 @@ Converting a schema to its wire type just needs to handle:
 - primitives (string/number/bool/null)
 - ObjectId -> string,
 - NativeDate -> string
-- and virtual numbers (messageCount/totalCount).
+- virtual numbers (messageCount/totalCount)
 
 Helpers tried:
 - InferRawDocTypeFromSchema<S> (mongoose): raw shape from a Schema instance; adds `_id` (Require_id), no virtuals.

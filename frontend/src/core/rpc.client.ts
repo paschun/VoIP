@@ -2,7 +2,7 @@ import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import { authToken } from '@/core/auth-token.ts'
 import { notifyApiError, serverError } from '@/core/handle-error.ts'
-import type { AppType, WsAppType } from '../../../app/app.ts'
+import type { AppType, WsAppType } from '@backend/app.ts'
 
 // The API is same-origin on both dev + prod
 const origin = window.location.origin

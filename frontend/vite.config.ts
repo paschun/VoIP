@@ -1,4 +1,3 @@
-import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { BootstrapVueNextResolver } from 'bootstrap-vue-next/resolvers'
 import browserslist from 'browserslist'
@@ -33,11 +32,7 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // API contracts shared with the backend
-      '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
-    },
+    tsconfigPaths: true,
     // An empty list disables extensionless resolution.
     extensions: [],
   },

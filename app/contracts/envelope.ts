@@ -24,10 +24,11 @@ export interface ApiError {
   message: string
 }
 
-/**
- * Discriminated result of a frontend API call, built from the two wire shapes: on success the `Ok<T>` body tagged
- * `ok: true`; on failure the `ApiError` body plus the HTTP `status`, tagged `ok: false`. Call sites branch with
- * `if (!res.ok)` and read `res.data` / `res.message` -- no lossy `false` sentinel, no try/catch.
- */
-export type ApiResult<T> = (Ok<T> & { ok: true }) | (ApiError & { ok: false; status?: number })
+/*
+All API route responses follow the `Ok` shape on success. And the `ApiError` shape on error.
 
+The webhooks don't, because they are used between communication between the provider (telnyx/twilio) server,
+not for the user-client.
+
+See call routes and setting routes for the webhook routes.
+*/
