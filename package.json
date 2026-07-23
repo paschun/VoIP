@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "node --env-file=.env app/app.ts",
-    "build": "pnpm run build -w frontend",
+    "build": "pnpm -F ./frontend run build",
     "start": "node --env-file=.env app/app.ts",
     "test": "vitest run",
     "test:watch": "vitest",
