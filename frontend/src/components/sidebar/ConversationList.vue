@@ -79,7 +79,8 @@ import { useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
 function getValidString(str: string): string {
-  return str.length > 10 ? str.substring(0, 10) + '..' : str
+  const maxLen = 15
+  return str.length > maxLen ? str.substring(0, maxLen) + '..' : str
 }
 
 const conversationStore = useConversationStore()

@@ -2,18 +2,18 @@
   <div class="w-100">
     <div class="sidebar-header">
       <div class="flex-grow-1">
-      <ThemeButton size="50px" />
+        <ThemeButton size="50px" />
       </div>
       <!-- v-b-toggle ids target the offcanvas panels mounted at the bottom of this template -->
-      <IBiGearFill v-b-toggle.sidebar-settings aria-hidden="true" class="m-2 cursor-pointer" title="Settings" />
-      <IBiPersonLinesFill v-b-toggle.sidebar-contacts aria-hidden="true" class="m-2 cursor-pointer" title="Contacts" />
-      <IBiTelephone v-b-modal.call-modal aria-hidden="true" class="m-2 cursor-pointer" title="Call" />
-      <IBiPencilSquare aria-hidden="true" class="m-2 cursor-pointer" title="Compose" @click="composeOpen = true" />
+      <IBiGearFill v-b-toggle.sidebar-settings aria-hidden="true" class="icon" title="Settings" />
+      <IBiPersonLinesFill v-b-toggle.sidebar-contacts aria-hidden="true" class="icon" title="Contacts" />
+      <IBiTelephone v-b-modal.call-modal aria-hidden="true" class="icon" title="Call" />
+      <IBiPencilSquare aria-hidden="true" class="icon" title="Compose" @click="composeOpen = true" />
       <ProfileDropdown />
     </div>
     <ConversationList />
-    <SettingsPanel></SettingsPanel>
-    <ContactList></ContactList>
+    <SettingsPanel />
+    <ContactList />
     <ComposeMessageModal v-model="composeOpen" @sent="emit('messageSent')" />
   </div>
 </template>
@@ -49,5 +49,11 @@ onMounted(() => {
   align-items: center;
   justify-content: end;
   padding-left: 10px;
+}
+
+.icon {
+  margin: .5rem;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 </style>

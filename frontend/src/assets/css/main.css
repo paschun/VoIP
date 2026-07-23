@@ -221,32 +221,7 @@ section {
   margin: auto 0;
 }
 
-/* ------ RIGHT SIDE ------ */
-
-.chat {
-  background-color: var(--chat-background);
-  width: 100%;
-  padding: 0 10%;
-  padding-top: 7px;
-  overflow-y: auto;
-}
-
 /* ------ CHAT ------ */
-.you {
-  background: var(--chat-you);
-  margin: 0 auto 10px 0;
-  text-align: left;
-  width: max-content;
-}
-
-.me {
-  background: var(--chat-me);
-  margin: 0 0 10px auto;
-  text-align: right;
-  width: max-content;
-  color: whitesmoke;
-}
-
 .content {
   margin: 0.5em 0;
   line-height: 120%;

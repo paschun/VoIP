@@ -27,7 +27,7 @@
                 Call( {{ formatDuration(message.duration ?? 0) }} )
               </span>
               <template v-else>
-                <span v-for="image in message.media" :key="image">
+                <span v-for="image in mediaUrls(message.media)" :key="image">
                   <!-- d-block w-100 keeps the img's 100% width resolving against the bubble -->
                   <button type="button" class="btn d-block w-100 p-0 border-0" @click="showImage(image)">
                     <img :src="image" alt="Image">
@@ -69,6 +69,13 @@ function hideImage() {
   zoomImage.value = ''
 }
 
+/** MMS media is `string[]`, but legacy rows can hold a JSON string; normalize so v-for never walks a string char-by-char. */
+function mediaUrls(media: string | string[] | undefined): string[] {
+  if (Array.isArray(media)) return media
+  if (!media || media === '[]') return []
+  return [media]
+}
+
 // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the thread isn't
 // rendered yet, so the container's scrollHeight is stale and we'd land mid-thread.
 watch(
@@ -99,15 +106,37 @@ watch(
   display: flex;
 }
 
-/* ------ CHAT ------ */
+.chat {
+  background-color: var(--chat-background);
+  width: 100%;
+  padding: 0 7%;
+  padding-top: 7px;
+  overflow-y: auto;
+}
+
 .chat-bubble {
   border-radius: 7px;
   box-shadow: 2px 2px 10px rgba(70, 70, 70, 0.5);
   padding: 5px 7px;
-  width: 350px;
   max-width: 100%;
   position: relative;
 }
+
+.you {
+  background: var(--chat-you);
+  margin: 0 auto 10px 0;
+  text-align: left;
+  width: max-content;
+}
+
+.me {
+  background: var(--chat-me);
+  margin: 0 0 10px auto;
+  text-align: right;
+  width: max-content;
+  color: whitesmoke;
+}
+
 .your-mouth {
   width: 0;
   height: 0;
@@ -117,6 +146,7 @@ watch(
   bottom: 10px;
   left: -10px;
 }
+
 .my-mouth {
   width: 0;
   height: 0;
