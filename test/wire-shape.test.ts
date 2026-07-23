@@ -1,9 +1,9 @@
 import { describe, test, expectTypeOf } from 'vitest'
 import type { WireDoc } from '../shared/schema/wire.ts'
 import type { EmailDoc } from '../shared/schema/email.ts'
-import { contactSchema } from '../app/model/contact.model.ts'
-import { mediaSchema } from '../app/model/media.model.ts'
-import { settingSchema } from '../app/model/setting.model.ts'
+import type { contactSchema } from '../app/model/contact.model.ts'
+import type { mediaSchema } from '../app/model/media.model.ts'
+import type { settingSchema } from '../app/model/setting.model.ts'
 
 // Compile-time checks that `WireDoc` mirrors what `c.json` emits: ObjectId/Date -> string, booleans/`__v` preserved,
 // and no virtuals leak in (it derives from the raw doc) -- hence no `id`. Pure type assertions; `npx tsc` verifies them.

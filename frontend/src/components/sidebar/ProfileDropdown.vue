@@ -70,7 +70,9 @@
 
 <script setup lang="ts">
 /** The header profile dropdown: active-profile display + unread badge, profile selector, add-profile modal, logout.
- * The add-profile modal opens by id via `v-b-modal.add-profile`, so it stays template-ref imperative for `hide()`. */
+ * The add-profile modal opens by id via `v-b-modal.add-profile`, so it stays template-ref imperative for `hide()`.
+ * This component uses <BDropdown> which uses floating-ui, justifying the floating-ui types installed as devdep
+ */
 import { computed, onMounted, useTemplateRef } from 'vue'
 import { useRegle } from '@regle/core'
 import { required, withMessage } from '@regle/rules'

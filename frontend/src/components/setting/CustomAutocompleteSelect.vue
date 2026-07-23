@@ -20,7 +20,7 @@
   </div>
 </template>
 
-<script setup lang="ts" generic="T extends Record<string, string>, LK extends keyof T & string, VK extends keyof T & string">
+<script setup lang="ts" generic="T extends Record<LK | VK, string>, LK extends string, VK extends string">
 import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
 
 const props = defineProps<{
@@ -71,7 +71,7 @@ function highlightPreviousOption() {
 function selectHighlightedOption() {
   if (highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length) {
     const option = filteredOptions.value[highlightedIndex.value]
-    selectOption(option)
+    if (option) selectOption(option)
   }
 }
 function handleKeyDown(event: KeyboardEvent) {

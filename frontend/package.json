@@ -14,10 +14,9 @@
     "typecheck": "vue-tsc --build",
     "lint": "pnpm run typecheck; pnpm run eslint; pnpm run oxlint",
     "eslint-inspect": "config-inspector",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@floating-ui/vue": "^1.1.11",
     "@regle/core": "^1.28.0",
     "@regle/rules": "^1.28.0",
     "@sipec/vue3-tags-input": "^3.0.4",
@@ -39,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/config-inspector": "^3.1.0",
+    "@floating-ui/vue": "^1.1.11",
     "@iconify-json/bi": "^1.2.7",
     "@tsconfig/node26": "^26.0.0",
     "@types/node": "^26.0.0",

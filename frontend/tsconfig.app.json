@@ -1,7 +1,7 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   // include is the "root set" of files that typescript compiles. Can still import other files from them not included in this root set.
-  "include": ["src/**/*", "src/**/*.vue", "src/components.d.ts", "../shared/**/*.ts", "../app/app.ts"],
+  "include": ["src/**/*", "src/**/*.vue", "src/*.d.ts", "../shared/**/*.ts", "../app/app.ts"],
   "compilerOptions": {
     // ESNext needed for Uint8Array base64 methods
     "lib": ["ESNext", "DOM"],
@@ -26,7 +26,7 @@
     },
 
     // Extra safety for array and object lookups, but may have false positives.
-    // "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": true,
 
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   }

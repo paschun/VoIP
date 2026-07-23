@@ -54,8 +54,8 @@ export async function parseCsvContacts(file: File): Promise<ContactDraft[]> {
   // Skip the header row; keep rows with a non-empty first name and a valid phone number (stored canonical E.164).
   const parsed = csvdata
     .slice(1)
-    .filter((row) => typeof row[0] === 'string' && row[0] !== '')
-    .map((row) => ({ first_name: row[0], last_name: row[1], number: e164Phone.safeParse(row[2]), note: row[3] }))
+    .map((row) => ({ first_name: row[0] ?? '', last_name: row[1] ?? '', number: e164Phone.safeParse(row[2]), note: row[3] ?? '' }))
+    .filter((row) => row.first_name !== '')
   const rows = parsed.flatMap(({ number, ...rest }) => (number.success ? [{ ...rest, number: number.data }] : []))
   const dropped = parsed.length - rows.length
   if (dropped) void notifyError(`${dropped} row(s) skipped: invalid phone number`)

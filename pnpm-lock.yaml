@@ -316,9 +316,6 @@ importers:
 
   frontend:
     dependencies:
-      '@floating-ui/vue':
-        specifier: ^1.1.11
-        version: 1.1.11(vue@3.5.40(typescript@6.0.3))
       '@regle/core':
         specifier: ^1.28.0
         version: 1.28.4(pinia@4.0.2(@vue/devtools-api@8.1.5)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
@@ -377,6 +374,9 @@ importers:
       '@eslint/config-inspector':
         specifier: ^3.1.0
         version: 3.1.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(srvx@0.11.22)(typescript@6.0.3)
+      '@floating-ui/vue':
+        specifier: ^1.1.11
+        version: 1.1.11(vue@3.5.40(typescript@6.0.3))
       '@iconify-json/bi':
         specifier: ^1.2.7
         version: 1.2.7

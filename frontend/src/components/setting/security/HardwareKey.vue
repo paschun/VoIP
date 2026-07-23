@@ -54,24 +54,14 @@ type HardwareKeyList = InferResponseType<typeof client.api.hardwarekey.$get, Suc
 // Local WebAuthn helpers (only used by this component)
 // ---------------------------------------------------------------------------
 
-const getEndian = (): 'little' | 'big' => {
-  const buf = new ArrayBuffer(2)
-  const u8 = new Uint8Array(buf)
-  u8[0] = 0xaa
-  u8[1] = 0xbb
-  return new Uint16Array(buf)[0] === 0xbbaa ? 'little' : 'big'
-}
-
 const readBE16 = (buffer: Uint8Array): number => {
   if (buffer.length !== 2) throw new Error('Only 2byte buffer allowed!')
-  const bytes = getEndian() !== 'big' ? buffer.reverse() : buffer
-  return new Uint16Array(bytes.buffer)[0]
+  return new DataView(buffer.buffer, buffer.byteOffset, 2).getUint16(0)
 }
 
 const readBE32 = (buffer: Uint8Array): number => {
   if (buffer.length !== 4) throw new Error('Only 4byte buffers allowed!')
-  const bytes = getEndian() !== 'big' ? buffer.reverse() : buffer
-  return new Uint32Array(bytes.buffer)[0]
+  return new DataView(buffer.buffer, buffer.byteOffset, 4).getUint32(0)
 }
 
 const bufToHex = (buffer: Uint8Array): string => Array.prototype.map.call(new Uint8Array(buffer), (x: number) => x.toString(16).padStart(2, '0')).join('')
@@ -84,6 +74,7 @@ const parseAuthData = (buffer: Uint8Array) => {
   const flagsBuf = rest.slice(0, 1)
   rest = rest.slice(1)
   const flagsInt = flagsBuf[0]
+  if (flagsInt === undefined) throw new Error('authData too short: missing flags byte')
   const flags = {
     up: !!(flagsInt & 0x01),
     uv: !!(flagsInt & 0x04),
