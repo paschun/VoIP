@@ -10,10 +10,19 @@ import { notifyError } from '@/core/notify.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
-/** Provider call token: a Twilio JWT, or (Telnyx) the Setting carrying SIP creds. Inferred from `POST /api/call/token`. */
-type CallTokenData = InferResponseType<typeof client.api.call.token.$post, SuccessStatusCode>['data']
+/** Provider call credentials: a Twilio JWT, or (Telnyx) the Setting carrying SIP creds. Inferred from `POST /api/call/token`. */
+type CallCredentials = InferResponseType<typeof client.api.call.token.$post, SuccessStatusCode>['data']
 
 export type CallState = 'idle' | 'incoming' | 'active'
+
+// NonNullable because call-sites already have null checks
+type ActiveProfile = NonNullable<ReturnType<typeof useProfileStore>['activeProfile']>
+
+/** Whether the profile's calling is set up: Twilio needs provisioned call creds (twiml_app + app_key); Telnyx always is. */
+function isCallingSetUp(profile: ActiveProfile): boolean {
+  if (profile.type === 'twilio') return Boolean(profile.twiml_app && profile.app_key)
+  return true
+}
 
 /** One dial-pad key. */
 export type DialKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '*' | '#'
@@ -89,11 +98,11 @@ export const useCallStore = defineStore('call', () => {
     })
   }
 
-  function deviceSetup(tokenData: CallTokenData | undefined) {
-    if (!tokenData) return
-    if (tokenData.type === 'twilio') {
+  function deviceSetup(creds: CallCredentials | undefined) {
+    if (!creds) return
+    if (creds.type === 'twilio') {
       callType = 'twilio'
-      const device = new TwilioDevice(tokenData.token)
+      const device = new TwilioDevice(creds.token)
       device.on('registered', () => console.log('Connected'))
       device.on('error', (error: Error) => {
         console.error('twilio device error', error)
@@ -106,11 +115,11 @@ export const useCallStore = defineStore('call', () => {
       })
       void device.register()
       twilioDevice = device
-    } else if (tokenData.setting.sip_username && tokenData.setting.sip_password) {
+    } else if (creds.setting.sip_username && creds.setting.sip_password) {
       callType = 'telnyx'
       const rtc = new TelnyxRTC({
-        login: tokenData.setting.sip_username,
-        password: tokenData.setting.sip_password,
+        login: creds.setting.sip_username,
+        password: creds.setting.sip_password,
       })
       void rtc.connect()
       rtc.remoteElement = 'remote-media'
@@ -142,10 +151,11 @@ export const useCallStore = defineStore('call', () => {
     }
   }
 
-  async function getToken(): Promise<CallTokenData | undefined> {
-    const settingId = profileStore.activeProfileId
-    if (!settingId) return
-    const { data } = await request(client.api.call.token.$post({ json: { setting_id: settingId } }))
+  async function fetchCallCredentials(): Promise<CallCredentials | undefined> {
+    const profile = profileStore.activeProfile
+    // Skip an unset-up profile so requesting its call creds doesn't 409.
+    if (!profile?._id || !isCallingSetUp(profile)) return
+    const { data } = await request(client.api.call.token.$post({ json: { setting_id: profile._id } }))
     return data
   }
 
@@ -166,7 +176,7 @@ export const useCallStore = defineStore('call', () => {
   async function init() {
     if (initialized) return
     initialized = true
-    deviceSetup(await getToken())
+    deviceSetup(await fetchCallCredentials())
   }
 
   /** Tear everything down (CallView unmount). `init()` may be called again later. */
@@ -175,16 +185,20 @@ export const useCallStore = defineStore('call', () => {
     destroyDevices()
   }
 
-  // Re-init the calling SDK when the selected profile changes. Gated on the id so a detail refresh (unread counts)
-  // of the same profile doesn't needlessly tear down and rebuild the device.
+  // Re-init the calling SDK when the selection changes, and when a not-yet-set-up profile's calling first becomes
+  // ready (Twilio creds getting provisioned). Folding both into one key means a bare detail refresh (unread counts)
+  // still doesn't churn the device.
   watch(
-    () => profileStore.activeProfileId,
+    () => {
+      const p = profileStore.activeProfile
+      return p ? `${p._id}:${isCallingSetUp(p)}` : ''
+    },
     async () => {
       // The store (and this watch) outlives CallView; after destroy() a profile change must not rebuild devices
       // while no call UI is mounted -- init() will when CallView next mounts.
       if (!initialized) return
       destroyDevices()
-      deviceSetup(await getToken())
+      deviceSetup(await fetchCallCredentials())
     },
   )
 
