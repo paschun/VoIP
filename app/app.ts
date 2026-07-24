@@ -62,27 +62,26 @@ app.use('*', async (c, next) => {
   else c.header('Cache-Control', 'no-store')
 })
 
-// Security headers (helmet equivalent). CSP mirrors the directives the app shipped: default-src allows the Twilio SDK +
-// ws/wss for the voice socket; script-src keeps unsafe-eval/inline; style-src keeps unsafe-inline for Vue's scoped CSS.
-// COOP/CORP/Origin-Agent-Cluster are left off to preserve the exact header set this app shipped before.
-// todo: audit these
+// Security headers. Only two directives are provider-specific: connect-src allows wss: for the
+// Twilio and Telnyx WebRTC signaling sockets, and media-src allows sdk.twilio.com for Twilio's hosted ringtone/DTMF
+// audio (blob:/mediastream: cover the live WebRTC audio, maybe unnecessary). Everything else is same-origin -- both SDKs are bundled, not
+// pulled from a CDN. COOP/CORP/Origin-Agent-Cluster keep secure-headers' defaults; unsafe-eval/unsafe-inline are for
+// the bundled Vue runtime and its scoped styles.
 app.use(
   secureHeaders({
-    crossOriginOpenerPolicy: false,
-    crossOriginResourcePolicy: false,
-    crossOriginEmbedderPolicy: false,
-    originAgentCluster: false,
     contentSecurityPolicy: {
-      defaultSrc: ["'self'", 'sdk.twilio.com', 'wss:', 'ws:', 'eventgw.twilio.com'],
+      defaultSrc: ["'self'"],
       baseUri: ["'self'"],
-      fontSrc: ["'self'", 'https:', 'data:'],
+      connectSrc: ["'self'", 'wss:'],
+      fontSrc: ["'self'", 'data:'],
       formAction: ["'self'"],
       frameAncestors: ["'self'"],
       imgSrc: ["'self'", 'data:'],
-      objectSrc: ["'self'"],
+      mediaSrc: ["'self'", 'blob:', 'mediastream:', 'https://sdk.twilio.com'],
+      objectSrc: ["'none'"],
       scriptSrc: ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
       scriptSrcAttr: ["'none'"],
-      styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
       upgradeInsecureRequests: [],
     },
   }),
