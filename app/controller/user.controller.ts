@@ -45,6 +45,9 @@ import User from '../model/user.model.ts'
 const saltRounds = 10
 const upstreamRepo = { owner: 'paschun', repo: 'VoIP' } as const
 // github has abandoned octokit : https://github.com/octokit/openapi-types.ts/issues/494#issuecomment-4185069938
+
+// The batteries-included Octokit bundles @octokit/plugin-throttling with default handlers that honor GitHub's
+// rate-limit guidance: wait until `retry-after`/`x-ratelimit-reset`, then retry once.
 const octokit = new Octokit()
 
 /** Only the field we need off the GitHub "list commits" response; extra keys are ignored.
@@ -73,6 +76,7 @@ const currentVersion = (() => {
     return pkg.version
   }
 })()
+console.log('currentVersion', currentVersion)
 
 /** Authenticate; on success mint a 30d JWT and report which second factor (if any) the client must still clear. */
 async function authenticate(c: JsonCtx<LoginRequest>) {
@@ -133,8 +137,8 @@ function readVersion(c: Context<Env>) {
 
 // GitHub's unauthenticated REST limit is 60 req/hr per IP
 const DAY_MS = 24 * 60 * 60 * 1000
-// `at: 0` is stale forever-ago, so the first read always fetches.
-const updateCache = { isUpdateAvailable: false, at: 0 }
+// Refreshed in the background by startUpdateChecker. `false` until the first upstream fetch resolves.
+let isUpdateAvailable = false
 /** Latest upstream short commit, or `null` if GitHub is unreachable or returns an unexpected shape. */
 async function fetchRemoteVersion() {
   try {
@@ -150,15 +154,25 @@ async function fetchRemoteVersion() {
   }
 }
 
-/** Whether a newer build than the running one exists upstream; the result is cached for a day, and any lookup
- * failure reports `false`. */
-async function readUpdateAvailable(c: Context<Env>) {
-  if (Date.now() - updateCache.at > DAY_MS) {
-    const remoteVersion = await fetchRemoteVersion()
-    updateCache.isUpdateAvailable = remoteVersion !== null && currentVersion !== remoteVersion
-    updateCache.at = Date.now()
+/** Refresh the cached flag from upstream once; a lookup failure leaves the previous value untouched. */
+async function refreshUpdateAvailable() {
+  const remoteVersion = await fetchRemoteVersion()
+  if (remoteVersion) {
+    console.log('got latest version from github:', remoteVersion)
+    isUpdateAvailable = currentVersion !== remoteVersion
   }
-  return c.json({ data: updateCache.isUpdateAvailable } satisfies Ok<boolean>, 200)
+}
+
+/** Kick off the background update check -- once at boot, then daily. Decoupled from client traffic, which only ever
+ * reads the cached flag. The interval is unref'd so it can't keep the process alive. */
+export function startUpdateChecker() {
+  void refreshUpdateAvailable()
+  setInterval(() => void refreshUpdateAvailable(), DAY_MS).unref()
+}
+
+/** Whether a newer build than the running one exists upstream, straight from the background cache (see startUpdateChecker). */
+function readUpdateAvailable(c: Context<Env>) {
+  return c.json({ data: isUpdateAvailable } satisfies Ok<boolean>, 200)
 }
 
 /** Rename the caller; reject if the new username is taken by another account. */

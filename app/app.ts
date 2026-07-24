@@ -8,6 +8,7 @@ import { compress } from 'hono/compress'
 import { secureHeaders } from 'hono/secure-headers'
 import type { ApiError } from './contracts/envelope.ts'
 import { MAX_UPLOAD_BYTES } from './controller/media.controller.ts'
+import { startUpdateChecker } from './controller/user.controller.ts'
 import { connectDB } from './core/db.ts'
 import { env } from './core/env.ts'
 import { onError } from './core/error.ts'
@@ -152,7 +153,9 @@ if (existsSync('./frontend/dist')) {
 // Startup
 // -------
 await connectDB()
+startUpdateChecker() // Poll GitHub for a newer build in the background (once now, then daily)
 serve({ fetch: app.fetch, port: env.PORT })
+// render.com does not support using HTTP2 on the backend. Must be http1.1 to talk to tls termination proxy
 console.log('hono listening on PORT', env.PORT)
 
 // import { showRoutes } from 'hono/dev'
