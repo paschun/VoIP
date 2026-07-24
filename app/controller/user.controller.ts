@@ -46,10 +46,22 @@ const saltRounds = 10
 const upstreamRepo = { owner: 'paschun', repo: 'VoIP' } as const
 // github has abandoned octokit : https://github.com/octokit/openapi-types.ts/issues/494#issuecomment-4185069938
 
-// The batteries-included Octokit bundles @octokit/plugin-throttling with default handlers that honor GitHub's
-// rate-limit guidance: wait until `retry-after`/`x-ratelimit-reset`, then retry once.
-// Surface info logs for retry timing.
-const octokit = new Octokit({ log: { debug: console.debug, info: console.info, warn: console.warn, error: console.error } })
+// The batteries-included Octokit bundles @octokit/plugin-throttling. Always after the plugin has waited out
+// `retry-after`/`x-ratelimit-reset`, so this never hammers GitHub.
+const octokit = new Octokit({
+  log: { debug: console.debug, info: console.info, warn: console.warn, error: console.error },
+  throttle: {
+    // Custom handlers fully replace the plugin defaults, so they must do their own logging.
+    onRateLimit: (retryAfter: number, options: { method: string; url: string }) => {
+      console.warn(`GitHub rate limit hit for ${options.method} ${options.url}; retrying in ${retryAfter}s`)
+      return true // always retry
+    },
+    onSecondaryRateLimit: (retryAfter: number, options: { method: string; url: string }) => {
+      console.warn(`GitHub secondary rate limit hit for ${options.method} ${options.url}; retrying in ${retryAfter}s`)
+      return true
+    },
+  },
+})
 
 /** Only the field we need off the GitHub "list commits" response; extra keys are ignored.
  * Mandates an array of objects that all have the same shape: `{ sha: "a" }`, but there is at least one element in the arr.
