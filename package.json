@@ -4,7 +4,7 @@
   "main": "app/app.ts",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.14.0",
   "scripts": {
     "dev": "node --env-file=.env app/app.ts",
     "build": "pnpm -F ./frontend run build",
