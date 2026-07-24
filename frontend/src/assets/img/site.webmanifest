@@ -1,5 +1,5 @@
 {
-  "name": "VoIP Suite - Operation Privacy",
+  "name": "VoIP Suite NG",
   "short_name": "VoIP Suite",
   "icons": [
     {
@@ -16,7 +16,7 @@
     }
   ],
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/voip/",
   "background_color": "#2e2e2e",
   "theme_color": "#2e2e2e",
   "display": "standalone",
