@@ -48,7 +48,8 @@ const upstreamRepo = { owner: 'paschun', repo: 'VoIP' } as const
 
 // The batteries-included Octokit bundles @octokit/plugin-throttling with default handlers that honor GitHub's
 // rate-limit guidance: wait until `retry-after`/`x-ratelimit-reset`, then retry once.
-const octokit = new Octokit()
+// Surface info logs for retry timing.
+const octokit = new Octokit({ log: { debug: () => {}, info: console.info, warn: console.warn, error: console.error } })
 
 /** Only the field we need off the GitHub "list commits" response; extra keys are ignored.
  * Mandates an array of objects that all have the same shape: `{ sha: "a" }`, but there is at least one element in the arr.
