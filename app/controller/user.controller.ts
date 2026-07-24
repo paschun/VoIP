@@ -155,20 +155,24 @@ async function fetchRemoteVersion() {
   }
 }
 
-/** Refresh the cached flag from upstream once; a lookup failure leaves the previous value untouched. */
+let updateTimer: ReturnType<typeof setInterval> | undefined
+/** Refresh the cached flag from upstream once; a lookup failure leaves the previous value untouched. Once an update
+ * is available it stays available (this process keeps running the old build), so we stop polling. */
 async function refreshUpdateAvailable() {
   const remoteVersion = await fetchRemoteVersion()
   if (remoteVersion) {
     console.log('got latest version from github:', remoteVersion)
     isUpdateAvailable = currentVersion !== remoteVersion
   }
+  if (isUpdateAvailable && updateTimer) clearInterval(updateTimer)
 }
 
 /** Kick off the background update check -- once at boot, then daily. Decoupled from client traffic, which only ever
  * reads the cached flag. The interval is unref'd so it can't keep the process alive. */
 export function startUpdateChecker() {
   void refreshUpdateAvailable()
-  setInterval(() => void refreshUpdateAvailable(), DAY_MS).unref()
+  updateTimer = setInterval(() => void refreshUpdateAvailable(), DAY_MS)
+  updateTimer.unref()
 }
 
 /** Whether a newer build than the running one exists upstream, straight from the background cache (see startUpdateChecker). */
