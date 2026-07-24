@@ -4,14 +4,14 @@ import mongoose, { type Types } from 'mongoose'
 import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts'
 
 // End-to-end tests of the provider webhooks: real validation (AJV against the Telnyx OpenAPI spec for JSON, zod
-// gates for form posts), real controllers + models, only the websocket push mocked. Covers the Telnyx call-status URL (both
+// gates for form posts), real controllers + models, only the SSE push mocked. Covers the Telnyx call-status URL (both
 // payload styles -- native Call Control JSON events and Twilio-shaped TeXML form callbacks) and the Twilio inbound-SMS
 // and SMS-status form webhooks. A webhook must never answer non-2xx: every invalid-payload case still asserts the
 // route's success shape.
 
-// intercept the websocket push without changing the impl
-const sendToUser = vi.hoisted(() => vi.fn<typeof import('../app/core/socket.ts').sendToUser>())
-vi.mock(import('../app/core/socket.ts'), () => ({ sendToUser }))
+// intercept the SSE push without changing the impl
+const sendToUser = vi.hoisted(() => vi.fn<typeof import('../app/core/sse.ts').sendToUser>())
+vi.mock(import('../app/core/sse.ts'), () => ({ sendToUser }))
 
 const { callRoutes } = await import('../app/routes/call.route.ts')
 const { settingRoutes } = await import('../app/routes/setting.route.ts')
@@ -153,7 +153,7 @@ describe('POST /status/telnyx -- Call Control JSON events', () => {
     assert(call)
     expect(call.duration).toBe(86)
     expect(call.status).toBe('completed')
-    expect(sendToUser).toHaveBeenCalledWith(userId.toString(), { event: 'user_message', message: 'call', number: TO })
+    expect(sendToUser).toHaveBeenCalledWith(userId.toString(), { message: 'call', number: TO })
   })
 
   // Providers retry and deliver out of order; a hangup for a call we never logged must not throw or emit
@@ -230,7 +230,7 @@ describe('POST /status/telnyx -- TeXML form status callback', () => {
     assert(call)
     expect(call.duration).toBe(42)
     expect(call.status).toBe('completed')
-    expect(sendToUser).toHaveBeenCalledWith(userId.toString(), { event: 'user_message', message: 'call', number: TO })
+    expect(sendToUser).toHaveBeenCalledWith(userId.toString(), { message: 'call', number: TO })
     expect(errorSpy).not.toHaveBeenCalled()
   })
 
@@ -323,7 +323,7 @@ describe('POST /receive-sms/twilio -- Twilio inbound SMS form webhook', () => {
     expect(msg.number).toBe(TO)
     expect(msg.telnyx_number).toBe(FROM)
     expect(msg.setting.toString()).toBe(setting._id.toString())
-    expect(sendToUser).toHaveBeenCalledWith(userId.toString(), { event: 'user_message', message: 'hello', number: TO })
+    expect(sendToUser).toHaveBeenCalledWith(userId.toString(), { message: 'hello', number: TO })
     expect(errorSpy).not.toHaveBeenCalled()
   })
 

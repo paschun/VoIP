@@ -64,13 +64,13 @@
 
 <script setup lang="ts">
 /** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
-import { onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
+import { useTemplateRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { BOffcanvas } from 'bootstrap-vue-next'
 import CallView from '@/components/call/CallView.vue'
 import ChatThread from '@/components/chat/ChatThread.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
-import { connectSocket, disconnectSocket } from '@/core/socket.ts'
+import { useServerEvents } from '@/composables/useServerEvents.ts'
 import { confirmDelete } from '@/helper.ts'
 import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
@@ -104,12 +104,8 @@ watch(
   },
 )
 
-onMounted(() => {
-  connectSocket()
-})
-onUnmounted(() => {
-  disconnectSocket()
-})
+// Opens the SSE push stream now and closes it when this view unmounts (its scope disposes).
+useServerEvents()
 // A conversation was opened: drop the mobile sidebar drawer to reveal the chat pane.
 watch(
   () => conversationStore.activeRemoteNumber,

@@ -2,7 +2,7 @@ import { hc, parseResponse, DetailedError } from 'hono/client'
 import type { ClientResponse } from 'hono/client'
 import { authToken } from '@/core/auth-token.ts'
 import { notifyApiError, serverError } from '@/core/handle-error.ts'
-import type { AppType, WsAppType } from '@backend/app.ts'
+import type { AppType } from '@backend/app.ts'
 
 // The API is same-origin on both dev + prod
 const origin = window.location.origin
@@ -11,9 +11,6 @@ const origin = window.location.origin
 export const client = hc<AppType>(origin, {
   headers: () => ({ Authorization: `Bearer ${authToken.value}`, 'Cache-Control': 'no-cache' }),
 })
-
-/** Client for the websocket route only */
-export const wsClient = hc<WsAppType>(origin)
 
 /*
 https://github.com/honojs/hono/blob/v4.12.26/src/client/utils.ts#L92

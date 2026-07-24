@@ -6,7 +6,7 @@ import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env } from '../core/factory.ts'
 
-// Stays custom rather than hono's builtin jwt() middleware: the builtin can't read the ws upgrade's `?token=`
+// Stays custom rather than hono's builtin jwt() middleware: the builtin can't read the SSE stream's `?token=`
 // query, and it stashes the payload as `c.get('jwtPayload')` instead of our typed `user`.
 
 /** The claims `signToken` puts in the JWT payload. */
@@ -57,5 +57,5 @@ const bearerToken = (c: Context<Env>) => {
 
 export const auth = makeAuth(bearerToken)
 
-/** For the websocket upgrade: the JWT rides in `?token=` (browsers can't set headers on `new WebSocket`). */
-export const wsAuth = makeAuth((c) => c.req.query('token'))
+/** For the SSE stream: the JWT rides in `?token=` (browsers can't set headers on `new EventSource`). */
+export const sseAuth = makeAuth((c) => c.req.query('token'))

@@ -12,7 +12,7 @@ import { connectDB } from './core/db.ts'
 import { env } from './core/env.ts'
 import { onError } from './core/error.ts'
 import { factory } from './core/factory.ts'
-import { socketRoutes, wss } from './core/socket.ts'
+import { eventRoutes } from './core/sse.ts'
 import { appDirectoryGate } from './middleware/app-directory.ts'
 import { rateLimit } from './middleware/rate-limit.ts'
 import { authRoutes } from './routes/auth.route.ts'
@@ -112,11 +112,9 @@ const routes = app
   .route('/api/provider', providerRoutes)
   .route('/api/setting', settingRoutes)
 
-// Registered outside the `routes` chain. `AppType` below wraps `routes` in `ApplyGlobalResponse`, which adds the
-// JSON `ApiErrors` responses to every endpoint's schema. `hc` generates a `$ws` method only for an endpoint whose
-// schema holds `outputFormat: 'ws'` responses exclusively -- with those JSON entries merged in, the client type
-// would have no `$ws`. So the ws route gets its own contract.
-const wsRoutes = app.route('/api', socketRoutes)
+// Server->client push over SSE (`GET /api/events`). Registered outside the `routes` RPC chain: the frontend connects
+// with a native EventSource (see frontend composables/useServerEvents.ts), not the hc client, so it needs no `AppType` entry.
+app.route('/api', eventRoutes)
 
 // `onError` (core/error.ts) renders every thrown error as `{ message }` at the HTTPException's status, but `hc` can't
 // infer responses from a global error handler -- so `ApplyGlobalResponse` merges the error contract into every route.
@@ -134,9 +132,6 @@ type ApiErrors = {
 
 /** The RPC API surface: every `/api/...` route with its validated input, `c.json()` output, and error contract. Consumed by `hc<AppType>`. */
 export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
-
-/** The websocket route's own RPC contract, consumed by `hc<WsAppType>` (frontend `client.api.ws.$ws(...)`). */
-export type WsAppType = typeof wsRoutes
 
 // Static assets + SPA fallback
 // ----------------------------
@@ -157,7 +152,7 @@ if (existsSync('./frontend/dist')) {
 // Startup
 // -------
 await connectDB()
-serve({ fetch: app.fetch, port: env.PORT, websocket: { server: wss } })
+serve({ fetch: app.fetch, port: env.PORT })
 console.log('hono listening on PORT', env.PORT)
 
 // import { showRoutes } from 'hono/dev'

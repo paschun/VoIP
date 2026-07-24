@@ -38,7 +38,7 @@ import { env } from '../core/env.ts'
 import { ProviderError } from '../core/error.ts'
 import { factory } from '../core/factory.ts'
 import type { FormCtx, JsonCtx, PathParamCtx, PathParamJsonCtx, QueryCtx } from '../core/factory.ts'
-import { sendToUser } from '../core/socket.ts'
+import { sendToUser } from '../core/sse.ts'
 import { combineURLs, prepareUploadTarget } from '../helper/common.helper.ts'
 import { ack, emptyTwimlReply, ok } from '../helper/respond.helper.ts'
 import { parseTelnyxInboundMessage, parseTelnyxMessageStatus } from '../helper/telnyx-events.helper.ts'
@@ -282,7 +282,7 @@ async function persistInboundSms(input: InboundSms) {
   const userId = setting.user.toString()
   const contact = await Contact.findOne({ user: { $eq: userId }, number: { $eq: fromNumber } })
 
-  sendToUser(userId, { event: 'user_message', message: messageText, number: fromNumber })
+  sendToUser(userId, { message: messageText, number: fromNumber })
 
   if (setting.emailnotification) {
     const emailSetting = await Email.findOne({ user: { $eq: userId } })
