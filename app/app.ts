@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { createServer } from 'node:http2'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { bodyLimit } from 'hono/body-limit'
@@ -153,7 +152,7 @@ if (existsSync('./frontend/dist')) {
 // Startup
 // -------
 await connectDB()
-serve({ fetch: app.fetch, port: env.PORT, createServer })
+serve({ fetch: app.fetch, port: env.PORT })
 console.log('hono listening on PORT', env.PORT)
 
 // import { showRoutes } from 'hono/dev'
