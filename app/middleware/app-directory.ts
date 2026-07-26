@@ -18,7 +18,7 @@ const redirectRoot = configured === undefined
 
 /** True for requests that must never be gated: the API, uploads, socket.io, and any real asset file (has an extension). */
 function isPassthrough(path: string): boolean {
-  if (path.startsWith('/api/') || path.startsWith('/uploads/') || path.startsWith('/socket.io/')) return true
+  if (path.startsWith('/api/') || path.startsWith('/uploads/')) return true
   // A dot in the last segment means a file with an extension -> an asset request, return true to passthrough
   return (path.split('/').pop() ?? '').includes('.')
 }

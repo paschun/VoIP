@@ -209,10 +209,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.0.6
-        version: 2.0.11(hono@4.12.31)
+        version: 2.0.11(hono@4.12.32)
       '@hono/standard-validator':
         specifier: <1
-        version: 0.3.0(@standard-schema/spec@1.1.0)(hono@4.12.31)
+        version: 0.3.0(@standard-schema/spec@1.1.0)(hono@4.12.32)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -227,7 +227,7 @@ importers:
         version: 4.4.0
       hono:
         specifier: ^4.12.27
-        version: 4.12.31
+        version: 4.12.32
       mongoose:
         specifier: ^9.7.3
         version: 9.8.0
@@ -321,7 +321,7 @@ importers:
         version: 3.0.4(vue@3.5.40(typescript@6.0.3))
       '@telnyx/webrtc':
         specifier: ^2.27.1
-        version: 2.27.7
+        version: 2.27.8
       '@twilio/voice-sdk':
         specifier: ^2.18.3
         version: 2.18.3
@@ -339,7 +339,7 @@ importers:
         version: 1.6.4
       hono:
         specifier: ^4.12.25
-        version: 4.12.31
+        version: 4.12.32
       papaparse:
         specifier: ^5.5.3
         version: 5.5.4
@@ -1404,8 +1404,8 @@ packages:
     peerDependencies:
       vue: ^2.7.0 || ^3.0.0
 
-  '@telnyx/webrtc@2.27.7':
-    resolution: {integrity: sha512-uVMJUqNm5xorn5a+rqtYMsXdM19RaG4vCIBbMJCY3ESe8LaOfB1KXbsMnu4CtxUMcr/ESERewXteDlDfkWouWQ==}
+  '@telnyx/webrtc@2.27.8':
+    resolution: {integrity: sha512-TY5PT8IG9tFT68nA2guvIzsbGkAqdwa8J9GirYQAbxzQXbaLQhyL6VviNDAsFAEMvUDRGt9Y3SChkhq7vfbhxA==}
     engines: {node: '>=14.x'}
 
   '@tsconfig/node26@26.0.0':
@@ -1917,9 +1917,9 @@ packages:
   brace-expansion@2.1.2:
     resolution: {integrity: sha512-w5JZcKgdhDOgOwm8H+KgbosopHMuGcl6qbulwjtz3SM7I7P3yW1eAjzMPLrIE+NQ9vjgANKHWeMHnrT0OXW1oA==}
 
-  brace-expansion@5.0.7:
-    resolution: {integrity: sha512-7oFy703dxfY3/NLxC1fh2SUCQ0H9rmAY+5EpDVfXjUTTs+HEwR2nYaqLv+GWcTsumwxPfiz6CzCNkwXwBUwqCA==}
-    engines: {node: 18 || 20 || >=22}
+  brace-expansion@5.0.8:
+    resolution: {integrity: sha512-JZyDyq3D4AUifKTPOB7DELf6XsB3WdPuNxCtob1vFXPsSXhdAiHBWJ/tJ8HAc9aH84BK+5JFZLNkJKx3G9kzQg==}
+    engines: {node: 20 || >=22}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -2131,8 +2131,8 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
-  electron-to-chromium@1.5.395:
-    resolution: {integrity: sha512-7zt9Aw+SrmxLWLN0zhaTWZQiCdryLVrYTq5R7iZakLvi2UQPYMMsROYV/2qVCzMeCiSXHwKOU+sZ4zOVVlrtKA==}
+  electron-to-chromium@1.5.396:
+    resolution: {integrity: sha512-yHiw2Y3C3H9U6TMbOfoWK/BPreiOPXRfTWPBwQBoZG6/8TB6eOPnsy5oaRYuatR7Fw2SJ4kKforgufeo7fq0EQ==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -2399,8 +2399,8 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  hono@4.12.31:
-    resolution: {integrity: sha512-zJIHFrl6bq3RDd2YusFNCDlM8qUprxKswyi/OPzPyzKDdyBXDqWx8bZlZ7R+saTdSTatUmb3O7K4SspGPaEOQg==}
+  hono@4.12.32:
+    resolution: {integrity: sha512-XcuyW9qE2kJn07PkecMOBd5Vq/hMy7mmGw+idz1yblbg9N17ijJODrvPkn7/dwL3Kulj8LcRJ69DLOWf91dRUg==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -4045,14 +4045,14 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
-  '@hono/node-server@2.0.11(hono@4.12.31)':
+  '@hono/node-server@2.0.11(hono@4.12.32)':
     dependencies:
-      hono: 4.12.31
+      hono: 4.12.32
 
-  '@hono/standard-validator@0.3.0(@standard-schema/spec@1.1.0)(hono@4.12.31)':
+  '@hono/standard-validator@0.3.0(@standard-schema/spec@1.1.0)(hono@4.12.32)':
     dependencies:
       '@standard-schema/spec': 1.1.0
-      hono: 4.12.31
+      hono: 4.12.32
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -4547,7 +4547,7 @@ snapshots:
       '@tanstack/virtual-core': 3.17.6
       vue: 3.5.40(typescript@6.0.3)
 
-  '@telnyx/webrtc@2.27.7':
+  '@telnyx/webrtc@2.27.8':
     dependencies:
       '@peermetrics/webrtc-stats': 5.9.0
       loglevel: 1.9.2
@@ -5115,7 +5115,7 @@ snapshots:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.7:
+  brace-expansion@5.0.8:
     dependencies:
       balanced-match: 4.0.4
 
@@ -5132,7 +5132,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.11.1
       caniuse-lite: 1.0.30001806
-      electron-to-chromium: 1.5.395
+      electron-to-chromium: 1.5.396
       node-releases: 2.0.51
       update-browserslist-db: 1.2.3(browserslist@4.28.7)
 
@@ -5312,7 +5312,7 @@ snapshots:
       minimatch: 9.0.9
       semver: 7.8.5
 
-  electron-to-chromium@1.5.395: {}
+  electron-to-chromium@1.5.396: {}
 
   emoji-regex@8.0.0: {}
 
@@ -5594,7 +5594,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.12.31: {}
+  hono@4.12.32: {}
 
   hookable@5.5.3: {}
 
@@ -5845,7 +5845,7 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.7
+      brace-expansion: 5.0.8
 
   minimatch@5.1.9:
     dependencies:

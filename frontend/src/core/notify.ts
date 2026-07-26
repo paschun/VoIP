@@ -33,6 +33,5 @@ export async function showMessageNotification(number: string, message: string): 
   }
   if (Notification.permission === 'denied') return
   if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return
-  const icon = new URL('@/assets/img/icon.png', import.meta.url).href
-  new Notification('Message from ' + number, { body: message, dir: 'auto', icon })
+  new Notification('Message from ' + number, { body: message, dir: 'auto', icon: '/icon-192.png' })
 }
