@@ -1,5 +1,7 @@
+import { watch } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordInfo } from 'vue-router'
 import { authToken } from '@/core/auth-token.ts'
+import { useUserStore } from '@/stores/user.ts'
 
 // Manually-typed route map (vue-router "typed routes"). Each entry pairs a route
 // name with its path + raw params (what you pass to router.push) + normalized
@@ -7,9 +9,8 @@ import { authToken } from '@/core/auth-token.ts'
 // `routes` array below. Augmenting `TypesConfig` makes `this.$route`/`router.push`
 // param-aware, so e.g. `appdirectory` reads as `string` instead of `string | string[]`.
 export interface RouteNamedMap {
-  error: RouteRecordInfo<'error', '/404', Record<never, never>, Record<never, never>>
-  home: RouteRecordInfo<'home', '/', Record<never, never>, Record<never, never>>
-  login: RouteRecordInfo<'login', '/:appdirectory', { appdirectory: string }, { appdirectory: string }>
+  root: RouteRecordInfo<'root', '/', Record<never, never>, Record<never, never>>
+  login: RouteRecordInfo<'login', '/:appdirectory/', { appdirectory: string }, { appdirectory: string }>
   signup: RouteRecordInfo<'signup', '/:appdirectory/signup', { appdirectory: string }, { appdirectory: string }>
   dashboard: RouteRecordInfo<'dashboard', '/:appdirectory/dashboard', { appdirectory: string }, { appdirectory: string }>
   'not-found': RouteRecordInfo<'not-found', '/:pathMatch(.*)*', { pathMatch: string | string[] }, { pathMatch: string[] }>
@@ -18,6 +19,10 @@ export interface RouteNamedMap {
 declare module 'vue-router' {
   interface TypesConfig {
     RouteNamedMap: RouteNamedMap
+  }
+  interface RouteMeta {
+    /** Route is behind the session gate below, so its views can assume a live session. */
+    requiresAuth?: boolean
   }
 }
 
@@ -47,6 +52,7 @@ const router = createRouter({
     {
       path: '/:appdirectory/dashboard',
       name: 'dashboard',
+      meta: { requiresAuth: true },
       component: () => import('@/views/DashboardView.vue'),
     },
     {
@@ -58,9 +64,19 @@ const router = createRouter({
   ],
 })
 
-// Protected routes require a token; an expired/absent session lands on login, keeping the appdirectory param.
-router.beforeEach((to) => {
-  if (to.name === 'dashboard' && !authToken.value) return { name: 'login', params: to.params }
+// Session gate: settling this here, before the view is created, is what keeps a dead session from mounting the
+// dashboard and fanning out a dozen requests that each 401.
+router.beforeEach(async (to) => {
+  if (!to.meta.requiresAuth) return
+  if (await useUserStore().verifySession()) return
+  // this handler is also run on a "cold" load so have to be explicit about params
+  return { name: 'login', params: 'appdirectory' in to.params ? to.params : undefined }
+})
+
+// An emptied token -- logout, or a 401 killing the session -- is the one trigger for leaving a protected route, so
+// every authenticated view unmounts together and no view has to race the redirect itself.
+watch(authToken, (token) => {
+  if (!token && router.currentRoute.value.meta.requiresAuth) void router.push({ name: 'login' })
 })
 
 export default router

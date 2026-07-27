@@ -65,7 +65,6 @@
 <script setup lang="ts">
 /** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
 import { useTemplateRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import type { BOffcanvas } from 'bootstrap-vue-next'
 import CallView from '@/components/call/CallView.vue'
 import ChatThread from '@/components/chat/ChatThread.vue'
@@ -76,11 +75,8 @@ import { initPush } from '@/core/push.ts'
 import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
-import { useUserStore } from '@/stores/user.ts'
 import SidebarPanel from '@/components/sidebar/SidebarPanel.vue'
 
-const router = useRouter()
-const userStore = useUserStore()
 const conversationStore = useConversationStore()
 const contactStore = useContactStore()
 const callStore = useCallStore()
@@ -95,19 +91,7 @@ async function deleteChat() {
   await conversationStore.deleteActiveConversation()
 }
 
-// A 401 mid-session clears the token; bounce to login (the appdirectory param is inherited from the current route).
-// Entry while logged out is already blocked by the router's beforeEach guard.
-watch(
-  () => userStore.isLoggedIn, // Pinia unwraps refs/computeds when you access them on the store instance
-  (loggedIn) => {
-    if (!loggedIn) return void router.push({ name: 'login' })
-    // Web Push covers what SSE can't reach: notifications while the app is backgrounded or closed. Gated on the
-    // session so a bounced visitor never prompts for notification permission.
-    void initPush()
-  },
-  { immediate: true },
-)
-
+void initPush()
 // Opens the SSE push stream now and closes it when this view unmounts (its scope disposes).
 useServerEvents()
 // A conversation was opened: drop the mobile sidebar drawer to reveal the chat pane.

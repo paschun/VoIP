@@ -11,7 +11,8 @@ import { initThemeMetaSync } from '@/core/theme.ts'
 import App from './App.vue'
 import router from './router/routes.ts'
 
-// Catch-all for sessions that end without going through the store, i.e. an expired token cleared by handle-error.
+// Catch-all for sessions that end without `logout()`: a 401 clearing the token, or `verifySession` dropping an expired
+// one. Either way this browser is left subscribed to push, and revoking the server row needs a live token.
 watch(authToken, (token) => {
   if (!token) void disablePush({ revokeOnServer: false })
 })

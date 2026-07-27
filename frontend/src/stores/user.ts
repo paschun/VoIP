@@ -1,9 +1,9 @@
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useLocalStorage, StorageSerializers } from '@vueuse/core'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
-import { authToken as token } from '@/core/auth-token.ts'
+import { authToken as token, sessionActive } from '@/core/auth-token.ts'
 import { disablePush } from '@/core/push.ts'
 import { client, request } from '@/core/rpc.client.ts'
 
@@ -15,17 +15,52 @@ export const useUserStore = defineStore('user', () => {
   const userData = useLocalStorage<UserData | null>('user-data', null, { serializer: StorageSerializers.object })
 
   const isLoggedIn = computed(() => token.value.length > 0)
+  /** The token the server has accepted. As opposed to loading the token from local storage.
+   * Only used in this file.
+   */
+  const verifiedToken = ref('')
 
   // userData follows the token: a 401 (handle-error) clears the token, and the persisted user goes with it.
   watch(token, (t) => { if (!t) userData.value = null })
 
-  /** Persist user + token together (login, key/OTP verify). */
+  /**
+   * Whether the session is usable: unexpired locally, then confirmed by the cheapest authenticated call. The router's
+   * gate awaits this before entering a protected route, so a dead session never mounts a view that fans out requests.
+   */
+  async function verifySession(): Promise<boolean> {
+    if (!sessionActive()) {
+      token.value = ''
+      return false
+    }
+    if (verifiedToken.value === token.value) return true
+    const probed = token.value
+    try {
+      const { data } = await request(client.api.auth.me.$get())
+      // A logout or a fresh login can land while the probe is in flight; this reply describes neither of those
+      // sessions, and committing it would restore the user a logout just cleared.
+      if (token.value === probed) {
+        setUser(data)
+        verifiedToken.value = probed
+      }
+    } catch (e) {
+      console.error(e)
+      // Only a 401 is a verdict on the token, and `request` has already cleared it by then; a network fault or 5xx says
+      // nothing about the session, so read the answer off the token rather than ending it over a blip.
+    }
+    return isLoggedIn.value
+  }
+
+  /** Persist user + token together (login, key/OTP verify). The server minted this token for this user, so it counts
+   * as verified and the gate below can skip its probe. */
   function login(data: UserData, accessToken: string) {
     userData.value = data
     token.value = accessToken
+    verifiedToken.value = accessToken
   }
 
-  /** Update the stored user without touching the token (username/password change). */
+  /** Update the stored user without touching the token (username/password change).
+   * only used in this file
+   */
   function setUser(data: UserData) {
     userData.value = data
   }
@@ -50,5 +85,5 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { userData, token, isLoggedIn, login, setUser, changeUsername, logout }
+  return { userData, token, isLoggedIn, verifySession, login, setUser, changeUsername, logout }
 })

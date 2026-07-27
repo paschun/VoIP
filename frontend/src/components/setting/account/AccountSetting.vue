@@ -73,7 +73,7 @@ async function deleteAccount() {
     showCancelButton: false,
     confirmButtonText: 'Ok',
   })
-  // No redirect here: clearing the session trips the Dashboard's auth watcher, which bounces to login.
+  // No redirect here: clearing the session trips the router's token watcher, which bounces off the protected route.
   await userStore.logout()
 }
 </script>

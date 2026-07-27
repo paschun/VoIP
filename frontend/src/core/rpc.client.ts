@@ -60,16 +60,24 @@ from DetailedError:
  * if you need a typed failure shape, don't use {@link parseResponse}.`
  */
 export function request<T extends ClientResponse<unknown>>(req: T | Promise<T>) {
+  // The fetch is already in flight, so this is the token it carried -- a later login/logout can't confuse the 401 below.
+  const sentWith = authToken.value
   return parseResponse(req).catch((err: unknown) => {
     console.error(err)
     if (err instanceof DetailedError) {
       // DetailedError from parseResponse only carries `.{name,message,statusCode,detail.{data,statusText}}`; our backend
       // always sends a `{ message }` body, reachable at `.detail.data.message` (see serverError, which types the `any`s).
       const { status, message } = serverError(err)
-      // A 401 on a live session means the token is dead: clear it (the mirror of attaching it in `headers` above). The
-      // user store drops its data and the router bounces to login, both reacting to this auth state. Gate on a present
-      // token so a failed login (no token yet) just notifies and lets the user retry in place.
-      if (status === 401 && authToken.value) authToken.value = ''
+      // A 401 on a live session means the token is dead: clear it.
+      // The user store drops its data and the router bounces off protected routes, both reacting to the authToken state.
+      // Gate on a token having been sent so a failed login (none yet) just notifies and lets the user retry in place.
+      if (status === 401 && sentWith) {
+        // Still holding the bad token, clear it
+        if (authToken.value === sentWith) authToken.value = ''
+        // The token was cleared or replaced while this call was in flight, so an earlier 401 or a logout already ended
+        // the session and alerted for it. Propagate to the caller, but skip the duplicate alert.
+        else throw err
+      }
       notifyApiError(status, message)
     } else if (err instanceof Error) {
       notifyApiError(undefined, err.toString())
