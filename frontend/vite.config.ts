@@ -52,6 +52,10 @@ export default defineConfig({
     // :3000 (`preview.proxy` defaults to this too), so no cross-origin handling exists anywhere in the app.
     proxy: {
       '/api': { target: 'http://localhost:3000', ws: true },
+      // The backend generates the manifest under the app directory. A `^` key is matched as a RegExp, not a path
+      // prefix: `[^/]+` is a run of non-slash chars, i.e. exactly one path segment, so it matches whatever
+      // APPDIRECTORY is set to.
+      '^/[^/]+/manifest\\.json$': { target: 'http://localhost:3000' },
     },
   },
   preview: {

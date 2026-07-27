@@ -13,7 +13,8 @@ import { factory } from '../core/factory.ts'
 // pass through untouched -- they don't carry the directory prefix and the API is separately JWT-protected.
 
 const configured = env.APPDIRECTORY
-const directory = (configured ?? 'voip').toLowerCase()
+/** The path segment the SPA is served under. */
+export const appDir = (configured ?? 'voip').toLowerCase()
 const redirectRoot = configured === undefined
 
 /** True for requests that must never be gated: the API, uploads, socket.io, and any real asset file (has an extension). */
@@ -34,9 +35,9 @@ export function appDirectoryGate(errorPage: string) {
     if (isPassthrough(path)) return next()
     // Leading `/` makes split index 0 empty, so [1] is the first real segment (the directory) -- the app is served here.
     // If the request path matches what is configured in env, allow them through
-    if ((path.split('/')[1] ?? '').toLowerCase() === directory) return next()
+    if ((path.split('/')[1] ?? '').toLowerCase() === appDir) return next()
     // Backward-compat courtesy: bounce only the bare top-level domain to the default directory. Don't redirect typos.
-    if (redirectRoot && path === '/') return c.redirect(`/${directory}`)
+    if (redirectRoot && path === '/') return c.redirect(`/${appDir}/`)
     // fallback to 404
     return c.html(errorPage, 404)
   })

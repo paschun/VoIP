@@ -14,7 +14,8 @@ import { env } from './core/env.ts'
 import { onError } from './core/error.ts'
 import { factory } from './core/factory.ts'
 import { eventRoutes } from './core/sse.ts'
-import { appDirectoryGate } from './middleware/app-directory.ts'
+import { webManifest } from './helper/manifest.helper.ts'
+import { appDir, appDirectoryGate } from './middleware/app-directory.ts'
 import { rateLimit } from './middleware/rate-limit.ts'
 import { authRoutes } from './routes/auth.route.ts'
 import { callRoutes } from './routes/call.route.ts'
@@ -61,7 +62,9 @@ app.use(compress())
  * `/` redirects into the appdir or gets a 404, depending on APPDIRECTORY -- never index.html
  */
 const NO_STORE = new Set(['/', '/index.html', '/sw.js'])
-const STABLE = new Set(['/favicon.ico', '/icon-192.png', '/icon-512.png', '/icon-mask.png'])
+/** Generated below; a changed directory changes this URL too, so a stale copy is orphaned rather than served. */
+const manifestPath = `/${appDir}/manifest.json`
+const STABLE = new Set(['/favicon.ico', '/icon-192.png', '/icon-512.png', '/icon-mask.png', manifestPath])
 /** Content-hashed builds and write-once provider media, so a URL's bytes never change. */
 const IMMUTABLE = ['/static/', '/uploads/']
 
@@ -156,6 +159,10 @@ export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
 // API mounts (so `/api/*` is handled first and passes through) but before the static handlers (so it wraps them);
 // it's a plain `app.use`, not part of the `routes` chain, so `AppType`/RPC inference is untouched.
 app.use('*', appDirectoryGate(errorPage))
+
+// The PWA manifest is generated, not a build asset, so start_url/scope track the configured directory. Serving it only
+// at the directory's own path keeps it from disclosing that directory; index.html links it relatively to match.
+app.get(manifestPath, (c) => c.json(webManifest(appDir), 200, { 'Content-Type': 'application/manifest+json' }))
 
 // Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
 app.use('/uploads/*', serveStatic({ root: './' }))
