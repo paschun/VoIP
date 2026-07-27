@@ -62,7 +62,18 @@ export default defineConfig({
     outDir: 'dist',
     // Use `dist/static/...` layout so backend (`app.js`) routes that reference `/frontend/dist/static/` work.
     assetsDir: 'static',
-    sourcemap: true,
+    rolldownOptions: {
+      // input keys declares independent module graphs. can be anything.
+      // The key is what chunk.name matches in entryFileNames
+      input: { main: 'index.html', sw: 'src/sw.ts' },
+      output: {
+        // The service worker must keep a stable root-level name: its scope derives from its path (a hashed
+        // `/static/` name would only control `/static/`) and the client registers it by URL. Its imported chunks
+        // stay hashed -- a changed hash rewrites the entry's import, which is what triggers the update check.
+        entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'static/[name]-[hash].js'),
+      },
+    },
+    // sourcemap: true,
     emptyOutDir: true,
     cssMinify: 'lightningcss',
     target: jsTargets,

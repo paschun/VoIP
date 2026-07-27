@@ -1,13 +1,20 @@
-import { createApp } from 'vue'
+import { createApp, watch } from 'vue'
 // Global plugins
 import { createPinia } from 'pinia'
 // Global styles. main.css pulls the vendor stylesheets into a `vendor` cascade layer via @import, this is the single CSS entry point.
 import '@/assets/css/main.css'
 // Importing applies the persisted/OS color mode to <html> at startup, independent of where the theme toggle renders.
+import { authToken } from '@/core/auth-token.ts'
+import { disablePush } from '@/core/push.ts'
 import { initThemeMetaSync } from '@/core/theme.ts'
 
 import App from './App.vue'
 import router from './router/routes.ts'
+
+// Catch-all for sessions that end without going through the store, i.e. an expired token cleared by handle-error.
+watch(authToken, (token) => {
+  if (!token) void disablePush({ revokeOnServer: false })
+})
 
 // oxlint-disable-next-line typescript/no-unsafe-argument : a .vue module-resolution limitation in tsgolint
 const app = createApp(App)

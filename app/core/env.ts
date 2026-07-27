@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { base64urlBytes } from '../helper/base64url.helper.ts'
 
 /*
 function required(name: string): string {
@@ -12,7 +13,7 @@ const optional = (name: string, fallback: string) => process.env[name] ?? fallba
 // Single source of truth for environment configuration. The schema is parsed once here at import time, so the rest of
 // the app gets real, validated types (string/number/boolean) instead of `string | undefined`, and a missing/invalid
 // var fails fast at boot with a readable message rather than mid-request.
-const schema = z.object({
+const envSchema = z.object({
   DB: z.string().min(1),
   // dev will overwrite prod's webhook URLs on the provider, if they use the same provider config.
   // If dev's BASE_URL is localhost, the provider can't reach it, meaning inbound events are undelivered.
@@ -26,9 +27,15 @@ const schema = z.object({
   // can tell "unset" (backward-compat: redirect `/` to `/voip`, top level reachable) from "set" (no redirect; anything
   // off the configured directory 404s, hiding the login page). The effective directory + mode live in the gate.
   APPDIRECTORY: z.string().trim().optional(),
+  // Web Push (VAPID), all optional: unset disables push and the app boots normally using SSE alone. Generate with
+  // `npx web-push generate-vapid-keys`.
+  VAPID_PUBLIC_KEY: base64urlBytes(65).optional(), // uncompressed P-256 point
+  VAPID_PRIVATE_KEY: base64urlBytes(32).optional(), // that point's scalar
+  // Contact for the push service operator, carried in the signed request's `sub` claim.
+  VAPID_SUBJECT: z.url({ protocol: /^(https|mailto)$/ }).optional(),
 })
 
-const parsed = schema.safeParse(process.env)
+const parsed = envSchema.safeParse(process.env)
 if (!parsed.success) {
   throw new Error(`Invalid environment configuration:\n${z.prettifyError(parsed.error)}`)
 }

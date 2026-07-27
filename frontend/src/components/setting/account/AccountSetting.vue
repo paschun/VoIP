@@ -25,7 +25,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import { client, request } from '@/core/rpc.client.ts'
 import { useUserStore } from '@/stores/user.ts'
@@ -35,7 +34,6 @@ import ChangePassword from './ChangePassword.vue'
 import ChangeUsername from './ChangeUsername.vue'
 
 const userStore = useUserStore()
-const router = useRouter()
 const activeMenu = ref('setting')
 
 function enableMenu(menu: string) {
@@ -75,7 +73,7 @@ async function deleteAccount() {
     showCancelButton: false,
     confirmButtonText: 'Ok',
   })
-  userStore.logout()
-  await router.push({ name: 'login' })
+  // No redirect here: clearing the session trips the Dashboard's auth watcher, which bounces to login.
+  await userStore.logout()
 }
 </script>

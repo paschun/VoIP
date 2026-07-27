@@ -112,8 +112,8 @@ async function addProfile() {
   }
 }
 
-function logout() {
-  userStore.logout() // clears the session; the Dashboard watcher reacts to the auth-state change and bounces to login.
+async function logout() {
+  await userStore.logout() // clears the session; the Dashboard watcher reacts to the auth-state change and bounces to login.
 }
 
 onMounted(() => {

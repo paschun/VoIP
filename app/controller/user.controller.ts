@@ -37,6 +37,7 @@ import { auth } from '../middleware/auth.ts'
 import { jsonBody } from '../middleware/validate.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
+import PushSubscription from '../model/push-subscription.model.ts'
 import HardwareKey from '../model/hardwarekey.model.ts'
 import { Message } from '../model/message.model.ts'
 import Setting from '../model/setting.model.ts'
@@ -291,6 +292,7 @@ async function deleteAllAccountData(userid: string) {
   await Contact.deleteMany({ user: userid })
   await Email.deleteMany({ user: userid })
   await Message.deleteMany({ user: userid })
+  await PushSubscription.deleteMany({ user: userid })
   const settings = env.DEV ? [] : await Setting.find({ user: { $eq: userid } })
   for (const s of settings) {
     // Destructure first so the truthiness guards narrow these (a doc property's narrowing would reset across `await`).

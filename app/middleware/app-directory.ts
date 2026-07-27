@@ -19,8 +19,12 @@ const redirectRoot = configured === undefined
 /** True for requests that must never be gated: the API, uploads, socket.io, and any real asset file (has an extension). */
 function isPassthrough(path: string): boolean {
   if (path.startsWith('/api/') || path.startsWith('/uploads/')) return true
+  const file = path.split('/').pop() ?? ''
+  // The SPA entry is a navigation target despite its extension. Passing it through would hand out the login HTML at
+  // /index.html to anyone, which is the one thing the gate exists to prevent; under the directory it still resolves.
+  if (file === 'index.html') return false
   // A dot in the last segment means a file with an extension -> an asset request, return true to passthrough
-  return (path.split('/').pop() ?? '').includes('.')
+  return file.includes('.')
 }
 
 /** Gate the SPA entry behind the configured directory segment. `errorPage` is served (404) for a wrong/absent segment. */

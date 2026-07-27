@@ -1,6 +1,6 @@
 <template>
   <div class="wrap">
-    <CallView></CallView>
+    <CallView />
     <!--
       Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
       hamburger via v-b-toggle.mobile-sidebar); at/above `sm` Bootstrap renders it inline as the static
@@ -72,12 +72,12 @@ import ChatThread from '@/components/chat/ChatThread.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
 import { useServerEvents } from '@/composables/useServerEvents.ts'
 import { confirmDelete } from '@/helper.ts'
+import { initPush } from '@/core/push.ts'
 import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 import { useUserStore } from '@/stores/user.ts'
 import SidebarPanel from '@/components/sidebar/SidebarPanel.vue'
-
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -100,8 +100,12 @@ async function deleteChat() {
 watch(
   () => userStore.isLoggedIn, // Pinia unwraps refs/computeds when you access them on the store instance
   (loggedIn) => {
-    if (!loggedIn) void router.push({ name: 'login' })
+    if (!loggedIn) return void router.push({ name: 'login' })
+    // Web Push covers what SSE can't reach: notifications while the app is backgrounded or closed. Gated on the
+    // session so a bounced visitor never prompts for notification permission.
+    void initPush()
   },
+  { immediate: true },
 )
 
 // Opens the SSE push stream now and closes it when this view unmounts (its scope disposes).

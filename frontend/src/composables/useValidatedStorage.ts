@@ -10,6 +10,7 @@ import type { z } from 'zod'
  */
 export function useValidatedStorage<T>(key: string, schema: z.ZodType<T>, defaults: T): RemovableRef<T> {
   return useStorage<T>(key, defaults, localStorage, {
+    // object serializer also uses JSON.parse/stringify: https://github.com/vueuse/vueuse/blob/main/packages/core/useStorage/index.ts
     serializer: {
       read: (raw): T => {
         try {

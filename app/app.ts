@@ -24,6 +24,7 @@ import { hardwarekeyRoutes } from './routes/hardwarekey.route.ts'
 import { mediaRoutes } from './routes/media.route.ts'
 import { profileRoutes } from './routes/profile.route.ts'
 import { providerRoutes } from './routes/provider.route.ts'
+import { pushRoutes } from './routes/push.route.ts'
 import { settingRoutes } from './routes/setting.route.ts'
 // Branded static error page served by the backend for the HTTPS backstop and the app-directory gate's 404s.
 const errorPage = await readFile('./app/static/error.html', 'utf8')
@@ -53,13 +54,28 @@ if (env.HTTPS) {
 // ---------------
 app.use(compress())
 
-// Cache headers (set after the handler so they win): hashed build assets under /static/ are content-addressed and cached
-// forever; everything else (index.html, API JSON) and every mutating request must revalidate so deploys show up at once.
+// Cache headers (set after the handler so they win), keyed on whether a URL's bytes can change.
+
+/**
+ * a cached `/sw.js` stalls the mechanism that ships worker updates, 
+ * `/` redirects into the appdir or gets a 404, depending on APPDIRECTORY -- never index.html
+ */
+const NO_STORE = new Set(['/', '/index.html', '/sw.js'])
+const STABLE = new Set(['/favicon.ico', '/icon-192.png', '/icon-512.png', '/icon-mask.png'])
+/** Content-hashed builds and write-once provider media, so a URL's bytes never change. */
+const IMMUTABLE = ['/static/', '/uploads/']
+
 app.use('*', async (c, next) => {
   await next()
-  if (c.req.method !== 'GET') c.header('Cache-Control', 'no-store')
-  else if (c.req.path.startsWith('/static/')) c.header('Cache-Control', 'public, max-age=31536000, immutable')
-  else c.header('Cache-Control', 'no-store')
+  const { method, path } = c.req
+  const cache =
+    method !== 'GET' || NO_STORE.has(path) ? 'no-store'
+    : IMMUTABLE.some((prefix) => path.startsWith(prefix)) ? 'public, max-age=31536000, immutable'
+    // A week rather than a year, since these URLs aren't content-addressed and a replaced icon still has to propagate.
+    : STABLE.has(path) ? 'public, max-age=604800'
+    // The real catch-all, and it must stay no-store: the SPA fallback serves index.html for *any* unmatched path. API JSON lands here too.
+    : 'no-store'
+  c.header('Cache-Control', cache)
 })
 
 // Security headers. Only two directives are provider-specific: connect-src allows wss: for the
@@ -111,6 +127,7 @@ const routes = app
   .route('/api/profile', profileRoutes)
   .route('/api/provider', providerRoutes)
   .route('/api/setting', settingRoutes)
+  .route('/api/push', pushRoutes)
 
 // Server->client push over SSE (`GET /api/events`). Registered outside the `routes` RPC chain: the frontend connects
 // with a native EventSource (see frontend composables/useServerEvents.ts), not the hc client, so it needs no `AppType` entry.

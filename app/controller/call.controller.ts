@@ -17,7 +17,7 @@ import {
 } from '../contracts/call.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, FormCtx, JsonCtx } from '../core/factory.ts'
-import { sendToUser } from '../core/sse.ts'
+import { sendToUser } from '../core/notify.ts'
 import { requireConfigured } from '../helper/common.helper.ts'
 import { ack, emptyTwimlReply, ok, xmlResponse } from '../helper/respond.helper.ts'
 import { parseTelnyxCallEvent, type TelnyxCallEvent } from '../helper/telnyx-events.helper.ts'

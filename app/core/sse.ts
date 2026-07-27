@@ -12,8 +12,8 @@ const userStreams = new Map<string, Set<SSEStreamingApi>>()
 // the id's only job here is to differ between frames so the client fires even on two identical `data` payloads.
 let nextEventId = 0
 
-/** Push a message to every open stream of `userId`; a no-op when none are connected. */
-export function sendToUser(userId: string, message: PushMessage) {
+/** Write a frame to every open stream of `userId`; a no-op when none are connected. */
+export function sendSseToUser(userId: string, message: PushMessage) {
   const streams = userStreams.get(userId)
   if (!streams) return
   const id = String(++nextEventId)

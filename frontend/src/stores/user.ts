@@ -4,6 +4,7 @@ import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
 import { authToken as token } from '@/core/auth-token.ts'
+import { disablePush } from '@/core/push.ts'
 import { client, request } from '@/core/rpc.client.ts'
 
 /** The signed-in user, inferred from the `PATCH /api/auth/username` 200 body (`{ data: UserData }`). */
@@ -35,9 +36,18 @@ export const useUserStore = defineStore('user', () => {
     setUser(data)
   }
 
-  /** Clear the session; the watcher above drops userData when the token empties. */
-  function logout() {
-    token.value = ''
+  /**
+   * Clear the session; the watcher above drops userData when the token empties. Push is revoked first, while the token
+   * is still valid.
+   */
+  async function logout() {
+    try {
+      await disablePush()
+    } catch (e) {
+      console.error('Failed to revoke push subscription', e)
+    } finally {
+      token.value = ''
+    }
   }
 
   return { userData, token, isLoggedIn, login, setUser, changeUsername, logout }

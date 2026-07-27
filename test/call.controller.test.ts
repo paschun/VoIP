@@ -10,8 +10,8 @@ import { connectMemoryDb, disconnectMemoryDb, clearDb } from './helpers/mongo.ts
 // route's success shape.
 
 // intercept the SSE push without changing the impl
-const sendToUser = vi.hoisted(() => vi.fn<typeof import('../app/core/sse.ts').sendToUser>())
-vi.mock(import('../app/core/sse.ts'), () => ({ sendToUser }))
+const sendToUser = vi.hoisted(() => vi.fn<typeof import('../app/core/notify.ts').sendToUser>())
+vi.mock(import('../app/core/notify.ts'), () => ({ sendToUser }))
 
 const { callRoutes } = await import('../app/routes/call.route.ts')
 const { settingRoutes } = await import('../app/routes/setting.route.ts')

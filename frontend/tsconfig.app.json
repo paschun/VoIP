@@ -4,7 +4,7 @@
   "include": ["src/**/*", "src/**/*.vue", "src/*.d.ts", "../shared/**/*.ts", "../app/app.ts"],
   "compilerOptions": {
     // ESNext needed for Uint8Array base64 methods
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext", "DOM", "WebWorker"],
 
     // "types" controls which types get loaded globally / ambiently into every file without an import
     // Separate @types/foo package only needs the "types" array if it contributes global types that you use without importing.
