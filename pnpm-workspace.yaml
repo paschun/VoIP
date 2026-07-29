@@ -5,4 +5,5 @@ minimumReleaseAge: 1440
 engineStrict: true
 allowBuilds:
   cbor-extract: false
+  sharp: false
   vue-demi: false

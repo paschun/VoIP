@@ -2,7 +2,7 @@ import type { PushMessage } from '@shared/contracts/push.ts'
 
 declare const self: ServiceWorkerGlobalScope 
 
-const ICON = '/icon-192.png'
+const ICON = '/pwa-192x192.png'
 
 /** Open app windows, including pages loaded before this worker took control. */
 const windows = () => self.clients.matchAll({ type: 'window', includeUncontrolled: true })

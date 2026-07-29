@@ -14,7 +14,8 @@
     "typecheck": "vue-tsc --build",
     "lint": "pnpm run typecheck; pnpm run eslint; pnpm run oxlint",
     "eslint-inspect": "config-inspector",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gen-icons": "pwa-assets-generator"
   },
   "dependencies": {
     "@regle/core": "^1.28.0",
@@ -44,6 +45,7 @@
     "@types/node": "^26.0.0",
     "@types/papaparse": "^5.5.2",
     "@types/pulltorefreshjs": "<1",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/devtools-api": "^8.1.5",
     "@vue/eslint-config-typescript": "^14.7.0",

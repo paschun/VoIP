@@ -6,9 +6,9 @@ export const webManifest = (appDir: string) => ({
   name: 'VoIP Suite NG',
   short_name: 'VoIP Suite',
   icons: [
-    { src: '/icon-192.png', type: 'image/png', sizes: '192x192' },
-    { src: '/icon-mask.png', type: 'image/png', sizes: '512x512', purpose: 'maskable' },
-    { src: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+    { src: '/pwa-192x192.png', type: 'image/png', sizes: '192x192' },
+    { src: '/maskable-icon-512x512.png', type: 'image/png', sizes: '512x512', purpose: 'maskable' },
+    { src: '/pwa-512x512.png', type: 'image/png', sizes: '512x512' },
   ],
   scope: '/',
   start_url: `/${appDir}/`,

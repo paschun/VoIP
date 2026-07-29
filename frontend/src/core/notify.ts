@@ -33,5 +33,5 @@ export async function showMessageNotification(number: string, message: string): 
   }
   if (Notification.permission === 'denied') return
   if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return
-  new Notification('Message from ' + number, { body: message, dir: 'auto', icon: '/icon-192.png' })
+  new Notification('Message from ' + number, { body: message, dir: 'auto', icon: '/pwa-192x192.png' })
 }

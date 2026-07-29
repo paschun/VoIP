@@ -64,7 +64,15 @@ app.use(compress())
 const NO_STORE = new Set(['/', '/index.html', '/sw.js'])
 /** Generated below; a changed directory changes this URL too, so a stale copy is orphaned rather than served. */
 const manifestPath = `/${appDir}/manifest.json`
-const STABLE = new Set(['/favicon.ico', '/icon-192.png', '/icon-512.png', '/icon-mask.png', manifestPath])
+const STABLE = new Set([
+  '/favicon.ico',
+  '/chat-cat.svg',
+  '/apple-touch-icon-180x180.png',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/maskable-icon-512x512.png',
+  manifestPath,
+])
 /** Content-hashed builds and write-once provider media, so a URL's bytes never change. */
 const IMMUTABLE = ['/static/', '/uploads/']
 
