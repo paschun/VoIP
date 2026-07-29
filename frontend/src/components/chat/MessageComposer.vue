@@ -40,7 +40,7 @@
 <script setup lang="ts">
 /**
  * Composer for the open conversation: text input, image attachments (file picker or drag-and-drop with previews and
- * upload progress), send. Emits `sent` after a successful send.
+ * upload progress), send.
  */
 import { ref, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
@@ -49,8 +49,6 @@ import { useBusy } from '@/composables/useBusy.ts'
 import { useMediaUpload } from '@/composables/useMediaUpload.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
-
-const emit = defineEmits<{ sent: [] }>()
 
 const conversationStore = useConversationStore()
 
@@ -102,7 +100,6 @@ async function sendSms() {
     })
     messageBody.value = ''
     clearAttachments()
-    emit('sent')
   })
 }
 

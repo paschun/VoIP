@@ -36,7 +36,7 @@
           :key="item._id"
           class="contact"
           :class="{ 'active-chat': conversationStore.activeRemoteNumber === item._id }"
-          @click="conversationStore.openConversation(item)"
+          @click="selectConversation(item)"
         >
           <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
           <div class="d-flex justify-content-between w-100">
@@ -73,9 +73,10 @@
 /** The inbox sidebar: search box, loading skeleton, and conversation rows. Selection is a pure store call. */
 import { onMounted } from 'vue'
 import PullToRefresh from 'pulltorefreshjs'
+import { useMobileSidebar } from '@/composables/useMobileSidebar.ts'
 import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { formatTimestamp } from '@/helper.ts'
-import { useConversationStore } from '@/stores/conversation.ts'
+import { type Conversation, useConversationStore } from '@/stores/conversation.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 
 function getValidString(str: string): string {
@@ -85,6 +86,13 @@ function getValidString(str: string): string {
 
 const conversationStore = useConversationStore()
 const profileStore = useProfileStore()
+const { closeSidebar } = useMobileSidebar()
+
+/** Closes the drawer on every click, including a re-select of the already open row. */
+function selectConversation(conversation: Conversation): void {
+  closeSidebar()
+  void conversationStore.openConversation(conversation)
+}
 
 // Inbox rows filtered by the search box. Derives from the store list so it tracks loads/socket refreshes.
 const { query, results: searchNumbers } = useSearchFilter(

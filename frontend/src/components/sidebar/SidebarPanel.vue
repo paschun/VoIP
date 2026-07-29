@@ -14,7 +14,7 @@
     <ConversationList />
     <SettingsPanel />
     <ContactList />
-    <ComposeMessageModal v-model="composeOpen" @sent="emit('messageSent')" />
+    <ComposeMessageModal v-model="composeOpen" />
   </div>
 </template>
 
@@ -30,7 +30,6 @@ import { useContactStore } from '@/stores/contact.ts'
 import ConversationList from './ConversationList.vue'
 import ProfileDropdown from './ProfileDropdown.vue'
 
-const emit = defineEmits<{ messageSent: [] }>()
 const contactStore = useContactStore()
 const composeOpen = ref(false)
 

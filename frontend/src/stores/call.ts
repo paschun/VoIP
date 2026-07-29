@@ -30,7 +30,7 @@ export type DialKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' 
 /**
  * The calling state machine. Owns the Twilio/Telnyx SDK lifecycle (token fetch, device build/teardown, profile-change
  * re-init) and the in-call state (`state`/`remoteNumber`/`remoteName`/`duration`); all provider branching lives here.
- * CallView calls `init()`/`destroy()` around its mount; the Telnyx client plays into CallView's `#remote-media` element.
+ * CallModal calls `init()`/`destroy()` around its mount; the Telnyx client plays into CallModal's `#remote-media` element.
  */
 export const useCallStore = defineStore('call', () => {
   const profileStore = useProfileStore()
@@ -179,7 +179,7 @@ export const useCallStore = defineStore('call', () => {
     deviceSetup(await fetchCallCredentials())
   }
 
-  /** Tear everything down (CallView unmount). `init()` may be called again later. */
+  /** Tear everything down (CallModal unmount). `init()` may be called again later. */
   function destroy() {
     initialized = false
     destroyDevices()
@@ -194,8 +194,8 @@ export const useCallStore = defineStore('call', () => {
       return p ? `${p._id}:${isCallingSetUp(p)}` : ''
     },
     async () => {
-      // The store (and this watch) outlives CallView; after destroy() a profile change must not rebuild devices
-      // while no call UI is mounted -- init() will when CallView next mounts.
+      // The store (and this watch) outlives CallModal; after destroy() a profile change must not rebuild devices
+      // while no call UI is mounted -- init() will when CallModal next mounts.
       if (!initialized) return
       destroyDevices()
       deviceSetup(await fetchCallCredentials())

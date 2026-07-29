@@ -25,7 +25,7 @@ const emptyDraft = (): ContactDraft => ({ first_name: '', last_name: '', number:
 
 /**
  * The user's address book + all contact data access. Holds the shared list (read by Sidebar/ContactList/Dashboard/
- * CallView) and owns every read/write so no view talks to the contact routes directly. Mutations refresh the list AND
+ * CallModal) and owns every read/write so no view talks to the contact routes directly. Mutations refresh the list AND
  * the conversation inbox (its rows denormalize the contact name), so callers never reload either by hand.
  */
 export const useContactStore = defineStore('contact', () => {

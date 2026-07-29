@@ -58,6 +58,7 @@ import VueTagsInputModule from '@sipec/vue3-tags-input'
 import { e164Phone } from '@shared/phone.ts'
 import { useBusy } from '@/composables/useBusy.ts'
 import { useMediaUpload } from '@/composables/useMediaUpload.ts'
+import { useMobileSidebar } from '@/composables/useMobileSidebar.ts'
 import { notifyError } from '@/core/notify.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
 // UMD build exposes the component on `.default`; default-import interop can hand back the module namespace instead, so
@@ -71,9 +72,10 @@ interface Tag {
 }
 
 const visible = defineModel<boolean>()
-const emit = defineEmits<{ sent: [] }>()
 
 const conversationStore = useConversationStore()
+// A send may have created the first thread for a number; drop the drawer to reveal it.
+const { closeSidebar } = useMobileSidebar()
 
 const { busy: isLoading, run } = useBusy()
 const recipients = ref<string[]>([])
@@ -121,7 +123,7 @@ async function sendComposedMessage() {
     })
     reset()
     visible.value = false
-    emit('sent')
+    closeSidebar()
   })
 }
 
