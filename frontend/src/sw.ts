@@ -1,11 +1,17 @@
 import type { PushMessage } from '@shared/contracts/push.ts'
 
-declare const self: ServiceWorkerGlobalScope 
+declare const self: ServiceWorkerGlobalScope
 
 const ICON = '/pwa-192x192.png'
 
 /** Open app windows, including pages loaded before this worker took control. */
 const windows = () => self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+
+/** Shape check only -- the payload is Web-Push-encrypted, so only our server can have sent it. */
+function isPushMessage(value: unknown): value is PushMessage {
+  if (typeof value !== 'object' || value === null) return false
+  return 'number' in value && typeof value.number === 'string' && 'message' in value && typeof value.message === 'string'
+}
 
 /**
  * Show a notification unless a page is already on screen -- a visible page gets the same frame over SSE and notifies
@@ -18,9 +24,10 @@ async function notify({ number, message }: PushMessage) {
 }
 
 self.addEventListener('push', (event) => {
-  if (!event.data) return
-  // Our own server encrypted this payload, so it's parsed but not re-validated.
-  event.waitUntil(notify(event.data.json() as PushMessage))
+  const frame: unknown = event.data?.json()
+  // could import shared zod `pushMessage` schema, but adds a 64kb dependency
+  // so do local type narrowing instead
+  if (isPushMessage(frame)) event.waitUntil(notify(frame))
 })
 
 self.addEventListener('notificationclick', (event) => {
