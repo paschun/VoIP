@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { base64urlBytes } from '../helper/base64url.helper.ts'
 
 /*
 function required(name: string): string {
@@ -27,11 +26,8 @@ const envSchema = z.object({
   // can tell "unset" (backward-compat: redirect `/` to `/voip`, top level reachable) from "set" (no redirect; anything
   // off the configured directory 404s, hiding the login page). The effective directory + mode live in the gate.
   APPDIRECTORY: z.string().trim().optional(),
-  // Web Push (VAPID), all optional: unset disables push and the app boots normally using SSE alone. Generate with
-  // `npx web-push generate-vapid-keys`.
-  VAPID_PUBLIC_KEY: base64urlBytes(65).optional(), // uncompressed P-256 point
-  VAPID_PRIVATE_KEY: base64urlBytes(32).optional(), // that point's scalar
-  // Contact for the push service operator, carried in the signed request's `sub` claim.
+  // Contact for the push service operator, carried in the signed request's `sub` claim. Optional, like the keypair in
+  // push-keys.json: unset disables push and the app boots normally using SSE alone.
   VAPID_SUBJECT: z.url({ protocol: /^(https|mailto)$/ }).optional(),
 })
 

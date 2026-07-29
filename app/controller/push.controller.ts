@@ -6,19 +6,17 @@ import {
   pushSubscriptionBody,
   type PushSubscriptionRequest,
 } from '../contracts/push-subscription.ts'
-import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx } from '../core/factory.ts'
 import { ack } from '../helper/respond.helper.ts'
-import { isPushEnabled } from '../helper/web-push.helper.ts'
+import { vapidPublicKey } from '../helper/web-push.helper.ts'
 import { auth } from '../middleware/auth.ts'
 import { jsonBody } from '../middleware/validate.ts'
 import PushSubscription from '../model/push-subscription.model.ts'
 
 /** The VAPID public key the client needs as `applicationServerKey`; `null` when push isn't configured. */
 function getPublicKey(c: Context<Env>) {
-  const data = isPushEnabled ? (env.VAPID_PUBLIC_KEY ?? null) : null
-  return c.json({ data } satisfies Ok, 200)
+  return c.json({ data: vapidPublicKey } satisfies Ok, 200)
 }
 
 /**

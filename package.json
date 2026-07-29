@@ -14,7 +14,8 @@
     "typecheck": "tsc",
     "oxlint": "oxlint --ignore-pattern 'frontend/**'",
     "lint": "pnpm run typecheck; pnpm run oxlint",
-    "spec:texml": "openapi-typescript app/spec/texml-calls.yml -o app/spec/texml-calls.d.ts"
+    "spec:texml": "openapi-typescript app/spec/texml-calls.yml -o app/spec/texml-calls.d.ts",
+    "gen-push-keys": "web-push generate-vapid-keys --json > push-keys.json"
   },
   "devEngines": {
     "packageManager": {

@@ -44,3 +44,6 @@ Thumbs.db
 .dccache
 
 .agents
+
+# Web Push VAPID private+public key
+/push-keys.json

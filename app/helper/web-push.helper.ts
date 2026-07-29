@@ -1,17 +1,47 @@
+import { readFile } from 'node:fs/promises'
 import webpush, { WebPushError } from 'web-push'
+import { z } from 'zod'
 import type { PushMessage } from '../../shared/contracts/push.ts'
 import { env } from '../core/env.ts'
 import PushSubscription from '../model/push-subscription.model.ts'
+import { base64urlBytes } from './base64url.helper.ts'
 
-const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = env
+// Repo-root file written by `pnpm run gen-push-keys`
+const keysFile = new URL('../../push-keys.json', import.meta.url)
+const keysSchema = z.object({
+  publicKey: base64urlBytes(65), // uncompressed P-256 point
+  privateKey: base64urlBytes(32), // that point's scalar
+})
 
-/** Push is opt-in: with no VAPID keypair configured the app runs on SSE alone. */
-export const isPushEnabled = Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY && VAPID_SUBJECT)
+/** Narrows a caught value to a filesystem/syscall failure, which carries an `errno` string in `code`. */
+const isNodeError = (error: unknown): error is NodeJS.ErrnoException => error instanceof Error && 'code' in error
 
-if (VAPID_SUBJECT && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+async function readVapidKeys() {
+  let json: unknown
+  try {
+    json = JSON.parse(await readFile(keysFile, 'utf8'))
+  } catch (e) {
+    if (isNodeError(e) && e.code === 'ENOENT') return null
+    throw new Error('Unreadable push-keys.json', { cause: e })
+  }
+  const result = keysSchema.safeParse(json)
+  if (!result.success) throw new Error(`Invalid push-keys.json:\n${z.prettifyError(result.error)}`)
+  return result.data
+}
+
+const vapidKeys = await readVapidKeys()
+const { VAPID_SUBJECT } = env
+
+/** When keys not included, the app notifications run on SSE alone. */
+export const isPushEnabled = Boolean(vapidKeys && VAPID_SUBJECT)
+
+/** The key browsers pass as `applicationServerKey`; `null` when push isn't configured. */
+export const vapidPublicKey = vapidKeys?.publicKey ?? null
+
+if (vapidKeys && VAPID_SUBJECT) {
+  webpush.setVapidDetails(VAPID_SUBJECT, vapidKeys.publicKey, vapidKeys.privateKey)
 } else {
-  console.warn('Web Push disabled: set VAPID_SUBJECT, VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY to enable it')
+  console.warn('Web Push disabled: add push-keys.json and set VAPID_SUBJECT to enable it')
 }
 
 /**
