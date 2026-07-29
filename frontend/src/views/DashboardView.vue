@@ -6,7 +6,7 @@
       hamburger via v-b-toggle.mobile-sidebar); at/above `sm` Bootstrap renders it inline as the static
       sidebar column
     -->
-    <BOffcanvas id="mobile-sidebar" ref="mobileSidebar" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
+    <BOffcanvas id="mobile-sidebar" v-model="sidebarOpen" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
       <template #default="{ hide }">
         <!-- .d-sm-none hides this row >= sm breakpoint -->
         <div class="d-flex flex-row-reverse d-sm-none">
@@ -64,8 +64,8 @@
 
 <script setup lang="ts">
 /** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
-import { useTemplateRef, watch } from 'vue'
-import type { BOffcanvas } from 'bootstrap-vue-next'
+import { ref, watch } from 'vue'
+import { breakpointsBootstrapV5, useBreakpoints } from '@vueuse/core'
 import CallView from '@/components/call/CallView.vue'
 import ChatThread from '@/components/chat/ChatThread.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
@@ -80,11 +80,15 @@ import SidebarPanel from '@/components/sidebar/SidebarPanel.vue'
 const conversationStore = useConversationStore()
 const contactStore = useContactStore()
 const callStore = useCallStore()
-const mobileSidebar = useTemplateRef<InstanceType<typeof BOffcanvas>>('mobileSidebar')
+
+const breakpoints = useBreakpoints(breakpointsBootstrapV5)
+const isXS = breakpoints.isSmaller('sm')
+/** Drawer state below the `sm` breakpoint; starts open so a fresh load lands on the conversation list. */
+const sidebarOpen = ref(isXS)
 
 /** A send may have created the first thread for a number; drop the mobile sidebar to reveal it. */
 function onMessageSent() {
-  void mobileSidebar.value?.hide()
+  sidebarOpen.value = false
 }
 async function deleteChat() {
   if (!(await confirmDelete('Do you want to delete this chat?', 'chat not deleted'))) return
@@ -98,7 +102,7 @@ useServerEvents()
 watch(
   () => conversationStore.activeRemoteNumber,
   (number: string) => {
-    if (number) void mobileSidebar.value?.hide()
+    if (number) sidebarOpen.value = false
   },
 )
 </script>
