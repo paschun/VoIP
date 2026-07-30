@@ -12,6 +12,7 @@
  */
 import Swal from 'sweetalert2'
 import type { SweetAlertIcon } from 'sweetalert2'
+import { getPerm } from '@/core/push.ts'
 
 const fire = (icon: SweetAlertIcon, text?: string, title?: string) => Swal.fire({ icon, title, text })
 
@@ -19,19 +20,17 @@ export const notifySuccess = (text?: string, title = 'Success') => fire('success
 export const notifyError = (text?: string, title = 'Error') => fire('error', text, title)
 export const notifyInfo = (text?: string, title = '') => fire('info', text, title)
 
-/** Desktop-notify an incoming message, requesting Notification permission on first use. */
+/**
+ * Notify an incoming message. Shown via the service worker first, the only path Android Chrome supports; the constructor is the
+ * fallback for when no worker is registered. Permission is one origin-wide grant covering both, so the page's
+ * `Notification.permission` governs the worker too. Silent unless already granted -- asking needs a user gesture,
+ * which an arriving message is not.
+ */
 export async function showMessageNotification(number: string, message: string): Promise<void> {
-  if (!('Notification' in window)) {
-    void Swal.fire({
-      position: 'top-end',
-      icon: 'warning',
-      title: 'Desktop notifications are not supported in this browser',
-      showConfirmButton: false,
-      timer: 2500,
-    })
-    return
-  }
-  if (Notification.permission === 'denied') return
-  if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return
-  new Notification('Message from ' + number, { body: message, dir: 'auto', icon: '/pwa-192x192.png' })
+  if (getPerm() !== 'granted') return
+  const title = 'Message from ' + number
+  const options: NotificationOptions = { body: message, icon: '/pwa-192x192.png' }
+  const registration = await navigator.serviceWorker.getRegistration()
+  if (registration) await registration.showNotification(title, options)
+  else new Notification(title, options)
 }

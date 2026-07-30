@@ -7,7 +7,7 @@ import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
-import type { UserConfig } from 'vite'
+import type { Plugin, UserConfig } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import pkg from './package.json' with { type: 'json' }
 
@@ -15,8 +15,23 @@ import pkg from './package.json' with { type: 'json' }
 const cssTargets = browserslistToTargets(browserslist(pkg.browserslist))
 const jsTargets = browserslistToEsbuild(pkg.browserslist)
 
+/**
+ * Service worker requires HTTPS or we can add the header
+ */
+const serviceWorkerScope = (): Plugin => ({
+  name: 'service-worker-scope',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url?.startsWith('/src/sw.ts')) res.setHeader('Service-Worker-Allowed', '/')
+      next()
+    })
+  },
+})
+
 export default defineConfig({
   plugins: [
+    serviceWorkerScope(),
     vue(),
     vueDevTools({ launchEditor: 'codium' }),
 

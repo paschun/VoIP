@@ -14,6 +14,9 @@
           <li class="list-group-item cursor-pointer" @click="passwordEnable('mfa')">
             <IBiShieldLock aria-hidden="true" class="mx-2" />MFA Settings
           </li>
+          <li class="list-group-item cursor-pointer" @click="enableMenu('notification')">
+            <IBiBell aria-hidden="true" class="mx-2" />Notification Settings
+          </li>
         </ul>
         <div class="version">{{ meta.version }}</div>
       </div>
@@ -27,6 +30,10 @@
 
       <SettingsSection v-if="activeMenu === 'mfa'" title="MFA Settings" @back="enableMenu('setting')">
         <MfaSetting />
+      </SettingsSection>
+
+      <SettingsSection v-if="activeMenu === 'notification'" title="Notification Settings" @back="enableMenu('setting')">
+        <NotificationSetting />
       </SettingsSection>
 
       <SettingsSection v-if="activeMenu === 'password'" title="Password Verification" @back="enableMenu('setting')">
@@ -52,6 +59,7 @@ import { notifyError } from '@/core/notify.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 import AccountSetting from './account/AccountSetting.vue'
 import EmailSetting from './EmailSetting.vue'
+import NotificationSetting from './NotificationSetting.vue'
 import ProviderSettingModal from './ProviderSettingModal.vue'
 import MfaSetting from './security/MfaSetting.vue'
 import SettingsSection from './SettingsSection.vue'

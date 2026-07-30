@@ -71,7 +71,7 @@ import MessageComposer from '@/components/chat/MessageComposer.vue'
 import { MOBILE_SIDEBAR_ID } from '@/composables/useMobileSidebar.ts'
 import { useServerEvents } from '@/composables/useServerEvents.ts'
 import { confirmDelete } from '@/helper.ts'
-import { initPush } from '@/core/push.ts'
+import { setupPush } from '@/core/push.ts'
 import { useCallStore } from '@/stores/call.ts'
 import { useContactStore } from '@/stores/contact.ts'
 import { useConversationStore } from '@/stores/conversation.ts'
@@ -90,9 +90,9 @@ async function deleteChat() {
   await conversationStore.deleteActiveConversation()
 }
 
-void initPush()
 // Opens the SSE push stream now and closes it when this view unmounts (its scope disposes).
 useServerEvents()
+void setupPush()
 </script>
 
 <style scoped>
