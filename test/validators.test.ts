@@ -79,10 +79,9 @@ describe('mongoose Id path param validator', () => {
       })
     })
 
-    test.skip("standard schema type inference doesn't work", () => {
+    test("standard schema type inference works", () => {
       type Output = StandardSchemaV1.InferOutput<typeof Id>
-      // its close, just needs to support _id: false
-      // expectTypeOf<Output>().toEqualTypeOf<{ id: Types.ObjectId }>()
+      expectTypeOf<Output>().toEqualTypeOf<{ id: Types.ObjectId }>()
       expectTypeOf<Output>().not.toEqualTypeOf<unknown>()
     })
   })
@@ -405,7 +404,7 @@ describe('Profile Validator', () => {
         })
       })
 
-      test.skip("DOESN'T work with mongoose model", async () => {
+      test("works with mongoose model", async () => {
         const payload = { profile: '7'.repeat(24) }
         // type SOut = StandardSchemaV1.InferOutput<typeof ProfileValidator>
 
@@ -419,7 +418,7 @@ describe('Profile Validator', () => {
             // hook's `result.data` is typed to validator input, not output:
             // https://github.com/honojs/middleware/blob/main/packages/standard-validator/src/index.ts#L140
             expectTypeOf(result.data).not.toEqualTypeOf<{ profile: string }>()
-            // expectTypeOf(result.data).toEqualTypeOf<{ profile: Types.ObjectId }>()
+            expectTypeOf(result.data).toEqualTypeOf<{ profile: Types.ObjectId }>()
             expectTypeOf(result.data).not.toEqualTypeOf<unknown>()
           }),
         )
@@ -432,7 +431,7 @@ describe('Profile Validator', () => {
       })
     })
 
-    test.skip('with no hook', async () => {
+    test('with no hook', async () => {
       const profileId = 'b'.repeat(24)
       const payload = { profile: profileId }
 
@@ -445,7 +444,7 @@ describe('Profile Validator', () => {
         expect(valid).toEqual({ profile: new Types.ObjectId(profileId) })
         expect(valid).not.toHaveProperty('_id') // type says _id is on the obj but it isn't really
         expectTypeOf(valid).not.toEqualTypeOf<{ profile: string }>()
-        // expectTypeOf(valid).toEqualTypeOf<{ profile: Types.ObjectId }>()
+        expectTypeOf(valid).toEqualTypeOf<{ profile: Types.ObjectId }>()
         expectTypeOf(valid).not.toEqualTypeOf<unknown>()
 
         return c.text('ok', 200)
