@@ -1,8 +1,17 @@
 import crypto from 'node:crypto'
-import fs from 'node:fs'
-import { format } from 'date-fns'
+import { mkdir, readdir, rm, stat } from 'node:fs/promises'
 import { HTTPException } from 'hono/http-exception'
+import { format, subDays } from 'date-fns'
 import { env } from '../core/env.ts'
+
+/** Root of the dated upload folders, relative to the server's cwd. */
+export const UPLOAD_ROOT = 'uploads'
+/** An upload folder is pruned once nothing has been written to it for this long. */
+export const UPLOAD_RETENTION_DAYS = 7
+/** date-fns format for the per-day upload folder name. */
+export const UPLOAD_FOLDER_FORMAT = 'yyyyMMdd'
+/** date-fns format used to build unique, human-readable Telnyx resource names (down to the minute). */
+export const TIMESTAMP_FORMAT = 'yyyyMMddHHmm'
 
 /**
  * Return `value` if present, else throw 409. An absent provider credential/id means the profile was never configured
@@ -14,11 +23,6 @@ export function requireConfigured<T>(value: T | null | undefined, provider: 'twi
   }
   return value
 }
-
-/** date-fns format for the per-day upload folder name. */
-export const UPLOAD_FOLDER_FORMAT = 'yyyyMMdd'
-/** date-fns format used to build unique, human-readable Telnyx resource names (down to the minute). */
-export const TIMESTAMP_FORMAT = 'yyyyMMddHHmm'
 
 /** Join path segments into one URL, trimming the slashes at each seam so there are no doubles.
  * The first segment keeps any leading slash and the last keeps any trailing slash.
@@ -39,8 +43,24 @@ export const combineURLs = (...urls: string[]): string => {
  * checks attachment ownership.
  */
 export const prepareUploadTarget = async (ext: string): Promise<{ mediaPath: string; fullUrl: string }> => {
-  const dir = `uploads/${format(new Date(), UPLOAD_FOLDER_FORMAT)}`
-  await fs.promises.mkdir(dir, { recursive: true })
+  const dir = `${UPLOAD_ROOT}/${format(new Date(), UPLOAD_FOLDER_FORMAT)}`
+  await mkdir(dir, { recursive: true })
   const name = `${crypto.randomBytes(24).toString('hex')}${ext}`
   return { mediaPath: combineURLs(dir, name), fullUrl: combineURLs(env.BASE_URL, dir, name) }
+}
+
+/**
+ * Delete every upload folder untouched for {@link UPLOAD_RETENTION_DAYS}, returning the names removed. Age comes from
+ * the folder's mtime rather than its name, so {@link UPLOAD_FOLDER_FORMAT} can change freely. Loose files in the root
+ * are left alone.
+ */
+export const pruneOldUploads = async (): Promise<string[]> => {
+  const cutoff = subDays(new Date(), UPLOAD_RETENTION_DAYS)
+  const entries = await readdir(UPLOAD_ROOT, { withFileTypes: true }).catch(() => []) // nothing uploaded yet
+  const folders = await Promise.all(
+    entries.filter((e) => e.isDirectory()).map(async ({ name }) => ({ name, mtime: (await stat(`${UPLOAD_ROOT}/${name}`)).mtime })),
+  )
+  const stale = folders.filter(({ mtime }) => mtime < cutoff).map(({ name }) => name)
+  await Promise.all(stale.map((name) => rm(`${UPLOAD_ROOT}/${name}`, { recursive: true, force: true })))
+  return stale
 }

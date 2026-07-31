@@ -1,13 +1,12 @@
-import fs from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { bodyLimit } from 'hono/body-limit'
 import { HTTPException } from 'hono/http-exception'
-import { format, subDays } from 'date-fns'
 import cron from 'node-cron'
 import type { ApiError, Ok } from '../contracts/envelope.ts'
 import { uploadHeaders, CONTENT_TYPE_TO_EXT, type UploadHeaders } from '../contracts/media.ts'
 import { factory } from '../core/factory.ts'
 import type { HeaderCtx } from '../core/factory.ts'
-import { prepareUploadTarget, UPLOAD_FOLDER_FORMAT } from '../helper/common.helper.ts'
+import { prepareUploadTarget, pruneOldUploads } from '../helper/common.helper.ts'
 import { auth } from '../middleware/auth.ts'
 import { headerParams } from '../middleware/validate.ts'
 import Media from '../model/media.model.ts'
@@ -31,27 +30,16 @@ async function uploadMedia(c: HeaderCtx<UploadHeaders>) {
   if (bytes.length === 0) throw new HTTPException(400, { message: 'No file uploaded!' })
 
   const { mediaPath, fullUrl } = await prepareUploadTarget(ext)
-  await fs.promises.writeFile(mediaPath, bytes)
+  await writeFile(mediaPath, bytes)
 
   // Just the on-disk path is stored in mongo, but the full url is returned to the client.
   await Media.create({ media: mediaPath, user: c.get('user').id })
   return c.json({ data: { media: fullUrl } } satisfies Ok, 200)
 }
 
-// todo: remove all folders older than 7 days
-function pruneOldUploads() {
-  const startdate = format(subDays(new Date(), 7), UPLOAD_FOLDER_FORMAT)
-  try {
-    fs.rmSync(`uploads/${startdate}`, { recursive: true })
-    console.log('removed upload folder:', startdate)
-  } catch {
-    console.error('folder not found:', startdate)
-  }
-}
-
-cron.schedule('0 1 * * *', () => {
-  console.log('running a cron job daily at 01:00 to delete mms folder older than 7 days')
-  pruneOldUploads()
+cron.schedule('0 1 * * *', async () => {
+  const removed = await pruneOldUploads()
+  if (removed.length > 0) console.log('removed upload folders:', removed.join(', '))
 })
 
 // ── Route handler chain (auth + 10 MB body limit + handler), spread into the Hono group in media.route.ts ──────────
