@@ -18,7 +18,7 @@ function registerWorker(): Promise<ServiceWorkerRegistration> {
   const scope = appdir ? `/${appdir}/` : '/'
   const url = import.meta.env.DEV ? '/src/sw.ts' : '/sw.js'
   const registration = navigator.serviceWorker.register(url, { type: 'module', scope })
-  console.log('attempted to register service worker', registration)
+  console.log('attempting to register service worker', registration)
   return registration
 }
 

@@ -65,7 +65,7 @@ export async function sendPushToUser(userId: string, message: PushMessage) {
   await Promise.all(
     subs.map(async ({ _id, endpoint, keys }) => {
       try {
-        await webpush.sendNotification({ endpoint, keys }, payload)
+        await webpush.sendNotification({ endpoint, keys }, payload, { headers: { 'User-Agent': 'voipsuite' } })
       } catch (e) {
         console.error('Web Push send failed', e)
         if (e instanceof WebPushError && DEAD_SUBSCRIPTION.has(e.statusCode)) {
