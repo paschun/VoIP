@@ -5,6 +5,21 @@
 import Swal from 'sweetalert2'
 import { notifyInfo } from '@/core/notify.ts'
 
+function deviceClass() {
+  const ua = navigator.userAgent
+  const touch = navigator.maxTouchPoints > 1
+
+  if (/iPhone|iPod/.test(ua) || /Android.*Mobile/.test(ua)) return 'phone'
+  // iPadOS reports a Mac UA in desktop mode; touch points is the only tell.
+  if (/iPad/.test(ua) || (/Macintosh/.test(ua) && touch)) return 'tablet'
+  if (/Android/.test(ua) && !/Mobile/.test(ua)) return 'tablet'
+  if (touch && !matchMedia('(pointer: fine)').matches) return 'tablet'
+  return 'desktop'
+}
+
+/** Phone or tablet. Web Push is used only here -- desktop notifies from the page off the SSE stream. */
+export const isMobile = () => deviceClass() !== 'desktop'
+
 /**
  * Confirm/deny "delete X?" dialog. Resolves `true` only on confirm; a deny shows the `denyMessage` toast; a dismiss
  * (esc/backdrop) resolves `false` silently.

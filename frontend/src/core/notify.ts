@@ -12,7 +12,14 @@
  */
 import Swal from 'sweetalert2'
 import type { SweetAlertIcon } from 'sweetalert2'
-import { getPerm } from '@/core/push.ts'
+
+/** This origin's notification permission; one grant covers both the page and the service worker. */
+export const getNotifPerm = () => {
+  // iOS Safari only defines `Notification` once installed to the home screen. Read off `window`: a bare reference
+  // to an undeclared global throws ReferenceError.
+  if (!window.Notification) return 'denied'
+  return Notification.permission
+}
 
 const fire = (icon: SweetAlertIcon, text?: string, title?: string) => Swal.fire({ icon, title, text })
 
@@ -27,7 +34,7 @@ export const notifyInfo = (text?: string, title = '') => fire('info', text, titl
  * which an arriving message is not.
  */
 export async function showMessageNotification(number: string, message: string): Promise<void> {
-  if (getPerm() !== 'granted') return
+  if (getNotifPerm() !== 'granted') return
   const title = 'Message from ' + number
   const options: NotificationOptions = { body: message, icon: '/pwa-192x192.png' }
   const registration = await navigator.serviceWorker.getRegistration()

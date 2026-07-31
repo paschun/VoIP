@@ -1,15 +1,11 @@
+import { getNotifPerm } from '@/core/notify.ts'
 import { client, request } from '@/core/rpc.client.ts'
-
-export const getPerm = () => {
-  // iOS Safari only defines `Notification` once installed to the home screen. Read off `window`: a bare reference
-  // to an undeclared global throws ReferenceError.
-  if (!window.Notification) return 'denied'
-  return Notification.permission
-}
+import { isMobile } from '@/helper.ts'
 
 /**
  * Register the service worker, which both receives Web Push and is the only way to raise a notification on Android.
  * Vite bundles the worker to `/sw.js` on build only, so dev registers the source file the dev server serves instead.
+ * Mobile only -- desktop notifies from the page instead.
  */
 function registerWorker(): Promise<ServiceWorkerRegistration> {
   // Scope the worker to the app directory (the first path segment) so `registration.scope` is a URL it can open on
@@ -56,11 +52,14 @@ export async function getPushStatus(): Promise<PushStatus> {
   }
 }
 
-/** Ask for notification permission, then bring this browser's push subscription up to date. */
+/**
+ * Ask for notification permission, then bring this browser's push subscription up to date. Web Push is mobile-only:
+ * desktop gets the same frames over SSE while a page is open, which is the only window in which it can notify.
+ */
 export async function requestAndSubscribe(): Promise<NotificationPermission> {
-  let perm = getPerm()
+  let perm = getNotifPerm()
   if (perm === 'default') perm = await Notification.requestPermission() // only request if its default
-  if (perm === 'granted') await registerWorker().then(subscribeToPush)
+  if (perm === 'granted' && isMobile()) await registerWorker().then(subscribeToPush)
   return perm
 }
 

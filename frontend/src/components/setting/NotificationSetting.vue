@@ -25,20 +25,22 @@
             <span v-if="lastSseEventAt" class="text-muted ms-2">last event {{ lastSseEventAt.toLocaleTimeString() }}</span>
           </dd>
 
-          <dt class="col-5">Service worker</dt>
-          <dd class="col-7 mb-1"><span class="badge" :class="workerBadge.variant">{{ workerBadge.text }}</span></dd>
+          <template v-if="mobile">
+            <dt class="col-5">Service worker</dt>
+            <dd class="col-7 mb-1"><span class="badge" :class="workerBadge.variant">{{ workerBadge.text }}</span></dd>
 
-          <dt class="col-5">Web push</dt>
-          <dd class="col-7 mb-1"><span class="badge" :class="pushBadge.variant">{{ pushBadge.text }}</span></dd>
+            <dt class="col-5">Web push</dt>
+            <dd class="col-7 mb-1"><span class="badge" :class="pushBadge.variant">{{ pushBadge.text }}</span></dd>
 
-          <template v-if="status.endpoint">
-            <dt class="col-5">Push service</dt>
-            <dd class="col-7 mb-1">{{ pushServiceHost }}</dd>
+            <template v-if="status.endpoint">
+              <dt class="col-5">Push service</dt>
+              <dd class="col-7 mb-1">{{ pushServiceHost }}</dd>
 
-            <dt class="col-5">Full Endpoint</dt>
-            <dd class="col-7 mb-1">
-              <code class="d-inline-block w-100 align-bottom" :title="status.endpoint">{{ status.endpoint }}</code>
-            </dd>
+              <dt class="col-5">Full Endpoint</dt>
+              <dd class="col-7 mb-1">
+                <code class="d-inline-block w-100 align-bottom" :title="status.endpoint">{{ status.endpoint }}</code>
+              </dd>
+            </template>
           </template>
         </dl>
       </div>
@@ -51,9 +53,10 @@ import { computed, onMounted, ref } from 'vue'
 import type { EventSourceStatus } from '@vueuse/core'
 import ToggleSwitch from '@/components/shared/ToggleSwitch.vue'
 import { lastSseEventAt, sseStatus } from '@/composables/useServerEvents.ts'
-import { notifyError } from '@/core/notify.ts'
+import { getNotifPerm, notifyError, notifyInfo } from '@/core/notify.ts'
 import { client, request } from '@/core/rpc.client.ts'
-import { disablePush, getPerm, getPushStatus, requestAndSubscribe, type PushStatus } from '@/core/push.ts'
+import { disablePush, getPushStatus, requestAndSubscribe, type PushStatus } from '@/core/push.ts'
+import { isMobile } from '@/helper.ts'
 
 type Badge = { text: string; variant: string }
 
@@ -63,7 +66,9 @@ const SSE_BADGES: Record<EventSourceStatus, Badge> = {
   CLOSED: { text: 'disconnected', variant: 'bg-danger' },
 }
 
-const permission = ref<NotificationPermission>(getPerm())
+const mobile = isMobile()
+
+const permission = ref<NotificationPermission>(getNotifPerm())
 const enabled = ref(false)
 const status = ref<PushStatus>({})
 const vapidConfigured = ref(false)
@@ -84,15 +89,20 @@ const workerBadge = computed<Badge>(() => {
 
 const pushServiceHost = computed(() => (status.value.endpoint ? new URL(status.value.endpoint).host : ''))
 
-/** The switch tracks the push subscription itself, so it survives a reload and reflects a revoke from anywhere. */
+/**
+ * On mobile the switch tracks the push subscription itself, so it survives a reload and reflects a revoke from
+ * anywhere; desktop has no subscription, so the browser permission is all there is to track.
+ */
 async function refresh() {
   status.value = await getPushStatus()
-  enabled.value = !!status.value.endpoint
+  permission.value = getNotifPerm()
+  enabled.value = mobile ? !!status.value.endpoint : permission.value === 'granted'
 }
 
 // this component is rendered with v-if so this runs each time the component is opened
 onMounted(async () => {
   await refresh()
+  if (!mobile) return
   const { data: publicKey } = await request(client.api.push.key.$get())
   vapidConfigured.value = !!publicKey
 })
@@ -102,6 +112,8 @@ async function toggle() {
   try {
     if (!enabled.value) {
       await disablePush()
+      // Nothing to revoke on desktop -- granted permission is the whole state, and only the browser can withdraw it.
+      if (!mobile) void notifyInfo('Turn notifications off in your browser site permissions')
       return
     }
     permission.value = await requestAndSubscribe()
