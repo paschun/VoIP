@@ -42,7 +42,7 @@ async function uploadMedia(c: HeaderCtx<UploadHeaders>) {
 function pruneOldUploads() {
   const startdate = format(subDays(new Date(), 7), UPLOAD_FOLDER_FORMAT)
   try {
-    fs.rmSync('./uploads/' + startdate, { recursive: true })
+    fs.rmSync(`uploads/${startdate}`, { recursive: true })
     console.log('removed upload folder:', startdate)
   } catch {
     console.error('folder not found:', startdate)

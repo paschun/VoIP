@@ -69,11 +69,15 @@ function hideImage() {
   zoomImage.value = ''
 }
 
-/** MMS media is `string[]`, but legacy rows can hold a JSON string; normalize so v-for never walks a string char-by-char. */
+/**
+ * `media` is `string[]`, but legacy rows hold the whole array JSON-encoded in one string. A leading `[` can't begin a
+ * URL scheme, so as a `src` it is a relative reference the browser resolves against the current route -- and those
+ * uploads are gone from disk anyway, so drop it.
+ */
 function mediaUrls(media: string | string[] | undefined): string[] {
-  if (Array.isArray(media)) return media
-  if (!media || media === '[]') return []
-  return [media]
+  if (!media) return []
+  const list = Array.isArray(media) ? media : [media]
+  return list.filter((url) => URL.canParse(url))
 }
 
 // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the thread isn't

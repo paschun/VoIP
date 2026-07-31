@@ -34,11 +34,13 @@ export const combineURLs = (...urls: string[]): string => {
 
 /**
  * Ensure today's `uploads/<date>/` dir exists and reserve a unique target for a file with `ext` (leading dot). Returns
- * the on-disk path (`./uploads/...`, what we store) and its public URL. Shared by the raw upload and the MMS download.
+ * the on-disk path (`uploads/...`, what we store) and its public URL. Shared by the raw upload and the MMS download.
+ * The path must stay free of a `./` prefix: it is matched against the pathname of an upload URL when an outgoing MMS
+ * checks attachment ownership.
  */
 export const prepareUploadTarget = async (ext: string): Promise<{ mediaPath: string; fullUrl: string }> => {
   const dir = `uploads/${format(new Date(), UPLOAD_FOLDER_FORMAT)}`
-  await fs.promises.mkdir(`./${dir}`, { recursive: true })
+  await fs.promises.mkdir(dir, { recursive: true })
   const name = `${crypto.randomBytes(24).toString('hex')}${ext}`
-  return { mediaPath: combineURLs('./', dir, name), fullUrl: combineURLs(env.BASE_URL, dir, name) }
+  return { mediaPath: combineURLs(dir, name), fullUrl: combineURLs(env.BASE_URL, dir, name) }
 }
