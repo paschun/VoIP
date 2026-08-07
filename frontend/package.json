@@ -24,6 +24,7 @@
     "@telnyx/webrtc": "^2.27.1",
     "@twilio/voice-sdk": "^2.18.3",
     "@vueuse/core": "^14.3.0",
+    "@vueuse/router": "^14.4.0",
     "bootstrap": "^5.3.8",
     "bootstrap-vue-next": "<1",
     "cbor-x": "^1.6.4",

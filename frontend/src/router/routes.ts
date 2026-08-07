@@ -12,7 +12,9 @@ export interface RouteNamedMap {
   root: RouteRecordInfo<'root', '/', Record<never, never>, Record<never, never>>
   login: RouteRecordInfo<'login', '/:appdirectory/', { appdirectory: string }, { appdirectory: string }>
   signup: RouteRecordInfo<'signup', '/:appdirectory/signup', { appdirectory: string }, { appdirectory: string }>
-  dashboard: RouteRecordInfo<'dashboard', '/:appdirectory/dashboard', { appdirectory: string }, { appdirectory: string }>
+  // `number` is the open conversation's remote phone number; raw omit/'' clears it, normalized '' means none open
+  dashboard: RouteRecordInfo<'dashboard', '/:appdirectory/dashboard/:number?',
+    { appdirectory: string; number?: string }, { appdirectory: string; number: string }>
   'not-found': RouteRecordInfo<'not-found', '/:pathMatch(.*)*', { pathMatch: string | string[] }, { pathMatch: string[] }>
 }
 
@@ -50,7 +52,7 @@ const router = createRouter({
       component: () => import('@/views/SignupView.vue'),
     },
     {
-      path: '/:appdirectory/dashboard',
+      path: '/:appdirectory/dashboard/:number?',
       name: 'dashboard',
       meta: { requiresAuth: true },
       component: () => import('@/views/DashboardView.vue'),

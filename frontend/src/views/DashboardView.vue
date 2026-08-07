@@ -64,10 +64,11 @@
 
 <script setup lang="ts">
 /** Main messaging view: the sidebar (conversation list), the chat thread + composer, the compose SMS/MMS modal, and the call tab. */
-import { breakpointsBootstrapV5, useBreakpoints } from '@vueuse/core'
+import { breakpointsBootstrapV5, onKeyStroke, useBreakpoints } from '@vueuse/core'
 import CallModal from '@/components/call/CallModal.vue'
 import ChatThread from '@/components/chat/ChatThread.vue'
 import MessageComposer from '@/components/chat/MessageComposer.vue'
+import { useConversationRoute } from '@/composables/useConversationRoute.ts'
 import { MOBILE_SIDEBAR_ID } from '@/composables/useMobileSidebar.ts'
 import { useServerEvents } from '@/composables/useServerEvents.ts'
 import { confirmDelete } from '@/helper.ts'
@@ -85,11 +86,23 @@ const breakpoints = useBreakpoints(breakpointsBootstrapV5)
 // Below `sm` the drawer starts open, so a fresh load lands on the conversation list.
 const isXS = breakpoints.isSmaller('sm')
 
+/** True while a BVN modal/offcanvas/dropdown or a swal dialog is open (each closes itself on Escape). */
+function hasOpenOverlay(): boolean {
+  return document.querySelector('.modal.show, .offcanvas.show, .dropdown-menu.show, .swal2-popup') !== null
+}
+
+// Escape closes the open thread, unless an overlay owns the key.
+onKeyStroke('Escape', (e) => {
+  if (e.isComposing || hasOpenOverlay()) return
+  conversationStore.clearActiveConversation()
+})
+
 async function deleteChat() {
   if (!(await confirmDelete('Do you want to delete this chat?', 'chat not deleted'))) return
   await conversationStore.deleteActiveConversation()
 }
 
+useConversationRoute()
 // Opens the SSE push stream now and closes it when this view unmounts (its scope disposes).
 useServerEvents()
 void setupPush()
