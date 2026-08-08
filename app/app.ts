@@ -5,6 +5,7 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { bodyLimit } from 'hono/body-limit'
 import type { ApplyGlobalResponse } from 'hono/client'
 import { compress } from 'hono/compress'
+import { etag } from 'hono/etag'
 import { secureHeaders } from 'hono/secure-headers'
 import type { ApiError } from './contracts/envelope.ts'
 import { MAX_UPLOAD_BYTES } from './controller/media.controller.ts'
@@ -14,8 +15,9 @@ import { env } from './core/env.ts'
 import { onError } from './core/error.ts'
 import { factory } from './core/factory.ts'
 import { eventRoutes } from './core/sse.ts'
-import { webManifest } from './helper/manifest.helper.ts'
+import { manifestPath, webManifest } from './helper/manifest.helper.ts'
 import { appDir, appDirectoryGate } from './middleware/app-directory.ts'
+import { cacheControl } from './middleware/cache-control.ts'
 import { rateLimit } from './middleware/rate-limit.ts'
 import { authRoutes } from './routes/auth.route.ts'
 import { callRoutes } from './routes/call.route.ts'
@@ -54,40 +56,7 @@ if (env.HTTPS) {
 // Core middleware
 // ---------------
 app.use(compress())
-
-// Cache headers (set after the handler so they win), keyed on whether a URL's bytes can change.
-
-/**
- * a cached `/sw.js` stalls the mechanism that ships worker updates, 
- * `/` redirects into the appdir or gets a 404, depending on APPDIRECTORY -- never index.html
- */
-const NO_STORE = new Set(['/', '/index.html', '/sw.js'])
-/** Generated below; a changed directory changes this URL too, so a stale copy is orphaned rather than served. */
-const manifestPath = `/${appDir}/manifest.json`
-const STABLE = new Set([
-  '/favicon.ico',
-  '/chat-cat.svg',
-  '/apple-touch-icon-180x180.png',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/maskable-icon-512x512.png',
-  manifestPath,
-])
-/** Content-hashed builds and write-once provider media, so a URL's bytes never change. */
-const IMMUTABLE = ['/static/', '/uploads/']
-
-app.use('*', async (c, next) => {
-  await next()
-  const { method, path } = c.req
-  const cache =
-    method !== 'GET' || NO_STORE.has(path) ? 'no-store'
-    : IMMUTABLE.some((prefix) => path.startsWith(prefix)) ? 'public, max-age=31536000, immutable'
-    // A week rather than a year, since these URLs aren't content-addressed and a replaced icon still has to propagate.
-    : STABLE.has(path) ? 'public, max-age=604800'
-    // The real catch-all, and it must stay no-store: the SPA fallback serves index.html for *any* unmatched path. API JSON lands here too.
-    : 'no-store'
-  c.header('Cache-Control', cache)
-})
+app.use('*', cacheControl)
 
 // Security headers. Only two directives are provider-specific: connect-src allows wss: for the
 // Twilio and Telnyx WebRTC signaling sockets, and media-src allows sdk.twilio.com for Twilio's hosted ringtone/DTMF
@@ -168,12 +137,17 @@ export type AppType = ApplyGlobalResponse<typeof routes, ApiErrors>
 // it's a plain `app.use`, not part of the `routes` chain, so `AppType`/RPC inference is untouched.
 app.use('*', appDirectoryGate(errorPage))
 
-// The PWA manifest is generated, not a build asset, so start_url/scope track the configured directory. Serving it only
-// at the directory's own path keeps it from disclosing that directory; index.html links it relatively to match.
-app.get(manifestPath, (c) => c.json(webManifest(appDir), 200, { 'Content-Type': 'application/manifest+json' }))
-
 // Uploaded media, then the built frontend; any unmatched path serves index.html so the Vue router handles deep links.
 app.use('/uploads/*', serveStatic({ root: './' }))
+
+// ETag/304 revalidation for the static tier below (manifest, icons, sw.js, hashed assets, SPA HTML). Placed after the
+// API mounts so it never hashes JSON/SSE bodies, and after /uploads so immutable multi-MB media isn't buffered for a
+// digest. Weak: compress() encodes the body downstream of the digest, so the tag can't promise byte-identity.
+app.use('*', etag({ weak: true }))
+
+// The PWA manifest is generated, not a build asset, so start_url/scope track the configured directory. Serving it only
+// at the directory's own path keeps it from disclosing that directory; index.html links it relatively to match.
+app.get(manifestPath(appDir), (c) => c.json(webManifest(appDir), 200, { 'Content-Type': 'application/manifest+json' }))
 // Only mount the built-frontend handlers when a build exists; in dev the Vite server serves the SPA and proxies /api,
 // so skipping them here avoids serveStatic's "root path not found" warning on every request.
 if (existsSync('./frontend/dist')) {

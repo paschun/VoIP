@@ -1,3 +1,5 @@
+export const manifestPath = (appDir: string) => `/${appDir}/manifest.json`
+
 /**
  * PWA manifest for the SPA, built per-deploy so `start_url` lands on `appDir` (the configured entry segment)
  * instead of a build-time constant.
