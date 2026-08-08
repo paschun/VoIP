@@ -70,14 +70,14 @@ function hideImage() {
 }
 
 /**
- * `media` is `string[]`, but legacy rows hold the whole array JSON-encoded in one string. A leading `[` can't begin a
- * URL scheme, so as a `src` it is a relative reference the browser resolves against the current route -- and those
- * uploads are gone from disk anyway, so drop it.
+ * `media` is `string[]` of absolute upload URLs, but legacy rows hold other shapes: the whole array JSON-encoded in
+ * one string, or a dead `blob:` object-URL handle. Only http(s) is renderable -- anything else either resolves
+ * against the current route or trips the img-src CSP, and those uploads are gone from disk anyway.
  */
 function mediaUrls(media: string | string[] | undefined): string[] {
   if (!media) return []
   const list = Array.isArray(media) ? media : [media]
-  return list.filter((url) => URL.canParse(url))
+  return list.filter((url) => URL.canParse(url) && /^https?:$/.test(new URL(url).protocol))
 }
 
 // Scroll only after Vue has flushed the new messages into the DOM; before nextTick the thread isn't
