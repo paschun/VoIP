@@ -25,6 +25,7 @@ async function notify({ number, message }: PushMessage) {
 
 self.addEventListener('push', (event) => {
   const frame: unknown = event.data?.json()
+  console.log('[sw] push', frame)
   // could import shared zod `pushMessage` schema, but adds a 64kb dependency
   // so do local type narrowing instead
   if (isPushMessage(frame)) event.waitUntil(notify(frame))
