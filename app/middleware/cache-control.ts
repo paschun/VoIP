@@ -1,13 +1,12 @@
 import { factory } from '../core/factory.ts'
 import { manifestPath } from '../helper/manifest.helper.ts'
-import { appDir } from './app-directory.ts'
+import { appDir, isPassthrough } from './app-directory.ts'
 
 // Cache-Control tiers, keyed on whether a URL's bytes can change. Applied after the handler so the header wins.
 // no-store forbids keeping a copy
 // no-cache allows keeping a copy but requires revalidating it
 
-/** `/` redirects into the appdir or gets a 404, depending on APPDIRECTORY -- never index.html. */
-const NO_STORE = new Set(['/', '/index.html'])
+// API routes are no-store
 /** Stored but revalidated on every fetch: SW update checks must see new bytes immediately; unchanged checks 304 via ETag. */
 const NO_CACHE = new Set(['/sw.js'])
 /** A week rather than a year, since these URLs aren't content-addressed and a replaced icon still has to propagate.
@@ -25,16 +24,20 @@ const STABLE = new Set([
 /** Content-hashed builds and write-once provider media, so a URL's bytes never change. */
 const IMMUTABLE = ['/static/', '/uploads/']
 
-/**
- * Sets the Cache-Control tier for every response. The catch-all must stay no-store: the SPA fallback serves
- * index.html for *any* unmatched path, and API JSON lands there too.
- */
+/** Sets the Cache-Control tier for every response. The fallthrough must stay no-store -- per-user API JSON lands there. */
 export const cacheControl = factory.createMiddleware(async (c, next) => {
   await next()
   const { method, path } = c.req
+  // What the gate doesn't pass through is a navigation, answered with HTML -- the SPA entry or the error page:
+  // impersonal bytes pointing at hashed assets, so they revalidate like sw.js instead of being withheld from disk.
+  // Request-keyed, because etag's 304 drops the response's Content-Type.
+  const isNavigation = !isPassthrough(path)
+  // Only a served representation earns a freshness tier; a 404 under /static/ would otherwise be pinned for a year.
+  // `res.ok` === 2xx
+  const served = c.res.ok || c.res.status === 304
   const cache =
-    method !== 'GET' || NO_STORE.has(path) ? 'no-store'
-    : NO_CACHE.has(path) ? 'no-cache'
+    method !== 'GET' || !served ? 'no-store'
+    : NO_CACHE.has(path) || isNavigation ? 'no-cache'
     : IMMUTABLE.some((prefix) => path.startsWith(prefix)) ? 'public, max-age=31536000, immutable'
     : STABLE.has(path) ? 'public, max-age=604800'
     : 'no-store'

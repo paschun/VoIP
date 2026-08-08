@@ -18,7 +18,7 @@ export const appDir = (configured ?? 'voip').toLowerCase()
 const redirectRoot = configured === undefined
 
 /** True for requests that must never be gated: the API, uploads, socket.io, and any real asset file (has an extension). */
-function isPassthrough(path: string): boolean {
+export function isPassthrough(path: string): boolean {
   if (path.startsWith('/api/') || path.startsWith('/uploads/')) return true
   const file = path.split('/').pop() ?? ''
   // The SPA entry is a navigation target despite its extension. Passing it through would hand out the login HTML at

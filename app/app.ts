@@ -152,6 +152,10 @@ app.get(manifestPath(appDir), (c) => c.json(webManifest(appDir), 200, { 'Content
 // so skipping them here avoids serveStatic's "root path not found" warning on every request.
 if (existsSync('./frontend/dist')) {
   app.use('/*', serveStatic({ root: './frontend/dist' })) // static assets
+  // Asset prefixes must 404 instead of reaching the fallback: HTML at a .js URL is the classic module-load failure,
+  // and the immutable tier would pin that wrong body to the URL for a year.
+  app.get('/static/*', (c) => c.notFound())
+  app.get('/uploads/*', (c) => c.notFound())
   app.get('*', serveStatic({ path: './frontend/dist/index.html' })) // SPA fallback
 }
 
