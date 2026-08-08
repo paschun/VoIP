@@ -314,7 +314,7 @@ a {
   font-size: 0.8em;
   margin-top: 1.5rem;
   text-align: center;
-  color: var(--accent-color);
+  color: var(--bs-secondary-color);
 }
 .drop-down .dropdown-toggle::after {
   display: none;
@@ -365,7 +365,7 @@ a {
   font-weight: 800;
   letter-spacing: 0.8rem;
   width: 200px;
-  color: var(--accent-color);
+  color: var(--text-primary-color);
   border-radius: 5px;
   font-size: 1.5em;
 }

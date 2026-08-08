@@ -51,7 +51,7 @@ function onContactSelected(option: SelectOptionData<string>) {
 :deep([data-select-popover]) {
   --vs-background-color: var(--background-color-secondary);
   --vs-text-color: var(--text-primary-color);
-  --vs-placeholder-color: var(--accent-color);
+  --vs-placeholder-color: var(--bs-secondary-color);
   --vs-menu-background-color: var(--background-color-primary);
   --vs-option-hover-background-color: var(--contact-hover);
   --vs-option-focused-background-color: var(--contact-hover);
