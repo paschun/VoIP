@@ -5,7 +5,7 @@
     track-color="var(--text-primary-color)"
     knob-color="var(--background-color-primary)"
   >
-    <template #on><span>🌙</span></template>
+    <template #on><span>🌚</span></template>
     <template #off><span>☀️</span></template>
   </ToggleSwitch>
 </template>

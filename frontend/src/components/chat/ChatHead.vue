@@ -63,12 +63,6 @@ async function deleteChat() {
   display: flex;
   padding-right: 25px;
 }
-.chat-head i {
-  color: #aaaaaa;
-  width: 60px;
-  margin: auto;
-  text-align: center;
-}
 .chat-name {
   width: 100%;
   margin: auto;
