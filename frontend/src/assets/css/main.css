@@ -168,15 +168,10 @@ section {
   display: flex;
 }
 
-.search i {
-  width: 60px;
-}
-
-/* Icon color/centering for the left-side search bar and the chat composer (`.wrap-message` lives in Dashboard.vue). */
-.search i,
-.wrap-message i {
+.search svg {
+  flex: none;
+  margin: auto 0.75rem;
   color: #aaaaaa;
-  text-align: center;
 }
 
 .input-search {
@@ -229,18 +224,6 @@ section {
 }
 
 /* ------ CHAT ------ */
-.content {
-  margin: 0.5em 0;
-  line-height: 120%;
-  font-size: 0.9em;
-  overflow-wrap: break-word;
-}
-
-.content img {
-  width: 100%;
-  border-radius: 7px;
-}
-
 .time {
   font-size: 0.6em;
   text-align: right;

@@ -31,12 +31,8 @@
         <div>
           <div class="wrap-search">
             <div class="search">
-              <div class="d-flex flex-row">
-                <div>&nbsp;&nbsp;<IBiSearch />&nbsp;&nbsp;</div>
-                <div>
-                  <input v-model="query" type="text" class="input-search" placeholder="Search">
-                </div>
-              </div>
+              <IBiSearch aria-hidden="true" />
+              <input v-model="query" type="text" class="input-search" placeholder="Search">
             </div>
           </div>
           <ul class="list-group">

@@ -2,7 +2,7 @@
   <div class="fill-column">
     <div class="wrap-search">
       <div class="search">
-        <i class="fa fa-search fa" aria-hidden="true"></i>
+        <IBiSearch aria-hidden="true" />
         <input v-model="query" type="text" class="input-search" placeholder="Search">
       </div>
     </div>

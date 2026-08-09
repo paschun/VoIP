@@ -126,6 +126,18 @@ watch(
   position: relative;
 }
 
+.content {
+  margin: 0.5em 0;
+  line-height: 120%;
+  font-size: 0.9em;
+  overflow-wrap: break-word;
+}
+
+.content img {
+  width: 100%;
+  border-radius: 7px;
+}
+
 .you {
   background: var(--chat-you);
   margin: 0 auto 10px 0;
