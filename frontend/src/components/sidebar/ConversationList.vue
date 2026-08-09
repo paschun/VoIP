@@ -132,7 +132,8 @@ onUnmounted(() => {
 }
 .active-chat {
   background-color: var(--contact-highlighted);
-  border-right: 3px solid var(--theme-orange);
+  /* Shadow, not a border: it paints the bar without taking layout width, so selecting never shifts the row's content. */
+  box-shadow: inset -3px 0 0 var(--theme-orange);
 }
 .contact-preview {
   width: 100%;
