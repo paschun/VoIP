@@ -1,5 +1,5 @@
 <template>
-  <div class="w-100">
+  <div class="fill-column w-100">
     <div class="sidebar-header">
       <div class="flex-grow-1">
         <ThemeButton size="50px" />
@@ -42,8 +42,9 @@ onMounted(() => {
 .sidebar-header {
   width: 100%;
   height: 60px;
+  container: sidebar-header / inline-size;
   background: var(--background-color-secondary);
-  border-right: 1px solid #444444;
+  border-right: 1px solid var(--divider-color);
   display: flex;
   align-items: center;
   justify-content: end;

@@ -138,8 +138,11 @@ useEventListener(document, 'drop', onDrop)
 .paperclip {
   transform: scale(2);
 }
+/* Flex centers the icon; as inline content it would sit on the button's text baseline instead. */
 .send-btn {
   height: 36px;
+  display: flex;
+  align-items: center;
 }
 .wrap-message {
   width: auto;

@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div class="fill-column">
     <div class="wrap-search">
       <div class="search">
         <i class="fa fa-search fa" aria-hidden="true"></i>
         <input v-model="query" type="text" class="input-search" placeholder="Search">
       </div>
     </div>
-    <div class="contact-list">
+    <div ref="list" class="contact-list">
       <div v-if="conversationStore.inboxIsLoading" class="box-placeholder">
         <div class="p-4">
           <span class="category text link"></span>
@@ -71,8 +71,8 @@
 
 <script setup lang="ts">
 /** The inbox sidebar: search box, loading skeleton, and conversation rows. Selection is a pure store call. */
-import { onMounted } from 'vue'
-import PullToRefresh from 'pulltorefreshjs'
+import { onMounted, onUnmounted, useTemplateRef } from 'vue'
+import PullToRefresh, { type PullToRefreshInstance } from 'pulltorefreshjs'
 import { useMobileSidebar } from '@/composables/useMobileSidebar.ts'
 import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { formatTimestamp } from '@/helper.ts'
@@ -84,6 +84,7 @@ function getValidString(str: string): string {
   return str.length > maxLen ? str.substring(0, maxLen) + '..' : str
 }
 
+const listElement = useTemplateRef<HTMLElement>('list')
 const conversationStore = useConversationStore()
 const profileStore = useProfileStore()
 const { closeSidebar } = useMobileSidebar()
@@ -106,14 +107,19 @@ function pullRefreshFunction() {
   void profileStore.loadProfiles()
 }
 
+let pullToRefresh: PullToRefreshInstance | undefined
+
 onMounted(() => {
-  PullToRefresh.init({
+  pullToRefresh = PullToRefresh.init({
     mainElement: '.contact-list',
     triggerElement: '.contact-list',
     onRefresh: () => pullRefreshFunction(),
-    distThreshold: 120,
-    distMax: 140,
+    // Dont refresh from just scrolling the list. Require user to scroll-up when already at the top
+    shouldPullToRefresh: () => !listElement.value?.scrollTop,
   })
+})
+onUnmounted(() => {
+  pullToRefresh?.destroy()
 })
 </script>
 
@@ -121,8 +127,12 @@ onMounted(() => {
 .contact {
   cursor: pointer;
 }
+/* Owns the sidebar's scroll; `contain` keeps the overscroll off the page (pull-to-refresh, rubber-banding). */
 .contact-list {
-  min-height: calc(100vh - 105px);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Inbox loading skeleton. */

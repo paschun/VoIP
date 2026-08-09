@@ -3,10 +3,20 @@
     <!--
       Responsive offcanvas: below the `md` breakpoint it's a slide-out drawer (opened by the chat-head
       hamburger via v-b-toggle); at/above `md` Bootstrap renders it inline as the static
-      sidebar column. The breakpoint must match `col-md-4`, or the inline column has no width and shrink-wraps.
+      sidebar column. The breakpoint must match the first `col-*` width, or the inline column shrink-wraps its content.
+      The column is 5/12 so the header icon row still fits at md (~320px), capped at 400px since nothing needs more.
+      p-1 trims the drawer's 1rem body padding; h-100 + flex column hand the scroll to the conversation list.
     -->
-    <!-- body-class p-0: the drawer body is padded by default, the inline column isn't; p-0 keeps both identical. -->
-    <BOffcanvas :id="MOBILE_SIDEBAR_ID" :visible="isS" class="col-md-4" responsive="md" placement="start" body-class="p-1" no-header shadow>
+    <BOffcanvas
+      :id="MOBILE_SIDEBAR_ID"
+      :visible="isS"
+      class="col-md-5 sidebar-col"
+      responsive="md"
+      placement="start"
+      body-class="p-1 h-100 d-flex flex-column"
+      no-header
+      shadow
+    >
       <template #default="{ hide }">
         <!-- .d-md-none hides this row >= md breakpoint -->
         <div class="d-flex flex-row-reverse d-md-none">
@@ -15,7 +25,7 @@
         <SidebarPanel />
       </template>
     </BOffcanvas>
-    <section class="col col-md-8 pb-2">
+    <section class="col pb-2">
       <div class="chat-head">
         <!-- hamburger / drawer-open icon hidden on larger screens (>= md) where sidebar always visible -->
         <IBiChevronLeft v-b-toggle="MOBILE_SIDEBAR_ID" aria-hidden="true" class="mx-3 my-auto d-md-none h2" style="font-size: 2em" />
@@ -105,6 +115,15 @@ useServerEvents()
 void setupPush()
 </script>
 
+<!-- Unscoped: a scoped selector would not reach BOffcanvas's root element. -->
+<style>
+/* The sidebar column needs no more than 400px. `min()` keeps the cap off the drawer's own `max-width: 100%`, which
+   would otherwise overflow a phone narrower than that. */
+.sidebar-col {
+  max-width: min(400px, 100%);
+}
+</style>
+
 <style scoped>
 /* Outer app container */
 .wrap {
@@ -124,6 +143,11 @@ void setupPush()
 }
 
 /* ------ RIGHT SIDE ------ */
+/* Takes whatever the sidebar leaves; `min-width` lifts the min-content floor that would otherwise overflow `.wrap`. */
+section {
+  min-width: 0;
+}
+
 .chat-head {
   background-color: var(--background-color-secondary);
   width: 100%;

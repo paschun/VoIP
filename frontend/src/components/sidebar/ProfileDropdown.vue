@@ -2,19 +2,19 @@
   <BDropdown class="drop-down" variant="primary">
     <template #button-content>
       <div class="d-flex flex-row align-items-center">
-        <div v-if="profileStore.activeProfile" class="d-flex flex-column">
-          <div class="profile-name">{{ profileStore.activeProfile.profile }}</div>
-          <div class="profile-num">{{ profileStore.activeProfile.number }}</div>
-          <span v-if="activeTotalCount > 0" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
-            ><span class="visually-hidden">unread messages</span></span
-          >
-        </div>
-        <div v-else>
-          <span v-if="userStore.userData">{{ userStore.userData.name }}</span>
+        <div class="profile-text">
+          <template v-if="profileStore.activeProfile">
+            <div class="profile-name">{{ profileStore.activeProfile.profile }}</div>
+            <div class="profile-num">{{ profileStore.activeProfile.number }}</div>
+          </template>
+          <span v-else-if="userStore.userData">{{ userStore.userData.name }}</span>
         </div>
         <div>
           <IBiPersonBadge aria-hidden="true" class="mx-2 my-auto" title="Profiles" />
         </div>
+        <span v-if="activeTotalCount > 0" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-2"
+          ><span class="visually-hidden">unread messages</span></span
+        >
         <div class="dropdownAdd"></div>
       </div>
     </template>
@@ -124,6 +124,20 @@ useActiveProfileChange(() => profileStore.refreshActiveProfile())
 </script>
 
 <style scoped>
+/* Plain rules, not `d-flex`: Bootstrap's utilities are `!important` and would beat the query below. */
+.profile-text {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The header row needs ~360px with this text and ~260px without, so drop it when the sidebar is too narrow. Only the
+   panel width matters, not the viewport: the drawer is a fixed 400px however wide the phone is. */
+@container sidebar-header (width < 360px) {
+  .profile-text {
+    display: none;
+  }
+}
+
 .dropdownAdd {
   margin-left: 0.255em;
   vertical-align: 0.255em;
