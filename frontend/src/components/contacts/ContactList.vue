@@ -4,11 +4,7 @@
     <BOffcanvas id="sidebar-contacts" placement="end" shadow no-header>
       <template #default="{ hide }">
         <div class="d-flex mt-2 justify-content-between">
-          <div class="drop-down">
-            <BButton class="float-left d-flex m-1" size="sm" variant="primary">
-              <IBiX @click="hide()" />
-            </BButton>
-          </div>
+          <BCloseButton class="m-2" aria-label="Close contacts" @click="hide()" />
           <div>
             <div class="d-flex justify-content-start">
               <div class="ml-1">
@@ -93,12 +89,4 @@ async function deleteAll() {
 }
 </script>
 
-<style scoped>
-.drop-down,
-.drop-down > button {
-  background-color: var(--bs-offcanvas-bg);
-}
-.drop-down > button {
-  border-color: var(--bs-offcanvas-bg);
-}
-</style>
+

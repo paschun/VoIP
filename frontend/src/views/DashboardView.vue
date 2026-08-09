@@ -1,27 +1,24 @@
 <template>
   <div class="wrap">
     <!--
-      Responsive offcanvas: below the `sm` breakpoint it's a slide-out drawer (opened by the chat-head
-      hamburger via v-b-toggle); at/above `sm` Bootstrap renders it inline as the static
-      sidebar column
+      Responsive offcanvas: below the `md` breakpoint it's a slide-out drawer (opened by the chat-head
+      hamburger via v-b-toggle); at/above `md` Bootstrap renders it inline as the static
+      sidebar column. The breakpoint must match `col-md-4`, or the inline column has no width and shrink-wraps.
     -->
-    <BOffcanvas :id="MOBILE_SIDEBAR_ID" :visible="isXS" class="col-auto col-md-4" responsive="sm" placement="start" no-header shadow>
+    <!-- body-class p-0: the drawer body is padded by default, the inline column isn't; p-0 keeps both identical. -->
+    <BOffcanvas :id="MOBILE_SIDEBAR_ID" :visible="isS" class="col-md-4" responsive="md" placement="start" body-class="p-1" no-header shadow>
       <template #default="{ hide }">
-        <!-- .d-sm-none hides this row >= sm breakpoint -->
-        <div class="d-flex flex-row-reverse d-sm-none">
-          <div class="drop-down">
-            <BButton class="float-right d-flex" size="sm" variant="primary">
-              <IBiX @click="hide()" />
-            </BButton>
-          </div>
+        <!-- .d-md-none hides this row >= md breakpoint -->
+        <div class="d-flex flex-row-reverse d-md-none">
+          <BCloseButton class="m-1" aria-label="Close sidebar" @click="hide()" />
         </div>
         <SidebarPanel />
       </template>
     </BOffcanvas>
     <section class="col col-md-8 pb-2">
       <div class="chat-head">
-        <!-- hamburger / drawer-open icon hidden on larger screens (>= sm) where sidebar always visible -->
-        <IBiChevronLeft v-b-toggle="MOBILE_SIDEBAR_ID" aria-hidden="true" class="mx-3 my-auto d-sm-none h2" style="font-size: 2em" />
+        <!-- hamburger / drawer-open icon hidden on larger screens (>= md) where sidebar always visible -->
+        <IBiChevronLeft v-b-toggle="MOBILE_SIDEBAR_ID" aria-hidden="true" class="mx-3 my-auto d-md-none h2" style="font-size: 2em" />
         <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
         <div class="chat-name">
           <h1 v-if="conversationStore.activeConversation" class="font-name">
@@ -83,8 +80,8 @@ const contactStore = useContactStore()
 const callStore = useCallStore()
 
 const breakpoints = useBreakpoints(breakpointsBootstrapV5)
-// Below `sm` the drawer starts open, so a fresh load lands on the conversation list.
-const isXS = breakpoints.isSmaller('sm')
+// Below `md` the drawer starts open, so a fresh load lands on the conversation list.
+const isS = breakpoints.isSmaller('md') // 768px
 
 /** True while a BVN modal/offcanvas/dropdown or a swal dialog is open (each closes itself on Escape). */
 function hasOpenOverlay(): boolean {
