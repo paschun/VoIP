@@ -33,12 +33,12 @@
           :class="{ 'active-chat': conversationStore.activeRemoteNumber === item._id }"
           @click="selectConversation(item)"
         >
-          <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
-          <div class="d-flex justify-content-between w-100">
+          <IBiPersonBoundingBox aria-hidden="true" class="mx-2 flex-shrink-0" style="font-size: 1.5em" />
+          <div class="d-flex align-items-center justify-content-between w-100">
             <div class="contact-preview">
               <div class="contact-text">
-                <h1 v-if="item.contact" class="conversation-name">{{ item.contact.first_name }} {{ item.contact.last_name }}</h1>
-                <h1 v-else class="conversation-name">{{ item._id }}</h1>
+                <div v-if="item.contact" class="conversation-name">{{ item.contact.first_name }} {{ item.contact.last_name }}</div>
+                <div v-else class="conversation-name">{{ item._id }}</div>
                 <p v-if="item.message" class="message-preview">
                   {{ getValidString(item.message) }}
                 </p>
@@ -52,7 +52,7 @@
               </div>
             </div>
 
-            <div class="align-self-center text-end me-3">
+            <div class="text-end me-3">
               <span class="timestamp">{{ formatTimestamp(item.created_at, false) }}</span>
               <!-- Jan 1, 2000 10:00 AM -->
               <span v-if="item.unread > 0" class="badge bg-success">{{ item.unread }}</span>
@@ -125,6 +125,7 @@ onUnmounted(() => {
   background-color: var(--contact-highlighted);
   border-bottom: 1px solid var(--divider-color);
   display: flex;
+  align-items: center;
   cursor: pointer;
 }
 .contact:hover {
@@ -139,11 +140,15 @@ onUnmounted(() => {
   width: 100%;
   height: 70px;
   display: flex;
+  align-items: center;
   overflow: hidden;
 }
 .contact-text {
   height: 40px;
-  margin: auto 0;
+}
+.conversation-name {
+  line-height: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 .message-preview {
   font-size: 0.8em;

@@ -150,13 +150,6 @@ a {
 
 /* ------ CONVERSATION TEXT ------ */
 
-/* Heading reset for the contact name shown in the chat header and in each inbox row. */
-.conversation-name {
-  font-size: 1em;
-  font-weight: inherit;
-  padding-bottom: 0;
-  line-height: 0.5rem;
-}
 .timestamp {
   font-size: 0.6em;
   text-align: right;
