@@ -10,7 +10,7 @@
       <div class="form-group mt-4">
         <VueTagsInput
           v-model="tagInput"
-          class="form-control chat-input"
+          class="form-control rounded-input"
           :tags="recipientTags"
           placeholder="Enter phone number"
           @tags-changed="onTagsChanged"
@@ -23,7 +23,7 @@
         <textarea
           v-model="composeMessage"
           rows="8"
-          class="form-control chat-input"
+          class="form-control rounded-input"
           placeholder="Type Message here"
           :class="{ 'is-invalid': touched.message && composeContentMissing }"
           @blur="touched.message = true"
@@ -35,13 +35,13 @@
       </div>
       <!-- send images over MMS -->
       <label class="input-group mb-3 cursor-pointer" for="attachment-file-input">
-        <span class="input-group-text paperClip chat-input">
+        <span class="input-group-text paperClip rounded-input">
           <IBiPaperclip />
         </span>
-        <span class="form-control chat-input" :class="{ 'text-secondary': !selectedFileNames }">{{ selectedFileNames || 'Choose file' }}</span>
+        <span class="form-control rounded-input" :class="{ 'text-secondary': !selectedFileNames }">{{ selectedFileNames || 'Choose file' }}</span>
       </label>
       <div class="form-group mb-2 mt-4 d-none">
-        <input id="attachment-file-input" type="file" class="form-control chat-input" multiple accept="image/*" @change="onFilesPick">
+        <input id="attachment-file-input" type="file" class="form-control rounded-input" multiple accept="image/*" @change="onFilesPick">
       </div>
 
       <div class="d-grid d-md-flex">

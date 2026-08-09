@@ -36,7 +36,7 @@
                 <span> {{ message.message }} </span>
               </template>
             </div>
-            <div class="time">
+            <div class="timestamp">
               {{ formatTimestamp(message.created_at) }}
               <!-- January 1, 2000 10:00 AM -->
             </div>

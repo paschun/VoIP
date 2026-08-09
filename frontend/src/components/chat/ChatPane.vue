@@ -17,5 +17,6 @@ import MessageComposer from '@/components/chat/MessageComposer.vue'
 /* Takes whatever the sidebar leaves; `min-width` lifts the min-content floor that would otherwise overflow `.wrap`. */
 section {
   min-width: 0;
+  background-color: var(--background-color-primary);
 }
 </style>

@@ -1,11 +1,6 @@
 <template>
   <div class="fill-column">
-    <div class="wrap-search">
-      <div class="search">
-        <IBiSearch aria-hidden="true" />
-        <input v-model="query" type="text" class="input-search" placeholder="Search">
-      </div>
-    </div>
+    <SearchBar v-model="query" />
     <div ref="list" class="contact-list">
       <div v-if="conversationStore.inboxIsLoading" class="box-placeholder">
         <div class="p-4">
@@ -42,12 +37,12 @@
           <div class="d-flex justify-content-between w-100">
             <div class="contact-preview">
               <div class="contact-text">
-                <h1 v-if="item.contact" class="font-name">{{ item.contact.first_name }} {{ item.contact.last_name }}</h1>
-                <h1 v-else class="font-name">{{ item._id }}</h1>
-                <p v-if="item.message" class="font-preview">
+                <h1 v-if="item.contact" class="conversation-name">{{ item.contact.first_name }} {{ item.contact.last_name }}</h1>
+                <h1 v-else class="conversation-name">{{ item._id }}</h1>
+                <p v-if="item.message" class="message-preview">
                   {{ getValidString(item.message) }}
                 </p>
-                <p v-else class="font-preview">
+                <p v-else class="message-preview">
                   <span v-if="item.message_type === 'call'">
                     <span v-if="item.type === 'send'"> Outbound </span>
                     <span v-else> Inbound </span>
@@ -58,9 +53,9 @@
             </div>
 
             <div class="align-self-center text-end me-3">
-              <span class="time">{{ formatTimestamp(item.created_at, false) }}</span>
+              <span class="timestamp">{{ formatTimestamp(item.created_at, false) }}</span>
               <!-- Jan 1, 2000 10:00 AM -->
-              <span v-if="item.unread > 0" class="badge message_count bg-success">{{ item.unread }}</span>
+              <span v-if="item.unread > 0" class="badge bg-success">{{ item.unread }}</span>
             </div>
           </div>
         </div>
@@ -73,6 +68,7 @@
 /** The inbox sidebar: search box, loading skeleton, and conversation rows. Selection is a pure store call. */
 import { onMounted, onUnmounted, useTemplateRef } from 'vue'
 import PullToRefresh, { type PullToRefreshInstance } from 'pulltorefreshjs'
+import SearchBar from '@/components/shared/SearchBar.vue'
 import { useMobileSidebar } from '@/composables/useMobileSidebar.ts'
 import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { formatTimestamp } from '@/helper.ts'
@@ -125,10 +121,38 @@ onUnmounted(() => {
 
 <style scoped>
 .contact {
+  height: 70px;
+  background-color: var(--contact-highlighted);
+  border-bottom: 1px solid var(--divider-color);
+  display: flex;
   cursor: pointer;
+}
+.contact:hover {
+  background-color: var(--contact-hover);
+}
+.active-chat {
+  background-color: var(--contact-highlighted);
+  border-right: 3px solid var(--theme-orange);
+}
+.contact-preview {
+  width: 100%;
+  height: 70px;
+  display: flex;
+  overflow: hidden;
+}
+.contact-text {
+  height: 40px;
+  margin: auto 0;
+}
+.message-preview {
+  font-size: 0.8em;
+  line-height: 1.2rem;
+  font-weight: inherit;
 }
 /* Owns the sidebar's scroll; `contain` keeps the overscroll off the page (pull-to-refresh, rubber-banding). */
 .contact-list {
+  background-color: var(--contact-list);
+  width: 100%;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -167,7 +191,6 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 .box-placeholder .text.link {
-  background-color: var(--blue);
   opacity: 0.4;
 }
 .box-placeholder .text.line {

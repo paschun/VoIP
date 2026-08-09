@@ -12,7 +12,7 @@
             <div v-if="callStore.state === 'idle'">
               <ContactPicker class="mb-2" @select="setDialInput" />
               <BFormGroup class="mb-0">
-                <BFormInput v-model="dialInput" class="chat-input" type="number" required></BFormInput>
+                <BFormInput v-model="dialInput" class="rounded-input" type="number" required></BFormInput>
               </BFormGroup>
             </div>
             <ActiveCallPanel v-else />

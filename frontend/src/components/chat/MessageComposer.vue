@@ -23,7 +23,7 @@
   <div class="row wrap-container">
     <div class="col-md-12 wrap-container2">
       <div v-if="conversationStore.hasActiveConversation" class="wrap-message">
-        <div class="message pl-2">
+        <div class="message-field pl-2">
           <input v-model="messageBody" type="text" class="input-message" placeholder="Type message here" @keyup.enter="sendSms">
           <label class="m-2 cursor-pointer" for="composer-file-input">
             <IBiPaperclip class="paperclip" />
@@ -148,6 +148,15 @@ useEventListener(document, 'drop', onDrop)
   width: auto;
   height: 60px;
   background: var(--chat-background);
+  display: flex;
+}
+/* Holds the text input and the attach button. */
+.message-field {
+  width: 100%;
+  background: var(--background-color-primary);
+  margin: 5px;
+  border: none;
+  border-radius: 25px;
   display: flex;
 }
 .input-message {

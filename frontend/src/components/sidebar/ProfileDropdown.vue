@@ -25,7 +25,7 @@
         <div class="d-flex flex-row">
           <div>
             <div class="d-flex flex-column">
-              <div>
+              <div class="profile-label">
                 {{ profile.profile }}
               </div>
               <div>
@@ -51,7 +51,7 @@
       <span class="small text-secondary">Profile</span>
       <form class="ml-2 mr-2" @submit.prevent="addProfile">
         <div class="form-group mt-2">
-          <input v-model="r$.$value" class="form-control chat-input" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
+          <input v-model="r$.$value" class="form-control rounded-input" placeholder="Enter Profile" :class="{ 'is-invalid': r$.$error }">
           <div v-if="r$.$error" class="invalid-feedback">
             <span v-for="error of r$.$errors" :key="error">{{ error }}</span>
           </div>
@@ -136,6 +136,52 @@ useActiveProfileChange(() => profileStore.refreshActiveProfile())
   .profile-text {
     display: none;
   }
+}
+
+/* The toggle keeps an explicit fill so it stays filled on hover; the menu and its items theme natively through
+   Bootstrap's own --bs-dropdown-* tokens. :deep targets BootstrapVueNext elements. */
+.drop-down,
+.drop-down :deep(.dropdown-toggle) {
+  background-color: var(--background-color-secondary);
+  border-color: var(--background-color-secondary);
+  color: var(--text-primary-color);
+}
+.drop-down :deep(.dropdown-toggle) {
+  padding: 0 0.75rem;
+  font-size: 15px;
+}
+.drop-down :deep(.dropdown-toggle::after) {
+  display: none;
+}
+.drop-down :deep(.dropdown-menu) {
+  --bs-dropdown-bg: var(--background-color-secondary);
+  --bs-dropdown-border-color: var(--background-color-secondary);
+  --bs-dropdown-color: var(--text-primary-color);
+  --bs-dropdown-link-color: var(--text-primary-color);
+  --bs-dropdown-link-hover-color: var(--text-primary-color);
+  --bs-dropdown-link-hover-bg: var(--contact-hover);
+  --bs-dropdown-box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  max-height: 100vh;
+  overflow-y: auto;
+}
+.drop-down :deep(.dropdown-item) {
+  line-height: 18px;
+}
+
+/* A long profile name truncates instead of widening the toggle or the menu. */
+.profile-name,
+.profile-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+.profile-name {
+  max-width: 100px;
+}
+.profile-num {
+  font-size: 12px;
+  color: var(--theme-orange);
 }
 
 .dropdownAdd {

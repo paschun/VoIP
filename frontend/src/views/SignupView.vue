@@ -10,7 +10,7 @@
             </BInputGroupText>
             <input
               v-model="r$.$value.name"
-              class="form-control chat-input"
+              class="form-control rounded-input"
               type="text"
               placeholder="Username"
               :class="{ 'is-invalid': r$.name.$error }"
@@ -26,7 +26,7 @@
             </BInputGroupText>
             <input
               v-model="r$.$value.password"
-              class="chat-input form-control"
+              class="rounded-input form-control"
               type="password"
               placeholder="Password"
               :class="{ 'is-invalid': r$.password.$error }"
@@ -42,7 +42,7 @@
             </BInputGroupText>
             <input
               v-model="r$.$value.c_password"
-              class="chat-input form-control"
+              class="rounded-input form-control"
               type="password"
               placeholder="Confirm Password"
               :class="{ 'is-invalid': r$.c_password.$error }"

@@ -2,8 +2,7 @@
 
 /* Vendor stylesheets go in the `vendor` layer so app rules below win Bootstrap conflicts without !important -- layer
    order beats specificity. The tradeoff: a low-specificity app rule also beats Bootstrap's higher-specificity
-   contextual rules, so where we want one of those (input-group corner squaring), re-apply it in the app layer (see
-   .chat-input below). */
+   contextual rules, so where we want one of those (input-group corner squaring), re-apply it in the app layer. */
 @import 'bootstrap/dist/css/bootstrap.css' layer(vendor);
 @import 'bootstrap-vue-next/dist/bootstrap-vue-next.css' layer(vendor);
 @import 'sweetalert2/dist/sweetalert2.min.css' layer(vendor);
@@ -25,12 +24,13 @@
   }
 }
 
+/* Only rules shared by two or more components belong here; anything with a single consumer lives in that component's
+   <style scoped> block. Component styles are unlayered, so they win over this layer. */
 @layer app {
 :root {
   color-scheme: light;
   --background-color-primary: light-dark(#ffffff, rgb(18, 18, 18));
   --background-color-secondary: light-dark(rgb(246, 246, 246), rgb(46, 46, 46));
-  --background-color-info: light-dark(#dcd4cc, #0b1419);
   --accent-color: light-dark(#cacaca, #3f3f3f);
   --text-primary-color: light-dark(#222, #ddd);
   --chat-you: light-dark(rgb(233, 233, 233), rgb(59, 59, 59));
@@ -42,29 +42,32 @@
   --text-button: light-dark(#1c282f, #cacaca);
   /* Derived from the text color so it contrasts with whatever it divides in either theme. */
   --divider-color: color-mix(in srgb, var(--text-primary-color) 25%, transparent);
-  --background-image-opacity: 0.8;
 
   --theme-orange: #ff5821;
+
+  /* Both properties inherit, so every scroll container in the app picks them up from here. A transparent track lets
+     the scroller's own background show through. */
+  scrollbar-width: thin;
+  scrollbar-color: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2)) transparent;
 }
 /* color-scheme must be re-declared here: the app-layer `:root` light above would otherwise beat Bootstrap's
-   vendor-layer `[data-bs-theme=dark] { color-scheme: dark }`. Non-color vars can't use light-dark(). */
+   vendor-layer `[data-bs-theme=dark] { color-scheme: dark }`. */
 [data-bs-theme='dark'] {
   color-scheme: dark;
-  --background-image-opacity: 0.4;
 }
 body {
   background: var(--background-color-secondary);
   color: var(--text-primary-color);
 }
-section {
-  background-color: var(--background-color-primary);
+a {
+  text-decoration: none;
 }
-/* Bootstrap ships no cursor utilities; these fill the gap for the many clickable non-button elements. */
+
+/* ------ UTILITIES ------ */
+
+/* Bootstrap ships no cursor utilities; this fills the gap for the many clickable non-button elements. */
 .cursor-pointer {
   cursor: pointer;
-}
-.cursor-copy {
-  cursor: copy;
 }
 /* Growing flex column that can shrink below its content, so a scrolling child fits instead of overflowing. */
 .fill-column {
@@ -73,6 +76,9 @@ section {
   flex: 1;
   min-height: 0;
 }
+
+/* ------ AUTH PAGES ------ */
+
 .login-box {
   background: var(--background-color-primary);
   width: 50%;
@@ -85,23 +91,21 @@ section {
   transition: 0.5s;
   border-radius: 10px;
 }
-
-@media only screen and (max-width: 768px) {
-  .login-box {
-    width: 75%;
-  }
-  .col {
-    width: 100%;
-  }
-}
-
 .login-box h1 {
   text-align: center;
   transition: 0.5s;
   font-family: 'Skia', sans-serif;
 }
+@media only screen and (max-width: 768px) {
+  .login-box {
+    width: 75%;
+  }
+}
+
+/* ------ FORMS ------ */
+
 /* Round via Bootstrap's own token, not the border-radius property, so input-group corner squaring still wins. */
-.chat-input {
+.rounded-input {
   border: none;
   background-color: var(--background-color-secondary);
   color: var(--text-primary-color);
@@ -110,6 +114,11 @@ section {
   transition: 0.5s;
   display: inline-flex;
 }
+.rounded-input:focus {
+  outline: none;
+  background-color: var(--background-color-secondary);
+  color: var(--text-primary-color);
+}
 .form-control:disabled,
 .form-control[readonly] {
   background-color: var(--background-color-secondary);
@@ -117,15 +126,8 @@ section {
 }
 .form-control:focus {
   box-shadow: none;
-  /* border-color: transparent; */
 }
-.chat-input:focus {
-  outline: none;
-  background-color: var(--background-color-secondary);
-  color: var(--text-primary-color);
-}
-
-/* Rounded primary submit button, shared by Login, ComposeMessageModal, and ProviderSettingModal. */
+/* Rounded primary submit button. */
 .submit-btn {
   border: none;
   border-radius: 10px;
@@ -135,221 +137,7 @@ section {
   color: white;
   transition: 0.5s;
 }
-
-/* ------ FONTS ------ */
-.font-name {
-  font-size: 1em;
-  font-weight: inherit;
-  padding-bottom: 0;
-  line-height: 0.5rem;
-}
-
-.font-preview {
-  font-size: 0.8em;
-  line-height: 1.2rem;
-  font-weight: inherit;
-}
-
-/* ------ LEFT SIDE ------ */
-
-.wrap-search {
-  width: 100%;
-  height: 45px;
-  background: var(--background-color-primary);
-  display: flex;
-}
-
-.search {
-  width: calc(100% - 20px);
-  height: 30px;
-  background-color: var(--background-color-secondary);
-  margin: auto;
-  border-radius: 15px;
-  display: flex;
-}
-
-.search svg {
-  flex: none;
-  margin: auto 0.75rem;
-  color: #aaaaaa;
-}
-
-.input-search {
-  width: 100%;
-  border: none;
-  background-color: var(--background-color-secondary);
-  color: var(--text-primary-color);
-  border-radius: unset; /* fixes Chromium cursor size on message search bar */
-}
-
-.input-search:focus {
-  outline: none;
-}
-.contact-list {
-  background-color: var(--contact-list);
-  width: 100%;
-}
-
-.contact {
-  height: 70px;
-  background-color: var(--contact-highlighted);
-  border-bottom: 1px solid var(--divider-color);
-  display: flex;
-}
-
-.contact img {
-  width: 50px;
-  height: 50px;
-  margin: 10px;
-  border-radius: 50%;
-}
-
-.contact:hover {
-  background-color: var(--contact-hover);
-}
-.active-chat {
-  background-color: var(--contact-highlighted);
-  border-right: 3px solid var(--theme-orange);
-}
-.contact-preview {
-  width: 100%;
-  height: 70px;
-  display: flex;
-  overflow: hidden;
-}
-
-.contact-text {
-  height: 40px;
-  margin: auto 0;
-}
-
-/* ------ CHAT ------ */
-.time {
-  font-size: 0.6em;
-  text-align: right;
-  font-style: italic;
-}
-
-.message {
-  width: 100%;
-  background: var(--background-color-primary);
-  margin: 5px;
-  border: none;
-  border-radius: 25px;
-  display: flex;
-}
-
-/* ------ SCROLLBAR ------ */
-
-body::-webkit-scrollbar,
-.contact-list::-webkit-scrollbar,
-.chat::-webkit-scrollbar {
-  width: 0.4em;
-  height: 0.4em;
-}
-
-body::-webkit-scrollbar-thumb,
-.contact-list::-webkit-scrollbar-thumb,
-.chat::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-/* Toggle button + wrapper keep an explicit fill (staying filled on hover is intentional); the menu and its items
-   theme natively via Bootstrap's --bs-dropdown-* tokens below. */
-.drop-down,
-.drop-down > button {
-  background-color: var(--background-color-secondary);
-  border-color: var(--background-color-secondary);
-  color: var(--text-primary-color);
-}
-a {
-  text-decoration: none;
-}
-.modal {
-  --bs-modal-bg: var(--background-color-primary);
-}
-.close {
-  padding: 1rem;
-  margin: -1rem -1rem -1rem auto;
-  background-color: transparent;
-  border: 0;
-  color: var(--text-primary-color);
-}
-
-.card-body {
-  flex: 1 1 auto;
-  min-height: 1px;
-  padding: 1.25rem;
-  background-color: var(--accent-color);
-}
-.card {
-  overflow: hidden;
-  --bs-card-bg: var(--background-color-secondary);
-}
-
-.badge {
-  border-radius: 0.5rem;
-}
-
-/* remove outline from chevron arrow when clicked */
-.bi {
-  outline: none;
-}
-.input-group-text {
-  border: none;
-  background-color: var(--accent-color);
-  color: var(--background-color-primary);
-}
-.version {
-  font-size: 0.8em;
-  margin-top: 1.5rem;
-  text-align: center;
-  color: var(--bs-secondary-color);
-}
-.drop-down .dropdown-toggle::after {
-  display: none;
-}
-.drop-down .btn {
-  padding: 0 0.75rem;
-  font-size: 15px;
-}
-.profile-num {
-  font-size: 12px;
-  color: var(--theme-orange);
-}
-.dropdown-item {
-  line-height: 18px;
-}
-.dropdown-item > div > div > div > div,
-.profile-name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  max-width: 250px;
-}
-.profile-name {
-  max-width: 100px;
-}
-/* Theme the whole dropdown (menu bg/border + item color and hover) through Bootstrap's own tokens. */
-.dropdown-menu {
-  --bs-dropdown-bg: var(--background-color-secondary);
-  --bs-dropdown-border-color: var(--background-color-secondary);
-  --bs-dropdown-color: var(--text-primary-color);
-  --bs-dropdown-link-color: var(--text-primary-color);
-  --bs-dropdown-link-hover-color: var(--text-primary-color);
-  --bs-dropdown-link-hover-bg: var(--contact-hover);
-  --bs-dropdown-box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-  max-height: 100vh;
-  overflow-y: auto;
-}
-
-.list-group {
-  --bs-list-group-bg: transparent;
-  --bs-list-group-color: var(--text-primary-color);
-}
-
-
-/* .totp used in Login and Mfa */
+/* Wide-tracked one-time-code field. */
 .totp {
   text-align: center;
   font-weight: 800;
@@ -358,5 +146,54 @@ a {
   color: var(--text-primary-color);
   border-radius: 5px;
   font-size: 1.5em;
+}
+
+/* ------ CONVERSATION TEXT ------ */
+
+/* Heading reset for the contact name shown in the chat header and in each inbox row. */
+.conversation-name {
+  font-size: 1em;
+  font-weight: inherit;
+  padding-bottom: 0;
+  line-height: 0.5rem;
+}
+.timestamp {
+  font-size: 0.6em;
+  text-align: right;
+  font-style: italic;
+}
+.version {
+  font-size: 0.8em;
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--bs-secondary-color);
+}
+
+/* ------ BOOTSTRAP COMPONENT THEMING ------ */
+
+.modal {
+  --bs-modal-bg: var(--background-color-primary);
+}
+.card {
+  overflow: hidden;
+  --bs-card-bg: var(--background-color-secondary);
+}
+.card-body {
+  flex: 1 1 auto;
+  min-height: 1px;
+  padding: 1.25rem;
+  background-color: var(--accent-color);
+}
+.badge {
+  border-radius: 0.5rem;
+}
+.input-group-text {
+  border: none;
+  background-color: var(--accent-color);
+  color: var(--background-color-primary);
+}
+.list-group {
+  --bs-list-group-bg: transparent;
+  --bs-list-group-color: var(--text-primary-color);
 }
 }

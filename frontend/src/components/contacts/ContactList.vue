@@ -29,12 +29,7 @@
           </div>
         </div>
         <div>
-          <div class="wrap-search">
-            <div class="search">
-              <IBiSearch aria-hidden="true" />
-              <input v-model="query" type="text" class="input-search" placeholder="Search">
-            </div>
-          </div>
+          <SearchBar v-model="query" />
           <ul class="list-group">
             <li v-for="contact in searchContacts" :key="contact._id" class="list-group-item d-flex justify-content-between align-items-center">
               <div class="d-flex flex-column">
@@ -55,6 +50,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import SearchBar from '@/components/shared/SearchBar.vue'
 import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { notifySuccess } from '@/core/notify.ts'
 import { downloadContactsCsv } from '@/core/services/contacts-csv.ts'

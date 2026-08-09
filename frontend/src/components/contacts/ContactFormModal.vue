@@ -40,13 +40,13 @@
               <button class="btn btn-success mb-2 float-right" @click="downloadSampleCsv()">Sample File</button>
             </div>
             <label class="input-group mb-3 cursor-pointer" for="csv-file-input">
-              <span class="input-group-text paperClip chat-input"><IBiPaperclip /></span>
-              <span class="form-control csv_field_input chat-input" :class="{ 'text-secondary': !csvFileName }">{{
+              <span class="input-group-text paperClip rounded-input"><IBiPaperclip /></span>
+              <span class="form-control csv_field_input rounded-input" :class="{ 'text-secondary': !csvFileName }">{{
                 csvFileName || 'Choose file'
               }}</span>
             </label>
             <div class="form-group mb-2 mt-4 d-none">
-              <input id="csv-file-input" type="file" class="form-control chat-input" accept=".csv" @change="onCsvFileChange">
+              <input id="csv-file-input" type="file" class="form-control rounded-input" accept=".csv" @change="onCsvFileChange">
             </div>
             <div class="d-flex justify-content-start">
               <div>
@@ -134,9 +134,6 @@ async function importContactsCsv() {
 </script>
 
 <style scoped>
-.close {
-  margin: 0 !important;
-}
 .paperClip {
   border-radius: 0% !important;
   border-top-left-radius: 5px !important;

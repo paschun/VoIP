@@ -4,7 +4,7 @@
     <IBiChevronLeft v-b-toggle="MOBILE_SIDEBAR_ID" aria-hidden="true" class="mx-3 my-auto d-md-none h2" style="font-size: 2em" />
     <IBiPersonBoundingBox aria-hidden="true" class="mx-2 my-auto" style="font-size: 2em" />
     <div class="chat-name">
-      <h1 v-if="conversationStore.activeConversation" class="font-name">
+      <h1 v-if="conversationStore.activeConversation" class="conversation-name">
         <div v-if="conversationStore.activeConversation.contact" class="d-flex align-items-start align-self-center">
           <div class="mt-2 ml-4">
             {{ conversationStore.activeConversation.contact.first_name }}
@@ -72,5 +72,8 @@ async function deleteChat() {
 .chat-name {
   width: 100%;
   margin: auto;
+}
+.cursor-copy {
+  cursor: copy;
 }
 </style>
