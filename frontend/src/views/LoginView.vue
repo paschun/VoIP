@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegle } from '@regle/core'
 import { required, minLength, withMessage } from '@regle/rules'
@@ -135,12 +135,10 @@ import ThemeButton from '@/components/shared/ThemeButton.vue'
 import { requestPublicKeyCredential } from '@/core/webauthn.ts'
 import { useLoginStore, type HardwareKey } from '@/stores/login.ts'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
-import { useUserStore } from '@/stores/user.ts'
 
 type Screen = 'login' | 'picker' | 'keys' | 'otp'
 
 const router = useRouter()
-const userStore = useUserStore()
 const loginStore = useLoginStore()
 const meta = useServerMetaStore()
 
@@ -160,11 +158,6 @@ const screen = ref<Screen>('login')
 
 async function goToDashboard() {
   await router.push({ name: 'dashboard' })
-}
-// The server gates the secret directory (a wrong segment 404s before this loads), so the page only needs to skip
-// itself when the user is already signed in.
-async function redirectIfLoggedIn() {
-  if (userStore.isLoggedIn) await goToDashboard()
 }
 async function submitLogin() {
   const { valid, data } = await loginR$.$validate()
@@ -202,6 +195,4 @@ function showScreen(target: Screen) {
   }
   screen.value = target
 }
-
-onMounted(redirectIfLoggedIn)
 </script>

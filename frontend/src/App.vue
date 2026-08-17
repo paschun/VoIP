@@ -4,13 +4,18 @@
       <span v-if="meta.updateAvailable" class="update-ribbon"
         ><a href="https://github.com/paschun/VoIP" target="_blank" rel="noopener noreferrer">update</a></span
       >
-      <RouterView />
+      <!-- Component isnt resolved until the nav guard settles -->
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" v-if="Component" />
+        <LoadingSpinner v-else show />
+      </RouterView>
     </div>
   </BApp>
 </template>
 
 <script setup lang="ts">
 import { BApp } from 'bootstrap-vue-next'
+import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import { useServerMetaStore } from '@/stores/server-meta.ts'
 
 const meta = useServerMetaStore()

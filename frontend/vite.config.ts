@@ -92,7 +92,7 @@ export default defineConfig({
         entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'static/[name]-[hash].js'),
         // Rolldown inlines a single-importer module into its entry, which would fold the worker logic back into
         // `sw.js`; this group forces it out into a hashed chunk so the entry stays a byte-stable shell.
-        advancedChunks: { groups: [{ name: 'sw-worker', test: /src\/sw-worker\.ts/ }] },
+        codeSplitting: { groups: [{ name: 'sw-worker', test: /src\/sw-worker\.ts/ }] },
       },
     },
     // sourcemap: true,

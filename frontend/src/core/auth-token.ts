@@ -8,6 +8,7 @@ function expiry(token: string): number | null {
   const payload = token.split('.')[1]
   if (!payload) return null
   try {
+    // JWT segments are base64url; `atob` only reads standard base64, so map its two differing chars back.
     return expClaim.safeParse(JSON.parse(atob(payload.replaceAll('-', '+').replaceAll('_', '/')))).data?.exp ?? null
   } catch (e) {
     console.error(e)

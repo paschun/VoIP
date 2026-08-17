@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useLocalStorage, StorageSerializers } from '@vueuse/core'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
@@ -14,8 +14,7 @@ export type UserData = InferResponseType<typeof client.api.auth.username.$patch,
 export const useUserStore = defineStore('user', () => {
   const userData = useLocalStorage<UserData | null>('user-data', null, { serializer: StorageSerializers.object })
 
-  const isLoggedIn = computed(() => token.value.length > 0)
-  /** The token the server has accepted. As opposed to loading the token from local storage.
+  /** The token the server has accepted/validated. As opposed to loading the token from local storage.
    * Only used in this file.
    */
   const verifiedToken = ref('')
@@ -47,7 +46,7 @@ export const useUserStore = defineStore('user', () => {
       // Only a 401 is a verdict on the token, and `request` has already cleared it by then; a network fault or 5xx says
       // nothing about the session, so read the answer off the token rather than ending it over a blip.
     }
-    return isLoggedIn.value
+    return sessionActive()
   }
 
   /** Persist user + token together (login, key/OTP verify). The server minted this token for this user, so it counts
@@ -85,5 +84,5 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { userData, token, isLoggedIn, verifySession, login, setUser, changeUsername, logout }
+  return { userData, token, verifySession, login, setUser, changeUsername, logout }
 })

@@ -1,6 +1,6 @@
 import { watch } from 'vue'
-import { createRouter, createWebHistory, type RouteRecordInfo } from 'vue-router'
-import { authToken } from '@/core/auth-token.ts'
+import { createRouter, createWebHistory, type NavigationGuardReturn, type RouteRecordInfo } from 'vue-router'
+import { authToken, sessionActive } from '@/core/auth-token.ts'
 import { useUserStore } from '@/stores/user.ts'
 
 // Manually-typed route map (vue-router "typed routes"). Each entry pairs a route
@@ -13,8 +13,12 @@ export interface RouteNamedMap {
   login: RouteRecordInfo<'login', '/:appdirectory/', { appdirectory: string }, { appdirectory: string }>
   signup: RouteRecordInfo<'signup', '/:appdirectory/signup', { appdirectory: string }, { appdirectory: string }>
   // `number` is the open conversation's remote phone number; raw omit/'' clears it, normalized '' means none open
-  dashboard: RouteRecordInfo<'dashboard', '/:appdirectory/dashboard/:number?',
-    { appdirectory: string; number?: string }, { appdirectory: string; number: string }>
+  dashboard: RouteRecordInfo<
+    'dashboard',
+    '/:appdirectory/dashboard/:number?',
+    { appdirectory: string; number?: string },
+    { appdirectory: string; number: string }
+  >
   'not-found': RouteRecordInfo<'not-found', '/:pathMatch(.*)*', { pathMatch: string | string[] }, { pathMatch: string[] }>
 }
 
@@ -27,6 +31,8 @@ declare module 'vue-router' {
     requiresAuth?: boolean
   }
 }
+
+const DashboardView = () => import('@/views/DashboardView.vue')
 
 // dynamic imports for bundle splitting: https://router.vuejs.org/guide/advanced/lazy-loading.html
 const router = createRouter({
@@ -55,7 +61,7 @@ const router = createRouter({
       path: '/:appdirectory/dashboard/:number?',
       name: 'dashboard',
       meta: { requiresAuth: true },
-      component: () => import('@/views/DashboardView.vue'),
+      component: DashboardView,
     },
     {
       // https://router.vuejs.org/guide/essentials/dynamic-matching.html#Catch-all-404-Not-found-Route
@@ -66,13 +72,26 @@ const router = createRouter({
   ],
 })
 
-// Session gate: settling this here, before the view is created, is what keeps a dead session from mounting the
-// dashboard and fanning out a dozen requests that each 401.
-router.beforeEach(async (to) => {
-  if (!to.meta.requiresAuth) return
-  if (await useUserStore().verifySession()) return
-  // this handler is also run on a "cold" load so have to be explicit about params
-  return { name: 'login', params: 'appdirectory' in to.params ? to.params : undefined }
+// This session gate is what keeps a dead session from mounting the dashboard and fanning out a dozen requests that each 401.
+router.beforeEach(async (to): Promise<NavigationGuardReturn> => {
+
+  // special-case login
+  if (to.name === 'login') {
+    // local-only check, skip displaying the login page if we have a token
+    if (sessionActive()) return { name: 'dashboard', params: to.params } // redirect from login to dashboard. beforeEach will run again and do a network check.
+    return true // accept navigation to login
+  }
+
+  if (!to.meta.requiresAuth) return true
+
+  // Dashboard is the only route behind the auth gate, so its chunk is fetched alongside the token validation probe instead of after it, in order to minimize render time.
+  void DashboardView()
+  const verified = await useUserStore().verifySession()
+  if (verified) return true // server accepted the token, allow navigation to dashboard
+
+  // If verifySession failed, redirect from dashboard to login.
+  // Params are explicit for first-load case. Already-loaded redirects dont need explicit params.
+  return { name: 'login', params: 'appdirectory' in to.params ? to.params : undefined } // `in` check is for typescript typed routes to be happy
 })
 
 // An emptied token -- logout, or a 401 killing the session -- is the one trigger for leaving a protected route, so
