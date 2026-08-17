@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
-import { TelnyxRTC, type Call as TelnyxCall } from '@telnyx/webrtc'
-import { Device as TwilioDevice, type Call as TwilioCall } from '@twilio/voice-sdk'
+import type { Call as TelnyxCall, TelnyxRTC } from '@telnyx/webrtc'
+import type { Call as TwilioCall, Device as TwilioDevice } from '@twilio/voice-sdk'
 import type { InferResponseType } from 'hono/client'
 import type { SuccessStatusCode } from 'hono/utils/http-status'
 import { defineStore } from 'pinia'
@@ -98,11 +98,13 @@ export const useCallStore = defineStore('call', () => {
     })
   }
 
-  function deviceSetup(creds: CallCredentials | undefined) {
+  async function deviceSetup(creds: CallCredentials | undefined) {
     if (!creds) return
     if (creds.type === 'twilio') {
       callType = 'twilio'
-      const device = new TwilioDevice(creds.token)
+      // Load SDKs on-demand as separate chunks, save ~200kB un-gz each
+      const twilio = await import('@twilio/voice-sdk')
+      const device = new twilio.Device(creds.token)
       device.on('registered', () => console.log('Connected'))
       device.on('error', (error: Error) => {
         console.error('twilio device error', error)
@@ -117,7 +119,8 @@ export const useCallStore = defineStore('call', () => {
       twilioDevice = device
     } else if (creds.setting.sip_username && creds.setting.sip_password) {
       callType = 'telnyx'
-      const rtc = new TelnyxRTC({
+      const telnyx = await import('@telnyx/webrtc')
+      const rtc = new telnyx.TelnyxRTC({
         login: creds.setting.sip_username,
         password: creds.setting.sip_password,
       })
@@ -176,7 +179,7 @@ export const useCallStore = defineStore('call', () => {
   async function init() {
     if (initialized) return
     initialized = true
-    deviceSetup(await fetchCallCredentials())
+    await fetchCallCredentials().then(deviceSetup)
   }
 
   /** Tear everything down (CallModal unmount). `init()` may be called again later. */
@@ -198,7 +201,7 @@ export const useCallStore = defineStore('call', () => {
       // while no call UI is mounted -- init() will when CallModal next mounts.
       if (!initialized) return
       destroyDevices()
-      deviceSetup(await fetchCallCredentials())
+      await fetchCallCredentials().then(deviceSetup)
     },
   )
 

@@ -51,6 +51,16 @@ import DialerPad from './DialerPad.vue'
 import IncomingCallPanel from './IncomingCallPanel.vue'
 import { type CallState, type DialKey, useCallStore } from '@/stores/call.ts'
 
+/** Run `fn` once the browser is idle, returning its canceller. Has fallback for Safari which doesn't support requestIdle as of 26.5 */
+function whenIdle(fn: () => void): () => void {
+  if (typeof window.requestIdleCallback !== 'function') {
+    const timer = setTimeout(fn, 500)
+    return () => clearTimeout(timer)
+  }
+  const handle = requestIdleCallback(fn, { timeout: 3000 }) // call after 3s regardless
+  return () => cancelIdleCallback(handle)
+}
+
 const callStore = useCallStore()
 const callModal = useTemplateRef<InstanceType<typeof BModal>>('callModal')
 const dialInput = ref('')
@@ -67,10 +77,13 @@ function removeDigit() {
   dialInput.value = dialInput.value.slice(0, -1)
 }
 
+let cancelInit = () => {}
 onMounted(() => {
-  void callStore.init()
+  // Registering the device is what makes incoming calls ring, so we can't wait for the user to open the dialer.
+  cancelInit = whenIdle(() => void callStore.init())
 })
 onBeforeUnmount(() => {
+  cancelInit() // A fast unmount would otherwise leave a pending init that builds devices with no call UI mounted.
   callStore.destroy()
 })
 // Pops the modal for incoming calls and store-driven dials (Dashboard's chat-header call button).
