@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory, type NavigationGuardReturn, type RouteRecordInfo } from 'vue-router'
 import { authToken, sessionActive } from '@/core/auth-token.ts'
 import { useUserStore } from '@/stores/user.ts'
+import DashboardView from '@/views/DashboardView.vue'
 
 // Manually-typed route map (vue-router "typed routes"). Each entry pairs a route
 // name with its path + raw params (what you pass to router.push) + normalized
@@ -32,8 +33,6 @@ declare module 'vue-router' {
   }
 }
 
-const DashboardView = () => import('@/views/DashboardView.vue')
-
 // dynamic imports for bundle splitting: https://router.vuejs.org/guide/advanced/lazy-loading.html
 const router = createRouter({
   history: createWebHistory(),
@@ -61,7 +60,8 @@ const router = createRouter({
       path: '/:appdirectory/dashboard/:number?',
       name: 'dashboard',
       meta: { requiresAuth: true },
-      component: DashboardView,
+      // oxlint-disable-next-line typescript/no-unsafe-assignment : tsgolint cant resolve .vue modules
+      component: DashboardView, // static so that it can show skeleton immediately
     },
     {
       // https://router.vuejs.org/guide/essentials/dynamic-matching.html#Catch-all-404-Not-found-Route
@@ -74,7 +74,6 @@ const router = createRouter({
 
 // This session gate is what keeps a dead session from mounting the dashboard and fanning out a dozen requests that each 401.
 router.beforeEach(async (to): Promise<NavigationGuardReturn> => {
-
   // special-case login
   if (to.name === 'login') {
     // local-only check, skip displaying the login page if we have a token
@@ -84,8 +83,7 @@ router.beforeEach(async (to): Promise<NavigationGuardReturn> => {
 
   if (!to.meta.requiresAuth) return true
 
-  // Dashboard is the only route behind the auth gate, so its chunk is fetched alongside the token validation probe instead of after it, in order to minimize render time.
-  void DashboardView()
+  // starting loading actual DashboardBody immediately, before verifySession. DashboardView is just a wrapper with a small skeleton.
   void import('@/components/dashboard/DashboardBody.vue')
   const verified = await useUserStore().verifySession()
   if (verified) return true // server accepted the token, allow navigation to dashboard
