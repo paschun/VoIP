@@ -1,3 +1,4 @@
+import { DevTools } from '@vitejs/devtools'
 import vue from '@vitejs/plugin-vue'
 import { BootstrapVueNextResolver } from 'bootstrap-vue-next/resolvers'
 import browserslist from 'browserslist'
@@ -34,6 +35,7 @@ export default defineConfig({
     serviceWorkerScope(),
     vue(),
     vueDevTools({ launchEditor: 'codium' }),
+    DevTools(),
 
     // Auto-imports the icon components used in templates (`<i-bi-x />`) via the
     // IconsResolver; no manual per-icon import needed. Replaces bootstrap-vue's
@@ -94,10 +96,12 @@ export default defineConfig({
         // `sw.js`; this group forces it out into a hashed chunk so the entry stays a byte-stable shell.
         codeSplitting: { groups: [{ name: 'sw-worker', test: /src\/sw-worker\.ts/ }] },
       },
+      devtools: {}, // enable vite devtools in dev mode. run build, then dev
     },
     // sourcemap: true,
     emptyOutDir: true,
     cssMinify: 'lightningcss',
     target: jsTargets,
   },
+  // devtools: true, // launches vite devtools server on build
 }) satisfies UserConfig

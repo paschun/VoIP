@@ -114,9 +114,6 @@
       </form>
 
       <div class="d-flex my-4 justify-content-center">
-        <a href="https://www.twitter.com/0perationP" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
-          <IBiTwitter class="mx-2 text-secondary" style="font-size: 2em" />
-        </a>
         <a href="https://github.com/0perationPrivacy/" target="_blank" rel="noopener noreferrer" aria-label="Github" title="Github">
           <IBiGithub class="mx-2 text-secondary" style="font-size: 2em" />
         </a>
