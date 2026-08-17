@@ -46,8 +46,8 @@
 /** The inbox sidebar: search box, loading skeleton, and conversation rows. Selection is a pure store call. */
 import { onMounted, onUnmounted, useTemplateRef } from 'vue'
 import PullToRefresh, { type PullToRefreshInstance } from 'pulltorefreshjs'
+import ListSkeleton from '@/components/shared/ListSkeleton.vue'
 import SearchBar from '@/components/shared/SearchBar.vue'
-import ListSkeleton from './ListSkeleton.vue'
 import { useMobileSidebar } from '@/composables/useMobileSidebar.ts'
 import { useSearchFilter } from '@/composables/useSearchFilter.ts'
 import { formatTimestamp } from '@/helper.ts'

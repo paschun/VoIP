@@ -86,6 +86,7 @@ router.beforeEach(async (to): Promise<NavigationGuardReturn> => {
 
   // Dashboard is the only route behind the auth gate, so its chunk is fetched alongside the token validation probe instead of after it, in order to minimize render time.
   void DashboardView()
+  void import('@/components/dashboard/DashboardBody.vue')
   const verified = await useUserStore().verifySession()
   if (verified) return true // server accepted the token, allow navigation to dashboard
 
