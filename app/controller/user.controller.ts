@@ -1,13 +1,13 @@
-import { execSync } from 'node:child_process'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { Octokit, RequestError } from 'octokit'
-import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { Octokit, RequestError } from 'octokit'
 import QRCode from 'qrcode'
 import Speakeasy from 'speakeasy'
+import { z } from 'zod'
 import pkg from '../../package.json' with { type: 'json' }
-import type { Ok } from '../contracts/envelope.ts'
 import {
   loginBody,
   type LoginRequest,
@@ -26,22 +26,25 @@ import {
   type UserData,
   type TotpQrInfo,
 } from '../contracts/auth.ts'
+import type { Ok } from '../contracts/envelope.ts'
 import { env } from '../core/env.ts'
 import { factory } from '../core/factory.ts'
 import type { Env, JsonCtx } from '../core/factory.ts'
-import { signToken } from '../middleware/auth.ts'
 import { ack } from '../helper/respond.helper.ts'
 import * as telnyxHelper from '../helper/telnyx.helper.ts'
 import * as twilioHelper from '../helper/twilio.helper.ts'
+import { signToken } from '../middleware/auth.ts'
 import { auth } from '../middleware/auth.ts'
 import { jsonBody } from '../middleware/validate.ts'
 import Contact from '../model/contact.model.ts'
 import Email from '../model/email.model.ts'
-import PushSubscription from '../model/push-subscription.model.ts'
 import HardwareKey from '../model/hardwarekey.model.ts'
 import { Message } from '../model/message.model.ts'
+import PushSubscription from '../model/push-subscription.model.ts'
 import Setting from '../model/setting.model.ts'
 import User from '../model/user.model.ts'
+
+const execAsync = promisify(exec)
 
 const saltRounds = 10
 const upstreamRepo = { owner: 'paschun', repo: 'VoIP' } as const
@@ -72,7 +75,7 @@ const octokit = new Octokit({
 const commitsSchema = z.tuple([z.object({ sha: z.hash('sha1') })]).rest(z.object({ sha: z.hash('sha1') }))
 
 /** Project a user doc onto the client-facing {@link UserData}: strips secrets; `totp` = secret present.
- * 
+ *
  * authenticate (login) -- needs all three
  * changeUsername -- needs all three
  * readUser (/me) -- Mfa.vue reads only .totp
@@ -80,17 +83,16 @@ const commitsSchema = z.tuple([z.object({ sha: z.hash('sha1') })]).rest(z.object
 const toUserData = (u: InstanceType<typeof User>): UserData => ({ _id: u._id.toString(), name: u.name, totp: Boolean(u.totpSecret) })
 
 /** Running build id: the short git commit, falling back to `package.json`'s version. */
-const currentVersion = (() => {
+const currentVersion = (async () => {
   try {
-    return execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
-      .toString()
-      .trim()
+    const { stdout } = await execAsync('git rev-parse --short HEAD', { cwd: import.meta.dirname })
+    return stdout.trim()
   } catch (err) {
     console.error(err)
     return pkg.version
   }
 })()
-console.log('currentVersion', currentVersion)
+void currentVersion.then((ver) => console.log('currentVersion', ver))
 
 /** Authenticate; on success mint a 30d JWT and report which second factor (if any) the client must still clear. */
 async function authenticate(c: JsonCtx<LoginRequest>) {
@@ -145,8 +147,8 @@ function readSignupOption(c: Context<Env>) {
 }
 
 /** The running build id (see `currentVersion`). */
-function readVersion(c: Context<Env>) {
-  return c.json({ data: currentVersion } satisfies Ok<string>, 200)
+async function readVersion(c: Context<Env>) {
+  return c.json({ data: await currentVersion } satisfies Ok<string>, 200)
 }
 
 // GitHub's unauthenticated REST limit is 60 req/hr per IP
@@ -175,7 +177,7 @@ async function refreshUpdateAvailable() {
   const remoteVersion = await fetchRemoteVersion()
   if (remoteVersion) {
     console.log('got latest version from github:', remoteVersion)
-    isUpdateAvailable = currentVersion !== remoteVersion
+    isUpdateAvailable = (await currentVersion) !== remoteVersion
   }
   if (isUpdateAvailable && updateTimer) clearInterval(updateTimer)
 }
